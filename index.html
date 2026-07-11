@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Szenario-Rechner regulierte Sparten</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-copy">
+        <h1>Szenario-Rechner regulierte Sparten</h1>
+        <p>Portfolio-App für regulierte Sparten: Basisdaten der Sparte, geplante Maßnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.</p>
+      </div>
+      <div class="header-actions" aria-label="Globale Modellaktionen">
+        <div class="global-actions">
+          <button type="button" id="importModel" class="primary">Daten laden</button>
+          <button type="button" id="exportModel">Daten herunterladen</button>
+          <button type="button" id="printReport">Report drucken</button>
+          <details class="action-menu">
+            <summary>Mehr</summary>
+            <div class="action-menu-list">
+              <button type="button" id="openHelp">Hilfe</button>
+              <button type="button" id="loadDemoModel">Demodaten laden</button>
+              <button type="button" id="resetModel">Zurücksetzen</button>
+              <button type="button" id="clearBrowserData" class="danger-action">Browserdaten löschen</button>
+            </div>
+          </details>
+        </div>
+        <input id="importFile" class="hidden-file" type="file" accept="application/json,.json">
+        <div id="storageStatus" class="status-line"></div>
+      </div>
+    </div>
+  </header>
+
+	  <nav class="view-tabs" aria-label="Arbeitsansichten">
+	    <button type="button" class="view-tab active" data-view="basis">Stammdaten</button>
+	    <button type="button" class="view-tab" data-view="measures">Maßnahmen</button>
+	    <button type="button" class="view-tab" data-view="results">Ergebnisse</button>
+	    <button type="button" class="view-tab" data-view="report">Report</button>
+	  </nav>
+
+  <section class="sticky-kpis" aria-label="Live-Wirkung">
+    <div class="sticky-kpi" id="stickyVerdictTile">
+      <div class="label">Verdict</div>
+      <div class="value" id="stickyVerdict">-</div>
+      <div class="delta" id="stickyVerdictDelta">live</div>
+    </div>
+    <div class="sticky-kpi">
+      <div class="label">Jahr-1-EOG</div>
+      <div class="value" id="stickyEog">-</div>
+      <div class="delta" id="stickyEogDelta"></div>
+    </div>
+    <div class="sticky-kpi">
+      <div class="label">IRR</div>
+      <div class="value" id="stickyIrr">-</div>
+      <div class="delta" id="stickyIrrDelta"></div>
+    </div>
+    <div class="sticky-kpi">
+      <div class="label">Kapitalwert</div>
+      <div class="value" id="stickyNpv">-</div>
+      <div class="delta" id="stickyNpvDelta"></div>
+    </div>
+  </section>
+
+  <main>
+    <section class="panel app-view" data-view-panel="basis" aria-label="Basisdaten und Szenario">
+      <div class="group">
+        <h2>Basisdaten Sparte</h2>
+        <div class="grid2">
+          <div>
+            <label for="sector">Sparte</label>
+            <select id="sector">
+              <option value="gas">Gas</option>
+              <option value="strom">Strom</option>
+            </select>
+          </div>
+          <div>
+            <label for="baseYear">Startjahr</label>
+            <input id="baseYear" type="number" value="2027" min="2025" step="1">
+          </div>
+          <div>
+            <label for="baseEog">bestehende EOG TEUR p.a.</label>
+            <input id="baseEog" type="number" value="20000" min="0" step="100">
+          </div>
+          <div>
+            <label for="rab">regulierte Kapitalbasis TEUR</label>
+            <input id="rab" type="number" value="85000" min="0" step="500">
+          </div>
+          <div>
+            <label for="returnRate">Kapitalverzinsung %</label>
+            <input id="returnRate" type="number" value="5.0" min="0" step="0.1">
+          </div>
+          <div>
+            <label for="financingRate">Fremdkapitalzins %</label>
+            <input id="financingRate" type="number" value="5.0" min="0" step="0.1">
+          </div>
+        </div>
+        <p class="hint" id="sectorHint">Gas: KANU-Szenarien und Q-Element sind prüfpflichtige Annahmen.</p>
+        <div class="period-summary" aria-label="Regulierungsperioden">
+          <div class="period-fact">
+            <div class="label">Regulierungsperiode</div>
+            <div class="value" id="periodName">-</div>
+          </div>
+          <div class="period-fact">
+            <div class="label">Zeitraum</div>
+            <div class="value" id="periodYears">-</div>
+          </div>
+          <div class="period-fact">
+            <div class="label">Kostenbasis</div>
+            <div class="value" id="periodBaseYear">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Szenario</h2>
+        <div class="segmented" aria-label="Szenarioauswahl">
+          <button type="button" class="scenario active" data-scenario="basis">Basis</button>
+	          <button type="button" class="scenario" data-scenario="konservativ">Konservativ</button>
+	          <button type="button" class="scenario" data-scenario="wert">Wert</button>
+	        </div>
+	        <div id="scenarioDiff" class="scenario-diff"></div>
+	        <div class="grid2" style="margin-top:10px">
+          <div>
+            <label for="horizon">Horizont Jahre</label>
+            <input id="horizon" type="number" value="20" min="1" max="60" step="1">
+          </div>
+          <div>
+            <label for="discountRate">Diskontsatz %</label>
+            <input id="discountRate" type="number" value="5.0" min="0" step="0.1">
+          </div>
+          <div>
+            <label for="kanuEndYear">KANU-Zieljahr</label>
+            <input id="kanuEndYear" type="number" value="2045" min="2028" step="1">
+          </div>
+          <div>
+            <label for="degressiveRate">KANU degressiv %</label>
+            <input id="degressiveRate" type="number" value="10" min="0" max="12" step="0.1">
+          </div>
+          <div>
+            <label for="taxFactor">Zuschlag/Steuern %</label>
+            <input id="taxFactor" type="number" value="0" min="0" step="0.1">
+          </div>
+          <div>
+            <label for="portfolioAttribution">Portfolio-Attribution %</label>
+            <input id="portfolioAttribution" type="number" value="25" min="0" max="100" step="1">
+          </div>
+	        </div>
+	        <p class="hint">Szenarien setzen nur Annahmen. Die Maßnahmen bleiben einzeln sichtbar und können separat ein- oder ausgeschaltet werden.</p>
+	        <div id="globalValidation" class="validation-messages" role="status" aria-live="polite"></div>
+	      </div>
+
+      <div class="group">
+        <h2>Portfolio-Wirkung</h2>
+        <div class="grid2">
+          <div>
+            <label for="qDelta">Q-Delta Portfolio %</label>
+            <input id="qDelta" type="number" value="0" step="0.1">
+          </div>
+          <div>
+            <label for="eDelta">E-/Effizienz-Delta %</label>
+            <input id="eDelta" type="number" value="0" step="0.1">
+          </div>
+        </div>
+        <p class="hint">Zusatznutzen p.a. = bestehende EOG x Delta x Attribution. Bei Gas ist Q als prüfpflichtiges Szenario markiert.</p>
+      </div>
+
+      <div>
+        <h2>Stammdaten prüfen</h2>
+        <div class="action-row">
+          <button type="button" id="openBasisWizard" class="primary">Stammdaten prüfen</button>
+        </div>
+        <p class="hint">Der Wizard führt die wichtigsten Stammdaten und Szenarioannahmen einmal strukturiert durch.</p>
+      </div>
+    </section>
+
+    <section class="panel app-view hidden" data-view-panel="measures" aria-label="Maßnahmenkatalog">
+      <div class="group">
+        <h2>Maßnahmenkatalog</h2>
+        <div class="action-row">
+          <button type="button" id="newMeasure" class="primary">Neue Maßnahme geführt</button>
+          <button type="button" id="toggleAllInCatalog">Alle aktivieren</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Aktiv</th>
+                <th>Maßnahme</th>
+                <th>Jahr</th>
+                <th>Kosten</th>
+                <th>aktiv.</th>
+                <th>IRR</th>
+                <th>Notiz</th>
+              </tr>
+            </thead>
+            <tbody id="measureBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div class="stack wide app-view hidden" data-view-panel="results">
+      <section class="panel" aria-label="Managemententscheidung">
+        <h2>Management-Entscheidung</h2>
+        <div class="summary-hero">
+          <div id="managementVerdict" class="verdict-card">
+            <div class="verdict-label">Entscheidungstendenz</div>
+	            <div class="verdict-title" id="managementVerdictTitle">-</div>
+	            <div class="verdict-text" id="managementVerdictText">-</div>
+	            <div class="pill-row" id="managementPills"></div>
+	            <details class="verdict-why">
+	              <summary>Warum?</summary>
+	              <ul id="verdictWhyList"></ul>
+	            </details>
+	          </div>
+          <div class="story-card">
+            <div>
+              <strong>In einem Satz</strong>
+              <p id="managementStory">-</p>
+            </div>
+            <div>
+              <strong>Wichtigster Haken</strong>
+              <p id="managementCaveat">-</p>
+            </div>
+            <div>
+              <strong>Nächster Schritt</strong>
+              <p id="managementNextStep">-</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Kernkennzahlen">
+        <h2>Kernkennzahlen</h2>
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">aktive Investitionen</div>
+            <div class="value" id="kpiInvest">-</div>
+            <div class="sub" id="kpiInvestSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Jahr 1 EOG-Zusatz</div>
+            <div class="value" id="kpiEog">-</div>
+            <div class="sub" id="kpiEogSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Portfolio IRR</div>
+            <div class="value" id="kpiIrr">-</div>
+            <div class="sub" id="kpiIrrSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Kapitalwert</div>
+            <div class="value" id="kpiNpv">-</div>
+            <div class="sub" id="kpiNpvSub">gegen Diskontsatz</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Meeting-Fokus">
+        <h2>Meeting-Fokus</h2>
+        <div class="focus-tabs" aria-label="Gesprächsansicht">
+          <button type="button" class="focus-tab active" data-focus="management">Kurzentscheidung</button>
+          <button type="button" class="focus-tab" data-focus="technik">Technik</button>
+          <button type="button" class="focus-tab" data-focus="vnb">Kaufmännisch / VNB</button>
+          <button type="button" class="focus-tab" data-focus="controlling">Konzern-Controlling</button>
+          <button type="button" class="focus-tab" data-focus="finanzierung">Finanzierung</button>
+        </div>
+        <div id="meetingFocusBody" class="meeting-grid"></div>
+      </section>
+
+      <details class="panel-details">
+        <summary>Erweiterte Kennzahlen anzeigen</summary>
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">aktivierte Kapitalbasis</div>
+            <div class="value" id="kpiActivated">-</div>
+            <div class="sub" id="kpiActivatedSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Portfolio Q/E p.a.</div>
+            <div class="value" id="kpiPortfolioEffect">-</div>
+            <div class="sub" id="kpiPortfolioSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">EOG nach Zusatz</div>
+            <div class="value" id="kpiTotalEog">-</div>
+            <div class="sub">Basis-EOG plus Jahr 1</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Finanzierungsspread</div>
+            <div class="value" id="kpiSpread">-</div>
+            <div class="sub">IRR minus FK-Zins</div>
+          </div>
+        </div>
+      </details>
+
+	      <section class="panel" aria-label="Jahresdiagramm">
+	        <h2>EOG-Zusatzwirkung pro Jahr</h2>
+	        <div class="chart-legend" aria-label="Diagramm-Legende">
+	          <span><i style="background:#006f8f"></i>AfA</span>
+	          <span><i style="background:#4b8f6f"></i>Verzinsung</span>
+	          <span><i style="background:#c78a22"></i>Q/E</span>
+	          <span><i style="background:#7b6a9a"></i>OPEX/Risiko</span>
+	        </div>
+	        <div id="chart" class="chart"></div>
+	      </section>
+
+      <section class="panel" aria-label="Szenariovergleich">
+        <h2>Szenariovergleich</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Szenario</th>
+                <th>Attribution</th>
+                <th>Q/E p.a.</th>
+                <th>Jahr 1</th>
+                <th>IRR</th>
+                <th>Kapitalwert</th>
+              </tr>
+            </thead>
+            <tbody id="scenarioBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <details class="panel-details">
+        <summary>Jahrestabelle und Rechenpfad anzeigen</summary>
+        <div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+	                  <th>Jahr</th>
+	                  <th>RP</th>
+	                  <th>Basis-EOG</th>
+                  <th>AfA</th>
+                  <th>Verzinsung</th>
+                  <th>Q/E</th>
+                  <th>OPEX/Risiko</th>
+                  <th>EOG Zusatz</th>
+                  <th>EOG gesamt</th>
+                </tr>
+              </thead>
+              <tbody id="yearBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <div class="note warning">
+        Der Rechner ersetzt nicht die Entscheidung. Er macht aber die Abhängigkeiten sichtbar: Basisdaten, Maßnahmen, regulatorische Logik, Finanzierung, Portfolioeffekte und Attribution werden konsistent in einem Modell gerechnet.
+      </div>
+    </div>
+
+    <section class="panel app-view hidden" data-view-panel="report" aria-label="Management-Report">
+      <div class="report-actions">
+        <button type="button" id="printReportFromView" class="primary">Report drucken</button>
+      </div>
+      <div id="reportPage" class="report-page"></div>
+    </section>
+  </main>
+
+  <footer>
+    Copyright &copy; <a href="https://stromdao.de/" target="_blank" rel="noopener noreferrer">STROMDAO GmbH</a>. Lizenz: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>.
+  </footer>
+
+  <div id="wizardModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="wizardTitle">Wizard</h2>
+        <div id="wizardStepper" class="stepper"></div>
+      </div>
+      <div id="wizardBody" class="dialog-body"></div>
+      <div class="dialog-foot">
+        <button type="button" id="wizardCancel">Abbrechen</button>
+        <div class="dialog-actions">
+          <button type="button" id="wizardBack">Zurück</button>
+          <button type="button" id="wizardNext" class="primary">Weiter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="loadTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="loadTitle">Daten laden</h2>
+      </div>
+      <div class="dialog-body">
+        <div class="choice-grid">
+          <button type="button" id="loadJson">
+            <strong>Bestehende JSON hochladen</strong>
+            <span>Importiert ein zuvor heruntergeladenes Rechner-Modell mit Stammdaten, Szenario und Maßnahmen.</span>
+          </button>
+          <button type="button" id="loadBasisWizard">
+            <strong>Stammdaten geführt erfassen</strong>
+            <span>Startet den Stammdaten-Wizard und lässt vorhandene Maßnahmen im aktuellen Modell bestehen.</span>
+          </button>
+          <button type="button" id="loadDemoFromModal">
+            <strong>Mit Demodaten arbeiten</strong>
+            <span>Lädt ein fest hinterlegtes Beispielmodell für eine schnelle fachliche Erprobung.</span>
+          </button>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="loadCancel">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="measureEditModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="measureEditTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="measureEditTitle">Maßnahme bearbeiten</h2>
+        <div class="pill-row" id="selectedPills"></div>
+      </div>
+      <div class="dialog-body">
+        <div class="group">
+          <h3>Grunddaten</h3>
+          <div class="grid2">
+            <div>
+              <label for="mName">Name</label>
+              <input id="mName" type="text">
+            </div>
+            <div>
+              <label for="mType">Typ</label>
+              <select id="mType">
+                <option value="wahl">Wahlmaßnahme</option>
+                <option value="noRegret">No-Regret</option>
+                <option value="risiko">Risikomaßnahme</option>
+              </select>
+            </div>
+            <div>
+              <label for="mCost">Kosten TEUR</label>
+              <input id="mCost" type="number" min="0" step="1">
+            </div>
+            <div>
+              <label for="mYear">Inbetriebnahme</label>
+              <input id="mYear" type="number" min="2025" step="1">
+            </div>
+            <div>
+              <label for="mSecure">sicher aktivierbar %</label>
+              <input id="mSecure" type="number" min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="mUncertain">unsicherer Anteil %</label>
+              <input id="mUncertain" type="number" min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="mProbability">Wahrscheinlichkeit %</label>
+              <input id="mProbability" type="number" min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="mOpexRecognition">OPEX-Anerkennung %</label>
+              <input id="mOpexRecognition" type="number" min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="mLife">normale ND Jahre</label>
+              <input id="mLife" type="number" min="1" step="1">
+            </div>
+            <div>
+              <label for="mDepr">AfA-Szenario</label>
+              <select id="mDepr">
+                <option value="normal">Normal linear</option>
+                <option value="kanuLinear">KANU linear</option>
+	                <option value="kanuDegressive">KANU degressiv</option>
+	              </select>
+	            </div>
+	          </div>
+	          <div id="measureValidation" class="validation-messages" role="status" aria-live="polite"></div>
+	        </div>
+        <div>
+          <h3>Direkte Zusatzwirkung</h3>
+          <div class="grid2">
+            <div>
+              <label for="mQDirect">Q direkt TEUR p.a.</label>
+              <input id="mQDirect" type="number" step="1">
+            </div>
+            <div>
+              <label for="mEDirect">E direkt TEUR p.a.</label>
+              <input id="mEDirect" type="number" step="1">
+            </div>
+            <div>
+              <label for="mRiskAvoided">Risikowert TEUR p.a.</label>
+              <input id="mRiskAvoided" type="number" step="1">
+            </div>
+            <div>
+              <label for="mPortfolioShare">Portfolioanteil %</label>
+              <input id="mPortfolioShare" type="number" min="0" max="100" step="1">
+            </div>
+          </div>
+          <p class="hint">Portfolioanteil verteilt den globalen Q-/E-Effekt auf einzelne Maßnahmen. Direkte Werte gehören nur hinein, wenn sie separat begründet sind.</p>
+        </div>
+        <div class="group">
+          <h3>Meeting-Notiz</h3>
+          <label for="mNote">Notiz zur Maßnahme</label>
+          <textarea id="mNote" placeholder="z.B. No-Regret noch nicht bestätigt&#10;Unklar, ob Tiefbau im geplanten Jahr stattfinden kann"></textarea>
+          <p class="hint">Notizen werden mit dem Modell gespeichert, im Maßnahmenkatalog markiert und im Report als offene Punkte ausgewiesen.</p>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="measureEditClose">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="meetingTextModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="meetingTextTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="meetingTextTitle">Meeting-Text bearbeiten</h2>
+      </div>
+      <div class="dialog-body">
+        <div class="group">
+          <label for="meetingTextHeading">Überschrift</label>
+          <input id="meetingTextHeading" type="text">
+        </div>
+        <div>
+          <label for="meetingTextBody">Text</label>
+          <textarea id="meetingTextBody"></textarea>
+          <p class="hint">Der Text überschreibt nur diese Meeting-Kachel. Kennzahlen und Rechenwerte bleiben dynamisch.</p>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="meetingTextReset">Standardtext wiederherstellen</button>
+        <div class="dialog-actions">
+          <button type="button" id="meetingTextCancel">Abbrechen</button>
+          <button type="button" id="meetingTextSave" class="primary">Speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="helpTitle">Wofür nutzt man diesen Rechner?</h2>
+      </div>
+      <div class="dialog-body">
+        <div class="help-content">
+          <div>
+            <h3>Zweck</h3>
+            <p>Der Rechner unterstützt Investitionsentscheidungen in regulierten Sparten. Er macht sichtbar, wie Maßnahmen über Aktivierung, Abschreibung, Kapitalverzinsung, Finanzierung, Risiken und Portfolioeffekte auf die Erlösobergrenze und die wirtschaftliche Tragfähigkeit wirken können.</p>
+          </div>
+          <div>
+            <h3>Ziel</h3>
+            <p>Eine Maßnahme soll nicht nur als Kostenposition betrachtet werden. Das Modell fragt, welcher Anteil regulatorisch kapitalwirksam wird, welche EOG-Wirkung daraus entsteht und ob die erwartete Rendite die Finanzierungskosten und das Risiko rechtfertigt.</p>
+          </div>
+          <div>
+            <h3>Governance</h3>
+            <ul>
+              <li>Alle wesentlichen Annahmen werden explizit erfasst: Sparte, EOG-Basis, Kapitalbasis, Aktivierbarkeit, AfA, Finanzierung und Portfolioeffekte.</li>
+              <li>Maßnahmen werden einzeln dokumentiert und können ein- oder ausgeschaltet werden.</li>
+              <li>Unsichere Annahmen werden über Wahrscheinlichkeiten, Attribution und Szenarien abgebildet, statt stillschweigend in einer Zahl zu verschwinden.</li>
+              <li>Die Entscheidung wird nachvollziehbar: wirtschaftlich tragfähig, Grenzfall oder nur über Risiko, Pflicht oder Strategie begründbar.</li>
+              <li>Daten können als JSON exportiert und in einem anderen Browser wieder importiert werden. Damit bleiben Rechenstand und Annahmen prüfbar.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Typischer Ablauf</h3>
+            <ol>
+              <li>Stammdaten der Sparte erfassen oder ein vorhandenes Modell laden.</li>
+              <li>Geplante Maßnahmen anlegen und ihre Aktivierungs- und Wirklogik beschreiben.</li>
+              <li>Szenarien vergleichen und Finanzierungsspread, Kapitalwert und EOG-Wirkung bewerten.</li>
+              <li>Die Entscheidung nicht aus dem Rechner ableiten lassen, sondern die Annahmen und das Ergebnis als Entscheidungsgrundlage nutzen.</li>
+            </ol>
+          </div>
+          <div class="note warning">
+            Der Rechner ersetzt keine regulatorische Prüfung und keinen Beschluss. Er schafft eine gemeinsame, nachvollziehbare Entscheidungsgrundlage für Governance, Priorisierung und Finanzierung.
+          </div>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="helpClose">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/ui.js"></script>
+</body>
+</html>

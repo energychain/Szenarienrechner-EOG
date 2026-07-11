@@ -1,0 +1,126 @@
+import { describe, expect, it } from 'vitest';
+import {
+  calcMeasure,
+  calcPortfolio,
+  irr,
+  npv,
+  params,
+  regulatoryPeriodFor,
+  scenarioParams
+} from '../src/engine.js';
+
+const baseInputs = {
+  sector: 'gas',
+  baseYear: 2028,
+  baseEog: 10000,
+  rab: 50000,
+  returnRate: 5,
+  financingRate: 5,
+  horizon: 3,
+  discountRate: 5,
+  kanuEndYear: 2030,
+  degressiveRate: 10,
+  taxFactor: 0,
+  portfolioAttribution: 25,
+  qDelta: 0,
+  eDelta: 0
+};
+
+function baseMeasure(overrides = {}) {
+  return {
+    id: 'm1',
+    active: true,
+    name: 'Testmassnahme',
+    type: 'wahl',
+    cost: 1000,
+    year: 2028,
+    secure: 100,
+    uncertain: 0,
+    probability: 0,
+    opexRecognition: 0,
+    life: 10,
+    depr: 'normal',
+    qDirect: 0,
+    eDirect: 0,
+    riskAvoided: 0,
+    portfolioShare: 100,
+    note: '',
+    ...overrides
+  };
+}
+
+describe('financial helpers', () => {
+  it('calculates npv against a known cash-flow series', () => {
+    expect(npv(0.1, [-100, 60, 60])).toBeCloseTo(4.1322, 4);
+  });
+
+  it('calculates irr against a known cash-flow series', () => {
+    expect(irr([-100, 60, 60])).toBeCloseTo(0.13066, 4);
+  });
+});
+
+describe('regulatoryPeriodFor', () => {
+  it('handles gas period boundaries and 5-year future periods', () => {
+    expect(regulatoryPeriodFor('gas', 2022)).toMatchObject({ id: 'RP4', start: 2023, end: 2027 });
+    expect(regulatoryPeriodFor('gas', 2027)).toMatchObject({ id: 'RP4', start: 2023, end: 2027 });
+    expect(regulatoryPeriodFor('gas', 2028)).toMatchObject({ id: 'RP5', start: 2028, end: 2032 });
+    expect(regulatoryPeriodFor('gas', 2033)).toMatchObject({ id: 'RP6', start: 2033, end: 2037, known: false });
+    expect(regulatoryPeriodFor('gas', 2038)).toMatchObject({ id: 'RP7', start: 2038, end: 2042, known: false });
+  });
+
+  it('handles strom period boundaries and 5-year future periods', () => {
+    expect(regulatoryPeriodFor('strom', 2023)).toMatchObject({ id: 'RP4', start: 2024, end: 2028 });
+    expect(regulatoryPeriodFor('strom', 2028)).toMatchObject({ id: 'RP4', start: 2024, end: 2028 });
+    expect(regulatoryPeriodFor('strom', 2029)).toMatchObject({ id: 'RP5', start: 2029, end: 2033 });
+    expect(regulatoryPeriodFor('strom', 2034)).toMatchObject({ id: 'RP6', start: 2034, end: 2038, known: false });
+  });
+});
+
+describe('calcMeasure depreciation scenarios', () => {
+  it('calculates normal linear depreciation', () => {
+    const result = calcMeasure(baseMeasure(), params(baseInputs));
+    expect(result.rows[0].depreciation).toBeCloseTo(100, 4);
+    expect(result.rows[0].capitalReturn).toBeCloseTo(47.5, 4);
+    expect(result.rows[0].eog).toBeCloseTo(147.5, 4);
+  });
+
+  it('calculates KANU linear depreciation for gas', () => {
+    const result = calcMeasure(baseMeasure({ depr: 'kanuLinear' }), params(baseInputs));
+    expect(result.rows[0].depreciation).toBeCloseTo(333.3333, 4);
+    expect(result.rows[0].capitalReturn).toBeCloseTo(41.6667, 4);
+    expect(result.rows[0].eog).toBeCloseTo(375, 4);
+  });
+
+  it('calculates KANU degressive depreciation for gas', () => {
+    const p = params({ ...baseInputs, kanuEndYear: 2037, degressiveRate: 12 });
+    const result = calcMeasure(baseMeasure({ depr: 'kanuDegressive' }), p);
+    expect(result.rows[0].depreciation).toBeCloseTo(120, 4);
+    expect(result.rows[0].capitalReturn).toBeCloseTo(47, 4);
+    expect(result.rows[0].eog).toBeCloseTo(167, 4);
+  });
+});
+
+describe('scenario and portfolio parameters', () => {
+  it('applies conservative and value scenario overrides', () => {
+    const base = params({ ...baseInputs, portfolioAttribution: 25, qDelta: 0.6, eDelta: 0.2 });
+    expect(scenarioParams(base, 'konservativ')).toMatchObject({
+      attribution: 0.1,
+      qDelta: 0.003,
+      eDelta: 0.001
+    });
+    expect(scenarioParams(base, 'wert')).toMatchObject({
+      attribution: 0.5,
+      qDelta: 0.006,
+      eDelta: 0.002
+    });
+  });
+
+  it('calculates portfolio attribution at 0 and 100 percent boundaries', () => {
+    const model = { measures: [baseMeasure()] };
+    const noAttribution = calcPortfolio(model, params({ ...baseInputs, qDelta: 1, portfolioAttribution: 0 }));
+    const fullAttribution = calcPortfolio(model, params({ ...baseInputs, qDelta: 1, portfolioAttribution: 100 }));
+    expect(noAttribution.qePa).toBeCloseTo(0, 4);
+    expect(fullAttribution.qePa).toBeCloseTo(100, 4);
+    expect(fullAttribution.yearly[0].qAndE).toBeCloseTo(100, 4);
+  });
+});

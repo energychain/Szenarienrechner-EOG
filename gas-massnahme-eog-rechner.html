@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Szenario-Rechner regulierte Sparten</title>
+  <script type="module" crossorigin>(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const r of document.querySelectorAll('link[rel="modulepreload"]'))i(r);new MutationObserver(r=>{for(const a of r)if(a.type==="childList")for(const l of a.addedNodes)l.tagName==="LINK"&&l.rel==="modulepreload"&&i(l)}).observe(document,{childList:!0,subtree:!0});function n(r){const a={};return r.integrity&&(a.integrity=r.integrity),r.referrerPolicy&&(a.referrerPolicy=r.referrerPolicy),r.crossOrigin==="use-credentials"?a.credentials="include":r.crossOrigin==="anonymous"?a.credentials="omit":a.credentials="same-origin",a}function i(r){if(r.ep)return;r.ep=!0;const a=n(r);fetch(r.href,a)}})();const ae={id:"regulatory-parameters-2026-07",effectiveMonth:"2026-07",source:"BNetzA-Anreizregulierung / NEST-Rahmenfestlegung, Arbeitsstand fuer Produktisierung",futurePeriodLengthYears:5,regulatoryPeriodsBySector:{gas:[{number:4,id:"RP4",label:"4. Regulierungsperiode",start:2023,end:2027,costBaseYear:2020,known:!0},{number:5,id:"RP5",label:"5. Regulierungsperiode",start:2028,end:2032,costBaseYear:2025,known:!0}],strom:[{number:4,id:"RP4",label:"4. Regulierungsperiode",start:2024,end:2028,costBaseYear:2021,known:!0},{number:5,id:"RP5",label:"5. Regulierungsperiode",start:2029,end:2033,costBaseYear:2026,known:!0}]}};function A(e,t,n){return Math.max(t,Math.min(n,e))}function h(e,t=0){const n=Number(e);return Number.isFinite(n)?n:t}function X(e,t,n=ae){const i=n.regulatoryPeriodsBySector[e]||n.regulatoryPeriodsBySector.gas,r=Math.round(h(t)),a=i.find(u=>r>=u.start&&r<=u.end);if(a)return a;const l=i[0];if(r<l.start)return l;const y=i[i.length-1],f=n.futurePeriodLengthYears,w=Math.floor((r-y.end-1)/f)+1,b=y.end+1+(w-1)*f,v=b+f-1,m=y.number+w;return{number:m,id:"RP"+m,label:m+". Regulierungsperiode",start:b,end:v,costBaseYear:b-3,known:!1}}function Y(e,t){return t.reduce((n,i,r)=>n+i/Math.pow(1+e,r),0)}function ve(e){let t=-.95,n=1.5,i=Y(t,e);const r=Y(n,e);if(i*r>0)return NaN;for(let a=0;a<80;a++){const l=(t+n)/2,y=Y(l,e);if(Math.abs(y)<1e-5)return l;i*y<=0?n=l:(t=l,i=y)}return(t+n)/2}function Te(e,t={}){const n=String(e.sector||"gas"),i=Math.round(h(e.baseYear));return{sector:n,baseYear:i,regulatoryPeriod:X(n,i),baseEog:h(e.baseEog),rab:h(e.rab),returnRate:h(e.returnRate)/100,financingRate:h(e.financingRate)/100,horizon:Math.max(1,Math.round(h(e.horizon))),discountRate:h(e.discountRate)/100,kanuEndYear:Math.round(h(e.kanuEndYear)),degressiveRate:A(h(e.degressiveRate),0,12)/100,taxFactor:h(e.taxFactor)/100,attribution:A(h(e.portfolioAttribution),0,100)/100,qDelta:h(e.qDelta)/100,eDelta:h(e.eDelta)/100,...t}}function oe(e){const t=A(h(e.secure),0,100)/100,n=A(h(e.uncertain),0,100)/100,i=A(h(e.probability),0,100)/100,r=t+n*i,a=Math.min(1,r);return{share:a,rawShare:r,activated:h(e.cost)*a,nonActivated:Math.max(0,h(e.cost)*(1-a))}}function se(e,t,n=0){const i=oe(e),r=i.nonActivated*A(h(e.opexRecognition),0,100)/100,a=Math.round(h(e.year)),l=h(e.qDirect)+h(e.eDirect)+n,y=h(e.riskAvoided);let f=i.activated;const w=[];for(let u=0;u<t.horizon;u++){const E=t.baseYear+u,M=E>=a?f:0;let B=0;if(M>1e-6)if(e.depr==="normal"||t.sector==="strom")B=Math.min(M,i.activated/Math.max(1,h(e.life)));else if(e.depr==="kanuLinear"){const O=Math.max(1,t.kanuEndYear-E+1);B=Math.min(M,M/O)}else{const O=Math.max(1,t.kanuEndYear-E+1),Fe=M/O;B=Math.min(M,Math.max(M*t.degressiveRate,Fe))}const U=Math.max(0,M-B/2)*t.returnRate*(1+t.taxFactor),K=E===a?r:0,Q=E>=a?l:0,V=E>=a?y:0,he=B+U+K+Q+V;E>=a&&(f=Math.max(0,f-B)),w.push({year:E,depreciation:B,capitalReturn:U,qAndE:Q,opexRisk:K+V,eog:he})}const b=[-h(e.cost),...w.map(u=>u.eog)],v=ve(b),m=Y(t.discountRate,b);return{measure:e,activated:i.activated,activeShare:i.share,rows:w,irr:v,npv:m}}function J(e,t){return t.baseEog*(t.qDelta+t.eDelta)*t.attribution*A(h(e.portfolioShare),0,100)/100}function Oe(e,t){const i=(Array.isArray(e?.measures)?e.measures:[]).filter(m=>m.active),r=i.map(m=>se(m,t,J(m,t))),a=Array.from({length:t.horizon},(m,u)=>({year:t.baseYear+u,regulatoryPeriod:null,depreciation:0,capitalReturn:0,qAndE:0,opexRisk:0,eog:0}));r.forEach(m=>{m.rows.forEach((u,E)=>{a[E].depreciation+=u.depreciation,a[E].capitalReturn+=u.capitalReturn,a[E].qAndE+=u.qAndE,a[E].opexRisk+=u.opexRisk,a[E].eog+=u.eog})});const l=i.reduce((m,u)=>m+h(u.cost),0),y=r.reduce((m,u)=>m+u.activated,0),f=[-l,...a.map(m=>m.eog)],w=l>0?ve(f):NaN,b=l>0?Y(t.discountRate,f):0,v=i.reduce((m,u)=>m+J(u,t),0);return a.forEach(m=>{m.regulatoryPeriod=X(t.sector,m.year)}),{p:t,activeMeasures:i,results:r,yearly:a,invest:l,activated:y,irr:w,npv:b,qePa:v}}function Ce(e,t){return t==="konservativ"?{...e,attribution:Math.min(e.attribution,.1),qDelta:e.qDelta*.5,eDelta:e.eDelta*.5,discountRate:Math.max(e.discountRate,e.financingRate)}:t==="wert"?{...e,attribution:Math.max(e.attribution,.5),qDelta:e.qDelta||.006,eDelta:e.eDelta||.002}:e}const be=[],Ke=[{id:"demo_grid_automation",active:!0,name:"Netzautomatisierung Schwerpunktgebiet Nord",type:"wahl",cost:820,year:2027,secure:70,uncertain:30,probability:60,opexRecognition:60,life:15,depr:"normal",qDirect:15,eDirect:8,riskAvoided:20,portfolioShare:35,note:"Abstimmen, ob der Qualitätsbeitrag separat messbar ist oder nur als Portfolioeffekt angesetzt wird."},{id:"demo_station_replacement",active:!0,name:"Ersatz Trafostation mit Fernwirkfähigkeit",type:"wahl",cost:540,year:2027,secure:75,uncertain:25,probability:55,opexRecognition:50,life:35,depr:"normal",qDirect:10,eDirect:3,riskAvoided:18,portfolioShare:25,note:"Technische Umsetzbarkeit im geplanten Inbetriebnahmejahr bestätigen."},{id:"demo_pressure_station",active:!1,name:"Modernisierung Gasdruckregelanlage",type:"risiko",cost:610,year:2029,secure:72,uncertain:28,probability:50,opexRecognition:70,life:40,depr:"kanuLinear",qDirect:0,eDirect:6,riskAvoided:28,portfolioShare:20,note:""},{id:"demo_sensor_rollout",active:!1,name:"Sensorik zur Zustands- und Qualitätsüberwachung",type:"wahl",cost:360,year:2028,secure:55,uncertain:35,probability:65,opexRecognition:55,life:12,depr:"normal",qDirect:18,eDirect:12,riskAvoided:12,portfolioShare:20,note:"Datengrundlage für Q-/E-Wirkung mit Betrieb und Regulierungsmanagement klären."},{id:"demo_line_replacement",active:!1,name:"Leitungsabschnitt mit erhöhter Ausfallwahrscheinlichkeit",type:"risiko",cost:740,year:2029,secure:80,uncertain:20,probability:50,opexRecognition:70,life:40,depr:"kanuDegressive",qDirect:0,eDirect:0,riskAvoided:45,portfolioShare:0,note:"Risikowert validieren: Schadenshöhe, Eintrittswahrscheinlichkeit und mögliche Bauabhängigkeiten."}],j=["sector","baseYear","baseEog","rab","returnRate","financingRate","horizon","discountRate","kanuEndYear","degressiveRate","taxFactor","portfolioAttribution","qDelta","eDelta"],de=["mName","mType","mCost","mYear","mSecure","mUncertain","mProbability","mOpexRecognition","mLife","mDepr","mQDirect","mEDirect","mRiskAvoided","mPortfolioShare","mNote"],qe={sector:"Legt fest, welche regulatorische Logik gilt. Gas kann KANU-Szenarien enthalten; Strom ist bei Qualitäts- und Effizienzthemen anders zu bewerten.",baseYear:"Startjahr der Betrachtung. Der Rechner leitet daraus je Sparte die passende Regulierungsperiode ab und rechnet alle Jahreswerte relativ zu diesem Jahr.",baseEog:"Bestehende Erlösobergrenze der Sparte pro Jahr. Sie ist Bezugsgröße für Portfolioeffekte und zeigt, wie stark eine Maßnahme das Gesamtbild verändert.",rab:"Regulatorisch gebundene Kapitalbasis. Sie hilft, Investitionen relativ zur bestehenden Kapitalbindung und zur künftigen Verzinsungsbasis einzuordnen.",returnRate:"Regulatorische Kapitalverzinsung. Sie wirkt nur auf anerkanntes, aktiviertes Kapital und ist nicht automatisch die Rendite der Gesamtkosten.",financingRate:"Kosten des eingesetzten Fremdkapitals. Der Vergleich mit IRR und Kapitalwert zeigt, ob eine Maßnahme den Finanzierungsspread trägt.",horizon:"Zeitraum der Auswertung. Ein längerer Horizont zeigt vollständige Abschreibungs- und Verzinsungspfade, erhöht aber die Unsicherheit.",discountRate:"Abzinsungssatz für den Kapitalwert. Er bildet die Mindestverzinsung oder Opportunitätskosten des Kapitals ab.",kanuEndYear:"Zieljahr für beschleunigte Gas-Abschreibungen. Es verschiebt EOG-Wirkung, Restwertpfad und Kapitalbindung über die Zeit.",degressiveRate:"Degressiver AfA-Satz im KANU-Szenario. Höhere Werte führen zu schnellerer Refinanzierung, aber auch schneller sinkendem Restbuchwert.",taxFactor:"Pauschaler Zuschlag für Steuern oder weitere regulatorische Zuschläge. Nur verwenden, wenn diese Wirkung fachlich begründet ist.",portfolioAttribution:"Anteil eines Portfolioeffekts, der den aktiven Maßnahmen zugerechnet wird. Dieser Wert ist eine Governance-Annahme und sollte konservativ begründet werden.",qDelta:"Geschätzte Qualitätswirkung auf die relevante Portfolio-Basis. Der Euro-Effekt entsteht erst über Basis x Delta x Attribution.",eDelta:"Geschätzte Effizienz- oder EOG-Wirkung auf Portfolioebene. Sie sollte nur angesetzt werden, wenn ein plausibler kausaler Zusammenhang besteht.",mName:"Eindeutige Bezeichnung der Maßnahme. Sie sollte fachlich wiedererkennbar sein, damit Annahmen später prüfbar bleiben.",mType:"Einordnung der Maßnahme. Wahlmaßnahmen werden als wirtschaftliche Entscheidung betrachtet; Risiko- und Pflichtnähe beeinflussen die Begründung.",mCost:"Gesamtkosten der Maßnahme in TEUR. Die Rendite wird gegen diese Gesamtkosten gestellt, auch wenn nur ein Teil davon aktiviert wird.",mYear:"Jahr der Inbetriebnahme. Erst ab diesem Jahr entstehen Abschreibung, Verzinsung und direkte Zusatzwirkungen im Modell.",mSecure:"Anteil der Kosten, der mit hoher Sicherheit aktivierbar und regulatorisch kapitalwirksam ist.",mUncertain:"Kostenanteil mit unklarer Aktivierung. Dieser Anteil wird nur risikogewichtet berücksichtigt.",mProbability:"Wahrscheinlichkeit, mit der der unsichere Anteil aktivierbar wird. Zusammen mit dem unsicheren Anteil bildet sie die erwartete Kapitalbasis.",mOpexRecognition:"Anteil nicht aktivierter Kosten, der als OPEX anerkannt oder wirtschaftlich berücksichtigt werden kann.",mLife:"Normale Nutzungsdauer für lineare Abschreibung. Sie bestimmt, wie schnell die aktivierte Basis über AfA in die EOG zurückfließt.",mDepr:"Abschreibungsszenario. Bei Gas können KANU-Varianten die zeitliche EOG-Wirkung und den Restwertpfad deutlich verändern.",mQDirect:"Direkte, separat begründete Qualitätswirkung in TEUR pro Jahr. Nicht mit pauschalen Portfolioeffekten doppelt zählen.",mEDirect:"Direkte Effizienz- oder EOG-Wirkung in TEUR pro Jahr. Nur ansetzen, wenn sie der Maßnahme belastbar zurechenbar ist.",mRiskAvoided:"Monetarisierter vermiedener Risikowert pro Jahr, z.B. vermiedene Störungen, Sanktionen oder Folgekosten.",mPortfolioShare:"Anteil, mit dem diese Maßnahme am globalen Q-/E-Portfolioeffekt beteiligt ist. Die Summe sollte fachlich plausibel bleiben.",mNote:"Arbeitsnotiz für Meeting, Klärpunkte oder Governance-Auflagen. Die Notiz wird gespeichert, in der Übersicht markiert und im Report ausgewiesen."},s=Object.fromEntries([...j,...de].map(e=>[e,document.getElementById(e)]));let p=structuredClone(be),P=p[0]?.id,x="basis",L="basis",D="management",I={},N=null,c=null,pe=null;const le="regulierte-sparten-szenario-rechner-v1",Ye=[],je=1,We="0.2.0-dev";let fe=null;function C(e){return`${e.id} ${e.start}-${e.end}`}function _(e){return`${e.label} (${e.start}-${e.end})${e.known?"":", fortgeschrieben"}`}function g(e){const t=Number(s[e].value);return Number.isFinite(t)?t:0}function Ge(){return Object.fromEntries(j.map(e=>[e,s[e].value]))}function W(e={}){return Te(Ge(),e)}function ee(e){return Ce(W(),e)}function He(){return{measures:p}}function ce(e=W()){return Oe(He(),e)}function o(e,t=0){return new Intl.NumberFormat("de-DE",{minimumFractionDigits:t,maximumFractionDigits:t}).format(e)+" TEUR"}function d(e,t=1){return Number.isFinite(e)?new Intl.NumberFormat("de-DE",{minimumFractionDigits:t,maximumFractionDigits:t}).format(e)+" %":"-"}function Ue(e,t=0){return new Intl.NumberFormat("de-DE",{minimumFractionDigits:t,maximumFractionDigits:t}).format(e)}function R(e){return String(e??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;")}function z(e){const t=document.getElementById("storageStatus");t&&(t.textContent=e,window.clearTimeout(fe),fe=window.setTimeout(()=>{t.textContent===e&&(t.textContent="")},4500))}function ke(){return{app:"regulierte-sparten-szenario-rechner",version:je,appVersion:We,regulatoryParameterSetId:ae.id,regulatoryParameterEffectiveMonth:ae.effectiveMonth,savedAt:new Date().toISOString(),activeView:L,meetingFocus:D,scenario:x,selectedId:P,inputs:Object.fromEntries(j.map(e=>[e,s[e].value])),measures:structuredClone(p),meetingTextOverrides:structuredClone(I)}}function ye(e){if(!e||!Array.isArray(e.measures)||!e.inputs)throw new Error("Die Datei enthält kein gültiges Rechner-Modell.");j.forEach(t=>{Object.hasOwn(e.inputs,t)&&(s[t].value=e.inputs[t])}),p=e.measures.map((t,n)=>({...De(),...t,id:String(t.id||"import_"+Date.now().toString(36)+"_"+n)})),P=p.some(t=>t.id===e.selectedId)?e.selectedId:p[0]?.id,x=["basis","konservativ","wert"].includes(e.scenario)?e.scenario:"basis",L=["basis","measures","results","report"].includes(e.activeView)?e.activeView:L,D=["management","technik","vnb","controlling","finanzierung"].includes(e.meetingFocus)?e.meetingFocus:"management",I=e.meetingTextOverrides&&typeof e.meetingTextOverrides=="object"?structuredClone(e.meetingTextOverrides):{},document.querySelectorAll(".scenario").forEach(t=>t.classList.toggle("active",t.dataset.scenario===x)),document.querySelectorAll(".focus-tab").forEach(t=>t.classList.toggle("active",t.dataset.focus===D)),F(L),S()}function G(e=!0){try{localStorage.setItem(le,JSON.stringify(ke())),e||z("Daten wurden im Browser gespeichert.")}catch{z("Browser-Speicherung ist nicht verfügbar.")}}function Qe(){try{const e=localStorage.getItem(le);return e?(ye(JSON.parse(e)),z("Gespeicherte Browserdaten geladen."),!0):!1}catch{return z("Gespeicherte Browserdaten konnten nicht geladen werden."),!1}}function Ve(){const e=ke(),t=new Blob([JSON.stringify(e,null,2)],{type:"application/json"}),n=URL.createObjectURL(t),i=document.createElement("a"),r=e.savedAt.slice(0,19).replaceAll(":","").replace("T","-");i.href=n,i.download="regulierte-sparten-szenario-rechner-"+r+".json",document.body.appendChild(i),i.click(),i.remove(),URL.revokeObjectURL(n),z("JSON-Datei wurde zum Download vorbereitet.")}function Je(e){if(!e)return;const t=new FileReader;t.addEventListener("load",()=>{try{ye(JSON.parse(String(t.result))),G(!0),z("Import erfolgreich. Daten wurden im Browser gespeichert.")}catch{z("Import fehlgeschlagen: JSON-Datei passt nicht zum Rechner.")}}),t.readAsText(e)}function Ze(){try{[le,...Ye].forEach(e=>localStorage.removeItem(e)),z("Browserdaten dieses Rechners wurden gelöscht.")}catch{z("Browserdaten konnten nicht gelöscht werden.")}}function Ee(){s.sector.value="strom",s.baseYear.value="2027",s.baseEog.value="20000",s.rab.value="85000",s.returnRate.value="5.0",s.financingRate.value="5.0",s.horizon.value="20",s.discountRate.value="5.0",s.kanuEndYear.value="2045",s.degressiveRate.value="10",s.taxFactor.value="0",s.portfolioAttribution.value="25",s.qDelta.value="0.6",s.eDelta.value="0.2",p=structuredClone(Ke),P=p[0]?.id,x="basis",L="basis",D="management",I={},document.querySelectorAll(".scenario").forEach(e=>e.classList.toggle("active",e.dataset.scenario===x)),document.querySelectorAll(".focus-tab").forEach(e=>e.classList.toggle("active",e.dataset.focus===D)),F(L),S(),z("Demodaten wurden geladen und im Browser gespeichert.")}function Xe(){document.getElementById("loadModal").classList.remove("hidden")}function H(){document.getElementById("loadModal").classList.add("hidden")}function et(){document.getElementById("helpModal").classList.remove("hidden")}function we(){document.getElementById("helpModal").classList.add("hidden")}function tt(){_e(),document.getElementById("measureEditModal").classList.remove("hidden")}function Re(){document.getElementById("measureEditModal").classList.add("hidden")}function $e(e,t){return e+"."+t}function nt(e,t,n,i){const r=$e(e,t),a=I[r]||{};N={key:r,title:n,text:i},document.getElementById("meetingTextHeading").value=a.title??n,document.getElementById("meetingTextBody").value=a.text??i,document.getElementById("meetingTextModal").classList.remove("hidden")}function te(){N=null,document.getElementById("meetingTextModal").classList.add("hidden")}function it(){N&&(I[N.key]={title:document.getElementById("meetingTextHeading").value||N.title,text:document.getElementById("meetingTextBody").value||N.text},te(),T(),G(!0))}function rt(){N&&(delete I[N.key],te(),T(),G(!0))}function at(e){if(!e)return"";const t=e.startsWith("w_")?e.slice(2):e;return{mName:"mName",mType:"mType",mCost:"mCost",mYear:"mYear",mSecure:"mSecure",mUncertain:"mUncertain",mProbability:"mProbability",mOpexRecognition:"mOpexRecognition",mLife:"mLife",mDepr:"mDepr",mQDirect:"mQDirect",mEDirect:"mEDirect",mRiskAvoided:"mRiskAvoided",mPortfolioShare:"mPortfolioShare"}[t]||t}function Me(){let e=document.getElementById("fieldHelpPopover");return e||(e=document.createElement("div"),e.id="fieldHelpPopover",e.className="info-popover hidden",document.body.appendChild(e)),e}function ot(){Me().classList.add("hidden")}function st(e,t){const n=Me();n.textContent=t,n.classList.remove("hidden");const i=e.getBoundingClientRect(),r=Math.min(window.innerHeight-n.offsetHeight-12,i.bottom+8),a=Math.min(window.innerWidth-n.offsetWidth-12,Math.max(12,i.left));n.style.top=Math.max(12,r)+"px",n.style.left=a+"px"}function xe(e=document){e.querySelectorAll("label[for]").forEach(t=>{if(t.querySelector(".info-dot"))return;const n=qe[at(t.getAttribute("for"))];if(!n)return;const i=document.createElement("button");i.type="button",i.className="info-dot",i.textContent="i",i.setAttribute("aria-label","Fachliche Hilfe zu "+t.textContent.trim()),i.title=n,i.addEventListener("click",r=>{r.preventDefault(),r.stopPropagation(),st(i,n)}),t.appendChild(i)})}function ze(e){const t=[],n=new Set;[["secure","mSecure","sicher aktivierbar"],["uncertain","mUncertain","unsicherer Anteil"],["probability","mProbability","Wahrscheinlichkeit"],["opexRecognition","mOpexRecognition","OPEX-Anerkennung"],["portfolioShare","mPortfolioShare","Portfolioanteil"]].forEach(([y,f,w])=>{const b=Number(e[y]);Number.isFinite(b)&&(b<0||b>100)&&(t.push(`${w} ${d(b,1)} → für die Rechnung auf ${d(A(b,0,100),1)} begrenzt.`),n.add(f))});const r=Number(e.secure),a=Number(e.uncertain);Number.isFinite(r)&&Number.isFinite(a)&&r+a>100&&(t.push(`Aktivierungsanteile ${d(r+a,1)} → sicher + unsicher liegt über 100 % der Kosten.`),n.add("mSecure"),n.add("mUncertain"));const l=oe(e);return l.rawShare>1&&(t.push(`Wirksamer Aktivierungsanteil ${d(l.rawShare*100,1)} → auf 100,0 % begrenzt.`),n.add("mSecure"),n.add("mUncertain"),n.add("mProbability")),Number.isFinite(Number(e.life))&&Number(e.life)<1&&(t.push(`Nutzungsdauer ${e.life} Jahre → für die Rechnung mindestens 1 Jahr.`),n.add("mLife")),{messages:t,invalidIds:n}}function dt(e){const t=document.getElementById("measureValidation");if(!t)return;["mSecure","mUncertain","mProbability","mOpexRecognition","mPortfolioShare","mLife"].forEach(i=>{s[i]&&s[i].setAttribute("aria-invalid","false")});const n=ze(e);n.invalidIds.forEach(i=>{s[i]&&s[i].setAttribute("aria-invalid","true")}),t.classList.toggle("active",n.messages.length>0),t.innerHTML=n.messages.length?`<strong>Annahmen begrenzt</strong><ul>${n.messages.map(i=>`<li>${R(i)}</li>`).join("")}</ul>`:""}function lt(){const e=document.getElementById("globalValidation");if(!e)return;const t=[["horizon",g("horizon"),1,60,"Horizont",i=>Ue(i,0)+" Jahre"],["degressiveRate",g("degressiveRate"),0,12,"KANU degressiv",i=>d(i,1)],["portfolioAttribution",g("portfolioAttribution"),0,100,"Portfolio-Attribution",i=>d(i,1)]],n=[];t.forEach(([i,r,a,l,y,f])=>{s[i].setAttribute("aria-invalid","false"),Number.isFinite(r)&&(r<a||r>l)&&(n.push(`${y} ${f(r)} → für die Rechnung auf ${f(A(r,a,l))} begrenzt.`),s[i].setAttribute("aria-invalid","true"))}),e.classList.toggle("active",n.length>0),e.innerHTML=n.length?`<strong>Szenarioannahmen begrenzt</strong><ul>${n.map(i=>`<li>${R(i)}</li>`).join("")}</ul>`:""}function ct(e){const t=W(),n=ee(e),i=[["attribution","Attribution",r=>d(r*100,0)],["qDelta","Q-Delta",r=>d(r*100,2)],["eDelta","E-/Effizienz-Delta",r=>d(r*100,2)],["discountRate","Diskontsatz",r=>d(r*100,1)]];return e==="basis"?[]:i.filter(([r])=>Math.abs((n[r]??0)-(t[r]??0))>1e-6).map(([r,a,l])=>`${a}: ${l(t[r])} → ${l(n[r])}`)}function Se(){const e=document.getElementById("scenarioDiff");if(!e)return;const t=ct(x);e.innerHTML=t.length?`<strong>${Z(x)} verändert:</strong><ul>${t.map(n=>`<li>${R(n)}</li>`).join("")}</ul>`:`<strong>${Z(x)}:</strong> keine zusätzlichen Szenarioanpassungen. Es gelten die eingegebenen Annahmen.`}function ut(e){const t=Number.isFinite(e.irr)?e.irr-e.p.financingRate:NaN;return e.activeMeasures.length?Number.isFinite(t)&&t>=.01&&e.npv>0?{cls:"good",title:"Wirtschaftlich tragfähig",text:"Portfolio-IRR und Kapitalwert liegen oberhalb der Finanzierungsschwelle. Attribution und Portfolioeffekte müssen trotzdem belegbar bleiben."}:Number.isFinite(t)&&t>=-.01?{cls:"warn",title:"Grenzfall",text:"Die Wirtschaftlichkeit ist nahe an den Kapitalkosten. Entscheidung braucht belastbare Annahmen zu Aktivierung, Q/E, Risiko und Timing."}:{cls:"bad",title:"Nicht als Renditemaßnahme tragfähig",text:"Unter den aktuellen Annahmen liegt die Rendite unter dem Fremdkapitalzins. Umsetzung wäre nur über Risiko, Pflicht, Strategie oder bessere Annahmen begründbar."}:{cls:"warn",title:"Keine aktive Maßnahme",text:"Es ist kein investives Szenario ausgewählt."}}function ie(e,t,n){if(t==null||!Number.isFinite(e)||!Number.isFinite(t))return{text:"",cls:""};const i=e-t;return Math.abs(i)<1e-6?{text:"unverändert",cls:""}:{text:(i>0?"+":"")+n(i),cls:i>0?"up":"down"}}function Be(e){e&&(e.classList.add("changed"),window.clearTimeout(e._changeTimer),e._changeTimer=window.setTimeout(()=>e.classList.remove("changed"),900))}function re(e,t){const n=document.getElementById(e);n.textContent=t.text,n.classList.toggle("up",t.cls==="up"),n.classList.toggle("down",t.cls==="down"),t.cls&&Be(n.closest(".sticky-kpi"))}function mt(e,t,n){const i={eog:t.eog,irr:e.irr,npv:e.npv,verdict:n.title},r=document.getElementById("stickyVerdictTile");r.className="sticky-kpi "+n.cls,document.getElementById("stickyVerdict").textContent=n.title,document.getElementById("stickyEog").textContent=o(i.eog,1),document.getElementById("stickyIrr").textContent=Number.isFinite(i.irr)?d(i.irr*100,1):"-",document.getElementById("stickyNpv").textContent=o(i.npv,1);const a=pe;a&&a.verdict!==i.verdict?(document.getElementById("stickyVerdictDelta").textContent=a.verdict+" → "+i.verdict,Be(r)):document.getElementById("stickyVerdictDelta").textContent=a?"unverändert":"live",re("stickyEogDelta",ie(i.eog,a?.eog,l=>o(l,1))),re("stickyIrrDelta",ie(i.irr,a?.irr,l=>d(l*100,1))),re("stickyNpvDelta",ie(i.npv,a?.npv,l=>o(l,1))),pe=i}function gt(e){return Number.isFinite(e)?d(e*100,1).replace(" %"," Prozentpunkte"):"-"}function ht(e){return Number.isFinite(e)?e>=0?"über":"unter":"nicht bewertbar"}function pt(e,t,n,i){const r=document.getElementById("managementVerdict");r.className="verdict-card "+i.cls,document.getElementById("managementVerdictTitle").textContent=i.title,document.getElementById("managementVerdictText").textContent=i.text;const a=Number.isFinite(e.irr)?d(e.irr*100,1):"nicht berechenbar",l=Number.isFinite(n)?Math.abs(n):NaN,y=Number.isFinite(n)?`Der IRR liegt ${gt(l)} ${ht(n)} dem FK-Zins von ${d(e.p.financingRate*100,1)}.`:"Der Spread zum FK-Zins ist nicht berechenbar.",f=e.activeMeasures.length===1?"1 aktive Maßnahme":e.activeMeasures.length+" aktive Maßnahmen";document.getElementById("managementStory").textContent=e.activeMeasures.length?`Bei ${o(e.invest)} Investition und ${f} entsteht im ersten Jahr ein EOG-Zusatz von ${o(t.eog,1)} in ${_(e.p.regulatoryPeriod)}; der Portfolio-IRR beträgt ${a}. ${y}`:"Es ist keine aktive Maßnahme ausgewählt. Für eine Entscheidung müssen zuerst Maßnahmen aktiviert oder angelegt werden.",document.getElementById("managementCaveat").textContent=e.activeMeasures.length?e.qePa>0?`Der zugerechnete Portfolioeffekt von ${o(e.qePa,1)} p.a. ist entscheidungsrelevant und muss kausal sowie regulatorisch begründet werden.`:"Die Wirtschaftlichkeit hängt vor allem an Aktivierbarkeit, Anerkennungsfähigkeit, Timing und Risikowert der Maßnahmen.":"Ohne aktive Maßnahme gibt es keinen belastbaren Business Case.",document.getElementById("managementNextStep").textContent=e.activeMeasures.length?"Im Meeting die drei offenen Annahmen festziehen: Aktivierungsprofil, regulatorische Anerkennung und zurechenbare Portfolio-/Risikowirkung.":"Eine Maßnahme aktivieren, Demodaten laden oder eine neue Maßnahme geführt erfassen.";const w=[["Invest "+o(e.invest),""],["IRR "+a,i.cls],["Spread "+(Number.isFinite(n)?d(n*100,1):"-"),i.cls]];document.getElementById("managementPills").innerHTML=w.map(([b,v])=>`<span class="pill ${v}">${b}</span>`).join(""),document.getElementById("verdictWhyList").innerHTML=["Grün: Spread ≥ 1,0 Prozentpunkt und Kapitalwert > 0.","Gelb: Spread ≥ -1,0 Prozentpunkt, aber Grün-Kriterien nicht vollständig erfüllt, oder keine aktive Maßnahme.","Rot: Spread < -1,0 Prozentpunkt oder Spread nicht belastbar.",`Aktuell: Spread ${Number.isFinite(n)?d(n*100,1):"-"}, Kapitalwert ${o(e.npv,1)}.`].map(b=>`<li>${R(b)}</li>`).join("")}function $(e,t,n,i,r){const a=$e(e,t),l=I[a]||{},y=l.title??n,f=l.text??r,w=Object.hasOwn(I,a);return`
+    <div class="meeting-card" data-meeting-card="${t}">
+      <div class="meeting-card-head">
+        <strong>${R(y)}</strong>
+        <button type="button" class="edit-icon ${w?"edited":""}" data-action="editMeetingText" data-focus="${e}" data-card="${t}" data-title="${R(n)}" data-text="${R(r)}" aria-label="Meeting-Text bearbeiten" title="Meeting-Text bearbeiten">✎</button>
+      </div>
+      <p>${i?`<span class="big">${i}</span><br>`:""}${R(f)}</p>
+    </div>
+  `}function ft(e){if(!e.activeMeasures.length)return"Keine aktive Maßnahme.";const t=e.activeMeasures.slice(0,3).map(i=>i.name).join(", "),n=e.activeMeasures.length>3?` und ${e.activeMeasures.length-3} weitere`:"";return t+n+"."}function vt(e,t,n){const i=e.invest>0?e.activated/e.invest*100:0,r=Number.isFinite(e.irr)?d(e.irr*100,1):"-",a=Number.isFinite(n)?d(n*100,1):"-",l={management:[$("management","decisionQuestion","Beschlussfrage",Number.isFinite(e.irr)?r+" IRR":"",`Ist der Business Case bei ${o(e.invest)} Investition und ${o(t.eog,1)} EOG-Zusatz im Startjahr tragfähig?`),$("management","whyItWorks","Warum es trägt",Number.isFinite(n)?a+" Spread":"",`Rendite wird gegen FK-Zins ${d(e.p.financingRate*100,1)} und Kapitalwert ${o(e.npv,1)} gespiegelt.`),$("management","watchOut","Nicht übersehen","",e.qePa>0?`Q/E-Portfolioeffekt von ${o(e.qePa,1)} p.a. braucht Nachweis und Attribution.`:"Ohne Portfolioeffekt zählt vor allem die direkte regulatorische Kapitalwirkung.")],technik:[$("technik","technicalScope","Technische Betroffenheit","",ft(e)),$("technik","commissioningImpact","Inbetriebnahme & Wirkung",o(t.eog,1),`EOG-Wirkung startet im Jahr ${e.p.baseYear} in ${C(e.p.regulatoryPeriod)}. Timing und Bau-/Inbetriebnahmejahr entscheiden über das Zahlungsprofil.`),$("technik","riskArgument","Risikoargument",o(e.yearly[0]?.opexRisk||0,1),"OPEX/Risiko im Startjahr. Technik sollte Risikowert, Störungsfolgen und Umsetzungsrisiken validieren.")],vnb:[$("vnb","eogStartYear","EOG-Wirkung Startjahr",o(t.eog,1),`${_(e.p.regulatoryPeriod)} mit Kostenbasis ${e.p.regulatoryPeriod.costBaseYear}. Basis-EOG steigt modellhaft auf ${o(e.p.baseEog+t.eog,1)}.`),$("vnb","capitalBase","Regulatorische Kapitalbasis",o(e.activated),`${d(i,1)} der Investition wird erwartbar kapitalwirksam.`),$("vnb","recognitionQe","Anerkennung / Q/E",o(e.qePa,1),"Portfolioeffekte und OPEX-Anerkennung getrennt belegen, damit keine Doppelzählung entsteht.")],controlling:[$("controlling","investmentVolume","Investitionsvolumen",o(e.invest),`${e.activeMeasures.length} aktive Maßnahmen im Szenario.`),$("controlling","npv","Kapitalwert",o(e.npv,1),`Gegen Diskontsatz ${d(e.p.discountRate*100,1)} gerechnet.`),$("controlling","resultLogic","Ergebnislogik",a,"Spread zum FK-Zins. Controlling sollte Szenario, Budgetwirkung und Ergebnisbeitrag konsistent übernehmen.")],finanzierung:[$("finanzierung","financingHurdle","Finanzierungshürde",d(e.p.financingRate*100,1),"FK-Zins als Mindestschwelle für die Renditebetrachtung."),$("finanzierung","returnBuffer","Renditepuffer",a,`IRR ${r} im Vergleich zur Finanzierungshürde.`),$("finanzierung","advisorQuestion","Bank-/Beraterfrage",o(e.npv,1),"Sind Cashflow-Profil, regulatorische Anerkennung und Sensitivitäten ausreichend belegbar?")]};document.getElementById("meetingFocusBody").innerHTML=l[D].join("")}function bt(){const e=W();if(!p.length){document.getElementById("measureBody").innerHTML=`
+      <tr>
+        <td colspan="7">Noch keine Maßnahme angelegt. Lege eine neue Maßnahme geführt an oder lade Demodaten.</td>
+      </tr>
+    `;return}document.getElementById("measureBody").innerHTML=p.map(t=>{const n=se(t,e,J(t,e));return`
+      <tr class="${t.id===P?"selected":""}" data-id="${t.id}">
+        <td><input type="checkbox" data-action="active" data-id="${t.id}" ${t.active?"checked":""}></td>
+        <td><button type="button" data-action="select" data-id="${t.id}">${t.name}</button></td>
+        <td>${t.year}</td>
+        <td>${o(t.cost)}</td>
+        <td>${d(n.activeShare*100,0)}</td>
+        <td>${Number.isFinite(n.irr)?d(n.irr*100,1):"-"}</td>
+        <td><span class="note-indicator ${String(t.note||"").trim()?"":"empty"}" title="${String(t.note||"").trim()?R(t.note):"Keine Notiz"}">i</span></td>
+      </tr>
+    `}).join("")}function Ae(){return p.find(e=>e.id===P)||p[0]}function F(e){L=e,document.querySelectorAll(".view-tab").forEach(t=>{t.classList.toggle("active",t.dataset.view===e)}),document.querySelectorAll("[data-view-panel]").forEach(t=>{t.classList.toggle("hidden",t.dataset.viewPanel!==e)})}function De(){const e=p.length+1;return{id:"new_"+Date.now().toString(36)+"_"+e,active:!0,name:"Neue Maßnahme "+e,type:"wahl",cost:250,year:Math.round(g("baseYear")),secure:70,uncertain:30,probability:50,opexRecognition:70,life:40,depr:s.sector.value==="strom"?"normal":"kanuLinear",qDirect:0,eDirect:0,riskAvoided:0,portfolioShare:0,note:""}}function kt(){return{sector:s.sector.value,baseYear:Math.round(g("baseYear")),baseEog:g("baseEog"),rab:g("rab"),returnRate:g("returnRate"),financingRate:g("financingRate"),horizon:Math.round(g("horizon")),discountRate:g("discountRate"),kanuEndYear:Math.round(g("kanuEndYear")),degressiveRate:g("degressiveRate"),taxFactor:g("taxFactor"),portfolioAttribution:g("portfolioAttribution"),qDelta:g("qDelta"),eDelta:g("eDelta")}}function Ie(e){return e==="basis"?["Sparte","Wertbasis","Finanzierung","Portfolio","Bestätigung"]:["Einordnung","Kosten","Regulatorik","Zusatzwirkung","Bestätigung"]}function q(e){const t=document.getElementById(e);return t?t.value:""}function k(e){const t=Number(q(e));return Number.isFinite(t)?t:0}function Ne(e){return`<dl class="review-list">${e.map(([t,n])=>`
+    <div><dt>${t}</dt><dd>${n}</dd></div>
+  `).join("")}</dl>`}function yt(){const e=c.draft,t=X(e.sector,e.baseYear);return c.step===0?`
+      <h3>Sparte und zeitlicher Bezug</h3>
+      <div class="grid2">
+        <div>
+          <label for="w_sector">Sparte</label>
+          <select id="w_sector">
+            <option value="gas" ${e.sector==="gas"?"selected":""}>Gas</option>
+            <option value="strom" ${e.sector==="strom"?"selected":""}>Strom</option>
+          </select>
+        </div>
+        <div>
+          <label for="w_baseYear">Startjahr</label>
+          <input id="w_baseYear" type="number" value="${e.baseYear}" min="2025" step="1">
+	            </div>
+	          </div>
+	          <p class="hint">Der Rechner leitet daraus ${_(t)} mit Kostenbasis ${t.costBaseYear} ab.</p>
+	        `:c.step===1?`
+      <h3>Bestehende Wert- und Erlösbasis</h3>
+      <div class="grid2">
+        <div>
+          <label for="w_baseEog">bestehende EOG TEUR p.a.</label>
+          <input id="w_baseEog" type="number" value="${e.baseEog}" min="0" step="100">
+        </div>
+        <div>
+          <label for="w_rab">regulierte Kapitalbasis TEUR</label>
+          <input id="w_rab" type="number" value="${e.rab}" min="0" step="500">
+        </div>
+      </div>
+      <p class="hint">Diese Werte sind der Anker für Portfolioeffekte und relative Bewertung.</p>
+    `:c.step===2?`
+      <h3>Finanzierung und Auswertung</h3>
+      <div class="grid2">
+        <div>
+          <label for="w_returnRate">Kapitalverzinsung %</label>
+          <input id="w_returnRate" type="number" value="${e.returnRate}" min="0" step="0.1">
+        </div>
+        <div>
+          <label for="w_financingRate">Fremdkapitalzins %</label>
+          <input id="w_financingRate" type="number" value="${e.financingRate}" min="0" step="0.1">
+        </div>
+        <div>
+          <label for="w_horizon">Horizont Jahre</label>
+          <input id="w_horizon" type="number" value="${e.horizon}" min="1" max="60" step="1">
+        </div>
+        <div>
+          <label for="w_discountRate">Diskontsatz %</label>
+          <input id="w_discountRate" type="number" value="${e.discountRate}" min="0" step="0.1">
+        </div>
+      </div>
+    `:c.step===3?`
+      <h3>Regulatorik und Portfolioannahmen</h3>
+      <div class="grid2">
+        <div>
+          <label for="w_kanuEndYear">KANU-Zieljahr</label>
+          <input id="w_kanuEndYear" type="number" value="${e.kanuEndYear}" min="2028" step="1">
+        </div>
+        <div>
+          <label for="w_degressiveRate">KANU degressiv %</label>
+          <input id="w_degressiveRate" type="number" value="${e.degressiveRate}" min="0" max="12" step="0.1">
+        </div>
+        <div>
+          <label for="w_taxFactor">Zuschlag/Steuern %</label>
+          <input id="w_taxFactor" type="number" value="${e.taxFactor}" min="0" step="0.1">
+        </div>
+        <div>
+          <label for="w_portfolioAttribution">Portfolio-Attribution %</label>
+          <input id="w_portfolioAttribution" type="number" value="${e.portfolioAttribution}" min="0" max="100" step="1">
+        </div>
+        <div>
+          <label for="w_qDelta">Q-Delta Portfolio %</label>
+          <input id="w_qDelta" type="number" value="${e.qDelta}" step="0.1">
+        </div>
+        <div>
+          <label for="w_eDelta">E-/Effizienz-Delta %</label>
+          <input id="w_eDelta" type="number" value="${e.eDelta}" step="0.1">
+        </div>
+      </div>
+      <p class="hint">Q bei Gas bleibt eine prüfpflichtige Annahme.</p>
+    `:`
+    <h3>Stammdaten bestätigen</h3>
+    ${Ne([["Sparte",e.sector==="gas"?"Gas":"Strom"],["Startjahr",e.baseYear],["Regulierungsperiode",_(t)],["Kostenbasis",t.costBaseYear],["Bestehende EOG",o(e.baseEog)],["Regulierte Kapitalbasis",o(e.rab)],["Kapitalverzinsung",d(e.returnRate)],["Fremdkapitalzins",d(e.financingRate)],["Horizont",e.horizon+" Jahre"],["Portfolio-Attribution",d(e.portfolioAttribution)],["Q-/E-Delta",d(e.qDelta)+" / "+d(e.eDelta)]])}
+  `}function Et(){const e=c.draft;if(c.step===0)return`
+      <h3>Einordnung der Maßnahme</h3>
+      <div class="grid2">
+        <div>
+          <label for="w_mName">Name</label>
+          <input id="w_mName" type="text" value="${R(e.name)}">
+        </div>
+        <div>
+          <label for="w_mType">Typ</label>
+          <select id="w_mType">
+            <option value="wahl" ${e.type==="wahl"?"selected":""}>Wahlmaßnahme</option>
+            <option value="noRegret" ${e.type==="noRegret"?"selected":""}>No-Regret</option>
+            <option value="risiko" ${e.type==="risiko"?"selected":""}>Risikomaßnahme</option>
+          </select>
+        </div>
+        <div>
+          <label for="w_mYear">Inbetriebnahme</label>
+          <input id="w_mYear" type="number" value="${e.year}" min="2025" step="1">
+        </div>
+      </div>
+    `;if(c.step===1)return`
+      <h3>Kosten und Aktivierungsprofil</h3>
+      <div class="grid2">
+        <div>
+          <label for="w_mCost">Kosten TEUR</label>
+          <input id="w_mCost" type="number" value="${e.cost}" min="0" step="1">
+        </div>
+        <div>
+          <label for="w_mSecure">sicher aktivierbar %</label>
+          <input id="w_mSecure" type="number" value="${e.secure}" min="0" max="100" step="1">
+        </div>
+        <div>
+          <label for="w_mUncertain">unsicherer Anteil %</label>
+          <input id="w_mUncertain" type="number" value="${e.uncertain}" min="0" max="100" step="1">
+        </div>
+        <div>
+          <label for="w_mProbability">Wahrscheinlichkeit %</label>
+          <input id="w_mProbability" type="number" value="${e.probability}" min="0" max="100" step="1">
+        </div>
+      </div>
+    `;if(c.step===2)return`
+      <h3>Regulatorische Behandlung</h3>
+      <div class="grid2">
+        <div>
+          <label for="w_mOpexRecognition">OPEX-Anerkennung %</label>
+          <input id="w_mOpexRecognition" type="number" value="${e.opexRecognition}" min="0" max="100" step="1">
+        </div>
+        <div>
+          <label for="w_mLife">normale ND Jahre</label>
+          <input id="w_mLife" type="number" value="${e.life}" min="1" step="1">
+        </div>
+        <div>
+          <label for="w_mDepr">AfA-Szenario</label>
+          <select id="w_mDepr">
+            <option value="normal" ${e.depr==="normal"?"selected":""}>Normal linear</option>
+            <option value="kanuLinear" ${e.depr==="kanuLinear"?"selected":""}>KANU linear</option>
+            <option value="kanuDegressive" ${e.depr==="kanuDegressive"?"selected":""}>KANU degressiv</option>
+          </select>
+        </div>
+      </div>
+    `;if(c.step===3)return`
+      <h3>Zusatzwirkung und Attribution</h3>
+      <div class="grid2">
+        <div>
+          <label for="w_mQDirect">Q direkt TEUR p.a.</label>
+          <input id="w_mQDirect" type="number" value="${e.qDirect}" step="1">
+        </div>
+        <div>
+          <label for="w_mEDirect">E direkt TEUR p.a.</label>
+          <input id="w_mEDirect" type="number" value="${e.eDirect}" step="1">
+        </div>
+        <div>
+          <label for="w_mRiskAvoided">Risikowert TEUR p.a.</label>
+          <input id="w_mRiskAvoided" type="number" value="${e.riskAvoided}" step="1">
+        </div>
+        <div>
+          <label for="w_mPortfolioShare">Portfolioanteil %</label>
+          <input id="w_mPortfolioShare" type="number" value="${e.portfolioShare}" min="0" max="100" step="1">
+        </div>
+      </div>
+    `;const t=oe(e),n=ze(e);return`
+	        <h3>Maßnahme bestätigen</h3>
+	        ${Ne([["Name",R(e.name)],["Typ",e.type==="wahl"?"Wahlmaßnahme":e.type==="noRegret"?"No-Regret":"Risikomaßnahme"],["Inbetriebnahme",e.year],["Kosten",o(e.cost)],["Erwartet aktivierbar",o(t.activated)+" ("+d(t.share*100,1)+")"],["AfA-Szenario",e.depr],["Direkte Q/E-Wirkung",o(Number(e.qDirect)+Number(e.eDirect),1)+" p.a."],["Risikowert",o(e.riskAvoided,1)+" p.a."],["Portfolioanteil",d(e.portfolioShare)]])}
+	        ${n.messages.length?`<div class="validation-messages active" role="status"><strong>Annahmen begrenzt</strong><ul>${n.messages.map(i=>`<li>${R(i)}</li>`).join("")}</ul></div>`:""}
+	      `}function Le(){if(!c)return;const e=c.draft;c.type==="basis"?(c.step===0&&Object.assign(e,{sector:q("w_sector"),baseYear:Math.round(k("w_baseYear"))}),c.step===1&&Object.assign(e,{baseEog:k("w_baseEog"),rab:k("w_rab")}),c.step===2&&Object.assign(e,{returnRate:k("w_returnRate"),financingRate:k("w_financingRate"),horizon:Math.round(k("w_horizon")),discountRate:k("w_discountRate")}),c.step===3&&Object.assign(e,{kanuEndYear:Math.round(k("w_kanuEndYear")),degressiveRate:k("w_degressiveRate"),taxFactor:k("w_taxFactor"),portfolioAttribution:k("w_portfolioAttribution"),qDelta:k("w_qDelta"),eDelta:k("w_eDelta")})):(c.step===0&&Object.assign(e,{name:q("w_mName")||e.name,type:q("w_mType"),year:Math.round(k("w_mYear"))}),c.step===1&&Object.assign(e,{cost:k("w_mCost"),secure:k("w_mSecure"),uncertain:k("w_mUncertain"),probability:k("w_mProbability")}),c.step===2&&Object.assign(e,{opexRecognition:k("w_mOpexRecognition"),life:Math.round(k("w_mLife")),depr:q("w_mDepr")}),c.step===3&&Object.assign(e,{qDirect:k("w_mQDirect"),eDirect:k("w_mEDirect"),riskAvoided:k("w_mRiskAvoided"),portfolioShare:k("w_mPortfolioShare")}))}function ne(){if(!c)return;const e=Ie(c.type);document.getElementById("wizardTitle").textContent=(c.type==="basis"?"Stammdaten prüfen":"Neue Maßnahme anlegen")+" - "+e[c.step],document.getElementById("wizardStepper").innerHTML=e.map((t,n)=>`<span class="${n<=c.step?"active":""}"></span>`).join(""),document.getElementById("wizardBody").innerHTML=c.type==="basis"?yt():Et(),xe(document.getElementById("wizardBody")),document.getElementById("wizardBack").disabled=c.step===0,document.getElementById("wizardNext").textContent=c.step===e.length-1?"Speichern":"Weiter",document.getElementById("wizardModal").classList.remove("hidden")}function Pe(){c={type:"basis",step:0,draft:kt()},ne()}function wt(){c={type:"measure",step:0,draft:De()},F("measures"),ne()}function ue(){c=null,document.getElementById("wizardModal").classList.add("hidden")}function Rt(){c.type==="basis"?Object.entries(c.draft).forEach(([e,t])=>{s[e]&&(s[e].value=t)}):(p=[...p,c.draft],P=c.draft.id,F("measures")),ue(),S()}function $t(){Le();const e=Ie(c.type).length-1;if(c.step>=e){Rt();return}c.step+=1,ne()}function Mt(){Le(),c.step>0&&(c.step-=1),ne()}function xt(){if(!p.length){z("Es sind noch keine Maßnahmen vorhanden.");return}const e=p.every(t=>t.active);p=p.map(t=>({...t,active:!e})),S()}function zt(){const t=p.length>0&&p.every(i=>i.active)?"Alle deaktivieren":"Alle aktivieren",n=document.getElementById("toggleAllInCatalog");n&&(n.textContent=t)}function _e(){const e=Ae();if(!e){de.forEach(a=>{s[a]&&(s[a].value=""),s[a]&&s[a].setAttribute("aria-invalid","false")}),document.getElementById("selectedPills").innerHTML='<span class="pill warn">Keine Maßnahme ausgewählt</span>';const r=document.getElementById("measureValidation");r&&(r.classList.remove("active"),r.innerHTML="");return}s.mName.value=e.name,s.mType.value=e.type,s.mCost.value=e.cost,s.mYear.value=e.year,s.mSecure.value=e.secure,s.mUncertain.value=e.uncertain,s.mProbability.value=e.probability,s.mOpexRecognition.value=e.opexRecognition,s.mLife.value=e.life,s.mDepr.value=e.depr,s.mQDirect.value=e.qDirect,s.mEDirect.value=e.eDirect,s.mRiskAvoided.value=e.riskAvoided,s.mPortfolioShare.value=e.portfolioShare,s.mNote.value=e.note||"";const t=W(),n=se(e,t,J(e,t)),i=[["aktivierbar "+o(n.activated),"good"],["IRR "+(Number.isFinite(n.irr)?d(n.irr*100,1):"-"),Number.isFinite(n.irr)&&n.irr>=t.financingRate?"good":"warn"],[e.type==="noRegret"?"No-Regret":e.type==="risiko"?"Risiko":"Wahl",e.type==="noRegret"?"warn":"good"]];document.getElementById("selectedPills").innerHTML=i.map(([r,a])=>`<span class="pill ${a}">${r}</span>`).join(""),dt(e)}function St(e){const i={top:20,right:18,bottom:34,left:58},r=900-i.left-i.right,a=270-i.top-i.bottom,l=[["depreciation","#006f8f","AfA"],["capitalReturn","#4b8f6f","Verzinsung"],["qAndE","#c78a22","Q/E"],["opexRisk","#7b6a9a","OPEX/Risiko"]],y=u=>l.reduce((E,[M])=>E+Math.max(0,u[M]),0),f=Math.max(1,...e.map(y)),w=r/e.length,b=Math.max(8,w*.62),v=[0,.25,.5,.75,1].map(u=>{const E=i.top+a-u*a;return`<line x1="${i.left}" x2="${900-i.right}" y1="${E}" y2="${E}" stroke="#d9e0e8"></line>
+      <text x="${i.left-8}" y="${E+4}" text-anchor="end">${Math.round(f*u)}</text>`}).join(""),m=e.map((u,E)=>{const M=i.left+E*w+(w-b)/2;let B=i.top+a;const ge=l.map(([Q,V])=>{const O=Math.max(0,u[Q])/f*a;return B-=O,`<rect x="${M}" y="${B}" width="${b}" height="${O}" rx="2" fill="${V}"></rect>`}).join(""),U=e.length<=25||E%2===0?`<text x="${M+b/2}" y="259" text-anchor="middle">${u.year}</text>`:"",K=[`${u.year} / ${C(u.regulatoryPeriod)}`,`AfA: ${o(u.depreciation,1)}`,`Verzinsung: ${o(u.capitalReturn,1)}`,`Q/E: ${o(u.qAndE,1)}`,`OPEX/Risiko: ${o(u.opexRisk,1)}`,`EOG Zusatz: ${o(u.eog,1)}`].join(`
+`);return`<g tabindex="0" aria-label="${R(K)}"><title>${R(K)}</title>${ge}</g>${U}`}).join("");document.getElementById("chart").innerHTML=`<svg viewBox="0 0 900 270" width="100%" height="100%" role="img" aria-label="EOG-Zusatzwirkung">
+    ${v}
+    <line x1="${i.left}" x2="${900-i.right}" y1="${i.top+a}" y2="${i.top+a}" stroke="#64707d"></line>
+    <text x="12" y="16">TEUR p.a.</text>
+    ${m}
+  </svg>`}function Bt(e){document.getElementById("yearBody").innerHTML=e.yearly.map(t=>`
+    <tr>
+      <td>${t.year}</td>
+      <td>${C(t.regulatoryPeriod)}</td>
+      <td>${o(e.p.baseEog,1)}</td>
+      <td>${o(t.depreciation,1)}</td>
+      <td>${o(t.capitalReturn,1)}</td>
+      <td>${o(t.qAndE,1)}</td>
+      <td>${o(t.opexRisk,1)}</td>
+      <td>${o(t.eog,1)}</td>
+      <td>${o(e.p.baseEog+t.eog,1)}</td>
+    </tr>
+  `).join("")}function At(){const e=["basis","konservativ","wert"].map(t=>{const n=ce(ee(t)),i=n.yearly[0]||{eog:0};return`
+      <tr>
+        <td>${t==="basis"?"Basis":t==="konservativ"?"Konservativ":"Wert"}</td>
+        <td>${d(n.p.attribution*100,0)}</td>
+        <td>${o(n.qePa,1)}</td>
+        <td>${o(i.eog,1)}</td>
+        <td>${Number.isFinite(n.irr)?d(n.irr*100,1):"-"}</td>
+        <td>${o(n.npv,1)}</td>
+      </tr>
+    `});document.getElementById("scenarioBody").innerHTML=e.join("")}function Z(e){return e==="basis"?"Basis":e==="konservativ"?"Konservativ":"Wert"}function Dt(e,t,n,i){const r=document.getElementById("reportPage");if(!r)return;const a=e.activeMeasures.length===1?"1 aktive Maßnahme":e.activeMeasures.length+" aktive Maßnahmen",l=["basis","konservativ","wert"].map(v=>{const m=ce(ee(v)),u=m.yearly[0]||{eog:0};return`
+      <tr>
+        <td>${Z(v)}</td>
+        <td>${d(m.p.attribution*100,0)}</td>
+        <td>${o(m.qePa,1)}</td>
+        <td>${o(u.eog,1)}</td>
+        <td>${Number.isFinite(m.irr)?d(m.irr*100,1):"-"}</td>
+        <td>${o(m.npv,1)}</td>
+      </tr>
+    `}).join(""),y=e.results.map(v=>`
+    <tr>
+      <td>${R(v.measure.name)}</td>
+      <td>${v.measure.year}</td>
+      <td>${o(v.measure.cost)}</td>
+      <td>${d(v.activeShare*100,0)}</td>
+      <td>${Number.isFinite(v.irr)?d(v.irr*100,1):"-"}</td>
+      <td>${String(v.measure.note||"").trim()?"Ja":"-"}</td>
+    </tr>
+  `).join("")||'<tr><td colspan="6">Keine aktive Maßnahme im Report.</td></tr>',f=p.filter(v=>String(v.note||"").trim()),w=f.length?f.map(v=>`
+      <article>
+        <h3>${R(v.name)}</h3>
+        <p>${R(v.note)}</p>
+      </article>
+    `).join(""):'<p class="hint">Keine Maßnahmennotizen erfasst.</p>',b=e.activeMeasures.length?`Bei ${o(e.invest)} Investition und ${a} entsteht im Startjahr ein EOG-Zusatz von ${o(t.eog,1)} in ${_(e.p.regulatoryPeriod)}. Der Portfolio-IRR beträgt ${Number.isFinite(e.irr)?d(e.irr*100,1):"nicht berechenbar"} bei einem FK-Zins von ${d(e.p.financingRate*100,1)}.`:"Es ist keine aktive Maßnahme ausgewählt. Der Report dokumentiert daher noch keinen belastbaren Business Case.";r.innerHTML=`
+    <div class="report-head">
+      <div>
+        <h1 class="report-title">Management-Report Investitionsszenario</h1>
+        <p>${b}</p>
+      </div>
+      <div class="report-meta">
+        <div><strong>Stand:</strong> ${new Date().toLocaleString("de-DE")}</div>
+        <div><strong>Sparte:</strong> ${e.p.sector==="gas"?"Gas":"Strom"}</div>
+        <div><strong>Startjahr:</strong> ${e.p.baseYear}</div>
+        <div><strong>Regulierungsperiode:</strong> ${C(e.p.regulatoryPeriod)}</div>
+        <div><strong>Kostenbasis:</strong> ${e.p.regulatoryPeriod.costBaseYear}</div>
+        <div><strong>Szenario:</strong> ${Z(x)}</div>
+      </div>
+    </div>
+
+    <section class="report-section">
+      <h2>Entscheidungstendenz</h2>
+      <div class="report-summary">
+        <div class="report-box">
+          <strong>Urteil</strong>
+          <p>${i.title}</p>
+        </div>
+        <div class="report-box">
+          <strong>Governance-Hinweis</strong>
+          <p>${e.qePa>0?`Portfolioeffekte von ${o(e.qePa,1)} p.a. müssen kausal, regulatorisch und hinsichtlich Attribution belegt werden.`:"Entscheidend sind Aktivierbarkeit, Anerkennung, Timing und Risikowert der aktiven Maßnahmen."}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h2>Kernkennzahlen</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="label">Investition</div><div class="value">${o(e.invest)}</div><div class="sub">${a}</div></div>
+        <div class="kpi"><div class="label">EOG-Zusatz Jahr 1</div><div class="value">${o(t.eog,1)}</div><div class="sub">${e.p.baseYear} / ${C(e.p.regulatoryPeriod)}</div></div>
+        <div class="kpi"><div class="label">Portfolio IRR</div><div class="value">${Number.isFinite(e.irr)?d(e.irr*100,1):"-"}</div><div class="sub">Spread ${Number.isFinite(n)?d(n*100,1):"-"}</div></div>
+        <div class="kpi"><div class="label">Kapitalwert</div><div class="value">${o(e.npv,1)}</div><div class="sub">Diskontsatz ${d(e.p.discountRate*100,1)}</div></div>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h2>Szenariovergleich</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Szenario</th><th>Attribution</th><th>Q/E p.a.</th><th>Jahr 1</th><th>IRR</th><th>Kapitalwert</th></tr></thead>
+          <tbody>${l}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h2>Aktive Maßnahmen</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Maßnahme</th><th>Jahr</th><th>Kosten</th><th>aktiv.</th><th>IRR</th><th>Notiz</th></tr></thead>
+          <tbody>${y}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h2>Offene Punkte aus Maßnahmennotizen</h2>
+      <div class="note-list">${w}</div>
+    </section>
+  `}function T(){const e=ce(ee(x)),t=e.yearly[0]||{eog:0},n=e.invest>0?e.activated/e.invest*100:0,i=Number.isFinite(e.irr)?e.irr-e.p.financingRate:NaN;document.getElementById("kpiInvest").textContent=o(e.invest),document.getElementById("kpiInvestSub").textContent=e.activeMeasures.length+" aktive Maßnahmen",document.getElementById("kpiActivated").textContent=o(e.activated),document.getElementById("kpiActivatedSub").textContent=d(n,1)+" der Investitionen",document.getElementById("kpiEog").textContent=o(t.eog,1),document.getElementById("kpiEogSub").textContent=e.p.baseYear+" / "+C(e.p.regulatoryPeriod),document.getElementById("kpiIrr").textContent=Number.isFinite(e.irr)?d(e.irr*100,1):"-",document.getElementById("kpiIrrSub").textContent="FK-Zins "+d(e.p.financingRate*100,1),document.getElementById("kpiNpv").textContent=o(e.npv,1),document.getElementById("kpiPortfolioEffect").textContent=o(e.qePa,1),document.getElementById("kpiPortfolioSub").textContent="p.a. aus Q/E-Attribution",document.getElementById("kpiTotalEog").textContent=o(e.p.baseEog+t.eog,1),document.getElementById("kpiSpread").textContent=Number.isFinite(i)?d(i*100,1):"-";const r=ut(e);mt(e,t,r),pt(e,t,i,r),vt(e,t,i),St(e.yearly),Bt(e),At(),Dt(e,t,i,r)}function It(){const e=s.sector.value==="gas",t=X(s.sector.value,g("baseYear"));document.getElementById("sectorHint").textContent=e?`Gas: ${_(t)}. KANU-Szenarien und Q-Element sind prüfpflichtige Annahmen.`:`Strom: ${_(t)}. Q-Element ist regulatorisch naheliegender; KANU wird für Strom nicht angewendet.`,document.getElementById("periodName").textContent=t.label,document.getElementById("periodYears").textContent=t.start+"-"+t.end,document.getElementById("periodBaseYear").textContent="Kostenbasis "+t.costBaseYear,e||(p=p.map(n=>({...n,depr:"normal"})))}function S(){It(),lt(),Se(),bt(),_e(),T(),zt(),G(!0)}function me(){const e=Ae();e&&(Object.assign(e,{name:s.mName.value,type:s.mType.value,cost:g("mCost"),year:Math.round(g("mYear")),secure:g("mSecure"),uncertain:g("mUncertain"),probability:g("mProbability"),opexRecognition:g("mOpexRecognition"),life:Math.round(g("mLife")),depr:s.mDepr.value,qDirect:g("mQDirect"),eDirect:g("mEDirect"),riskAvoided:g("mRiskAvoided"),portfolioShare:g("mPortfolioShare"),note:s.mNote.value}),S())}j.forEach(e=>s[e].addEventListener("input",S));s.sector.addEventListener("change",S);de.forEach(e=>s[e].addEventListener("input",me));s.mType.addEventListener("change",me);s.mDepr.addEventListener("change",me);xe();document.querySelectorAll(".view-tab").forEach(e=>{e.addEventListener("click",()=>F(e.dataset.view))});document.addEventListener("click",e=>{!e.target.closest(".info-dot")&&!e.target.closest("#fieldHelpPopover")&&ot()});document.querySelectorAll(".scenario").forEach(e=>{e.addEventListener("click",()=>{x=e.dataset.scenario,document.querySelectorAll(".scenario").forEach(t=>t.classList.toggle("active",t===e)),Se(),T()})});document.querySelectorAll(".focus-tab").forEach(e=>{e.addEventListener("click",()=>{D=e.dataset.focus,document.querySelectorAll(".focus-tab").forEach(t=>t.classList.toggle("active",t===e)),T(),G(!0)})});document.getElementById("meetingFocusBody").addEventListener("click",e=>{const t=e.target.closest('[data-action="editMeetingText"]');t&&nt(t.dataset.focus,t.dataset.card,t.dataset.title,t.dataset.text)});document.getElementById("measureBody").addEventListener("click",e=>{const t=e.target.dataset.action,n=e.target.dataset.id;if(!t||!n)return;const i=p.find(r=>r.id===n);if(i){if(t==="select"){P=n,S(),tt();return}t==="active"&&(i.active=e.target.checked),S()}});document.getElementById("openHelp").addEventListener("click",et);document.getElementById("helpClose").addEventListener("click",we);document.getElementById("helpModal").addEventListener("click",e=>{e.target.id==="helpModal"&&we()});document.getElementById("measureEditClose").addEventListener("click",Re);document.getElementById("measureEditModal").addEventListener("click",e=>{e.target.id==="measureEditModal"&&Re()});document.getElementById("meetingTextCancel").addEventListener("click",te);document.getElementById("meetingTextSave").addEventListener("click",it);document.getElementById("meetingTextReset").addEventListener("click",rt);document.getElementById("meetingTextModal").addEventListener("click",e=>{e.target.id==="meetingTextModal"&&te()});document.getElementById("openBasisWizard").addEventListener("click",Pe);document.getElementById("newMeasure").addEventListener("click",wt);document.getElementById("exportModel").addEventListener("click",Ve);document.getElementById("printReport").addEventListener("click",()=>{F("report"),T(),window.print()});document.getElementById("printReportFromView").addEventListener("click",()=>{T(),window.print()});document.getElementById("importModel").addEventListener("click",Xe);document.getElementById("loadDemoModel").addEventListener("click",Ee);document.getElementById("clearBrowserData").addEventListener("click",()=>{window.confirm("Alle im Browser gespeicherten Daten dieses Rechners löschen? Das aktuelle Modell bleibt bis zum Neuladen sichtbar.")&&Ze()});document.getElementById("loadJson").addEventListener("click",()=>{H(),document.getElementById("importFile").click()});document.getElementById("loadBasisWizard").addEventListener("click",()=>{H(),Pe()});document.getElementById("loadDemoFromModal").addEventListener("click",()=>{H(),Ee()});document.getElementById("loadCancel").addEventListener("click",H);document.getElementById("loadModal").addEventListener("click",e=>{e.target.id==="loadModal"&&H()});document.getElementById("importFile").addEventListener("change",e=>{Je(e.target.files[0]),e.target.value=""});document.getElementById("toggleAllInCatalog").addEventListener("click",xt);document.getElementById("wizardCancel").addEventListener("click",ue);document.getElementById("wizardBack").addEventListener("click",Mt);document.getElementById("wizardNext").addEventListener("click",$t);document.getElementById("wizardModal").addEventListener("click",e=>{e.target.id==="wizardModal"&&ue()});document.getElementById("resetModel").addEventListener("click",()=>{window.confirm("Aktuelles Modell zurücksetzen? Gespeicherte Browserdaten werden danach mit dem leeren Modell überschrieben.")&&(p=structuredClone(be),P=p[0]?.id,x="basis",D="management",I={},document.querySelectorAll(".scenario").forEach(e=>e.classList.toggle("active",e.dataset.scenario==="basis")),document.querySelectorAll(".focus-tab").forEach(e=>e.classList.toggle("active",e.dataset.focus===D)),S(),z("Modell wurde zurückgesetzt und im Browser gespeichert."))});document.querySelectorAll(".action-menu-list button").forEach(e=>{e.addEventListener("click",()=>{const t=e.closest(".action-menu");t&&t.removeAttribute("open")})});Qe()||(F(L),S());</script>
+  <style rel="stylesheet" crossorigin>:root{--bg: #f5f7f9;--panel: #ffffff;--ink: #16202a;--muted: #64707d;--line: #d9e0e8;--soft: #edf2f5;--accent: #006f8f;--accent-2: #6b5b7d;--good: #1d7f5f;--warn: #a96500;--bad: #a23a3a;--shadow: 0 8px 24px rgba(22, 32, 42, .07)}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg);line-height:1.35}header{background:#fff;border-bottom:1px solid var(--line);padding:16px 22px 14px}.header-inner{display:grid;grid-template-columns:minmax(320px,1fr) auto;gap:16px;align-items:start}.header-copy{min-width:0}h1{margin:0 0 5px;font-size:22px;letter-spacing:0}header p{margin:0;color:var(--muted);max-width:1100px;font-size:13px}.header-actions{min-width:min(100%,560px)}.global-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.global-actions button{padding:0 10px}.action-menu{position:relative}.action-menu summary{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:13px;cursor:pointer;list-style:none}.action-menu summary::-webkit-details-marker{display:none}.action-menu-list{position:absolute;right:0;z-index:25;margin-top:6px;display:grid;min-width:210px;gap:6px;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:0 12px 36px #16202a29}.action-menu:not([open]) .action-menu-list{display:none}.action-menu-list button{width:100%;justify-content:flex-start;text-align:left}.danger-action{color:var(--bad);border-color:#a23a3a59}main{padding:16px 22px 26px;display:grid;grid-template-columns:minmax(300px,380px) minmax(360px,520px) minmax(560px,1fr);gap:14px;align-items:start}footer{padding:0 22px 22px;color:var(--muted);font-size:12px}footer a{color:var(--accent);text-decoration:none;font-weight:700}footer a:hover{text-decoration:underline}.view-tabs{display:flex;flex-wrap:wrap;gap:8px;padding:12px 22px 0;background:var(--bg)}.view-tabs button{min-width:118px;padding:0 12px}.sticky-kpis{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:1.1fr repeat(3,1fr);gap:8px;padding:10px 22px;border-bottom:1px solid var(--line);background:#f5f7f9f5;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}.sticky-kpi{min-height:62px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;transition:border-color .2s ease,background .2s ease}.sticky-kpi.good{border-left:5px solid var(--good)}.sticky-kpi.warn{border-left:5px solid var(--warn)}.sticky-kpi.bad{border-left:5px solid var(--bad)}.sticky-kpi.changed{background:#fff9ed;border-color:#a9650073}.sticky-kpi .label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}.sticky-kpi .value{margin-top:2px;color:var(--accent);font-size:18px;font-weight:700;overflow-wrap:anywhere}.sticky-kpi.good .value{color:var(--good)}.sticky-kpi.warn .value{color:var(--warn)}.sticky-kpi.bad .value{color:var(--bad)}.sticky-kpi .delta{min-height:15px;margin-top:2px;color:var(--muted);font-size:11px}.sticky-kpi .delta.up{color:var(--good)}.sticky-kpi .delta.down{color:var(--bad)}.app-view{grid-column:1 / -1}.app-view.hidden{display:none}.action-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}.hidden-file{display:none}section,.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}.panel{padding:14px}.stack{display:grid;gap:14px}.group{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--line)}.group:last-child{padding-bottom:0;margin-bottom:0;border-bottom:0}.period-summary{margin-top:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.period-fact{border:1px solid var(--line);border-radius:8px;background:var(--soft);padding:8px 10px;min-width:0}.period-fact .label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}.period-fact .value{margin-top:2px;font-weight:700;font-size:13px;overflow-wrap:anywhere}h2{margin:0 0 10px;font-size:15px;letter-spacing:0}h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}label{display:flex;align-items:center;gap:5px;margin-bottom:4px;font-size:12px;color:var(--muted)}.info-dot{width:17px;height:17px;min-height:17px;padding:0;border-radius:999px;border-color:#006f8f59;color:var(--accent);font-size:11px;font-weight:700;line-height:15px;text-align:center}.info-popover{position:fixed;z-index:30;width:min(330px,calc(100vw - 28px));padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:0 12px 36px #16202a38;color:var(--ink);font-size:12px}.info-popover.hidden{display:none}input,select,textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff;font-size:14px}input,select{height:34px}textarea{min-height:96px;resize:vertical;font-family:inherit;line-height:1.35}input[type=checkbox]{width:16px;height:16px;padding:0;vertical-align:-3px}input:focus,select:focus,textarea:focus{outline:2px solid rgba(0,111,143,.18);border-color:var(--accent)}input[aria-invalid=true],select[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--warn);background:#fff9ed}.segmented{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px;border:1px solid var(--line);border-radius:8px;background:var(--soft)}.scenario-diff{margin-top:8px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;color:var(--muted);font-size:12px}.scenario-diff strong{color:var(--ink)}.scenario-diff ul{margin:5px 0 0 18px;padding:0}.scenario-diff li{margin:2px 0}button{min-height:32px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-size:13px;cursor:pointer}button.active,button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}.hint{margin-top:7px;color:var(--muted);font-size:12px}.validation-messages{display:none;margin-top:10px;padding:9px 10px;border-left:4px solid var(--warn);border-radius:6px;background:#fff7ea;color:#4a3215;font-size:12px}.validation-messages.active{display:block}.validation-messages ul{margin:4px 0 0 18px;padding:0}.validation-messages li{margin:2px 0}.status-line{min-height:18px;margin-top:7px;color:var(--muted);font-size:12px}.pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.pill{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:12px}.pill.good{color:var(--good);border-color:#1d7f5f59}.pill.warn{color:var(--warn);border-color:#a9650059}.pill.bad{color:var(--bad);border-color:#a23a3a59}.kpis{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:9px}.kpi{min-height:88px;padding:11px;border:1px solid var(--line);border-radius:8px;background:#fff}.kpi .label{min-height:30px;color:var(--muted);font-size:12px}.kpi .value{margin-top:4px;color:var(--accent);font-size:22px;font-weight:700}.kpi .sub{margin-top:3px;color:var(--muted);font-size:12px}.summary-hero{display:grid;grid-template-columns:minmax(280px,1.1fr) minmax(320px,1.6fr);gap:14px;align-items:stretch}.verdict-card{min-height:176px;padding:16px;border:1px solid var(--line);border-radius:8px;background:#fff}.verdict-card.good{border-left:6px solid var(--good)}.verdict-card.warn{border-left:6px solid var(--warn)}.verdict-card.bad{border-left:6px solid var(--bad)}.verdict-label{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase}.verdict-title{margin-top:7px;font-size:26px;font-weight:700;letter-spacing:0}.verdict-card.good .verdict-title{color:var(--good)}.verdict-card.warn .verdict-title{color:var(--warn)}.verdict-card.bad .verdict-title{color:var(--bad)}.verdict-text{margin-top:8px;font-size:14px}.verdict-why{margin-top:10px;font-size:12px}.verdict-why summary{cursor:pointer;color:var(--accent);font-weight:700}.verdict-why ul{margin:6px 0 0 18px;padding:0;color:var(--muted)}.story-card{min-height:176px;display:grid;gap:10px;padding:16px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd}.story-card strong{display:block;margin-bottom:3px;font-size:13px}.story-card p{margin:0;color:var(--ink);font-size:14px}.focus-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.focus-tabs button{padding:0 12px}.meeting-grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px}.meeting-card{min-height:118px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff}.meeting-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}.meeting-card strong{display:block;color:var(--muted);font-size:12px}.edit-icon{width:26px;min-height:24px;padding:0;border-radius:999px;color:var(--accent);font-size:14px;line-height:1}.edit-icon.edited{background:#eaf6fa;border-color:#006f8f73;font-weight:700}.meeting-card p{margin:0;font-size:14px}.meeting-card .big{color:var(--accent);font-size:21px;font-weight:700}.report-actions{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}.report-page{display:grid;gap:14px}.report-head{display:grid;grid-template-columns:1.4fr .8fr;gap:14px;align-items:start}.report-title{margin:0 0 6px;font-size:24px}.report-meta{display:grid;gap:5px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;font-size:12px}.report-section{padding:14px;border:1px solid var(--line);border-radius:8px;background:#fff}.report-section h2{margin-bottom:8px}.report-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.report-box{padding:11px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;min-height:82px}.report-box strong{display:block;margin-bottom:5px;color:var(--muted);font-size:12px}.report-box p{margin:0;font-size:14px}.note-indicator{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;border:1px solid rgba(0,111,143,.35);color:var(--accent);font-weight:700;font-size:12px}.note-indicator.empty{color:var(--muted);border-color:var(--line);opacity:.45}.note-list{display:grid;gap:8px}.note-list article{padding:10px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd}.note-list h3{margin:0 0 5px;color:var(--ink);font-size:13px}.note-list p{margin:0;white-space:pre-wrap;color:var(--muted);font-size:13px}details.panel-details{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}details.panel-details>summary{padding:14px;cursor:pointer;font-size:15px;font-weight:700}details.panel-details>div{padding:0 14px 14px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}th{color:var(--muted);background:#fafbfc;font-weight:700;position:sticky;top:0;z-index:1}tr.selected{background:#eaf6fa}.table-wrap{max-height:292px;overflow:auto;border:1px solid var(--line);border-radius:8px}.chart{width:100%;height:270px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;overflow:hidden}.chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;color:var(--muted);font-size:12px}.chart-legend span{display:inline-flex;align-items:center;gap:5px}.chart-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}svg text{font-family:Arial,Helvetica,sans-serif;font-size:11px;fill:var(--muted)}.note{padding:10px 12px;border-left:4px solid var(--accent-2);border-radius:6px;background:#f4f1f7;color:#3d3446;font-size:13px}.note.warning{border-left-color:var(--warn);background:#fff7ea;color:#4a3215}.decision{padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff}.decision strong{display:block;margin-bottom:4px;font-size:18px}.decision.good strong{color:var(--good)}.decision.warn strong{color:var(--warn)}.decision.bad strong{color:var(--bad)}.modal{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:22px;background:#16202a73}.modal.hidden{display:none}.dialog{width:min(760px,100%);max-height:min(760px,92vh);display:grid;grid-template-rows:auto 1fr auto;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 18px 60px #16202a47;overflow:hidden}.dialog-head,.dialog-foot{padding:14px 16px;border-bottom:1px solid var(--line)}.dialog-foot{border-top:1px solid var(--line);border-bottom:0;display:flex;justify-content:space-between;gap:10px}.dialog-actions{display:flex;gap:8px}.dialog-body{padding:16px;overflow:auto}.stepper{display:flex;gap:6px;margin-top:10px}.stepper span{height:6px;flex:1;border-radius:999px;background:var(--soft)}.stepper span.active{background:var(--accent)}.review-list{display:grid;gap:7px;margin:0}.review-list div{display:grid;grid-template-columns:210px 1fr;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}.review-list dt{color:var(--muted)}.review-list dd{margin:0;font-weight:700}.choice-grid{display:grid;gap:10px}.choice-grid button{min-height:54px;padding:10px 12px;text-align:left}.choice-grid strong{display:block;margin-bottom:3px;font-size:14px}.choice-grid span{display:block;color:var(--muted);font-size:12px}.help-content{display:grid;gap:14px;font-size:13px}.help-content p{margin:0}.help-content ul,.help-content ol{margin:6px 0 0 18px;padding:0}.help-content li{margin:4px 0}@media(max-width:1220px){main{grid-template-columns:minmax(300px,430px) minmax(520px,1fr)}.wide{grid-column:1 / -1}}@media(max-width:760px){main{grid-template-columns:1fr;padding:12px}header{padding:14px}.header-inner{grid-template-columns:1fr}.global-actions{justify-content:flex-start}.action-menu-list{left:0;right:auto}.view-tabs{padding:10px 12px 0;overflow-x:auto}.sticky-kpis{position:static;grid-template-columns:1fr 1fr;padding:10px 12px}.sticky-kpi{min-height:58px}.sticky-kpi .value{font-size:16px}.grid2,.kpis,.summary-hero,.meeting-grid,.report-head,.report-summary,.period-summary{grid-template-columns:1fr}.review-list div{grid-template-columns:1fr;gap:2px}}@media print{body{background:#fff}header,.view-tabs,.sticky-kpis,footer,.modal,.report-actions{display:none!important}main{display:block;padding:0}.app-view{display:none!important}[data-view-panel=report]{display:block!important}section,.panel,.report-section{border:0;box-shadow:none;break-inside:avoid}.report-page{gap:10px}.table-wrap{max-height:none;overflow:visible;border:1px solid #ddd}th{position:static}}</style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-copy">
+        <h1>Szenario-Rechner regulierte Sparten</h1>
+        <p>Portfolio-App für regulierte Sparten: Basisdaten der Sparte, geplante Maßnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.</p>
+      </div>
+      <div class="header-actions" aria-label="Globale Modellaktionen">
+        <div class="global-actions">
+          <button type="button" id="importModel" class="primary">Daten laden</button>
+          <button type="button" id="exportModel">Daten herunterladen</button>
+          <button type="button" id="printReport">Report drucken</button>
+          <details class="action-menu">
+            <summary>Mehr</summary>
+            <div class="action-menu-list">
+              <button type="button" id="openHelp">Hilfe</button>
+              <button type="button" id="loadDemoModel">Demodaten laden</button>
+              <button type="button" id="resetModel">Zurücksetzen</button>
+              <button type="button" id="clearBrowserData" class="danger-action">Browserdaten löschen</button>
+            </div>
+          </details>
+        </div>
+        <input id="importFile" class="hidden-file" type="file" accept="application/json,.json">
+        <div id="storageStatus" class="status-line"></div>
+      </div>
+    </div>
+  </header>
+
+	  <nav class="view-tabs" aria-label="Arbeitsansichten">
+	    <button type="button" class="view-tab active" data-view="basis">Stammdaten</button>
+	    <button type="button" class="view-tab" data-view="measures">Maßnahmen</button>
+	    <button type="button" class="view-tab" data-view="results">Ergebnisse</button>
+	    <button type="button" class="view-tab" data-view="report">Report</button>
+	  </nav>
+
+  <section class="sticky-kpis" aria-label="Live-Wirkung">
+    <div class="sticky-kpi" id="stickyVerdictTile">
+      <div class="label">Verdict</div>
+      <div class="value" id="stickyVerdict">-</div>
+      <div class="delta" id="stickyVerdictDelta">live</div>
+    </div>
+    <div class="sticky-kpi">
+      <div class="label">Jahr-1-EOG</div>
+      <div class="value" id="stickyEog">-</div>
+      <div class="delta" id="stickyEogDelta"></div>
+    </div>
+    <div class="sticky-kpi">
+      <div class="label">IRR</div>
+      <div class="value" id="stickyIrr">-</div>
+      <div class="delta" id="stickyIrrDelta"></div>
+    </div>
+    <div class="sticky-kpi">
+      <div class="label">Kapitalwert</div>
+      <div class="value" id="stickyNpv">-</div>
+      <div class="delta" id="stickyNpvDelta"></div>
+    </div>
+  </section>
+
+  <main>
+    <section class="panel app-view" data-view-panel="basis" aria-label="Basisdaten und Szenario">
+      <div class="group">
+        <h2>Basisdaten Sparte</h2>
+        <div class="grid2">
+          <div>
+            <label for="sector">Sparte</label>
+            <select id="sector">
+              <option value="gas">Gas</option>
+              <option value="strom">Strom</option>
+            </select>
+          </div>
+          <div>
+            <label for="baseYear">Startjahr</label>
+            <input id="baseYear" type="number" value="2027" min="2025" step="1">
+          </div>
+          <div>
+            <label for="baseEog">bestehende EOG TEUR p.a.</label>
+            <input id="baseEog" type="number" value="20000" min="0" step="100">
+          </div>
+          <div>
+            <label for="rab">regulierte Kapitalbasis TEUR</label>
+            <input id="rab" type="number" value="85000" min="0" step="500">
+          </div>
+          <div>
+            <label for="returnRate">Kapitalverzinsung %</label>
+            <input id="returnRate" type="number" value="5.0" min="0" step="0.1">
+          </div>
+          <div>
+            <label for="financingRate">Fremdkapitalzins %</label>
+            <input id="financingRate" type="number" value="5.0" min="0" step="0.1">
+          </div>
+        </div>
+        <p class="hint" id="sectorHint">Gas: KANU-Szenarien und Q-Element sind prüfpflichtige Annahmen.</p>
+        <div class="period-summary" aria-label="Regulierungsperioden">
+          <div class="period-fact">
+            <div class="label">Regulierungsperiode</div>
+            <div class="value" id="periodName">-</div>
+          </div>
+          <div class="period-fact">
+            <div class="label">Zeitraum</div>
+            <div class="value" id="periodYears">-</div>
+          </div>
+          <div class="period-fact">
+            <div class="label">Kostenbasis</div>
+            <div class="value" id="periodBaseYear">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Szenario</h2>
+        <div class="segmented" aria-label="Szenarioauswahl">
+          <button type="button" class="scenario active" data-scenario="basis">Basis</button>
+	          <button type="button" class="scenario" data-scenario="konservativ">Konservativ</button>
+	          <button type="button" class="scenario" data-scenario="wert">Wert</button>
+	        </div>
+	        <div id="scenarioDiff" class="scenario-diff"></div>
+	        <div class="grid2" style="margin-top:10px">
+          <div>
+            <label for="horizon">Horizont Jahre</label>
+            <input id="horizon" type="number" value="20" min="1" max="60" step="1">
+          </div>
+          <div>
+            <label for="discountRate">Diskontsatz %</label>
+            <input id="discountRate" type="number" value="5.0" min="0" step="0.1">
+          </div>
+          <div>
+            <label for="kanuEndYear">KANU-Zieljahr</label>
+            <input id="kanuEndYear" type="number" value="2045" min="2028" step="1">
+          </div>
+          <div>
+            <label for="degressiveRate">KANU degressiv %</label>
+            <input id="degressiveRate" type="number" value="10" min="0" max="12" step="0.1">
+          </div>
+          <div>
+            <label for="taxFactor">Zuschlag/Steuern %</label>
+            <input id="taxFactor" type="number" value="0" min="0" step="0.1">
+          </div>
+          <div>
+            <label for="portfolioAttribution">Portfolio-Attribution %</label>
+            <input id="portfolioAttribution" type="number" value="25" min="0" max="100" step="1">
+          </div>
+	        </div>
+	        <p class="hint">Szenarien setzen nur Annahmen. Die Maßnahmen bleiben einzeln sichtbar und können separat ein- oder ausgeschaltet werden.</p>
+	        <div id="globalValidation" class="validation-messages" role="status" aria-live="polite"></div>
+	      </div>
+
+      <div class="group">
+        <h2>Portfolio-Wirkung</h2>
+        <div class="grid2">
+          <div>
+            <label for="qDelta">Q-Delta Portfolio %</label>
+            <input id="qDelta" type="number" value="0" step="0.1">
+          </div>
+          <div>
+            <label for="eDelta">E-/Effizienz-Delta %</label>
+            <input id="eDelta" type="number" value="0" step="0.1">
+          </div>
+        </div>
+        <p class="hint">Zusatznutzen p.a. = bestehende EOG x Delta x Attribution. Bei Gas ist Q als prüfpflichtiges Szenario markiert.</p>
+      </div>
+
+      <div>
+        <h2>Stammdaten prüfen</h2>
+        <div class="action-row">
+          <button type="button" id="openBasisWizard" class="primary">Stammdaten prüfen</button>
+        </div>
+        <p class="hint">Der Wizard führt die wichtigsten Stammdaten und Szenarioannahmen einmal strukturiert durch.</p>
+      </div>
+    </section>
+
+    <section class="panel app-view hidden" data-view-panel="measures" aria-label="Maßnahmenkatalog">
+      <div class="group">
+        <h2>Maßnahmenkatalog</h2>
+        <div class="action-row">
+          <button type="button" id="newMeasure" class="primary">Neue Maßnahme geführt</button>
+          <button type="button" id="toggleAllInCatalog">Alle aktivieren</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Aktiv</th>
+                <th>Maßnahme</th>
+                <th>Jahr</th>
+                <th>Kosten</th>
+                <th>aktiv.</th>
+                <th>IRR</th>
+                <th>Notiz</th>
+              </tr>
+            </thead>
+            <tbody id="measureBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div class="stack wide app-view hidden" data-view-panel="results">
+      <section class="panel" aria-label="Managemententscheidung">
+        <h2>Management-Entscheidung</h2>
+        <div class="summary-hero">
+          <div id="managementVerdict" class="verdict-card">
+            <div class="verdict-label">Entscheidungstendenz</div>
+	            <div class="verdict-title" id="managementVerdictTitle">-</div>
+	            <div class="verdict-text" id="managementVerdictText">-</div>
+	            <div class="pill-row" id="managementPills"></div>
+	            <details class="verdict-why">
+	              <summary>Warum?</summary>
+	              <ul id="verdictWhyList"></ul>
+	            </details>
+	          </div>
+          <div class="story-card">
+            <div>
+              <strong>In einem Satz</strong>
+              <p id="managementStory">-</p>
+            </div>
+            <div>
+              <strong>Wichtigster Haken</strong>
+              <p id="managementCaveat">-</p>
+            </div>
+            <div>
+              <strong>Nächster Schritt</strong>
+              <p id="managementNextStep">-</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Kernkennzahlen">
+        <h2>Kernkennzahlen</h2>
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">aktive Investitionen</div>
+            <div class="value" id="kpiInvest">-</div>
+            <div class="sub" id="kpiInvestSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Jahr 1 EOG-Zusatz</div>
+            <div class="value" id="kpiEog">-</div>
+            <div class="sub" id="kpiEogSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Portfolio IRR</div>
+            <div class="value" id="kpiIrr">-</div>
+            <div class="sub" id="kpiIrrSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Kapitalwert</div>
+            <div class="value" id="kpiNpv">-</div>
+            <div class="sub" id="kpiNpvSub">gegen Diskontsatz</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Meeting-Fokus">
+        <h2>Meeting-Fokus</h2>
+        <div class="focus-tabs" aria-label="Gesprächsansicht">
+          <button type="button" class="focus-tab active" data-focus="management">Kurzentscheidung</button>
+          <button type="button" class="focus-tab" data-focus="technik">Technik</button>
+          <button type="button" class="focus-tab" data-focus="vnb">Kaufmännisch / VNB</button>
+          <button type="button" class="focus-tab" data-focus="controlling">Konzern-Controlling</button>
+          <button type="button" class="focus-tab" data-focus="finanzierung">Finanzierung</button>
+        </div>
+        <div id="meetingFocusBody" class="meeting-grid"></div>
+      </section>
+
+      <details class="panel-details">
+        <summary>Erweiterte Kennzahlen anzeigen</summary>
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">aktivierte Kapitalbasis</div>
+            <div class="value" id="kpiActivated">-</div>
+            <div class="sub" id="kpiActivatedSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Portfolio Q/E p.a.</div>
+            <div class="value" id="kpiPortfolioEffect">-</div>
+            <div class="sub" id="kpiPortfolioSub">-</div>
+          </div>
+          <div class="kpi">
+            <div class="label">EOG nach Zusatz</div>
+            <div class="value" id="kpiTotalEog">-</div>
+            <div class="sub">Basis-EOG plus Jahr 1</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Finanzierungsspread</div>
+            <div class="value" id="kpiSpread">-</div>
+            <div class="sub">IRR minus FK-Zins</div>
+          </div>
+        </div>
+      </details>
+
+	      <section class="panel" aria-label="Jahresdiagramm">
+	        <h2>EOG-Zusatzwirkung pro Jahr</h2>
+	        <div class="chart-legend" aria-label="Diagramm-Legende">
+	          <span><i style="background:#006f8f"></i>AfA</span>
+	          <span><i style="background:#4b8f6f"></i>Verzinsung</span>
+	          <span><i style="background:#c78a22"></i>Q/E</span>
+	          <span><i style="background:#7b6a9a"></i>OPEX/Risiko</span>
+	        </div>
+	        <div id="chart" class="chart"></div>
+	      </section>
+
+      <section class="panel" aria-label="Szenariovergleich">
+        <h2>Szenariovergleich</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Szenario</th>
+                <th>Attribution</th>
+                <th>Q/E p.a.</th>
+                <th>Jahr 1</th>
+                <th>IRR</th>
+                <th>Kapitalwert</th>
+              </tr>
+            </thead>
+            <tbody id="scenarioBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <details class="panel-details">
+        <summary>Jahrestabelle und Rechenpfad anzeigen</summary>
+        <div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+	                  <th>Jahr</th>
+	                  <th>RP</th>
+	                  <th>Basis-EOG</th>
+                  <th>AfA</th>
+                  <th>Verzinsung</th>
+                  <th>Q/E</th>
+                  <th>OPEX/Risiko</th>
+                  <th>EOG Zusatz</th>
+                  <th>EOG gesamt</th>
+                </tr>
+              </thead>
+              <tbody id="yearBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <div class="note warning">
+        Der Rechner ersetzt nicht die Entscheidung. Er macht aber die Abhängigkeiten sichtbar: Basisdaten, Maßnahmen, regulatorische Logik, Finanzierung, Portfolioeffekte und Attribution werden konsistent in einem Modell gerechnet.
+      </div>
+    </div>
+
+    <section class="panel app-view hidden" data-view-panel="report" aria-label="Management-Report">
+      <div class="report-actions">
+        <button type="button" id="printReportFromView" class="primary">Report drucken</button>
+      </div>
+      <div id="reportPage" class="report-page"></div>
+    </section>
+  </main>
+
+  <footer>
+    Copyright &copy; <a href="https://stromdao.de/" target="_blank" rel="noopener noreferrer">STROMDAO GmbH</a>. Lizenz: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>.
+  </footer>
+
+  <div id="wizardModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="wizardTitle">Wizard</h2>
+        <div id="wizardStepper" class="stepper"></div>
+      </div>
+      <div id="wizardBody" class="dialog-body"></div>
+      <div class="dialog-foot">
+        <button type="button" id="wizardCancel">Abbrechen</button>
+        <div class="dialog-actions">
+          <button type="button" id="wizardBack">Zurück</button>
+          <button type="button" id="wizardNext" class="primary">Weiter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="loadTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="loadTitle">Daten laden</h2>
+      </div>
+      <div class="dialog-body">
+        <div class="choice-grid">
+          <button type="button" id="loadJson">
+            <strong>Bestehende JSON hochladen</strong>
+            <span>Importiert ein zuvor heruntergeladenes Rechner-Modell mit Stammdaten, Szenario und Maßnahmen.</span>
+          </button>
+          <button type="button" id="loadBasisWizard">
+            <strong>Stammdaten geführt erfassen</strong>
+            <span>Startet den Stammdaten-Wizard und lässt vorhandene Maßnahmen im aktuellen Modell bestehen.</span>
+          </button>
+          <button type="button" id="loadDemoFromModal">
+            <strong>Mit Demodaten arbeiten</strong>
+            <span>Lädt ein fest hinterlegtes Beispielmodell für eine schnelle fachliche Erprobung.</span>
+          </button>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="loadCancel">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="measureEditModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="measureEditTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="measureEditTitle">Maßnahme bearbeiten</h2>
+        <div class="pill-row" id="selectedPills"></div>
+      </div>
+      <div class="dialog-body">
+        <div class="group">
+          <h3>Grunddaten</h3>
+          <div class="grid2">
+            <div>
+              <label for="mName">Name</label>
+              <input id="mName" type="text">
+            </div>
+            <div>
+              <label for="mType">Typ</label>
+              <select id="mType">
+                <option value="wahl">Wahlmaßnahme</option>
+                <option value="noRegret">No-Regret</option>
+                <option value="risiko">Risikomaßnahme</option>
+              </select>
+            </div>
+            <div>
+              <label for="mCost">Kosten TEUR</label>
+              <input id="mCost" type="number" min="0" step="1">
+            </div>
+            <div>
+              <label for="mYear">Inbetriebnahme</label>
+              <input id="mYear" type="number" min="2025" step="1">
+            </div>
+            <div>
+              <label for="mSecure">sicher aktivierbar %</label>
+              <input id="mSecure" type="number" min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="mUncertain">unsicherer Anteil %</label>
+              <input id="mUncertain" type="number" min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="mProbability">Wahrscheinlichkeit %</label>
+              <input id="mProbability" type="number" min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="mOpexRecognition">OPEX-Anerkennung %</label>
+              <input id="mOpexRecognition" type="number" min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="mLife">normale ND Jahre</label>
+              <input id="mLife" type="number" min="1" step="1">
+            </div>
+            <div>
+              <label for="mDepr">AfA-Szenario</label>
+              <select id="mDepr">
+                <option value="normal">Normal linear</option>
+                <option value="kanuLinear">KANU linear</option>
+	                <option value="kanuDegressive">KANU degressiv</option>
+	              </select>
+	            </div>
+	          </div>
+	          <div id="measureValidation" class="validation-messages" role="status" aria-live="polite"></div>
+	        </div>
+        <div>
+          <h3>Direkte Zusatzwirkung</h3>
+          <div class="grid2">
+            <div>
+              <label for="mQDirect">Q direkt TEUR p.a.</label>
+              <input id="mQDirect" type="number" step="1">
+            </div>
+            <div>
+              <label for="mEDirect">E direkt TEUR p.a.</label>
+              <input id="mEDirect" type="number" step="1">
+            </div>
+            <div>
+              <label for="mRiskAvoided">Risikowert TEUR p.a.</label>
+              <input id="mRiskAvoided" type="number" step="1">
+            </div>
+            <div>
+              <label for="mPortfolioShare">Portfolioanteil %</label>
+              <input id="mPortfolioShare" type="number" min="0" max="100" step="1">
+            </div>
+          </div>
+          <p class="hint">Portfolioanteil verteilt den globalen Q-/E-Effekt auf einzelne Maßnahmen. Direkte Werte gehören nur hinein, wenn sie separat begründet sind.</p>
+        </div>
+        <div class="group">
+          <h3>Meeting-Notiz</h3>
+          <label for="mNote">Notiz zur Maßnahme</label>
+          <textarea id="mNote" placeholder="z.B. No-Regret noch nicht bestätigt&#10;Unklar, ob Tiefbau im geplanten Jahr stattfinden kann"></textarea>
+          <p class="hint">Notizen werden mit dem Modell gespeichert, im Maßnahmenkatalog markiert und im Report als offene Punkte ausgewiesen.</p>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="measureEditClose">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="meetingTextModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="meetingTextTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="meetingTextTitle">Meeting-Text bearbeiten</h2>
+      </div>
+      <div class="dialog-body">
+        <div class="group">
+          <label for="meetingTextHeading">Überschrift</label>
+          <input id="meetingTextHeading" type="text">
+        </div>
+        <div>
+          <label for="meetingTextBody">Text</label>
+          <textarea id="meetingTextBody"></textarea>
+          <p class="hint">Der Text überschreibt nur diese Meeting-Kachel. Kennzahlen und Rechenwerte bleiben dynamisch.</p>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="meetingTextReset">Standardtext wiederherstellen</button>
+        <div class="dialog-actions">
+          <button type="button" id="meetingTextCancel">Abbrechen</button>
+          <button type="button" id="meetingTextSave" class="primary">Speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="helpTitle">Wofür nutzt man diesen Rechner?</h2>
+      </div>
+      <div class="dialog-body">
+        <div class="help-content">
+          <div>
+            <h3>Zweck</h3>
+            <p>Der Rechner unterstützt Investitionsentscheidungen in regulierten Sparten. Er macht sichtbar, wie Maßnahmen über Aktivierung, Abschreibung, Kapitalverzinsung, Finanzierung, Risiken und Portfolioeffekte auf die Erlösobergrenze und die wirtschaftliche Tragfähigkeit wirken können.</p>
+          </div>
+          <div>
+            <h3>Ziel</h3>
+            <p>Eine Maßnahme soll nicht nur als Kostenposition betrachtet werden. Das Modell fragt, welcher Anteil regulatorisch kapitalwirksam wird, welche EOG-Wirkung daraus entsteht und ob die erwartete Rendite die Finanzierungskosten und das Risiko rechtfertigt.</p>
+          </div>
+          <div>
+            <h3>Governance</h3>
+            <ul>
+              <li>Alle wesentlichen Annahmen werden explizit erfasst: Sparte, EOG-Basis, Kapitalbasis, Aktivierbarkeit, AfA, Finanzierung und Portfolioeffekte.</li>
+              <li>Maßnahmen werden einzeln dokumentiert und können ein- oder ausgeschaltet werden.</li>
+              <li>Unsichere Annahmen werden über Wahrscheinlichkeiten, Attribution und Szenarien abgebildet, statt stillschweigend in einer Zahl zu verschwinden.</li>
+              <li>Die Entscheidung wird nachvollziehbar: wirtschaftlich tragfähig, Grenzfall oder nur über Risiko, Pflicht oder Strategie begründbar.</li>
+              <li>Daten können als JSON exportiert und in einem anderen Browser wieder importiert werden. Damit bleiben Rechenstand und Annahmen prüfbar.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Typischer Ablauf</h3>
+            <ol>
+              <li>Stammdaten der Sparte erfassen oder ein vorhandenes Modell laden.</li>
+              <li>Geplante Maßnahmen anlegen und ihre Aktivierungs- und Wirklogik beschreiben.</li>
+              <li>Szenarien vergleichen und Finanzierungsspread, Kapitalwert und EOG-Wirkung bewerten.</li>
+              <li>Die Entscheidung nicht aus dem Rechner ableiten lassen, sondern die Annahmen und das Ergebnis als Entscheidungsgrundlage nutzen.</li>
+            </ol>
+          </div>
+          <div class="note warning">
+            Der Rechner ersetzt keine regulatorische Prüfung und keinen Beschluss. Er schafft eine gemeinsame, nachvollziehbare Entscheidungsgrundlage für Governance, Priorisierung und Finanzierung.
+          </div>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="helpClose">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
