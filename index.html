@@ -34,12 +34,57 @@
     </div>
   </header>
 
-	  <nav class="view-tabs" aria-label="Arbeitsansichten">
-	    <button type="button" class="view-tab active" data-view="basis">Stammdaten</button>
-	    <button type="button" class="view-tab" data-view="measures">Maßnahmen</button>
-	    <button type="button" class="view-tab" data-view="results">Ergebnisse</button>
-	    <button type="button" class="view-tab" data-view="report">Report</button>
-	  </nav>
+  <section id="startScreen" class="start-screen hidden" aria-label="Geführter Einstieg">
+    <div class="start-copy">
+      <p class="eyebrow">Geführter Einstieg</p>
+      <h2>Nicht mit 20 Feldern starten. Erst verstehen, dann anpassen.</h2>
+      <p>Der Rechner zeigt am schnellsten seinen Nutzen mit einem fertigen Beispiel. Danach lassen sich Stammdaten, Maßnahmen und Annahmen Schritt für Schritt schärfen.</p>
+    </div>
+    <div class="start-actions" aria-label="Startwege">
+      <button type="button" id="startDemo" class="start-choice recommended">
+        <strong>Demodaten ansehen</strong>
+        <span>Empfohlen: lädt ein Beispiel und springt direkt zur Entscheidung.</span>
+      </button>
+      <button type="button" id="startWizard" class="start-choice">
+        <strong>Geführt starten</strong>
+        <span>Öffnet den Stammdaten-Wizard für ein eigenes Modell.</span>
+      </button>
+      <button type="button" id="startImport" class="start-choice">
+        <strong>Datei laden</strong>
+        <span>Importiert ein gespeichertes JSON-Modell.</span>
+      </button>
+    </div>
+  </section>
+
+  <nav class="view-tabs" aria-label="Arbeitsfluss">
+    <button type="button" class="view-tab active" data-view="basis">
+      <span class="step-main"><span class="step-number">1</span>Grundlagen</span>
+      <span class="step-status" id="status-basis">Stammdaten offen</span>
+    </button>
+    <button type="button" class="view-tab" data-view="measures">
+      <span class="step-main"><span class="step-number">2</span>Maßnahmen</span>
+      <span class="step-status" id="status-measures">0 Maßnahmen aktiv</span>
+    </button>
+    <button type="button" class="view-tab" data-view="results">
+      <span class="step-main"><span class="step-number">3</span>Entscheidung</span>
+      <span class="step-status" id="status-results">Entscheidung offen</span>
+    </button>
+    <button type="button" class="view-tab" data-view="report">
+      <span class="step-main">Report</span>
+      <span class="step-status" id="status-report">noch offen</span>
+    </button>
+  </nav>
+
+  <section class="mode-strip" aria-label="Ansichtsmodus">
+    <div>
+      <strong>Einfache Ansicht</strong>
+      <span>Nur die wichtigsten Felder. Erweiterte Annahmen behalten sichtbare Standardwerte.</span>
+    </div>
+    <label class="switch-row" for="expertModeToggle">
+      <input id="expertModeToggle" type="checkbox">
+      Expertenmodus
+    </label>
+  </section>
 
   <section class="sticky-kpis" aria-label="Live-Wirkung">
     <div class="sticky-kpi" id="stickyVerdictTile">
@@ -148,6 +193,7 @@
             <input id="portfolioAttribution" type="number" value="25" min="0" max="100" step="1">
           </div>
 	        </div>
+	        <p class="hint expert-defaults">Erweiterte Annahmen aktiv mit Standardwerten: Portfolio-Attribution 25 %, KANU degressiv 10 %, Zuschlag/Steuern 0 %. Im Expertenmodus lassen sie sich ändern.</p>
 	        <p class="hint">Szenarien setzen nur Annahmen. Die Maßnahmen bleiben einzeln sichtbar und können separat ein- oder ausgeschaltet werden.</p>
 	        <div id="globalValidation" class="validation-messages" role="status" aria-live="polite"></div>
 	      </div>
@@ -472,6 +518,7 @@
 	              </select>
 	            </div>
 	          </div>
+	          <p class="hint expert-defaults">Erweiterte Maßnahmeannahmen aktiv mit Defaults: 70 % sicher aktivierbar, 30 % unsicher, 50 % Wahrscheinlichkeit, OPEX-Anerkennung 70 %. Im Expertenmodus lassen sie sich ändern.</p>
 	          <div id="measureValidation" class="validation-messages" role="status" aria-live="polite"></div>
 	        </div>
         <div>

@@ -165,10 +165,19 @@ let meetingTextEdit = null;
 let wizard = null;
 let lastStickySnapshot = null;
 const storageKey = 'regulierte-sparten-szenario-rechner-v1';
+const expertModeKey = 'regulierte-sparten-szenario-rechner-expert-mode';
 const legacyStorageKeys = [];
 const modelVersion = 1;
 const appVersion = '0.2.0-dev';
 let storageStatusTimer = null;
+let expertMode = false;
+
+const expertFieldIds = [
+  'rab', 'returnRate', 'financingRate', 'discountRate', 'kanuEndYear',
+  'degressiveRate', 'taxFactor', 'portfolioAttribution', 'qDelta', 'eDelta',
+  'mType', 'mSecure', 'mUncertain', 'mProbability', 'mOpexRecognition',
+  'mDepr', 'mQDirect', 'mEDirect', 'mRiskAvoided', 'mPortfolioShare'
+];
 
 function periodText(period) {
   return `${period.id} ${period.start}-${period.end}`;
@@ -265,6 +274,7 @@ function applyModelState(state) {
   if (!state || !Array.isArray(state.measures) || !state.inputs) {
     throw new Error('Die Datei enthält kein gültiges Rechner-Modell.');
   }
+  hideStartScreen();
   inputIds.forEach(id => {
     if (Object.hasOwn(state.inputs, id)) el[id].value = state.inputs[id];
   });
@@ -310,6 +320,45 @@ function loadFromBrowser() {
   }
 }
 
+function showStartScreen() {
+  document.body.classList.add('show-start');
+  document.getElementById('startScreen').classList.remove('hidden');
+}
+
+function hideStartScreen() {
+  document.body.classList.remove('show-start');
+  document.getElementById('startScreen').classList.add('hidden');
+}
+
+function loadExpertMode() {
+  try {
+    expertMode = localStorage.getItem(expertModeKey) === 'true';
+  } catch (_error) {
+    expertMode = false;
+  }
+}
+
+function saveExpertMode() {
+  try {
+    localStorage.setItem(expertModeKey, expertMode ? 'true' : 'false');
+  } catch (_error) {}
+}
+
+function setExpertMode(enabled, persist = true) {
+  expertMode = enabled;
+  document.body.classList.toggle('expert-mode', expertMode);
+  const toggle = document.getElementById('expertModeToggle');
+  if (toggle) toggle.checked = expertMode;
+  expertFieldIds.forEach(id => {
+    const field = el[id] || document.getElementById(id);
+    const wrapper = field?.closest('.grid2 > div') || field?.closest('div');
+    if (!wrapper) return;
+    wrapper.classList.add('expert-field');
+    wrapper.classList.toggle('expert-hidden', !expertMode);
+  });
+  if (persist) saveExpertMode();
+}
+
 function exportModel() {
   const state = collectModelState();
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -342,7 +391,7 @@ function importModelFile(file) {
 
 function clearBrowserData() {
   try {
-    [storageKey, ...legacyStorageKeys].forEach(key => localStorage.removeItem(key));
+    [storageKey, expertModeKey, ...legacyStorageKeys].forEach(key => localStorage.removeItem(key));
     setStorageStatus('Browserdaten dieses Rechners wurden gelöscht.');
   } catch (_error) {
     setStorageStatus('Browserdaten konnten nicht gelöscht werden.');
@@ -350,6 +399,7 @@ function clearBrowserData() {
 }
 
 function applyDemoModel() {
+  hideStartScreen();
   el.sector.value = 'strom';
   el.baseYear.value = '2027';
   el.baseEog.value = '20000';
@@ -367,7 +417,7 @@ function applyDemoModel() {
   measures = structuredClone(demoMeasures);
   selectedId = measures[0]?.id;
   scenario = 'basis';
-  activeView = 'basis';
+  activeView = 'results';
   meetingFocus = 'management';
   meetingTextOverrides = {};
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === scenario));
@@ -1215,6 +1265,43 @@ function updateActionLabels() {
   if (catalogButton) catalogButton.textContent = label;
 }
 
+function setStepStatus(id, text, cls) {
+  const node = document.getElementById(id);
+  if (!node) return;
+  node.textContent = text;
+  node.classList.toggle('done', cls === 'done');
+  node.classList.toggle('warn', cls === 'warn');
+  node.classList.toggle('open', cls === 'open');
+}
+
+function updateFlowStatus() {
+  const basisComplete = Boolean(el.sector.value) && num('baseYear') > 0 && num('baseEog') > 0;
+  const activeCount = measures.filter(measure => measure.active).length;
+  const hasMeasures = activeCount > 0;
+  const decisionReady = basisComplete && hasMeasures;
+
+  setStepStatus(
+    'status-basis',
+    basisComplete ? 'Stammdaten erledigt' : 'Stammdaten unvollständig',
+    basisComplete ? 'done' : 'warn'
+  );
+  setStepStatus(
+    'status-measures',
+    hasMeasures ? `${activeCount} aktiv` : '0 Maßnahmen aktiv',
+    hasMeasures ? 'done' : 'warn'
+  );
+  setStepStatus(
+    'status-results',
+    decisionReady ? 'entscheidungsfähig' : 'Entscheidung offen',
+    decisionReady ? 'done' : 'open'
+  );
+  setStepStatus(
+    'status-report',
+    decisionReady ? 'Report bereit' : 'noch offen',
+    decisionReady ? 'done' : 'open'
+  );
+}
+
 function renderDetail() {
   const measure = selectedMeasure();
 	      if (!measure) {
@@ -1497,15 +1584,16 @@ function syncSectorDefaults() {
   }
 }
 
-	    function renderAll() {
-	      syncSectorDefaults();
-	      renderGlobalValidation();
-	      renderScenarioDiff();
-	      renderMeasures();
+function renderAll(persist = true) {
+  syncSectorDefaults();
+  renderGlobalValidation();
+  renderScenarioDiff();
+  renderMeasures();
   renderDetail();
   renderPortfolio();
   updateActionLabels();
-  saveToBrowser(true);
+  updateFlowStatus();
+  if (persist) saveToBrowser(true);
 }
 
 function updateSelectedFromDetail() {
@@ -1537,6 +1625,8 @@ detailIds.forEach(id => el[id].addEventListener('input', updateSelectedFromDetai
 el.mType.addEventListener('change', updateSelectedFromDetail);
 el.mDepr.addEventListener('change', updateSelectedFromDetail);
 enhanceHelpLabels();
+loadExpertMode();
+setExpertMode(expertMode, false);
 
 document.querySelectorAll('.view-tab').forEach(button => {
   button.addEventListener('click', () => setView(button.dataset.view));
@@ -1604,6 +1694,19 @@ document.getElementById('meetingTextModal').addEventListener('click', event => {
 document.getElementById('openBasisWizard').addEventListener('click', openBasisWizard);
 document.getElementById('newMeasure').addEventListener('click', openMeasureWizard);
 document.getElementById('exportModel').addEventListener('click', exportModel);
+document.getElementById('expertModeToggle').addEventListener('change', event => {
+  setExpertMode(event.target.checked);
+});
+document.getElementById('startDemo').addEventListener('click', applyDemoModel);
+document.getElementById('startWizard').addEventListener('click', () => {
+  hideStartScreen();
+  setView('basis');
+  renderAll();
+  openBasisWizard();
+});
+document.getElementById('startImport').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
 document.getElementById('printReport').addEventListener('click', () => {
   setView('report');
   renderPortfolio();
@@ -1670,5 +1773,6 @@ document.querySelectorAll('.action-menu-list button').forEach(button => {
 
 if (!loadFromBrowser()) {
   setView(activeView);
-  renderAll();
+  renderAll(false);
+  showStartScreen();
 }
