@@ -1,6 +1,6 @@
-# Szenario-Rechner regulierte Sparten
+# Szenarienrechner-EOG
 
-Offline-faehige Single-File-App fuer EOG-/Investitionsszenarien in regulierten Sparten.
+Portfolio-App fuer regulierte Sparten: Basisdaten der Sparte, geplante Massnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.
 
 ## Entwicklung
 
