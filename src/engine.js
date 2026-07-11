@@ -27,6 +27,67 @@ function finiteNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+const impactAreas = new Set(['qElement', 'efficiency', 'costBase', 'risk', 'portfolio']);
+const impactConfidences = new Set(['proven', 'assumption', 'review']);
+const impactGovernanceStates = new Set(['basis', 'sensitivity', 'excluded']);
+
+export function normalizeImpactAssumption(impact = {}, index = 0, measure = {}) {
+  const area = impactAreas.has(impact.area) ? impact.area : 'efficiency';
+  const confidence = impactConfidences.has(impact.confidence) ? impact.confidence : 'review';
+  const governance = impactGovernanceStates.has(impact.governance) ? impact.governance : confidence === 'review' ? 'sensitivity' : 'basis';
+  const startYear = Math.round(finiteNumber(impact.startYear, measure.year));
+  const endYearRaw = impact.endYear === '' || impact.endYear === null || impact.endYear === undefined
+    ? NaN
+    : finiteNumber(impact.endYear, NaN);
+  const endYear = Number.isFinite(endYearRaw) ? Math.round(endYearRaw) : null;
+  return {
+    id: String(impact.id || 'impact_' + index),
+    area,
+    title: String(impact.title || 'Wirkannahme'),
+    amount: finiteNumber(impact.amount),
+    confidence,
+    governance,
+    startYear,
+    endYear,
+    attribution: clamp(finiteNumber(impact.attribution, 100), 0, 100) / 100,
+    chain: String(impact.chain || ''),
+    evidence: String(impact.evidence || ''),
+    note: String(impact.note || '')
+  };
+}
+
+export function impactAssumptionsFor(measure = {}) {
+  const assumptions = Array.isArray(measure.impactAssumptions) ? measure.impactAssumptions : [];
+  return assumptions.map((impact, index) => normalizeImpactAssumption(impact, index, measure));
+}
+
+function impactIncludedInScenario(impact, p) {
+  if (impact.governance === 'excluded') return false;
+  if (p.assumptionMode === 'approvedOnly') return impact.confidence === 'proven' && impact.governance === 'basis';
+  if (p.assumptionMode === 'includeReview') return impact.governance !== 'excluded';
+  return impact.governance === 'basis' && impact.confidence !== 'review';
+}
+
+function impactActiveInYear(impact, year) {
+  return year >= impact.startYear && (impact.endYear === null || year <= impact.endYear);
+}
+
+export function impactEffectsForMeasure(measure, p, year) {
+  const assumptions = impactAssumptionsFor(measure);
+  return assumptions.reduce((effects, impact) => {
+    const included = impactIncludedInScenario(impact, p);
+    const annual = included && impactActiveInYear(impact, year) ? impact.amount * impact.attribution : 0;
+    if (impact.area === 'risk') {
+      effects.risk += annual;
+    } else {
+      effects.qAndE += annual;
+    }
+    if (included) effects.included.push(impact);
+    if (!included && impact.governance !== 'excluded') effects.sensitivity.push(impact);
+    return effects;
+  }, { qAndE: 0, risk: 0, included: [], sensitivity: [] });
+}
+
 export function regulatoryPeriodFor(sector, year, parameterSet = regulatoryParameterSet) {
   const periods = parameterSet.regulatoryPeriodsBySector[sector] || parameterSet.regulatoryPeriodsBySector.gas;
   const numericYear = Math.round(finiteNumber(year));
@@ -94,6 +155,7 @@ export function params(inputs, overrides = {}) {
     attribution: clamp(finiteNumber(inputs.portfolioAttribution), 0, 100) / 100,
     qDelta: finiteNumber(inputs.qDelta) / 100,
     eDelta: finiteNumber(inputs.eDelta) / 100,
+    assumptionMode: 'basis',
     ...overrides
   };
 }
@@ -142,8 +204,9 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     const avgCapital = Math.max(0, opening - depreciation / 2);
     const capitalReturn = avgCapital * p.returnRate * (1 + p.taxFactor);
     const firstYearOpex = year === start ? opex : 0;
-    const yearlyQE = year >= start ? qAndE : 0;
-    const yearlyRisk = year >= start ? risk : 0;
+    const impactEffects = year >= start ? impactEffectsForMeasure(measure, p, year) : { qAndE: 0, risk: 0, included: [], sensitivity: [] };
+    const yearlyQE = year >= start ? qAndE + impactEffects.qAndE : 0;
+    const yearlyRisk = year >= start ? risk + impactEffects.risk : 0;
     const eog = depreciation + capitalReturn + firstYearOpex + yearlyQE + yearlyRisk;
 
     if (year >= start) rest = Math.max(0, rest - depreciation);
@@ -153,7 +216,8 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   const flows = [-finiteNumber(measure.cost), ...rows.map(row => row.eog)];
   const measureIrr = irr(flows);
   const measureNpv = npv(p.discountRate, flows);
-  return { measure, activated: active.activated, activeShare: active.share, rows, irr: measureIrr, npv: measureNpv };
+  const impactSummary = impactEffectsForMeasure(measure, p, start);
+  return { measure, activated: active.activated, activeShare: active.share, rows, irr: measureIrr, npv: measureNpv, impactSummary };
 }
 
 export function portfolioEffectFor(measure, p) {
@@ -191,11 +255,12 @@ export function calcPortfolio(model, p) {
   const resultIrr = invest > 0 ? irr(flows) : NaN;
   const resultNpv = invest > 0 ? npv(p.discountRate, flows) : 0;
   const qePa = activeMeasures.reduce((sum, measure) => sum + portfolioEffectFor(measure, p), 0);
+  const impactPa = results.reduce((sum, result) => sum + result.impactSummary.qAndE + result.impactSummary.risk, 0);
   yearly.forEach(row => {
     row.regulatoryPeriod = regulatoryPeriodFor(p.sector, row.year);
   });
 
-  return { p, activeMeasures, results, yearly, invest, activated, irr: resultIrr, npv: resultNpv, qePa };
+  return { p, activeMeasures, results, yearly, invest, activated, irr: resultIrr, npv: resultNpv, qePa, impactPa };
 }
 
 export function scenarioParams(baseParams, name) {
@@ -205,7 +270,8 @@ export function scenarioParams(baseParams, name) {
       attribution: Math.min(baseParams.attribution, 0.1),
       qDelta: baseParams.qDelta * 0.5,
       eDelta: baseParams.eDelta * 0.5,
-      discountRate: Math.max(baseParams.discountRate, baseParams.financingRate)
+      discountRate: Math.max(baseParams.discountRate, baseParams.financingRate),
+      assumptionMode: 'approvedOnly'
     };
   }
   if (name === 'wert') {
@@ -213,7 +279,8 @@ export function scenarioParams(baseParams, name) {
       ...baseParams,
       attribution: Math.max(baseParams.attribution, 0.5),
       qDelta: baseParams.qDelta || 0.006,
-      eDelta: baseParams.eDelta || 0.002
+      eDelta: baseParams.eDelta || 0.002,
+      assumptionMode: 'includeReview'
     };
   }
   return baseParams;

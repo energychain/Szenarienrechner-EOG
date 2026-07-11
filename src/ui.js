@@ -3,6 +3,7 @@ import {
   calcPortfolio,
   clamp,
   expectedActivated,
+  impactAssumptionsFor,
   params as engineParams,
   portfolioEffectFor,
   regulatoryParameterSet,
@@ -27,10 +28,15 @@ const demoMeasures = [
     opexRecognition: 60,
     life: 15,
     depr: 'normal',
-    qDirect: 15,
-    eDirect: 8,
-    riskAvoided: 20,
+    qDirect: 0,
+    eDirect: 0,
+    riskAvoided: 0,
     portfolioShare: 35,
+    impactAssumptions: [
+      {'id':'impact_demo_grid_q','area':'qElement','title':'Weniger lange Versorgungsunterbrechungen','amount':15,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung grenzt Fehler schneller ein und verkürzt Wiederversorgung im Schwerpunktgebiet.','evidence':'Betriebserfahrung aus Störungsanalyse Nord 2024-2026','note':'Mit Regulierungsmanagement auf Q-Systematik prüfen.'},
+      {'id':'impact_demo_grid_e','area':'efficiency','title':'Weniger manuelle Entstörung und Schaltaufwand','amount':8,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Fernsteuerung reduziert Anfahrten und manuelle Schalthandlungen.','evidence':'Expertenschätzung Netzbetrieb','note':''},
+      {'id':'impact_demo_grid_risk','area':'risk','title':'Vermiedene Großstörung im Schwerpunktgebiet','amount':20,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung reduziert Eskalationsrisiko bei Folgefehlern.','evidence':'Risikoworkshop offen','note':'Nur als Sensitivität bis Freigabe.'}
+    ],
     note: 'Abstimmen, ob der Qualitätsbeitrag separat messbar ist oder nur als Portfolioeffekt angesetzt wird.'
   },
   {
@@ -46,10 +52,14 @@ const demoMeasures = [
     opexRecognition: 50,
     life: 35,
     depr: 'normal',
-    qDirect: 10,
-    eDirect: 3,
-    riskAvoided: 18,
+    qDirect: 0,
+    eDirect: 0,
+    riskAvoided: 0,
     portfolioShare: 25,
+    impactAssumptions: [
+      {'id':'impact_demo_station_q','area':'qElement','title':'Fernwirkfähigkeit reduziert Ausfallminuten','amount':10,'confidence':'proven','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Störung wird schneller erkannt und eingegrenzt; Wiederversorgungszeit sinkt.','evidence':'Historische Störungen vergleichbarer Stationen','note':''},
+      {'id':'impact_demo_station_risk','area':'risk','title':'Vermiedene Folgekosten bei Stationsausfall','amount':18,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Ersatz reduziert Eintrittswahrscheinlichkeit alterungsbedingter Ausfälle.','evidence':'Asset-Zustandsbewertung und Betriebsschätzung','note':''}
+    ],
     note: 'Technische Umsetzbarkeit im geplanten Inbetriebnahmejahr bestätigen.'
   },
   {
@@ -66,9 +76,13 @@ const demoMeasures = [
     life: 40,
     depr: 'kanuLinear',
     qDirect: 0,
-    eDirect: 6,
-    riskAvoided: 28,
+    eDirect: 0,
+    riskAvoided: 0,
     portfolioShare: 20,
+    impactAssumptions: [
+      {'id':'impact_demo_pressure_e','area':'efficiency','title':'Weniger ungeplante Instandsetzung','amount':6,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Modernisierung senkt wiederkehrende Störungs- und Instandsetzungsaufwände.','evidence':'Instandhaltungsplanung','note':''},
+      {'id':'impact_demo_pressure_risk','area':'risk','title':'Vermiedene Versorgungsunterbrechung','amount':28,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Zustandsrisiko sinkt, monetäre Höhe ist noch nicht freigegeben.','evidence':'Asset-Risikomatrix offen','note':'Prüfung durch Betrieb und VNB erforderlich.'}
+    ],
     note: ''
   },
   {
@@ -84,10 +98,14 @@ const demoMeasures = [
     opexRecognition: 55,
     life: 12,
     depr: 'normal',
-    qDirect: 18,
-    eDirect: 12,
-    riskAvoided: 12,
+    qDirect: 0,
+    eDirect: 0,
+    riskAvoided: 0,
     portfolioShare: 20,
+    impactAssumptions: [
+      {'id':'impact_demo_sensor_q','area':'qElement','title':'Frühere Fehlererkennung verbessert Qualitätskennzahl','amount':18,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Sensorik liefert Zustandsdaten vor Störungen; konkrete Q-Wirkung muss aus Ereignisdaten abgeleitet werden.','evidence':'Noch keine belastbare Historie','note':'Prüfpflichtig bis Datengrundlage vorliegt.'},
+      {'id':'impact_demo_sensor_e','area':'efficiency','title':'Gezieltere Instandhaltung','amount':12,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Zustandsdaten reduzieren Blindleistung in Inspektion und Instandhaltung.','evidence':'Betriebsschätzung','note':''}
+    ],
     note: 'Datengrundlage für Q-/E-Wirkung mit Betrieb und Regulierungsmanagement klären.'
   },
   {
@@ -105,8 +123,11 @@ const demoMeasures = [
     depr: 'kanuDegressive',
     qDirect: 0,
     eDirect: 0,
-    riskAvoided: 45,
+    riskAvoided: 0,
     portfolioShare: 0,
+    impactAssumptions: [
+      {'id':'impact_demo_line_risk','area':'risk','title':'Vermiedener Schadensfall kritischer Leitungsabschnitt','amount':45,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Ersatz senkt Ausfallwahrscheinlichkeit und Folgekosten im kritischen Abschnitt.','evidence':'Risikowert aus Asset-Management noch zu validieren','note':'Nur Sensitivität bis Schadenshöhe und Eintrittswahrscheinlichkeit bestätigt sind.'}
+    ],
     note: 'Risikowert validieren: Schadenshöhe, Eintrittswahrscheinlichkeit und mögliche Bauabhängigkeiten.'
   }
 ];
@@ -168,10 +189,30 @@ let lastStickySnapshot = null;
 const storageKey = 'regulierte-sparten-szenario-rechner-v1';
 const expertModeKey = 'regulierte-sparten-szenario-rechner-expert-mode';
 const legacyStorageKeys = [];
-const modelVersion = 1;
-const appVersion = '0.2.0-dev';
+const modelVersion = 2;
+const appVersion = '0.3.0-dev';
 let storageStatusTimer = null;
 let expertMode = false;
+
+const impactAreaLabels = {
+  qElement: 'Q-Element',
+  efficiency: 'Effizienz/OPEX',
+  costBase: 'Kostenbasis',
+  risk: 'Risiko',
+  portfolio: 'Portfolio'
+};
+
+const confidenceLabels = {
+  proven: 'belegt',
+  assumption: 'Annahme',
+  review: 'prüfpflichtig'
+};
+
+const governanceLabels = {
+  basis: 'Basisszenario',
+  sensitivity: 'Sensitivität',
+  excluded: 'nur dokumentiert'
+};
 
 const expertFieldIds = [
   'rab', 'returnRate', 'financingRate', 'discountRate', 'kanuEndYear',
@@ -243,6 +284,66 @@ function esc(value) {
     .replaceAll('"', '&quot;');
 }
 
+function newImpactAssumptionTemplate(measure = selectedMeasure()) {
+  return {
+    id: 'impact_' + Date.now().toString(36),
+    area: 'qElement',
+    title: 'Neue Wirkannahme',
+    amount: 0,
+    confidence: 'review',
+    governance: 'sensitivity',
+    startYear: Number(measure?.year) || Math.round(num('baseYear')),
+    endYear: '',
+    attribution: 100,
+    chain: '',
+    evidence: '',
+    note: ''
+  };
+}
+
+function normalizeMeasureForUi(measure, index = 0) {
+  return {
+    ...newMeasureTemplate(index + 1),
+    ...measure,
+    id: String(measure.id || 'import_' + Date.now().toString(36) + '_' + index),
+    impactAssumptions: Array.isArray(measure.impactAssumptions) ? structuredClone(measure.impactAssumptions) : []
+  };
+}
+
+function confidenceBadge(confidence) {
+  const cls = confidence === 'proven' ? 'good' : confidence === 'assumption' ? 'warn' : 'bad';
+  return `<span class="assumption-badge ${cls}">${confidenceLabels[confidence] || 'prüfpflichtig'}</span>`;
+}
+
+function impactAreaLabel(area) {
+  return impactAreaLabels[area] || 'Wirkung';
+}
+
+function impactGovernanceLabel(governance) {
+  return governanceLabels[governance] || 'Sensitivität';
+}
+
+function allImpactAssumptions(filterActive = false) {
+  return measures
+    .filter(measure => !filterActive || measure.active)
+    .flatMap(measure => impactAssumptionsFor(measure).map(impact => ({ ...impact, measure })));
+}
+
+function reviewRequiredImpacts(filterActive = false) {
+  return allImpactAssumptions(filterActive)
+    .filter(item => item.confidence === 'review' || item.governance === 'sensitivity');
+}
+
+function impactCounts(measure) {
+  const impacts = impactAssumptionsFor(measure);
+  return {
+    total: impacts.length,
+    proven: impacts.filter(impact => impact.confidence === 'proven').length,
+    assumption: impacts.filter(impact => impact.confidence === 'assumption').length,
+    review: impacts.filter(impact => impact.confidence === 'review').length
+  };
+}
+
 function setStorageStatus(text) {
   const node = document.getElementById('storageStatus');
   if (!node) return;
@@ -279,11 +380,7 @@ function applyModelState(state) {
   inputIds.forEach(id => {
     if (Object.hasOwn(state.inputs, id)) el[id].value = state.inputs[id];
   });
-  measures = state.measures.map((measure, index) => ({
-    ...newMeasureTemplate(),
-    ...measure,
-    id: String(measure.id || 'import_' + Date.now().toString(36) + '_' + index)
-  }));
+  measures = state.measures.map((measure, index) => normalizeMeasureForUi(measure, index));
   selectedId = measures.some(measure => measure.id === state.selectedId)
     ? state.selectedId
     : measures[0]?.id;
@@ -771,9 +868,10 @@ function renderManagementSummary(result, first, spread, decision) {
     ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} entsteht im ersten Jahr ein EOG-Zusatz von ${fmtTeur(first.eog, 1)} in ${periodDetailText(result.p.regulatoryPeriod)}; der Portfolio-IRR beträgt ${irrText}. ${spreadSentence}`
     : 'Es ist keine aktive Maßnahme ausgewählt. Für eine Entscheidung müssen zuerst Maßnahmen aktiviert oder angelegt werden.';
 
+  const knowledgeEffect = result.qePa + result.impactPa;
   document.getElementById('managementCaveat').textContent = result.activeMeasures.length
-    ? result.qePa > 0
-      ? `Der zugerechnete Portfolioeffekt von ${fmtTeur(result.qePa, 1)} p.a. ist entscheidungsrelevant und muss kausal sowie regulatorisch begründet werden.`
+    ? knowledgeEffect > 0
+      ? `Dokumentierte Portfolio- und Wirkannahmen von ${fmtTeur(knowledgeEffect, 1)} p.a. sind entscheidungsrelevant und müssen kausal sowie regulatorisch begründet bleiben.`
       : 'Die Wirtschaftlichkeit hängt vor allem an Aktivierbarkeit, Anerkennungsfähigkeit, Timing und Risikowert der Maßnahmen.'
     : 'Ohne aktive Maßnahme gibt es keinen belastbaren Business Case.';
 
@@ -827,7 +925,7 @@ function renderMeetingFocus(result, first, spread) {
     management: [
       meetingCard('management', 'decisionQuestion', 'Beschlussfrage', Number.isFinite(result.irr) ? irrText + ' IRR' : '', `Ist der Business Case bei ${fmtTeur(result.invest)} Investition und ${fmtTeur(first.eog, 1)} EOG-Zusatz im Startjahr tragfähig?`),
       meetingCard('management', 'whyItWorks', 'Warum es trägt', Number.isFinite(spread) ? spreadText + ' Spread' : '', `Rendite wird gegen FK-Zins ${fmtPct(result.p.financingRate * 100, 1)} und Kapitalwert ${fmtTeur(result.npv, 1)} gespiegelt.`),
-      meetingCard('management', 'watchOut', 'Nicht übersehen', '', result.qePa > 0 ? `Q/E-Portfolioeffekt von ${fmtTeur(result.qePa, 1)} p.a. braucht Nachweis und Attribution.` : 'Ohne Portfolioeffekt zählt vor allem die direkte regulatorische Kapitalwirkung.')
+      meetingCard('management', 'watchOut', 'Nicht übersehen', '', result.qePa + result.impactPa > 0 ? `Q/E- und Wirkannahmen von ${fmtTeur(result.qePa + result.impactPa, 1)} p.a. brauchen Nachweis, Attribution und Governance-Status.` : 'Ohne Portfolioeffekt zählt vor allem die direkte regulatorische Kapitalwirkung.')
     ],
     technik: [
       meetingCard('technik', 'technicalScope', 'Technische Betroffenheit', '', activeMeasureNames(result)),
@@ -837,7 +935,7 @@ function renderMeetingFocus(result, first, spread) {
     vnb: [
       meetingCard('vnb', 'eogStartYear', 'EOG-Wirkung Startjahr', fmtTeur(first.eog, 1), `${periodDetailText(result.p.regulatoryPeriod)} mit Kostenbasis ${result.p.regulatoryPeriod.costBaseYear}. Basis-EOG steigt modellhaft auf ${fmtTeur(result.p.baseEog + first.eog, 1)}.`),
       meetingCard('vnb', 'capitalBase', 'Regulatorische Kapitalbasis', fmtTeur(result.activated), `${fmtPct(activatedShare, 1)} der Investition wird erwartbar kapitalwirksam.`),
-      meetingCard('vnb', 'recognitionQe', 'Anerkennung / Q/E', fmtTeur(result.qePa, 1), 'Portfolioeffekte und OPEX-Anerkennung getrennt belegen, damit keine Doppelzählung entsteht.')
+      meetingCard('vnb', 'recognitionQe', 'Anerkennung / Q/E', fmtTeur(result.qePa + result.impactPa, 1), 'Portfolioeffekte, Wirkannahmen und OPEX-Anerkennung getrennt belegen, damit keine Doppelzählung entsteht.')
     ],
     controlling: [
       meetingCard('controlling', 'investmentVolume', 'Investitionsvolumen', fmtTeur(result.invest), `${result.activeMeasures.length} aktive Maßnahmen im Szenario.`),
@@ -858,13 +956,14 @@ function renderMeasures() {
   if (!measures.length) {
     document.getElementById('measureBody').innerHTML = `
       <tr>
-        <td colspan="7">Noch keine Maßnahme angelegt. Lege eine neue Maßnahme geführt an oder lade Demodaten.</td>
+        <td colspan="8">Noch keine Maßnahme angelegt. Lege eine neue Maßnahme geführt an oder lade Demodaten.</td>
       </tr>
     `;
     return;
   }
   document.getElementById('measureBody').innerHTML = measures.map(measure => {
     const result = calcMeasure(measure, p, portfolioEffectFor(measure, p));
+    const counts = impactCounts(measure);
     return `
       <tr class="${measure.id === selectedId ? 'selected' : ''}" data-id="${measure.id}">
         <td><input type="checkbox" data-action="active" data-id="${measure.id}" ${measure.active ? 'checked' : ''}></td>
@@ -872,6 +971,7 @@ function renderMeasures() {
         <td>${measure.year}</td>
         <td>${fmtTeur(measure.cost)}</td>
         <td>${fmtPct(result.activeShare * 100, 0)}</td>
+        <td>${counts.total ? `${counts.total} (${counts.review} prüf.)` : '-'}</td>
         <td>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</td>
         <td><span class="note-indicator ${String(measure.note || '').trim() ? '' : 'empty'}" title="${String(measure.note || '').trim() ? esc(measure.note) : 'Keine Notiz'}">i</span></td>
       </tr>
@@ -912,6 +1012,7 @@ function newMeasureTemplate() {
     eDirect: 0,
     riskAvoided: 0,
     portfolioShare: 0,
+    impactAssumptions: [],
     note: ''
   };
 }
@@ -1323,6 +1424,102 @@ function updateFlowStatus() {
   );
 }
 
+function selectOptions(options, selected) {
+  return Object.entries(options)
+    .map(([value, label]) => `<option value="${value}" ${value === selected ? 'selected' : ''}>${label}</option>`)
+    .join('');
+}
+
+function renderImpactAssumptions(measure) {
+  const node = document.getElementById('impactAssumptions');
+  if (!node) return;
+  const assumptions = impactAssumptionsFor(measure);
+  const rows = assumptions.map(impact => `
+    <article class="impact-card" data-impact-id="${esc(impact.id)}">
+      <div class="impact-card-head">
+        <div>
+          <strong>${esc(impact.title)}</strong>
+          <div class="impact-meta">${impactAreaLabel(impact.area)} · ${fmtTeur(impact.amount * impact.attribution, 1)} p.a. · ${impactGovernanceLabel(impact.governance)}</div>
+        </div>
+        <div class="impact-actions">
+          ${confidenceBadge(impact.confidence)}
+          <button type="button" data-action="removeImpact" data-impact-id="${esc(impact.id)}" class="small-danger">Entfernen</button>
+        </div>
+      </div>
+      <div class="grid2 compact-grid">
+        <div>
+          <label>Titel</label>
+          <input type="text" data-impact-field="title" data-impact-id="${esc(impact.id)}" value="${esc(impact.title)}">
+        </div>
+        <div>
+          <label>Wirkbereich</label>
+          <select data-impact-field="area" data-impact-id="${esc(impact.id)}">${selectOptions(impactAreaLabels, impact.area)}</select>
+        </div>
+        <div>
+          <label>Wert TEUR p.a.</label>
+          <input type="number" data-impact-field="amount" data-impact-id="${esc(impact.id)}" value="${impact.amount}" step="1">
+        </div>
+        <div>
+          <label>Attribution %</label>
+          <input type="number" data-impact-field="attribution" data-impact-id="${esc(impact.id)}" value="${impact.attribution * 100}" min="0" max="100" step="1">
+        </div>
+        <div>
+          <label>Vertrauen</label>
+          <select data-impact-field="confidence" data-impact-id="${esc(impact.id)}">${selectOptions(confidenceLabels, impact.confidence)}</select>
+        </div>
+        <div>
+          <label>Einfluss</label>
+          <select data-impact-field="governance" data-impact-id="${esc(impact.id)}">${selectOptions(governanceLabels, impact.governance)}</select>
+        </div>
+        <div>
+          <label>ab Jahr</label>
+          <input type="number" data-impact-field="startYear" data-impact-id="${esc(impact.id)}" value="${impact.startYear}" step="1">
+        </div>
+        <div>
+          <label>bis Jahr</label>
+          <input type="number" data-impact-field="endYear" data-impact-id="${esc(impact.id)}" value="${impact.endYear ?? ''}" placeholder="offen" step="1">
+        </div>
+      </div>
+      <label>Kausalkette</label>
+      <textarea data-impact-field="chain" data-impact-id="${esc(impact.id)}" placeholder="Maßnahme verändert welchen technischen/regulatorischen Treiber?">${esc(impact.chain)}</textarea>
+      <label>Datenbasis / Quelle</label>
+      <textarea data-impact-field="evidence" data-impact-id="${esc(impact.id)}" placeholder="Historie, Betriebserfahrung, Gutachten, Regulierungsmanagement ...">${esc(impact.evidence)}</textarea>
+      <label>Prüf- oder Freigabehinweis</label>
+      <textarea data-impact-field="note" data-impact-id="${esc(impact.id)}" placeholder="Was muss vor Beschluss/Freigabe noch bestätigt werden?">${esc(impact.note)}</textarea>
+    </article>
+  `).join('');
+  node.innerHTML = rows || '<p class="hint">Noch keine Wirkannahme erfasst. Direkte Q-/E- oder Risikowerte sollten künftig hier mit Quelle, Kausalkette und Vertrauensstufe dokumentiert werden.</p>';
+}
+
+function updateImpactAssumption(event) {
+  const field = event.target.dataset.impactField;
+  const id = event.target.dataset.impactId;
+  const measure = selectedMeasure();
+  if (!field || !id || !measure) return;
+  const impact = (measure.impactAssumptions || []).find(item => String(item.id) === id);
+  if (!impact) return;
+  const numericFields = new Set(['amount', 'attribution', 'startYear', 'endYear']);
+  impact[field] = numericFields.has(field) ? event.target.value === '' ? '' : Number(event.target.value) : event.target.value;
+  if (field === 'confidence' && impact.confidence === 'review' && impact.governance === 'basis') {
+    impact.governance = 'sensitivity';
+  }
+  renderAll();
+}
+
+function addImpactAssumption() {
+  const measure = selectedMeasure();
+  if (!measure) return;
+  measure.impactAssumptions = [...(measure.impactAssumptions || []), newImpactAssumptionTemplate(measure)];
+  renderAll();
+}
+
+function removeImpactAssumption(id) {
+  const measure = selectedMeasure();
+  if (!measure) return;
+  measure.impactAssumptions = (measure.impactAssumptions || []).filter(impact => String(impact.id) !== id);
+  renderAll();
+}
+
 function renderDetail() {
   const measure = selectedMeasure();
 	      if (!measure) {
@@ -1336,6 +1533,7 @@ function renderDetail() {
 	          validationNode.classList.remove('active');
 	          validationNode.innerHTML = '';
 	        }
+        renderImpactAssumptions({ impactAssumptions: [] });
 	        return;
 	      }
   el.mName.value = measure.name;
@@ -1363,6 +1561,7 @@ function renderDetail() {
 	      ];
 	      document.getElementById('selectedPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
 	      renderMeasureValidation(measure);
+      renderImpactAssumptions(measure);
 	    }
 
 function renderChart(yearly) {
@@ -1438,7 +1637,7 @@ function renderScenarios() {
       <tr>
         <td>${name === 'basis' ? 'Basis' : name === 'konservativ' ? 'Konservativ' : 'Wert'}</td>
         <td>${fmtPct(result.p.attribution * 100, 0)}</td>
-        <td>${fmtTeur(result.qePa, 1)}</td>
+        <td>${fmtTeur(result.qePa + result.impactPa, 1)}</td>
         <td>${fmtTeur(first.eog, 1)}</td>
         <td>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</td>
         <td>${fmtTeur(result.npv, 1)}</td>
@@ -1463,7 +1662,7 @@ function renderReport(result, first, spread, decision) {
       <tr>
         <td>${scenarioLabel(name)}</td>
         <td>${fmtPct(scenarioResult.p.attribution * 100, 0)}</td>
-        <td>${fmtTeur(scenarioResult.qePa, 1)}</td>
+        <td>${fmtTeur(scenarioResult.qePa + scenarioResult.impactPa, 1)}</td>
         <td>${fmtTeur(scenarioFirst.eog, 1)}</td>
         <td>${Number.isFinite(scenarioResult.irr) ? fmtPct(scenarioResult.irr * 100, 1) : '-'}</td>
         <td>${fmtTeur(scenarioResult.npv, 1)}</td>
@@ -1476,10 +1675,26 @@ function renderReport(result, first, spread, decision) {
       <td>${item.measure.year}</td>
       <td>${fmtTeur(item.measure.cost)}</td>
       <td>${fmtPct(item.activeShare * 100, 0)}</td>
+      <td>${impactCounts(item.measure).total || '-'}</td>
       <td>${Number.isFinite(item.irr) ? fmtPct(item.irr * 100, 1) : '-'}</td>
       <td>${String(item.measure.note || '').trim() ? 'Ja' : '-'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="6">Keine aktive Maßnahme im Report.</td></tr>';
+  `).join('') || '<tr><td colspan="7">Keine aktive Maßnahme im Report.</td></tr>';
+  const impactRows = allImpactAssumptions(true).map(item => `
+    <tr>
+      <td>${esc(item.measure.name)}</td>
+      <td>${impactAreaLabel(item.area)}</td>
+      <td>${esc(item.title)}</td>
+      <td>${fmtTeur(item.amount * item.attribution, 1)}</td>
+      <td>${confidenceLabels[item.confidence]}</td>
+      <td>${impactGovernanceLabel(item.governance)}</td>
+      <td>${esc(item.evidence || '-')}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="7">Keine regulatorischen Wirkannahmen dokumentiert.</td></tr>';
+  const reviewItems = reviewRequiredImpacts(true);
+  const reviewHtml = reviewItems.length
+    ? `<ul>${reviewItems.map(item => `<li><strong>${esc(item.measure.name)}:</strong> ${esc(item.title)} (${impactAreaLabel(item.area)}, ${confidenceLabels[item.confidence]}, ${impactGovernanceLabel(item.governance)})${item.note ? ` - ${esc(item.note)}` : ''}</li>`).join('')}</ul>`
+    : '<p class="hint">Keine prüfpflichtigen Wirkannahmen im aktiven Szenario dokumentiert.</p>';
   const notes = measures.filter(measure => String(measure.note || '').trim());
   const notesHtml = notes.length
     ? notes.map(measure => `
@@ -1518,7 +1733,7 @@ function renderReport(result, first, spread, decision) {
         </div>
         <div class="report-box">
           <strong>Governance-Hinweis</strong>
-          <p>${result.qePa > 0 ? `Portfolioeffekte von ${fmtTeur(result.qePa, 1)} p.a. müssen kausal, regulatorisch und hinsichtlich Attribution belegt werden.` : 'Entscheidend sind Aktivierbarkeit, Anerkennung, Timing und Risikowert der aktiven Maßnahmen.'}</p>
+          <p>${result.qePa + result.impactPa > 0 ? `Portfolio- und Wirkannahmen von ${fmtTeur(result.qePa + result.impactPa, 1)} p.a. müssen kausal, regulatorisch und hinsichtlich Attribution belegt werden.` : 'Entscheidend sind Aktivierbarkeit, Anerkennung, Timing und Risikowert der aktiven Maßnahmen.'}</p>
         </div>
       </div>
     </section>
@@ -1537,7 +1752,7 @@ function renderReport(result, first, spread, decision) {
       <h2>Szenariovergleich</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Szenario</th><th>Attribution</th><th>Q/E p.a.</th><th>Jahr 1</th><th>IRR</th><th>Kapitalwert</th></tr></thead>
+          <thead><tr><th>Szenario</th><th>Attribution</th><th>Q/E + Wirkung p.a.</th><th>Jahr 1</th><th>IRR</th><th>Kapitalwert</th></tr></thead>
           <tbody>${scenarioRows}</tbody>
         </table>
       </div>
@@ -1547,10 +1762,26 @@ function renderReport(result, first, spread, decision) {
       <h2>Aktive Maßnahmen</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Maßnahme</th><th>Jahr</th><th>Kosten</th><th>aktiv.</th><th>IRR</th><th>Notiz</th></tr></thead>
+          <thead><tr><th>Maßnahme</th><th>Jahr</th><th>Kosten</th><th>aktiv.</th><th>Wirkannahmen</th><th>IRR</th><th>Notiz</th></tr></thead>
           <tbody>${measureRows}</tbody>
         </table>
       </div>
+    </section>
+
+    <section class="report-section">
+      <h2>Regulatorische Wirkannahmen</h2>
+      <p class="hint">Diese Datenpunkte holen VNB-spezifisches Wissen ab. Sie fließen je nach Vertrauen und Governance-Status in Basis-, konservatives oder Wert-Szenario ein.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Maßnahme</th><th>Bereich</th><th>Wirkung</th><th>Wert p.a.</th><th>Vertrauen</th><th>Einfluss</th><th>Datenbasis</th></tr></thead>
+          <tbody>${impactRows}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h2>Prüfpflichtige Annahmen dieses Modells</h2>
+      ${reviewHtml}
     </section>
 
     <section class="report-section">
@@ -1575,8 +1806,8 @@ function renderPortfolio() {
   document.getElementById('kpiIrr').textContent = Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-';
   document.getElementById('kpiIrrSub').textContent = 'FK-Zins ' + fmtPct(result.p.financingRate * 100, 1);
   document.getElementById('kpiNpv').textContent = fmtTeur(result.npv, 1);
-  document.getElementById('kpiPortfolioEffect').textContent = fmtTeur(result.qePa, 1);
-  document.getElementById('kpiPortfolioSub').textContent = 'p.a. aus Q/E-Attribution';
+  document.getElementById('kpiPortfolioEffect').textContent = fmtTeur(result.qePa + result.impactPa, 1);
+  document.getElementById('kpiPortfolioSub').textContent = 'p.a. aus Q/E und Wirkannahmen';
   document.getElementById('kpiTotalEog').textContent = fmtTeur(result.p.baseEog + first.eog, 1);
   document.getElementById('kpiSpread').textContent = Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-';
 
@@ -1710,6 +1941,13 @@ document.getElementById('imprintModal').addEventListener('click', event => {
 document.getElementById('measureEditClose').addEventListener('click', closeMeasureEditModal);
 document.getElementById('measureEditModal').addEventListener('click', event => {
   if (event.target.id === 'measureEditModal') closeMeasureEditModal();
+});
+document.getElementById('addImpactAssumption').addEventListener('click', addImpactAssumption);
+document.getElementById('impactAssumptions').addEventListener('change', updateImpactAssumption);
+document.getElementById('impactAssumptions').addEventListener('click', event => {
+  const button = event.target.closest('[data-action="removeImpact"]');
+  if (!button) return;
+  removeImpactAssumption(button.dataset.impactId);
 });
 document.getElementById('meetingTextCancel').addEventListener('click', closeMeetingTextModal);
 document.getElementById('meetingTextSave').addEventListener('click', saveMeetingTextModal);

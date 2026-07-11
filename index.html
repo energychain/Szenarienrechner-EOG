@@ -240,6 +240,7 @@
                 <th>Jahr</th>
                 <th>Kosten</th>
                 <th>aktiv.</th>
+                <th>Wirkannahmen</th>
                 <th>IRR</th>
                 <th>Notiz</th>
               </tr>
@@ -328,7 +329,7 @@
             <div class="sub" id="kpiActivatedSub">-</div>
           </div>
           <div class="kpi">
-            <div class="label">Portfolio Q/E p.a.</div>
+            <div class="label">Q/E & Wirkannahmen p.a.</div>
             <div class="value" id="kpiPortfolioEffect">-</div>
             <div class="sub" id="kpiPortfolioSub">-</div>
           </div>
@@ -364,7 +365,7 @@
               <tr>
                 <th>Szenario</th>
                 <th>Attribution</th>
-                <th>Q/E p.a.</th>
+                <th>Q/E + Wirkung p.a.</th>
                 <th>Jahr 1</th>
                 <th>IRR</th>
                 <th>Kapitalwert</th>
@@ -415,7 +416,7 @@
   <footer>
     <span><strong>Offline-Garantie:</strong> Alle Daten bleiben auf diesem Gerät. Diese Anwendung baut keine Internetverbindung auf.</span>
     <span>Prüfung: F12-Netzwerk-Tab zeigt keine Requests; CSP-Meta-Tag blockiert Netzwerkverbindungen.</span>
-    <span>Version 0.2.0-dev · Repository: github.com/energychain/Szenarienrechner-EOG · Lizenz: CC BY-NC-SA 4.0</span>
+    <span>Version 0.3.0-dev · Repository: github.com/energychain/Szenarienrechner-EOG · Lizenz: CC BY-NC-SA 4.0</span>
     <button type="button" id="openImprint" class="footer-link">Impressum</button>
   </footer>
 
@@ -562,6 +563,16 @@
             </div>
           </div>
           <p class="hint">Portfolioanteil verteilt den globalen Q-/E-Effekt auf einzelne Maßnahmen. Direkte Werte gehören nur hinein, wenn sie separat begründet sind.</p>
+        </div>
+        <div class="group">
+          <div class="section-head-row">
+            <div>
+              <h3>Regulatorische Wirkannahmen</h3>
+              <p class="hint">Hier wird VNB-spezifisches Wissen dokumentiert: Wirkung, Datenbasis, Kausalkette, Vertrauensstufe und kontrollierter Ergebniseinfluss.</p>
+            </div>
+            <button type="button" id="addImpactAssumption" class="primary">Wirkannahme hinzufügen</button>
+          </div>
+          <div id="impactAssumptions" class="impact-list"></div>
         </div>
         <div class="group">
           <h3>Meeting-Notiz</h3>

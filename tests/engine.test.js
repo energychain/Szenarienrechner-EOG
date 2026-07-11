@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calcMeasure,
   calcPortfolio,
+  impactAssumptionsFor,
   irr,
   npv,
   params,
@@ -122,5 +123,59 @@ describe('scenario and portfolio parameters', () => {
     expect(noAttribution.qePa).toBeCloseTo(0, 4);
     expect(fullAttribution.qePa).toBeCloseTo(100, 4);
     expect(fullAttribution.yearly[0].qAndE).toBeCloseTo(100, 4);
+  });
+});
+
+describe('documented impact assumptions', () => {
+  const documentedImpacts = [
+    {
+      id: 'q1',
+      area: 'qElement',
+      title: 'Q-Wirkung aus Störungsreduktion',
+      amount: 12,
+      confidence: 'assumption',
+      governance: 'basis',
+      startYear: 2028,
+      endYear: '',
+      attribution: 50,
+      chain: 'Weniger Unterbrechungsminuten',
+      evidence: 'Betriebsschätzung'
+    },
+    {
+      id: 'r1',
+      area: 'risk',
+      title: 'Prüfpflichtiger Risikowert',
+      amount: 30,
+      confidence: 'review',
+      governance: 'sensitivity',
+      startYear: 2028,
+      attribution: 100
+    }
+  ];
+
+  it('normalizes VNB-specific impact assumptions for calculation and documentation', () => {
+    const impacts = impactAssumptionsFor(baseMeasure({ impactAssumptions: documentedImpacts }));
+    expect(impacts[0]).toMatchObject({
+      area: 'qElement',
+      confidence: 'assumption',
+      governance: 'basis',
+      amount: 12,
+      attribution: 0.5,
+      endYear: null
+    });
+  });
+
+  it('includes basis assumptions and keeps review items for value sensitivity', () => {
+    const model = { measures: [baseMeasure({ impactAssumptions: documentedImpacts })] };
+    const basis = calcPortfolio(model, params(baseInputs));
+    const conservative = calcPortfolio(model, scenarioParams(params(baseInputs), 'konservativ'));
+    const value = calcPortfolio(model, scenarioParams(params(baseInputs), 'wert'));
+
+    expect(basis.impactPa).toBeCloseTo(6, 4);
+    expect(basis.yearly[0].qAndE).toBeCloseTo(6, 4);
+    expect(basis.yearly[0].opexRisk).toBeCloseTo(0, 4);
+    expect(conservative.impactPa).toBeCloseTo(0, 4);
+    expect(value.impactPa).toBeCloseTo(36, 4);
+    expect(value.yearly[0].opexRisk).toBeCloseTo(30, 4);
   });
 });

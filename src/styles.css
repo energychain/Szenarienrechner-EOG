@@ -463,6 +463,94 @@
       margin-bottom: 10px;
     }
 
+    .section-head-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+
+    .section-head-row h3 {
+      margin-bottom: 2px;
+    }
+
+    .impact-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .impact-card {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .impact-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .impact-meta {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .impact-actions {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      min-width: max-content;
+    }
+
+    .assumption-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .assumption-badge.good {
+      color: var(--good);
+      border-color: rgba(29, 127, 95, .35);
+      background: #eef8f3;
+    }
+
+    .assumption-badge.warn {
+      color: var(--warn);
+      border-color: rgba(169, 101, 0, .35);
+      background: #fff8eb;
+    }
+
+    .assumption-badge.bad {
+      color: var(--bad);
+      border-color: rgba(162, 58, 58, .35);
+      background: #fff0f0;
+    }
+
+    .small-danger {
+      min-height: 26px;
+      padding: 0 8px;
+      color: var(--bad);
+      border-color: rgba(162, 58, 58, .35);
+      font-size: 12px;
+    }
+
+    .compact-grid {
+      gap: 8px;
+    }
+
     .hidden-file {
       display: none;
     }
