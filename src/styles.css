@@ -241,6 +241,7 @@
     }
 
     body.show-start .header-actions,
+    body.show-start .process-strip,
     body.show-start .view-tabs,
     body.show-start .mode-strip,
     body.show-start .sticky-kpis,
@@ -329,6 +330,76 @@
     .start-choice.recommended {
       border-color: rgba(0, 111, 143, .6);
       box-shadow: 0 8px 24px rgba(0, 111, 143, .12);
+    }
+
+    .role-selector {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .role-selector .eyebrow {
+      grid-column: 1 / -1;
+      margin-bottom: 0;
+    }
+
+    .role-selector button {
+      min-height: 58px;
+      padding: 9px 10px;
+      text-align: left;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .role-selector button.active {
+      background: #e9f4f7;
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .role-selector strong,
+    .role-selector span {
+      display: block;
+    }
+
+    .role-selector span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .process-strip {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 10px 22px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .process-strip strong,
+    .process-strip span {
+      display: block;
+    }
+
+    .process-strip span {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .process-controls {
+      display: grid;
+      grid-template-columns: auto minmax(170px, 210px) auto minmax(140px, 170px);
+      gap: 7px;
+      align-items: center;
+    }
+
+    .process-controls label {
+      margin: 0;
+      white-space: nowrap;
     }
 
     .view-tabs {
@@ -457,7 +528,7 @@
       top: 0;
       z-index: 20;
       display: grid;
-      grid-template-columns: 1.1fr repeat(3, 1fr);
+      grid-template-columns: 1.1fr repeat(4, 1fr);
       gap: 8px;
       padding: 10px 22px;
       border-bottom: 1px solid var(--line);
@@ -863,6 +934,67 @@
       margin-top: 7px;
       color: var(--muted);
       font-size: 12px;
+    }
+
+    .event-summary,
+    .maturity-panel,
+    .clarification-list,
+    .import-review {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .event-summary ul,
+    .clarification-list ul,
+    .import-review ul {
+      margin: 0 0 0 18px;
+      padding: 0;
+    }
+
+    .event-summary li,
+    .clarification-list li,
+    .import-review li {
+      margin: 3px 0;
+    }
+
+    .maturity-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: var(--soft);
+      overflow: hidden;
+    }
+
+    .maturity-bar span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .clarification-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+    }
+
+    .clarification-item.closed {
+      opacity: .68;
+      background: #f5f8f6;
+    }
+
+    .clarification-item strong {
+      color: var(--ink);
+    }
+
+    .clarification-meta {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
     }
 
     .pill-row {
@@ -1311,7 +1443,7 @@
     .modal {
       position: fixed;
       inset: 0;
-      z-index: 10;
+      z-index: 60;
       display: grid;
       place-items: center;
       padding: 22px;
@@ -1455,6 +1587,9 @@
       .start-screen,
       body.show-start .start-screen { grid-template-columns: 1fr; padding: 26px 14px 18px; }
       .start-copy h2 { font-size: 25px; }
+      .role-selector { grid-template-columns: 1fr; }
+      .process-strip { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
+      .process-controls { grid-template-columns: 1fr; width: 100%; }
       .view-tabs { grid-template-columns: 1fr 1fr; padding: 10px 12px 0; }
       .view-tabs button { min-height: 68px; }
       .mode-strip { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
@@ -1470,7 +1605,7 @@
 
     @media print {
       body { background: #fff; }
-      header, .view-tabs, .mode-strip, .sticky-kpis, footer, .modal, .report-actions { display: none !important; }
+      header, .process-strip, .view-tabs, .mode-strip, .sticky-kpis, footer, .modal, .report-actions { display: none !important; }
       main { display: block; padding: 0; }
       .app-view { display: none !important; }
       [data-view-panel="report"] { display: block !important; }

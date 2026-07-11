@@ -12,8 +12,12 @@ import {
 } from './engine.js';
 import {
   appendHistoryEvents,
+  compareHistoryChains,
   diffModelEvents,
-  emptyHistory
+  emptyHistory,
+  eventsAfter,
+  eventSummary,
+  latestEvent
 } from './history.js';
 import { imprintSections } from './trust-content.js';
 
@@ -195,14 +199,34 @@ const storageKey = 'regulierte-sparten-szenario-rechner-v1';
 const expertModeKey = 'regulierte-sparten-szenario-rechner-expert-mode';
 const authorKey = 'regulierte-sparten-szenario-rechner-author';
 const lastSeenEventKey = 'regulierte-sparten-szenario-rechner-last-seen-event';
+const roleKey = 'regulierte-sparten-szenario-rechner-role';
 const legacyStorageKeys = [];
-const modelVersion = 3;
+const modelVersion = 4;
 const appVersion = '0.3.0-dev';
+const processPhases = [
+  ['initialisierung', 'Initialisierung'],
+  ['datenerhebung', 'Datenerhebung'],
+  ['massnahmenbewertung', 'Maßnahmenbewertung'],
+  ['konsolidierung', 'Konsolidierung'],
+  ['entscheidungsvorlage', 'Entscheidungsvorlage'],
+  ['archiv', 'Beschluss/Archiv']
+];
+
+const roleProfiles = {
+  owner: { label: 'Modellverantwortung', view: 'basis', focus: 'management', expert: true },
+  expert: { label: 'Fachexpertise', view: 'results', focus: 'technik', expert: false },
+  management: { label: 'Management', view: 'results', focus: 'management', expert: false },
+  audit: { label: 'Audit', view: 'report', focus: 'controlling', expert: true }
+};
 let storageStatusTimer = null;
 let expertMode = false;
 let history = emptyHistory();
 let previousModelForHistory = null;
 let suppressHistoryEvents = false;
+let processState = defaultProcessState();
+let currentRole = 'owner';
+let clarificationStatus = {};
+let pendingImportReview = null;
 
 const impactAreaLabels = {
   qElement: 'Q-Element',
@@ -223,6 +247,56 @@ const governanceLabels = {
   sensitivity: 'Sensitivität',
   excluded: 'nur dokumentiert'
 };
+
+function defaultProcessState() {
+  const phaseTargets = Object.fromEntries(processPhases.map(([id]) => [id, '']));
+  return {
+    phase: 'massnahmenbewertung',
+    phaseTargets,
+    startedAt: new Date().toISOString()
+  };
+}
+
+function normalizeProcessState(value = {}) {
+  const defaults = defaultProcessState();
+  const phaseIds = new Set(processPhases.map(([id]) => id));
+  return {
+    ...defaults,
+    ...value,
+    phase: phaseIds.has(value.phase) ? value.phase : defaults.phase,
+    phaseTargets: { ...defaults.phaseTargets, ...(value.phaseTargets || {}) }
+  };
+}
+
+function phaseLabel(phase = processState.phase) {
+  return processPhases.find(([id]) => id === phase)?.[1] || 'Maßnahmenbewertung';
+}
+
+function loadRole() {
+  try {
+    const stored = localStorage.getItem(roleKey);
+    if (stored && roleProfiles[stored]) currentRole = stored;
+  } catch (_error) {}
+}
+
+function saveRole() {
+  try {
+    localStorage.setItem(roleKey, currentRole);
+  } catch (_error) {}
+}
+
+function applyRole(role, persist = true) {
+  if (!roleProfiles[role]) return;
+  currentRole = role;
+  if (persist) saveRole();
+  document.body.dataset.role = role;
+  document.querySelectorAll('[data-role-choice]').forEach(button => {
+    button.classList.toggle('active', button.dataset.roleChoice === role);
+  });
+  document.querySelectorAll('.role-pill').forEach(node => {
+    node.textContent = roleProfiles[role].label;
+  });
+}
 
 const expertFieldIds = [
   'rab', 'returnRate', 'financingRate', 'discountRate', 'kanuEndYear',
@@ -354,6 +428,289 @@ function impactCounts(measure) {
   };
 }
 
+function scenarioVerdictSignature() {
+  return ['basis', 'konservativ', 'wert'].map(name => decisionFor(currentPortfolio(currentScenarioParams(name))).title);
+}
+
+function clarificationKey(item) {
+  return item.key;
+}
+
+function clarificationItems() {
+  const impactItems = reviewRequiredImpacts(true).map(item => ({
+    key: `impact:${item.measure.id}:${item.id}`,
+    type: 'impact',
+    area: impactAreaLabel(item.area),
+    targetPhase: 'massnahmenbewertung',
+    title: item.title,
+    measure: item.measure.name,
+    detail: item.note || item.evidence || 'Wirkannahme prüfen und Vertrauensstufe/Governance bestätigen.'
+  }));
+  const noteItems = measures
+    .filter(measure => measure.active && String(measure.note || '').trim())
+    .map(measure => ({
+      key: `note:${measure.id}`,
+      type: 'note',
+      area: 'Maßnahme',
+      targetPhase: 'konsolidierung',
+      title: 'Maßnahmennotiz klären',
+      measure: measure.name,
+      detail: measure.note
+    }));
+  return [...impactItems, ...noteItems].map(item => ({
+    ...item,
+    status: clarificationStatus[clarificationKey(item)]?.status || 'open'
+  }));
+}
+
+function maturityScore() {
+  const activeImpacts = allImpactAssumptions(true);
+  const reviewItems = reviewRequiredImpacts(true);
+  const clarifications = clarificationItems();
+  const openClarifications = clarifications.filter(item => item.status !== 'closed');
+  const basisComplete = Boolean(el.sector.value) && num('baseYear') > 0 && num('baseEog') > 0;
+  const confirmedShare = activeImpacts.length
+    ? activeImpacts.filter(item => item.confidence === 'proven' && item.governance === 'basis').length / activeImpacts.length
+    : 0;
+  const reviewPenalty = activeImpacts.length ? reviewItems.length / activeImpacts.length : 0;
+  const verdicts = scenarioVerdictSignature();
+  const verdictStable = new Set(verdicts).size <= 1;
+  const activeCount = measures.filter(measure => measure.active).length;
+  let score = 0;
+  score += basisComplete ? 20 : 0;
+  score += activeCount > 0 ? 20 : 0;
+  score += Math.round(confirmedShare * 25);
+  score += Math.max(0, 20 - Math.round(reviewPenalty * 20));
+  score += verdictStable ? 10 : 4;
+  score += openClarifications.length === 0 ? 5 : 0;
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    blockers: openClarifications.length,
+    reviewCount: reviewItems.length,
+    openClarifications,
+    verdictStable
+  };
+}
+
+function renderProcessUx() {
+  const phase = phaseLabel();
+  const clarifications = clarificationItems();
+  const openCount = clarifications.filter(item => item.status !== 'closed').length;
+  const reviewCount = reviewRequiredImpacts(true).length;
+  const target = processState.phaseTargets?.entscheidungsvorlage || '';
+  const phaseSelect = document.getElementById('processPhase');
+  const targetInput = document.getElementById('phaseTargetDate');
+  if (phaseSelect) phaseSelect.value = processState.phase;
+  if (targetInput) targetInput.value = target;
+  const banner = document.getElementById('processBanner');
+  if (banner) {
+    banner.textContent = `KW ${isoWeek(new Date())} - ${phase}. ${reviewCount} Wirkannahmen prüfpflichtig, ${openCount} Klärpunkte offen${target ? `, Zieltermin Entscheidungsvorlage: ${formatDateShort(target)}` : ''}.`;
+  }
+  const counter = document.getElementById('clarificationCounter');
+  if (counter) counter.textContent = openCount ? `${openCount} Klärpunkte offen` : 'Keine offenen Klärpunkte';
+}
+
+function isoWeek(date) {
+  const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  return Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+}
+
+function formatDateShort(value) {
+  if (!value) return '';
+  const date = new Date(value + 'T00:00:00');
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+}
+
+function metricsForModel(model) {
+  try {
+    const p = engineParams(model.inputs || {});
+    const result = calcPortfolio({ measures: model.measures || [] }, engineScenarioParams(p, model.scenario || 'basis'));
+    const first = result.yearly[0] || { eog: 0 };
+    return {
+      irr: result.irr,
+      npv: result.npv,
+      eog: first.eog,
+      activeMeasures: result.activeMeasures.length
+    };
+  } catch (_error) {
+    return { irr: NaN, npv: NaN, eog: NaN, activeMeasures: 0 };
+  }
+}
+
+function metricSummary(metrics) {
+  return `IRR ${Number.isFinite(metrics.irr) ? fmtPct(metrics.irr * 100, 1) : '-'}, Kapitalwert ${Number.isFinite(metrics.npv) ? fmtTeur(metrics.npv, 1) : '-'}, Jahr-1-EOG ${Number.isFinite(metrics.eog) ? fmtTeur(metrics.eog, 1) : '-'}`;
+}
+
+function renderEventList(events, emptyText = 'Keine neuen Ereignisse.') {
+  return events.length
+    ? `<ul>${events.map(event => `<li>${esc(eventSummary(event))}</li>`).join('')}</ul>`
+    : `<p class="hint">${esc(emptyText)}</p>`;
+}
+
+function renderChangeSinceSeen() {
+  const node = document.getElementById('changeSinceSeen');
+  if (!node) return;
+  let lastSeen = '';
+  try {
+    lastSeen = localStorage.getItem(lastSeenEventKey) || '';
+  } catch (_error) {}
+  const events = eventsAfter(history, lastSeen);
+  const last = latestEvent(history);
+  node.innerHTML = `
+    <p>${events.length ? `${events.length} Ereignisse seit deiner letzten Ansicht.` : 'Seit deiner letzten Ansicht gibt es keine neuen Ereignisse.'}</p>
+    ${renderEventList(events.slice(-6))}
+    <p class="hint">Aktueller Head: ${esc(history.headId || '-')}${last ? ` · zuletzt ${esc(last.author)} ${new Date(last.timestamp).toLocaleString('de-DE')}` : ''}</p>
+  `;
+}
+
+function renderMaturityAndClarifications() {
+  const maturity = maturityScore();
+  const maturityNode = document.getElementById('maturityPanel');
+  if (maturityNode) {
+    maturityNode.innerHTML = `
+      <div><strong>${maturity.score} % Entscheidungsreife</strong> · ${maturity.blockers} Blocker · ${maturity.reviewCount} prüfpflichtige Wirkannahmen</div>
+      <div class="maturity-bar" aria-label="Entscheidungsreife"><span style="width:${maturity.score}%"></span></div>
+      <p class="hint">Bewertet werden Stammdaten, aktive Maßnahmen, belegte Wirkannahmen, offene Klärpunkte und Stabilität der Entscheidungstendenz über alle Szenarien.</p>
+    `;
+  }
+  const listNode = document.getElementById('clarificationList');
+  if (!listNode) return;
+  const items = clarificationItems();
+  listNode.innerHTML = items.length
+    ? items.map(item => `
+      <article class="clarification-item ${item.status === 'closed' ? 'closed' : ''}">
+        <div>
+          <strong>${esc(item.measure)}: ${esc(item.title)}</strong>
+          <div class="clarification-meta">${esc(item.area)} · Zielphase ${esc(phaseLabel(item.targetPhase))} · ${item.status === 'closed' ? 'geklärt' : 'offen'}</div>
+          <p class="hint">${esc(item.detail)}</p>
+        </div>
+        <button type="button" data-action="toggleClarification" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Wieder öffnen' : 'Klären'}</button>
+      </article>
+    `).join('')
+    : '<p class="hint">Keine Klärpunkte aus aktiven Wirkannahmen oder Maßnahmennotizen.</p>';
+}
+
+function showImportReview(review) {
+  pendingImportReview = review;
+  const body = document.getElementById('importReviewBody');
+  const incomingLatest = latestEvent(review.incoming.history);
+  const localMetrics = metricsForModel(currentModelData());
+  const incomingMetrics = metricsForModel(review.incoming.model);
+  const relationText = {
+    same: 'Import und lokaler Stand haben denselben Head.',
+    incomingNewer: 'Die Datei ist ein Nachfolger deines lokalen Stands.',
+    localNewer: 'Deine lokale Version ist aktueller als die importierte Datei.',
+    divergent: 'Lokaler Stand und Import sind auseinander gelaufen.'
+  }[review.comparison.relation];
+  body.innerHTML = `
+    <p><strong>${relationText}</strong></p>
+    <p>Import von ${esc(incomingLatest?.author || 'unbekannt')} · ${incomingLatest ? new Date(incomingLatest.timestamp).toLocaleString('de-DE') : 'ohne Zeitstempel'}</p>
+    <div class="report-summary">
+      <div class="report-box"><strong>Lokal</strong><p>${esc(metricSummary(localMetrics))}</p></div>
+      <div class="report-box"><strong>Import</strong><p>${esc(metricSummary(incomingMetrics))}</p></div>
+    </div>
+    <h3>Neue Ereignisse im Import</h3>
+    ${renderEventList(review.comparison.incomingAfterCommon)}
+    ${review.comparison.localAfterCommon.length ? `<h3>Lokale Ereignisse seit gemeinsamem Stand</h3>${renderEventList(review.comparison.localAfterCommon)}` : ''}
+  `;
+  document.getElementById('importReviewModal').classList.remove('hidden');
+}
+
+function closeImportReview() {
+  document.getElementById('importReviewModal').classList.add('hidden');
+  pendingImportReview = null;
+}
+
+function appendDecisionEvent(type, note) {
+  history = appendHistoryEvents(history, [{
+    type,
+    subject: { scope: 'history' },
+    field: 'headId',
+    oldValue: null,
+    newValue: history.headId,
+    note
+  }], ensureAuthor());
+}
+
+function applyPendingImport() {
+  if (!pendingImportReview) return;
+  const relation = pendingImportReview.comparison.relation;
+  applyModelState({
+    model: pendingImportReview.incoming.model,
+    history: pendingImportReview.incoming.history
+  });
+  if (relation === 'divergent') {
+    appendDecisionEvent('branchSelected', 'Import-Zweig übernommen; lokaler Parallelzweig wurde verworfen.');
+  }
+  saveToBrowser(true);
+  setStorageStatus('Import übernommen und im Browser gespeichert.');
+  closeImportReview();
+  renderAll();
+}
+
+function keepLocalImport() {
+  if (!pendingImportReview) return;
+  if (pendingImportReview.comparison.relation === 'divergent' || pendingImportReview.comparison.relation === 'incomingNewer') {
+    appendDecisionEvent('branchRejected', 'Import-Zweig verworfen; lokaler Stand bleibt maßgeblich.');
+    saveToBrowser(true);
+  }
+  setStorageStatus('Lokaler Stand wurde beibehalten.');
+  closeImportReview();
+  renderAll();
+}
+
+function setProcessPhase(nextPhase) {
+  if (!processPhases.some(([id]) => id === nextPhase) || processState.phase === nextPhase) return;
+  const previousPhase = processState.phase;
+  processState = normalizeProcessState({ ...processState, phase: nextPhase });
+  const author = ensureAuthor();
+  history = appendHistoryEvents(history, [{
+    type: 'phaseChanged',
+    subject: { scope: 'process' },
+    field: 'phase',
+    oldValue: previousPhase,
+    newValue: nextPhase,
+    note: `Phasenwechsel zu ${phaseLabel(nextPhase)}.`
+  }], author);
+  history.snapshots.push({
+    id: 'snap_' + Date.now().toString(36),
+    eventId: history.headId,
+    label: 'Phasenwechsel: ' + phaseLabel(nextPhase),
+    author,
+    timestamp: new Date().toISOString(),
+    phase: nextPhase
+  });
+  previousModelForHistory = currentModelData();
+  renderAll();
+}
+
+function setPhaseTarget(value) {
+  processState = normalizeProcessState({
+    ...processState,
+    phaseTargets: {
+      ...processState.phaseTargets,
+      entscheidungsvorlage: value
+    }
+  });
+  renderAll();
+}
+
+function toggleClarification(key) {
+  const current = clarificationStatus[key]?.status || 'open';
+  clarificationStatus = {
+    ...clarificationStatus,
+    [key]: {
+      status: current === 'closed' ? 'open' : 'closed',
+      author: ensureAuthor(),
+      timestamp: new Date().toISOString()
+    }
+  };
+  renderAll();
+}
+
 function setStorageStatus(text) {
   const node = document.getElementById('storageStatus');
   if (!node) return;
@@ -396,9 +753,12 @@ function currentModelData() {
     meetingFocus,
     scenario,
     selectedId,
+    role: currentRole,
+    process: structuredClone(processState),
     inputs: Object.fromEntries(inputIds.map(id => [id, el[id].value])),
     measures: structuredClone(measures),
-    meetingTextOverrides: structuredClone(meetingTextOverrides)
+    meetingTextOverrides: structuredClone(meetingTextOverrides),
+    clarificationStatus: structuredClone(clarificationStatus)
   };
 }
 
@@ -421,9 +781,12 @@ function legacyModelFromState(state) {
     meetingFocus: state.meetingFocus,
     scenario: state.scenario,
     selectedId: state.selectedId,
+    role: state.role || 'owner',
+    process: state.process || defaultProcessState(),
     inputs: state.inputs,
     measures: state.measures,
-    meetingTextOverrides: state.meetingTextOverrides || {}
+    meetingTextOverrides: state.meetingTextOverrides || {},
+    clarificationStatus: state.clarificationStatus || {}
   };
 }
 
@@ -471,6 +834,11 @@ function applyModelState(state) {
   meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
     ? structuredClone(model.meetingTextOverrides)
     : {};
+  processState = normalizeProcessState(model.process);
+  clarificationStatus = model.clarificationStatus && typeof model.clarificationStatus === 'object'
+    ? structuredClone(model.clarificationStatus)
+    : {};
+  applyRole(roleProfiles[model.role] ? model.role : currentRole, false);
   history = migrated.history;
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === scenario));
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
@@ -577,7 +945,13 @@ function importModelFile(file) {
   const reader = new FileReader();
   reader.addEventListener('load', () => {
     try {
-      applyModelState(JSON.parse(String(reader.result)));
+      const incoming = migrateModelState(JSON.parse(String(reader.result)));
+      const comparison = compareHistoryChains(history, incoming.history);
+      if (comparison.relation === 'incomingNewer' || comparison.relation === 'divergent' || comparison.relation === 'localNewer') {
+        showImportReview({ incoming, comparison });
+        return;
+      }
+      applyModelState({ model: incoming.model, history: incoming.history });
       saveToBrowser(true);
       setStorageStatus('Import erfolgreich. Daten wurden im Browser gespeichert.');
     } catch (_error) {
@@ -589,7 +963,7 @@ function importModelFile(file) {
 
 function clearBrowserData() {
   try {
-    [storageKey, expertModeKey, authorKey, lastSeenEventKey, ...legacyStorageKeys].forEach(key => localStorage.removeItem(key));
+    [storageKey, expertModeKey, authorKey, lastSeenEventKey, roleKey, ...legacyStorageKeys].forEach(key => localStorage.removeItem(key));
     setStorageStatus('Browserdaten dieses Rechners wurden gelöscht.');
   } catch (_error) {
     setStorageStatus('Browserdaten konnten nicht gelöscht werden.');
@@ -617,6 +991,8 @@ function applyDemoModel() {
   scenario = 'basis';
   activeView = 'results';
   meetingFocus = 'management';
+  processState = normalizeProcessState({ phase: 'massnahmenbewertung' });
+  clarificationStatus = {};
   meetingTextOverrides = {};
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === scenario));
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
@@ -915,11 +1291,13 @@ function setDelta(id, delta) {
 }
 
 function renderStickyKpis(result, first, decision) {
+  const maturity = maturityScore();
   const snapshot = {
     eog: first.eog,
     irr: result.irr,
     npv: result.npv,
-    verdict: decision.title
+    verdict: decision.title,
+    maturity: maturity.score
   };
   const verdictTile = document.getElementById('stickyVerdictTile');
   verdictTile.className = 'sticky-kpi ' + decision.cls;
@@ -927,6 +1305,9 @@ function renderStickyKpis(result, first, decision) {
   document.getElementById('stickyEog').textContent = fmtTeur(snapshot.eog, 1);
   document.getElementById('stickyIrr').textContent = Number.isFinite(snapshot.irr) ? fmtPct(snapshot.irr * 100, 1) : '-';
   document.getElementById('stickyNpv').textContent = fmtTeur(snapshot.npv, 1);
+  document.getElementById('stickyMaturity').textContent = `${maturity.score} %`;
+  document.getElementById('stickyMaturityDelta').textContent = `${maturity.blockers} Blocker`;
+  document.getElementById('stickyMaturityTile').className = 'sticky-kpi ' + (maturity.blockers === 0 && maturity.score >= 75 ? 'good' : maturity.score >= 50 ? 'warn' : 'bad');
 
   const previous = lastStickySnapshot;
   if (previous && previous.verdict !== snapshot.verdict) {
@@ -1804,6 +2185,25 @@ function renderReport(result, first, spread, decision) {
       </article>
     `).join('')
     : '<p class="hint">Keine Maßnahmennotizen erfasst.</p>';
+  const maturity = maturityScore();
+  const clarifications = clarificationItems();
+  const clarificationRows = clarifications.map(item => `
+    <tr>
+      <td>${esc(item.measure)}</td>
+      <td>${esc(item.title)}</td>
+      <td>${esc(item.area)}</td>
+      <td>${esc(phaseLabel(item.targetPhase))}</td>
+      <td>${item.status === 'closed' ? 'geklärt' : 'offen'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5">Keine Klärpunkte dokumentiert.</td></tr>';
+  const snapshotRows = (history.snapshots || []).map(snapshot => `
+    <tr>
+      <td>${esc(snapshot.label)}</td>
+      <td>${esc(snapshot.author)}</td>
+      <td>${new Date(snapshot.timestamp).toLocaleString('de-DE')}</td>
+      <td>${esc(phaseLabel(snapshot.phase))}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4">Noch keine Snapshots dokumentiert.</td></tr>';
   const story = result.activeMeasures.length
     ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} entsteht im Startjahr ein EOG-Zusatz von ${fmtTeur(first.eog, 1)} in ${periodDetailText(result.p.regulatoryPeriod)}. Der Portfolio-IRR beträgt ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
     : 'Es ist keine aktive Maßnahme ausgewählt. Der Report dokumentiert daher noch keinen belastbaren Business Case.';
@@ -1821,6 +2221,8 @@ function renderReport(result, first, spread, decision) {
         <div><strong>Regulierungsperiode:</strong> ${periodText(result.p.regulatoryPeriod)}</div>
         <div><strong>Kostenbasis:</strong> ${result.p.regulatoryPeriod.costBaseYear}</div>
         <div><strong>Szenario:</strong> ${scenarioLabel(scenario)}</div>
+        <div><strong>Phase:</strong> ${phaseLabel()}</div>
+        <div><strong>Entscheidungsreife:</strong> ${maturity.score} % / ${maturity.blockers} Blocker</div>
       </div>
     </div>
 
@@ -1885,6 +2287,27 @@ function renderReport(result, first, spread, decision) {
     </section>
 
     <section class="report-section">
+      <h2>Klärpunkte und Prozessstand</h2>
+      <p class="hint">Ein finaler Entscheidungsreport sollte offene Blocker schließen oder als Restunsicherheit zeichnen.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Maßnahme</th><th>Klärpunkt</th><th>Bereich</th><th>Zielphase</th><th>Status</th></tr></thead>
+          <tbody>${clarificationRows}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h2>Snapshots</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Marke</th><th>Autor</th><th>Zeitpunkt</th><th>Phase</th></tr></thead>
+          <tbody>${snapshotRows}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-section">
       <h2>Offene Punkte aus Maßnahmennotizen</h2>
       <div class="note-list">${notesHtml}</div>
     </section>
@@ -1943,6 +2366,9 @@ function renderAll(persist = true) {
   renderMeasures();
   renderDetail();
   renderPortfolio();
+  renderProcessUx();
+  renderChangeSinceSeen();
+  renderMaturityAndClarifications();
   updateActionLabels();
   updateFlowStatus();
   if (persist) saveToBrowser(true);
@@ -1977,11 +2403,27 @@ detailIds.forEach(id => el[id].addEventListener('input', updateSelectedFromDetai
 el.mType.addEventListener('change', updateSelectedFromDetail);
 el.mDepr.addEventListener('change', updateSelectedFromDetail);
 enhanceHelpLabels();
+loadRole();
+applyRole(currentRole, false);
 loadExpertMode();
 setExpertMode(expertMode, false);
 
 document.querySelectorAll('.view-tab').forEach(button => {
   button.addEventListener('click', () => setView(button.dataset.view));
+});
+
+document.querySelectorAll('[data-role-choice]').forEach(button => {
+  button.addEventListener('click', () => {
+    const role = button.dataset.roleChoice;
+    applyRole(role);
+    const profile = roleProfiles[role];
+    if (profile) {
+      meetingFocus = profile.focus;
+      setExpertMode(profile.expert);
+      document.querySelectorAll('.focus-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.focus === meetingFocus));
+    }
+    renderAll(!document.body.classList.contains('show-start'));
+  });
 });
 
 document.addEventListener('click', event => {
@@ -2010,6 +2452,12 @@ document.getElementById('meetingFocusBody').addEventListener('click', event => {
   const button = event.target.closest('[data-action="editMeetingText"]');
   if (!button) return;
   openMeetingTextModal(button.dataset.focus, button.dataset.card, button.dataset.title, button.dataset.text);
+});
+
+document.getElementById('clarificationList').addEventListener('click', event => {
+  const button = event.target.closest('[data-action="toggleClarification"]');
+  if (!button) return;
+  toggleClarification(button.dataset.clarificationKey);
 });
 
 document.getElementById('measureBody').addEventListener('click', event => {
@@ -2064,9 +2512,9 @@ document.getElementById('expertModeToggle').addEventListener('change', event => 
 document.getElementById('startDemo').addEventListener('click', applyDemoModel);
 document.getElementById('startWizard').addEventListener('click', () => {
   hideStartScreen();
-  setView('basis');
+  setView(roleProfiles[currentRole]?.view || 'basis');
   renderAll();
-  openBasisWizard();
+  if (currentRole === 'owner') openBasisWizard();
 });
 document.getElementById('startImport').addEventListener('click', () => {
   document.getElementById('importFile').click();
@@ -2107,6 +2555,14 @@ document.getElementById('importFile').addEventListener('change', event => {
   importModelFile(event.target.files[0]);
   event.target.value = '';
 });
+document.getElementById('processPhase').addEventListener('change', event => setProcessPhase(event.target.value));
+document.getElementById('phaseTargetDate').addEventListener('change', event => setPhaseTarget(event.target.value));
+document.getElementById('importApplyIncoming').addEventListener('click', applyPendingImport);
+document.getElementById('importKeepLocal').addEventListener('click', keepLocalImport);
+document.getElementById('importReviewClose').addEventListener('click', closeImportReview);
+document.getElementById('importReviewModal').addEventListener('click', event => {
+  if (event.target.id === 'importReviewModal') closeImportReview();
+});
 document.getElementById('toggleAllInCatalog').addEventListener('click', toggleAllMeasures);
 document.getElementById('wizardCancel').addEventListener('click', closeWizard);
 document.getElementById('wizardBack').addEventListener('click', wizardBack);
@@ -2121,6 +2577,8 @@ document.getElementById('resetModel').addEventListener('click', () => {
   selectedId = measures[0]?.id;
   scenario = 'basis';
   meetingFocus = 'management';
+  processState = defaultProcessState();
+  clarificationStatus = {};
   meetingTextOverrides = {};
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === 'basis'));
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));

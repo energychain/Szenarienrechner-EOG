@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   appendHistoryEvents,
+  compareHistoryChains,
   diffModelEvents,
   emptyHistory
 } from '../src/history.js';
@@ -69,5 +70,25 @@ describe('history event log', () => {
         newValue: 'proven'
       })
     ]));
+  });
+
+  it('classifies imported history chains', () => {
+    const base = appendHistoryEvents(emptyHistory(), [
+      { type: 'imported', subject: { scope: 'model' }, field: 'version', oldValue: null, newValue: 3 }
+    ], 'Migration', () => '2026-07-12T09:00:00Z');
+    const local = appendHistoryEvents(base, [
+      { type: 'inputChanged', subject: { scope: 'inputs' }, field: 'baseYear', oldValue: '2027', newValue: '2028' }
+    ], 'Zoerner', () => '2026-07-12T10:00:00Z');
+    const incoming = appendHistoryEvents(base, [
+      { type: 'assumptionConfidenceChanged', subject: { measureId: 'm1', impactId: 'i1' }, field: 'confidence', oldValue: 'review', newValue: 'proven' }
+    ], 'Müller', () => '2026-07-12T11:00:00Z');
+
+    expect(compareHistoryChains(base, local)).toMatchObject({ relation: 'incomingNewer', incomingAfterCommon: [expect.any(Object)] });
+    expect(compareHistoryChains(local, base)).toMatchObject({ relation: 'localNewer', localAfterCommon: [expect.any(Object)] });
+    expect(compareHistoryChains(local, incoming)).toMatchObject({
+      relation: 'divergent',
+      localAfterCommon: [expect.any(Object)],
+      incomingAfterCommon: [expect.any(Object)]
+    });
   });
 });

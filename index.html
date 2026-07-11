@@ -31,6 +31,7 @@
         </div>
         <input id="importFile" class="hidden-file" type="file" accept="application/json,.json">
         <div id="storageStatus" class="status-line"></div>
+        <div id="clarificationCounter" class="status-line"></div>
       </div>
     </div>
   </header>
@@ -41,6 +42,13 @@
       <h2>Nicht mit 20 Feldern starten. Erst verstehen, dann anpassen.</h2>
       <p>Der Rechner zeigt am schnellsten seinen Nutzen mit einem fertigen Beispiel. Danach lassen sich Stammdaten, Maßnahmen und Annahmen Schritt für Schritt schärfen.</p>
       <p class="trust-callout"><strong>Offline-Werkzeug:</strong> Alle Daten bleiben auf diesem Gerät. Die Datei baut keine Internetverbindung auf; das ist per F12-Netzwerk-Tab und CSP-Meta-Tag prüfbar.</p>
+      <div class="role-selector" aria-label="Rollenwahl">
+        <p class="eyebrow">In welcher Rolle bist du hier?</p>
+        <button type="button" data-role-choice="owner" class="active"><strong>Modellverantwortung</strong><span>voll bearbeiten</span></button>
+        <button type="button" data-role-choice="expert"><strong>Fachexpertise</strong><span>offene Punkte prüfen</span></button>
+        <button type="button" data-role-choice="management"><strong>Management</strong><span>Entscheidung und Änderungen</span></button>
+        <button type="button" data-role-choice="audit"><strong>Audit</strong><span>Historie und Report</span></button>
+      </div>
     </div>
     <div class="start-actions" aria-label="Startwege">
       <button type="button" id="startDemo" class="start-choice recommended">
@@ -55,6 +63,26 @@
         <strong>Datei laden</strong>
         <span>Importiert ein gespeichertes JSON-Modell.</span>
       </button>
+    </div>
+  </section>
+
+  <section class="process-strip" aria-label="Prozessstand">
+    <div>
+      <strong id="processBanner">KW - Maßnahmenbewertung.</strong>
+      <span>Rolle: <span class="role-pill">Modellverantwortung</span>. Der Prozessstand wird im Modell-JSON mitgeführt.</span>
+    </div>
+    <div class="process-controls">
+      <label for="processPhase">Phase</label>
+      <select id="processPhase">
+        <option value="initialisierung">Initialisierung</option>
+        <option value="datenerhebung">Datenerhebung</option>
+        <option value="massnahmenbewertung">Maßnahmenbewertung</option>
+        <option value="konsolidierung">Konsolidierung</option>
+        <option value="entscheidungsvorlage">Entscheidungsvorlage</option>
+        <option value="archiv">Beschluss/Archiv</option>
+      </select>
+      <label for="phaseTargetDate">Ziel Entscheidung</label>
+      <input id="phaseTargetDate" type="date">
     </div>
   </section>
 
@@ -108,6 +136,11 @@
       <div class="label">Kapitalwert</div>
       <div class="value" id="stickyNpv">-</div>
       <div class="delta" id="stickyNpvDelta"></div>
+    </div>
+    <div class="sticky-kpi" id="stickyMaturityTile">
+      <div class="label">Entscheidungsreife</div>
+      <div class="value" id="stickyMaturity">-</div>
+      <div class="delta" id="stickyMaturityDelta"></div>
     </div>
   </section>
 
@@ -280,6 +313,17 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section class="panel" aria-label="Was hat sich geändert">
+        <h2>Was hat sich geändert?</h2>
+        <div id="changeSinceSeen" class="event-summary"></div>
+      </section>
+
+      <section class="panel" aria-label="Entscheidungsreife und Klärpunkte">
+        <h2>Entscheidungsreife und Klärpunkte</h2>
+        <div id="maturityPanel" class="maturity-panel"></div>
+        <div id="clarificationList" class="clarification-list"></div>
       </section>
 
       <section class="panel" aria-label="Kernkennzahlen">
@@ -485,6 +529,24 @@
       <div class="dialog-foot">
         <button type="button" id="loadCancel">Schließen</button>
         <div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="importReviewModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="importReviewTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="importReviewTitle">Import prüfen</h2>
+      </div>
+      <div class="dialog-body">
+        <div id="importReviewBody" class="import-review"></div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="importKeepLocal">Lokalen Stand behalten</button>
+        <div class="dialog-actions">
+          <button type="button" id="importApplyIncoming" class="primary">Import übernehmen</button>
+          <button type="button" id="importReviewClose">Schließen</button>
+        </div>
       </div>
     </div>
   </div>

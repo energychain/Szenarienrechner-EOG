@@ -68,6 +68,62 @@ export function appendHistoryEvents(history, drafts, author, timestampFactory = 
   return next;
 }
 
+export function eventsAfter(history, eventId) {
+  const events = Array.isArray(history?.events) ? history.events : [];
+  if (!eventId) return events;
+  const index = events.findIndex(event => event.id === eventId);
+  return index >= 0 ? events.slice(index + 1) : events;
+}
+
+export function latestEvent(history) {
+  const events = Array.isArray(history?.events) ? history.events : [];
+  return events.find(event => event.id === history?.headId) || events.at(-1) || null;
+}
+
+export function compareHistoryChains(localHistory, incomingHistory) {
+  const localEvents = Array.isArray(localHistory?.events) ? localHistory.events : [];
+  const incomingEvents = Array.isArray(incomingHistory?.events) ? incomingHistory.events : [];
+  const localIds = new Set(localEvents.map(event => event.id));
+  const incomingIds = new Set(incomingEvents.map(event => event.id));
+  let commonId = null;
+  for (let index = incomingEvents.length - 1; index >= 0; index -= 1) {
+    if (localIds.has(incomingEvents[index].id)) {
+      commonId = incomingEvents[index].id;
+      break;
+    }
+  }
+  const localAfterCommon = eventsAfter(localHistory, commonId).filter(event => !incomingIds.has(event.id));
+  const incomingAfterCommon = eventsAfter(incomingHistory, commonId).filter(event => !localIds.has(event.id));
+  const localHead = localHistory?.headId || null;
+  const incomingHead = incomingHistory?.headId || null;
+  let relation = 'same';
+  if (localHead !== incomingHead) {
+    if (localIds.has(incomingHead) && !incomingAfterCommon.length) relation = 'localNewer';
+    else if (incomingIds.has(localHead) && !localAfterCommon.length) relation = 'incomingNewer';
+    else relation = 'divergent';
+  }
+  return {
+    relation,
+    commonId,
+    localAfterCommon,
+    incomingAfterCommon,
+    localHead,
+    incomingHead
+  };
+}
+
+export function eventSummary(event) {
+  const field = event.field ? ` (${event.field})` : '';
+  const author = event.author ? ` · ${event.author}` : '';
+  const subject = event.subject?.measureId
+    ? ` · Maßnahme ${event.subject.measureId}${event.subject.impactId ? ` / ${event.subject.impactId}` : ''}`
+    : '';
+  const valueText = event.field
+    ? `: ${JSON.stringify(event.oldValue)} → ${JSON.stringify(event.newValue)}`
+    : '';
+  return `${event.type}${field}${subject}${valueText}${author}`;
+}
+
 function valuesEqual(left, right) {
   return stableStringify(left ?? null) === stableStringify(right ?? null);
 }
@@ -191,6 +247,7 @@ export function diffModelEvents(previous, next) {
     ...diffMeasureEvents(previous, next)
   ];
   diffScalarFields(events, previous, next, ['scenario'], 'scenarioChanged', { scope: 'scenario' });
+  diffScalarFields(events, previous, next, ['role'], 'roleChanged', { scope: 'role' });
   if (!valuesEqual(previous.meetingTextOverrides || {}, next.meetingTextOverrides || {})) {
     events.push({
       type: 'meetingTextOverridesChanged',
@@ -198,6 +255,24 @@ export function diffModelEvents(previous, next) {
       field: 'meetingTextOverrides',
       oldValue: previous.meetingTextOverrides || {},
       newValue: next.meetingTextOverrides || {}
+    });
+  }
+  if (!valuesEqual(previous.process || {}, next.process || {})) {
+    events.push({
+      type: 'processChanged',
+      subject: { scope: 'process' },
+      field: 'process',
+      oldValue: previous.process || {},
+      newValue: next.process || {}
+    });
+  }
+  if (!valuesEqual(previous.clarificationStatus || {}, next.clarificationStatus || {})) {
+    events.push({
+      type: 'clarificationStatusChanged',
+      subject: { scope: 'clarifications' },
+      field: 'clarificationStatus',
+      oldValue: previous.clarificationStatus || {},
+      newValue: next.clarificationStatus || {}
     });
   }
   return events;
