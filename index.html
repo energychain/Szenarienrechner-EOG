@@ -413,11 +413,20 @@
     </section>
   </main>
 
-  <footer>
-    <span><strong>Offline-Garantie:</strong> Alle Daten bleiben auf diesem Gerät. Diese Anwendung baut keine Internetverbindung auf.</span>
-    <span>Prüfung: F12-Netzwerk-Tab zeigt keine Requests; CSP-Meta-Tag blockiert Netzwerkverbindungen.</span>
-    <span>Version 0.3.0-dev · Repository: github.com/energychain/Szenarienrechner-EOG · Lizenz: CC BY-NC-SA 4.0</span>
-    <button type="button" id="openImprint" class="footer-link">Impressum</button>
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-trust">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span><strong>Offline:</strong> Daten bleiben auf diesem Gerät, keine Internetverbindung.</span>
+      </div>
+      <div class="footer-meta" aria-label="Version und Nachweise">
+        <span>Prüfung per F12-Netzwerk-Tab und CSP</span>
+        <span>Version 0.3.0-dev</span>
+        <span>github.com/energychain/Szenarienrechner-EOG</span>
+        <span>CC BY-NC-SA 4.0</span>
+        <button type="button" id="openImprint" class="footer-link">Impressum</button>
+      </div>
+    </div>
   </footer>
 
   <div id="imprintModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="imprintTitle">

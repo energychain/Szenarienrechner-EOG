@@ -128,23 +128,87 @@
       align-items: start;
     }
 
-    footer {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-      align-items: center;
+    .app-footer {
       padding: 0 22px 22px;
       color: var(--muted);
       font-size: 12px;
     }
 
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .footer-trust,
+    .footer-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .footer-trust {
+      color: #40505f;
+    }
+
+    .footer-trust strong {
+      color: var(--ink);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--good);
+      box-shadow: 0 0 0 3px rgba(29, 127, 95, .12);
+    }
+
+    .footer-meta {
+      justify-content: flex-end;
+      font-size: 11px;
+    }
+
+    .footer-meta span {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-meta span + span::before,
+    .footer-meta span + .footer-link::before {
+      content: "";
+      width: 3px;
+      height: 3px;
+      margin-right: 10px;
+      border-radius: 50%;
+      background: var(--line);
+    }
+
     .footer-link {
+      display: inline-flex;
+      align-items: center;
       min-height: auto;
       padding: 0;
       border: 0;
       background: transparent;
-      color: var(--accent);
+      color: var(--muted);
+      font-size: 11px;
       font-weight: 700;
+      text-decoration: none;
+    }
+
+    .footer-link:hover,
+    .footer-link:focus-visible {
+      color: var(--accent);
       text-decoration: underline;
     }
 
@@ -1397,6 +1461,9 @@
       .sticky-kpis { position: static; grid-template-columns: 1fr 1fr; padding: 10px 12px; }
       .sticky-kpi { min-height: 58px; }
       .sticky-kpi .value { font-size: 16px; }
+      .app-footer { padding: 0 12px 16px; }
+      .footer-inner { align-items: flex-start; flex-direction: column; }
+      .footer-meta { justify-content: flex-start; }
       .grid2, .kpis, .summary-hero, .meeting-grid, .report-head, .report-summary, .period-summary { grid-template-columns: 1fr; }
       .review-list div { grid-template-columns: 1fr; gap: 2px; }
     }
