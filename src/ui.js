@@ -10,6 +10,11 @@ import {
   regulatoryPeriodFor,
   scenarioParams as engineScenarioParams
 } from './engine.js';
+import {
+  appendHistoryEvents,
+  diffModelEvents,
+  emptyHistory
+} from './history.js';
 import { imprintSections } from './trust-content.js';
 
 const initialMeasures = [];
@@ -188,11 +193,16 @@ let wizard = null;
 let lastStickySnapshot = null;
 const storageKey = 'regulierte-sparten-szenario-rechner-v1';
 const expertModeKey = 'regulierte-sparten-szenario-rechner-expert-mode';
+const authorKey = 'regulierte-sparten-szenario-rechner-author';
+const lastSeenEventKey = 'regulierte-sparten-szenario-rechner-last-seen-event';
 const legacyStorageKeys = [];
-const modelVersion = 2;
+const modelVersion = 3;
 const appVersion = '0.3.0-dev';
 let storageStatusTimer = null;
 let expertMode = false;
+let history = emptyHistory();
+let previousModelForHistory = null;
+let suppressHistoryEvents = false;
 
 const impactAreaLabels = {
   qElement: 'Q-Element',
@@ -354,14 +364,34 @@ function setStorageStatus(text) {
   }, 4500);
 }
 
-function collectModelState() {
+function localAuthor() {
+  try {
+    return localStorage.getItem(authorKey) || '';
+  } catch (_error) {
+    return '';
+  }
+}
+
+function ensureAuthor() {
+  const existing = localAuthor();
+  if (existing) return existing;
+  const entered = window.prompt('Name für das Änderungsprotokoll dieses Modells', '') || '';
+  const author = entered.trim() || 'Unbekannt';
+  try {
+    localStorage.setItem(authorKey, author);
+  } catch (_error) {}
+  return author;
+}
+
+function rememberSeenHead() {
+  if (!history.headId) return;
+  try {
+    localStorage.setItem(lastSeenEventKey, history.headId);
+  } catch (_error) {}
+}
+
+function currentModelData() {
   return {
-    app: 'regulierte-sparten-szenario-rechner',
-    version: modelVersion,
-    appVersion,
-    regulatoryParameterSetId: regulatoryParameterSet.id,
-    regulatoryParameterEffectiveMonth: regulatoryParameterSet.effectiveMonth,
-    savedAt: new Date().toISOString(),
     activeView,
     meetingFocus,
     scenario,
@@ -372,33 +402,103 @@ function collectModelState() {
   };
 }
 
-function applyModelState(state) {
-  if (!state || !Array.isArray(state.measures) || !state.inputs) {
+function collectModelState() {
+  return {
+    app: 'regulierte-sparten-szenario-rechner',
+    version: modelVersion,
+    appVersion,
+    regulatoryParameterSetId: regulatoryParameterSet.id,
+    regulatoryParameterEffectiveMonth: regulatoryParameterSet.effectiveMonth,
+    savedAt: new Date().toISOString(),
+    model: currentModelData(),
+    history: structuredClone(history)
+  };
+}
+
+function legacyModelFromState(state) {
+  return {
+    activeView: state.activeView,
+    meetingFocus: state.meetingFocus,
+    scenario: state.scenario,
+    selectedId: state.selectedId,
+    inputs: state.inputs,
+    measures: state.measures,
+    meetingTextOverrides: state.meetingTextOverrides || {}
+  };
+}
+
+function migrateModelState(state) {
+  const model = state?.model && state.model.inputs && Array.isArray(state.model.measures)
+    ? state.model
+    : legacyModelFromState(state || {});
+  if (!model || !Array.isArray(model.measures) || !model.inputs) {
     throw new Error('Die Datei enthält kein gültiges Rechner-Modell.');
   }
+  let migratedHistory = state?.history && Array.isArray(state.history.events)
+    ? {
+        headId: state.history.headId || null,
+        events: structuredClone(state.history.events),
+        snapshots: Array.isArray(state.history.snapshots) ? structuredClone(state.history.snapshots) : []
+      }
+    : emptyHistory();
+  if (!migratedHistory.events.length) {
+    migratedHistory = appendHistoryEvents(migratedHistory, [{
+      type: 'imported',
+      subject: { scope: 'model' },
+      field: 'version',
+      oldValue: null,
+      newValue: state?.version || 1,
+      note: 'Bestehendes Modell ohne Historie übernommen.'
+    }], 'Migration', () => state?.savedAt || new Date().toISOString());
+  }
+  return { model, history: migratedHistory };
+}
+
+function applyModelState(state) {
+  const migrated = migrateModelState(state);
+  const model = migrated.model;
   hideStartScreen();
   inputIds.forEach(id => {
-    if (Object.hasOwn(state.inputs, id)) el[id].value = state.inputs[id];
+    if (Object.hasOwn(model.inputs, id)) el[id].value = model.inputs[id];
   });
-  measures = state.measures.map((measure, index) => normalizeMeasureForUi(measure, index));
-  selectedId = measures.some(measure => measure.id === state.selectedId)
-    ? state.selectedId
+  measures = model.measures.map((measure, index) => normalizeMeasureForUi(measure, index));
+  selectedId = measures.some(measure => measure.id === model.selectedId)
+    ? model.selectedId
     : measures[0]?.id;
-  scenario = ['basis', 'konservativ', 'wert'].includes(state.scenario) ? state.scenario : 'basis';
-  activeView = ['basis', 'measures', 'results', 'report'].includes(state.activeView) ? state.activeView : activeView;
-  meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(state.meetingFocus) ? state.meetingFocus : 'management';
-  meetingTextOverrides = state.meetingTextOverrides && typeof state.meetingTextOverrides === 'object'
-    ? structuredClone(state.meetingTextOverrides)
+  scenario = ['basis', 'konservativ', 'wert'].includes(model.scenario) ? model.scenario : 'basis';
+  activeView = ['basis', 'measures', 'results', 'report'].includes(model.activeView) ? model.activeView : activeView;
+  meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(model.meetingFocus) ? model.meetingFocus : 'management';
+  meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
+    ? structuredClone(model.meetingTextOverrides)
     : {};
+  history = migrated.history;
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === scenario));
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
   setView(activeView);
-  renderAll();
+  suppressHistoryEvents = true;
+  try {
+    renderAll();
+  } finally {
+    suppressHistoryEvents = false;
+  }
+  previousModelForHistory = currentModelData();
+  rememberSeenHead();
 }
 
 function saveToBrowser(silent = true) {
   try {
+    const currentModel = currentModelData();
+    if (!suppressHistoryEvents && previousModelForHistory) {
+      const eventDrafts = diffModelEvents(previousModelForHistory, currentModel);
+      if (eventDrafts.length) {
+        history = appendHistoryEvents(history, eventDrafts, ensureAuthor());
+        previousModelForHistory = structuredClone(currentModel);
+      }
+    } else if (!previousModelForHistory) {
+      previousModelForHistory = structuredClone(currentModel);
+    }
     localStorage.setItem(storageKey, JSON.stringify(collectModelState()));
+    rememberSeenHead();
     if (!silent) setStorageStatus('Daten wurden im Browser gespeichert.');
   } catch (_error) {
     setStorageStatus('Browser-Speicherung ist nicht verfügbar.');
@@ -489,7 +589,7 @@ function importModelFile(file) {
 
 function clearBrowserData() {
   try {
-    [storageKey, expertModeKey, ...legacyStorageKeys].forEach(key => localStorage.removeItem(key));
+    [storageKey, expertModeKey, authorKey, lastSeenEventKey, ...legacyStorageKeys].forEach(key => localStorage.removeItem(key));
     setStorageStatus('Browserdaten dieses Rechners wurden gelöscht.');
   } catch (_error) {
     setStorageStatus('Browserdaten konnten nicht gelöscht werden.');
@@ -2038,5 +2138,6 @@ document.querySelectorAll('.action-menu-list button').forEach(button => {
 if (!loadFromBrowser()) {
   setView(activeView);
   renderAll(false);
+  previousModelForHistory = currentModelData();
   showStartScreen();
 }
