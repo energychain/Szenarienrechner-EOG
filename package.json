@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint src tests",
     "test": "vitest run",
+    "test:distribution": "node scripts/check-distribution.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

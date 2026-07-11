@@ -2,7 +2,12 @@ name: EOG Rechner
 
 on:
   push:
+    tags:
+      - 'v*'
   pull_request:
+
+permissions:
+  contents: write
 
 jobs:
   verify:
@@ -18,3 +23,36 @@ jobs:
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
+      - run: npm run test:distribution
+      - uses: actions/upload-artifact@v4
+        with:
+          name: szenarienrechner-eog-html
+          path: dist/index.html
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: cp dist/index.html gas-massnahme-eog-rechner.html
+      - run: sha256sum gas-massnahme-eog-rechner.html > SHA256SUMS.txt
+      - run: |
+          {
+            echo "Szenario-Rechner regulierte Sparten ${GITHUB_REF_NAME}"
+            echo
+            echo "SHA-256:"
+            cat SHA256SUMS.txt
+            echo
+            echo "Verifikation:"
+            echo "sha256sum gas-massnahme-eog-rechner.html"
+          } > RELEASE_NOTES.md
+      - run: gh release create "$GITHUB_REF_NAME" gas-massnahme-eog-rechner.html SHA256SUMS.txt --notes-file RELEASE_NOTES.md
+        env:
+          GH_TOKEN: ${{ github.token }}

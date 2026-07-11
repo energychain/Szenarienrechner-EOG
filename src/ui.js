@@ -9,6 +9,7 @@ import {
   regulatoryPeriodFor,
   scenarioParams as engineScenarioParams
 } from './engine.js';
+import { imprintSections } from './trust-content.js';
 
 const initialMeasures = [];
 
@@ -441,6 +442,26 @@ function openHelpModal() {
 
 function closeHelpModal() {
   document.getElementById('helpModal').classList.add('hidden');
+}
+
+function renderImprint() {
+  const body = document.getElementById('imprintBody');
+  if (!body) return;
+  body.innerHTML = imprintSections.map(section => `
+    <section>
+      <h3>${esc(section.title)}</h3>
+      <p>${section.lines.map(line => esc(line)).join('<br>')}</p>
+    </section>
+  `).join('');
+}
+
+function openImprintModal() {
+  renderImprint();
+  document.getElementById('imprintModal').classList.remove('hidden');
+}
+
+function closeImprintModal() {
+  document.getElementById('imprintModal').classList.add('hidden');
 }
 
 function openMeasureEditModal() {
@@ -1680,6 +1701,11 @@ document.getElementById('openHelp').addEventListener('click', openHelpModal);
 document.getElementById('helpClose').addEventListener('click', closeHelpModal);
 document.getElementById('helpModal').addEventListener('click', event => {
   if (event.target.id === 'helpModal') closeHelpModal();
+});
+document.getElementById('openImprint').addEventListener('click', openImprintModal);
+document.getElementById('imprintClose').addEventListener('click', closeImprintModal);
+document.getElementById('imprintModal').addEventListener('click', event => {
+  if (event.target.id === 'imprintModal') closeImprintModal();
 });
 document.getElementById('measureEditClose').addEventListener('click', closeMeasureEditModal);
 document.getElementById('measureEditModal').addEventListener('click', event => {

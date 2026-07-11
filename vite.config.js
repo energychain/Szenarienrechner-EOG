@@ -6,6 +6,7 @@ export default defineConfig({
   build: {
     assetsInlineLimit: Number.MAX_SAFE_INTEGER,
     cssCodeSplit: false,
+    modulePreload: false,
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {

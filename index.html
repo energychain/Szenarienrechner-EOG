@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Szenario-Rechner regulierte Sparten</title>
   <link rel="stylesheet" href="/src/styles.css">
 </head>
@@ -39,6 +40,7 @@
       <p class="eyebrow">Geführter Einstieg</p>
       <h2>Nicht mit 20 Feldern starten. Erst verstehen, dann anpassen.</h2>
       <p>Der Rechner zeigt am schnellsten seinen Nutzen mit einem fertigen Beispiel. Danach lassen sich Stammdaten, Maßnahmen und Annahmen Schritt für Schritt schärfen.</p>
+      <p class="trust-callout"><strong>Offline-Werkzeug:</strong> Alle Daten bleiben auf diesem Gerät. Die Datei baut keine Internetverbindung auf; das ist per F12-Netzwerk-Tab und CSP-Meta-Tag prüfbar.</p>
     </div>
     <div class="start-actions" aria-label="Startwege">
       <button type="button" id="startDemo" class="start-choice recommended">
@@ -411,8 +413,26 @@
   </main>
 
   <footer>
-    Copyright &copy; <a href="https://stromdao.de/" target="_blank" rel="noopener noreferrer">STROMDAO GmbH</a>. Lizenz: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>.
+    <span><strong>Offline-Garantie:</strong> Alle Daten bleiben auf diesem Gerät. Diese Anwendung baut keine Internetverbindung auf.</span>
+    <span>Prüfung: F12-Netzwerk-Tab zeigt keine Requests; CSP-Meta-Tag blockiert Netzwerkverbindungen.</span>
+    <span>Version 0.2.0-dev · Repository: github.com/energychain/Szenarienrechner-EOG · Lizenz: CC BY-NC-SA 4.0</span>
+    <button type="button" id="openImprint" class="footer-link">Impressum</button>
   </footer>
+
+  <div id="imprintModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="imprintTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="imprintTitle">Impressum</h2>
+      </div>
+      <div class="dialog-body">
+        <div id="imprintBody" class="imprint-content"></div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="imprintClose">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
 
   <div id="wizardModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
     <div class="dialog">
