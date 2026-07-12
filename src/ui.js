@@ -20,6 +20,11 @@ import {
   eventSummary,
   latestEvent
 } from './history.js';
+import {
+  buildPlanningResume,
+  normalizePlanningResume,
+  shouldShowPlanningResume
+} from './planning-resume.js';
 import { imprintSections } from './trust-content.js';
 
 const initialMeasures = [];
@@ -261,7 +266,7 @@ const authorKey = 'regulierte-sparten-szenario-rechner-author';
 const lastSeenEventKey = 'regulierte-sparten-szenario-rechner-last-seen-event';
 const roleKey = 'regulierte-sparten-szenario-rechner-role';
 const legacyStorageKeys = [];
-const modelVersion = 6;
+const modelVersion = 7;
 const appVersion = '0.3.0-dev';
 const processPhases = [
   ['initialisierung', 'Initialisierung'],
@@ -563,6 +568,7 @@ function defaultProcessState() {
   return {
     phase: 'massnahmenbewertung',
     phaseTargets,
+    resume: normalizePlanningResume(),
     startedAt: new Date().toISOString()
   };
 }
@@ -623,7 +629,8 @@ function normalizeProcessState(value = {}) {
     ...defaults,
     ...value,
     phase: phaseIds.has(value.phase) ? value.phase : defaults.phase,
-    phaseTargets: { ...defaults.phaseTargets, ...(value.phaseTargets || {}) }
+    phaseTargets: { ...defaults.phaseTargets, ...(value.phaseTargets || {}) },
+    resume: normalizePlanningResume(value.resume)
   };
 }
 
@@ -668,6 +675,7 @@ function applyReadonlyMode() {
   const readOnly = isReadOnlyRole();
   const selectors = [
     'main input', 'main select', 'main textarea',
+    '.process-controls input', '.process-controls select', '.process-controls textarea',
     '#measureEditModal input', '#measureEditModal select', '#measureEditModal textarea',
     '#meetingTextModal input', '#meetingTextModal textarea'
   ];
@@ -1107,11 +1115,32 @@ function renderProcessUx() {
   const target = processState.phaseTargets?.entscheidungsvorlage || '';
   const phaseSelect = document.getElementById('processPhase');
   const targetInput = document.getElementById('phaseTargetDate');
+  const resume = normalizePlanningResume(processState.resume);
+  const resumeSummary = buildPlanningResume({
+    phaseLabel: phase,
+    resume,
+    maturity: maturityScore(),
+    openClarifications: openCount,
+    reviewCount
+  });
+  const resumeFieldIds = ['planningStatusNote', 'planningNextStep', 'planningOwner', 'planningDueDate'];
   if (phaseSelect) phaseSelect.value = processState.phase;
   if (targetInput) targetInput.value = target;
+  if (!resumeFieldIds.includes(document.activeElement?.id)) {
+    const statusNote = document.getElementById('planningStatusNote');
+    const nextStep = document.getElementById('planningNextStep');
+    const owner = document.getElementById('planningOwner');
+    const dueDate = document.getElementById('planningDueDate');
+    if (statusNote) statusNote.value = resume.statusNote;
+    if (nextStep) nextStep.value = resume.nextStep;
+    if (owner) owner.value = resume.owner;
+    if (dueDate) dueDate.value = resume.dueDate;
+  }
   const banner = document.getElementById('processBanner');
   if (banner) {
-    banner.textContent = `KW ${isoWeek(new Date())} - ${phase}. ${reviewCount} Wirkannahmen prüfpflichtig, ${openCount} Klärpunkte offen${target ? `, Zieltermin Entscheidungsvorlage: ${formatDateShort(target)}` : ''}.`;
+    banner.textContent = shouldShowPlanningResume(resume)
+      ? `${resumeSummary.headline}. ${resumeSummary.status} ${resumeSummary.next}. ${resumeSummary.risks}.`
+      : `KW ${isoWeek(new Date())} - ${phase}. ${reviewCount} Wirkannahmen prüfpflichtig, ${openCount} Klärpunkte offen${target ? `, Zieltermin Entscheidungsvorlage: ${formatDateShort(target)}` : ''}.`;
   }
   const phasePill = document.getElementById('phasePillLabel');
   if (phasePill) phasePill.textContent = target ? `${phase} · Ziel ${formatDateShort(target)}` : phase;
@@ -1368,6 +1397,19 @@ function setPhaseTarget(value) {
       ...processState.phaseTargets,
       entscheidungsvorlage: value
     }
+  });
+  renderAll();
+}
+
+function setPlanningResumeField(field, value) {
+  const nextResume = normalizePlanningResume({
+    ...processState.resume,
+    [field]: value,
+    updatedAt: new Date().toISOString()
+  });
+  processState = normalizeProcessState({
+    ...processState,
+    resume: nextResume
   });
   renderAll();
 }
@@ -3853,6 +3895,13 @@ function committeeReportHtml(result, first, spread) {
     ? `Die erfassten Risikodaten zeigen eine erwartete Risikoreduktion von ${fmtTeur(result.riskPa, 1)} pro Jahr. Dieser Wert entsteht aus Eintrittswahrscheinlichkeit vorher/nachher und Schadenshöhe.`
     : 'Für den Arbeitsstand ist noch keine belastbare Risikoreduktion hinterlegt.';
   const financeLine = `Für Rückfragen: IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}, Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}, EBIT Jahr 1 ${fmtTeur(ebitYearOne, 1)}.`;
+  const planningSummary = buildPlanningResume({
+    phaseLabel: phaseLabel(),
+    resume: processState.resume,
+    maturity: maturityScore(),
+    openClarifications: openItems.length,
+    reviewCount: reviewItems.length
+  });
   return `
     <article class="committee-page">
       <header class="committee-head">
@@ -3865,6 +3914,11 @@ function committeeReportHtml(result, first, spread) {
           Stand ${esc(phaseLabel())} · ${esc(localAuthor() || 'ohne Autor')}
         </div>
       </header>
+      <section>
+        <h2>Arbeitsstand und nächster Schritt</h2>
+        <p><strong>${esc(planningSummary.headline)}.</strong> ${esc(planningSummary.status)}</p>
+        <p>${esc(planningSummary.next)}. ${esc(planningSummary.risks)}.</p>
+      </section>
       <section>
         <h2>Anlass und Beschlussvorschlag</h2>
         <p>${esc(committeeProposal(result))}</p>
@@ -4007,6 +4061,13 @@ function renderReport(result, first, spread, decision) {
   const strategyHint = strategy.sampReference
     ? `Referenz: ${esc(strategy.sampReference)}`
     : 'Noch keine Strategie- oder Planreferenz hinterlegt. Mit einer Referenz bleibt sichtbar, worauf das Budget einzahlt.';
+  const planningSummary = buildPlanningResume({
+    phaseLabel: phaseLabel(),
+    resume: processState.resume,
+    maturity,
+    openClarifications: clarifications.filter(item => item.status !== 'closed').length,
+    reviewCount: reviewItems.length
+  });
 
   report.innerHTML = `
     <div class="report-head">
@@ -4025,6 +4086,20 @@ function renderReport(result, first, spread, decision) {
         <div><strong>Entscheidungsreife:</strong> ${maturity.score} % / ${maturity.blockers} Blocker</div>
       </div>
     </div>
+
+    <section class="report-section">
+      <h2>Arbeitsstand und nächster Schritt</h2>
+      <div class="report-summary">
+        <div class="report-box">
+          <strong>${esc(planningSummary.headline)}</strong>
+          <p>${esc(planningSummary.status)}</p>
+        </div>
+        <div class="report-box">
+          <strong>Weiterarbeit</strong>
+          <p>${esc(planningSummary.next)}. ${esc(planningSummary.risks)}.</p>
+        </div>
+      </div>
+    </section>
 
     <section class="report-section">
       <h2>Entscheidungstendenz</h2>
@@ -4661,6 +4736,15 @@ document.getElementById('importFile').addEventListener('change', event => {
 });
 document.getElementById('processPhase').addEventListener('change', event => setProcessPhase(event.target.value));
 document.getElementById('phaseTargetDate').addEventListener('change', event => setPhaseTarget(event.target.value));
+[
+  ['planningStatusNote', 'statusNote'],
+  ['planningNextStep', 'nextStep'],
+  ['planningOwner', 'owner'],
+  ['planningDueDate', 'dueDate']
+].forEach(([id, field]) => {
+  const node = document.getElementById(id);
+  if (node) node.addEventListener('input', event => setPlanningResumeField(field, event.target.value));
+});
 document.getElementById('importApplyIncoming').addEventListener('click', applyPendingImport);
 document.getElementById('importKeepLocal').addEventListener('click', keepLocalImport);
 document.getElementById('importReviewClose').addEventListener('click', closeImportReview);
