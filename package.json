@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "build:release": "npm run build && cp dist/index.html dist/szenarienrechner-eog.html",
+    "build:story": "node scripts/build-story.mjs",
+    "build:release": "npm run build && npm run build:story && cp dist/index.html dist/szenarienrechner-eog.html",
     "lint": "eslint src tests scripts",
     "test": "vitest run",
     "test:distribution": "node scripts/check-distribution.mjs",
