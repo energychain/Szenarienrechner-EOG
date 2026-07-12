@@ -51,6 +51,10 @@ assert(adrDemo.includes('synthetische Demodaten'), 'ADR 0003 must document synth
 
 const dataFormat = readFileSync('DATA_FORMAT.md', 'utf8');
 assert(dataFormat.includes('localStorage'), 'DATA_FORMAT must document localStorage scope.');
+assert(dataFormat.includes('schemaVersion'), 'DATA_FORMAT must document schemaVersion.');
+assert(dataFormat.includes('regulatoryProfileId'), 'DATA_FORMAT must document regulatoryProfileId.');
+assert(dataFormat.includes('## Minimaler Projektumschlag'), 'DATA_FORMAT must document the minimal project envelope.');
+assert(dataFormat.includes('## Migrationsregeln'), 'DATA_FORMAT must document migration handling.');
 assert(dataFormat.includes('synthetisch'), 'DATA_FORMAT must document synthetic demo data.');
 
 console.log('Documentation checks passed.');
