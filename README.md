@@ -50,6 +50,7 @@ Weitere Projektdokumente:
 - `GOVERNANCE.md`: Maintainer-, Review- und Neutralitaetsregeln.
 - `DATA_FORMAT.md`: lokaler Speicher, JSON-Export und Importgrundsaetze.
 - `CHANGELOG.md`: Aenderungshistorie.
+- `docs/adr/`: Architekturentscheidungen.
 
 ## Offline-Verteilung und Verifikation
 
