@@ -258,7 +258,7 @@ const processPhases = [
 
 const roleProfiles = {
   owner: { label: 'Modellverantwortung', view: 'basis', focus: 'management', expert: true },
-  expert: { label: 'Fachexpertise', view: 'results', focus: 'technik', expert: false },
+  expert: { label: 'Fachexpertise', view: 'expertWork', focus: 'technik', expert: false },
   management: { label: 'Management', view: 'results', focus: 'management', expert: false },
   audit: { label: 'Audit', view: 'report', focus: 'controlling', expert: true }
 };
@@ -277,6 +277,8 @@ let strategy = defaultStrategy();
 let currentRole = 'owner';
 let clarificationStatus = {};
 let pendingImportReview = null;
+let basisEditing = false;
+let expertFilter = 'all';
 
 const impactAreaLabels = {
   qElement: 'Q-Element',
@@ -369,11 +371,37 @@ function applyRole(role, persist = true) {
   currentRole = role;
   if (persist) saveRole();
   document.body.dataset.role = role;
+  document.body.classList.toggle('role-readonly', role === 'management' || role === 'audit');
   document.querySelectorAll('[data-role-choice]').forEach(button => {
     button.classList.toggle('active', button.dataset.roleChoice === role);
   });
   document.querySelectorAll('.role-pill').forEach(node => {
     node.textContent = roleProfiles[role].label;
+  });
+  const readonlyPill = document.getElementById('readonlyPill');
+  if (readonlyPill) readonlyPill.classList.toggle('hidden', !(role === 'management' || role === 'audit'));
+}
+
+function isReadOnlyRole() {
+  return currentRole === 'management' || currentRole === 'audit';
+}
+
+function applyReadonlyMode() {
+  const readOnly = isReadOnlyRole();
+  const selectors = [
+    'main input', 'main select', 'main textarea',
+    '#measureEditModal input', '#measureEditModal select', '#measureEditModal textarea',
+    '#meetingTextModal input', '#meetingTextModal textarea'
+  ];
+  document.querySelectorAll(selectors.join(',')).forEach(node => {
+    node.disabled = readOnly;
+  });
+  [
+    'newMeasure', 'toggleAllInCatalog', 'addImpactAssumption', 'addObjective',
+    'openBasisWizard', 'toggleBasisEdit', 'meetingTextSave', 'meetingTextReset'
+  ].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) node.disabled = readOnly;
   });
 }
 
@@ -547,6 +575,49 @@ function objectivePills(measure) {
     : '<span class="pill warn">ohne Ziel</span>';
 }
 
+function renderBasisSummaryCards() {
+  const node = document.getElementById('basisSummaryCards');
+  if (!node) return;
+  const p = currentParams();
+  const objectiveNames = strategy.objectives.map(objective => objective.label).slice(0, 4).join(' · ');
+  const portfolioText = `${fmtPct(num('qDelta'), 2)} Q · ${fmtPct(num('eDelta'), 2)} E · ${fmtPct(num('portfolioAttribution'), 0)} Attribution`;
+  const cards = [
+    {
+      title: 'Basisdaten Sparte',
+      value: `${el.sector.value === 'gas' ? 'Gas' : 'Strom'} · Start ${p.baseYear} · EOG ${fmtTeur(p.baseEog, 0)} · RAB ${fmtTeur(p.rab, 0)}`,
+      meta: `${periodText(p.regulatoryPeriod)} · Kostenbasis ${p.regulatoryPeriod.costBaseYear}`
+    },
+    {
+      title: 'Strategische Ziele',
+      value: strategy.sampReference || 'Keine Strategie-/Planreferenz hinterlegt',
+      meta: objectiveNames || 'Noch keine Ziele gepflegt'
+    },
+    {
+      title: 'Szenario',
+      value: `${scenarioLabel(scenario)} · Horizont ${p.horizon} Jahre · Diskontsatz ${fmtPct(p.discountRate * 100, 1)}`,
+      meta: `KANU-Ziel ${p.kanuEndYear} · Zuschlag/Steuern ${fmtPct(p.taxFactor * 100, 1)}`
+    },
+    {
+      title: 'Portfolio-Wirkung',
+      value: portfolioText,
+      meta: 'Globale Q-/E-Wirkung wird über Attribution auf Maßnahmen verteilt'
+    }
+  ];
+  node.innerHTML = cards.map(card => `
+    <article class="summary-card">
+      <div>
+        <h3>${esc(card.title)}</h3>
+        <p class="summary-value">${esc(card.value)}</p>
+        <p class="summary-meta">${esc(card.meta)}</p>
+      </div>
+      <button type="button" data-action="editBasis" aria-label="${esc(card.title)} bearbeiten">✎</button>
+    </article>
+  `).join('');
+  document.body.classList.toggle('basis-editing', basisEditing);
+  const toggle = document.getElementById('toggleBasisEdit');
+  if (toggle) toggle.textContent = basisEditing ? 'Bearbeiten ausblenden' : 'Bearbeiten einblenden';
+}
+
 function allImpactAssumptions(filterActive = false) {
   return measures
     .filter(measure => !filterActive || measure.active)
@@ -556,6 +627,48 @@ function allImpactAssumptions(filterActive = false) {
 function reviewRequiredImpacts(filterActive = false) {
   return allImpactAssumptions(filterActive)
     .filter(item => item.confidence === 'review' || item.governance === 'sensitivity');
+}
+
+function impactWorkArea(impact) {
+  if (impact.area === 'risk' || impact.area === 'qElement') return 'technik';
+  if (impact.area === 'costBase' || impact.area === 'portfolio') return 'vnb';
+  return 'controlling';
+}
+
+function renderExpertWorkList() {
+  const node = document.getElementById('expertWorkList');
+  if (!node) return;
+  const impactItems = reviewRequiredImpacts(true).map(item => ({
+    key: item.measure.id + ':' + item.id,
+    measureId: item.measure.id,
+    title: item.title,
+    measure: item.measure.name,
+    area: impactWorkArea(item),
+    detail: `${impactAreaLabel(item.area)} · ${confidenceLabels[item.confidence]} · ${impactGovernanceLabel(item.governance)}${item.note ? ' · ' + item.note : ''}`,
+    type: 'impact'
+  }));
+  const clarificationWork = clarificationItems().map(item => ({
+    ...item,
+    area: item.area === 'Risiko' || item.area === 'Q-Element' ? 'technik' : item.area === 'Portfolio' || item.area === 'Kostenbasis' ? 'vnb' : 'controlling',
+    type: 'clarification'
+  }));
+  const items = [...impactItems, ...clarificationWork]
+    .filter(item => expertFilter === 'all' || item.area === expertFilter);
+  node.innerHTML = items.length
+    ? items.map(item => `
+      <article class="clarification-item ${item.status === 'closed' ? 'closed' : ''}">
+        <div>
+          <strong>${esc(item.measure)}: ${esc(item.title)}</strong>
+          <div class="clarification-meta">${esc(item.area)} · ${item.type === 'impact' ? 'Wirkannahme prüfen' : 'Klärpunkt'}</div>
+          <p class="hint">${esc(item.detail)}</p>
+        </div>
+        <div class="row-actions">
+          <button type="button" data-action="openWorkItem" data-measure-id="${esc(item.measureId || '')}">Öffnen</button>
+          ${item.type === 'clarification' ? `<button type="button" data-action="toggleClarification" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Wieder öffnen' : 'Klären'}</button>` : ''}
+        </div>
+      </article>
+    `).join('')
+    : '<div class="empty-state"><div class="empty-icon">✓</div><strong>Alles geklärt</strong><p>Für den gewählten Bereich liegen keine offenen prüfpflichtigen Punkte vor.</p></div>';
 }
 
 function impactCounts(measure) {
@@ -632,8 +745,23 @@ function maturityScore() {
   };
 }
 
+function maturityRingHtml(score, blockers, size = 58) {
+  const radius = 22;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - Math.max(0, Math.min(100, score)) / 100);
+  return `
+    <svg class="maturity-ring" viewBox="0 0 64 64" width="${size}" height="${size}" role="img" aria-label="Entscheidungsreife ${score} Prozent">
+      <circle class="ring-bg" cx="32" cy="32" r="${radius}"></circle>
+      <circle class="ring-value" cx="32" cy="32" r="${radius}" stroke-dasharray="${circumference.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"></circle>
+      <text x="32" y="35" text-anchor="middle">${score}</text>
+      ${blockers ? `<circle class="ring-blocker" cx="49" cy="15" r="5"></circle>` : ''}
+    </svg>
+  `;
+}
+
 function renderProcessUx() {
   const phase = phaseLabel();
+  const currentIndex = processPhases.findIndex(([id]) => id === processState.phase);
   const clarifications = clarificationItems();
   const openCount = clarifications.filter(item => item.status !== 'closed').length;
   const reviewCount = reviewRequiredImpacts(true).length;
@@ -645,6 +773,16 @@ function renderProcessUx() {
   const banner = document.getElementById('processBanner');
   if (banner) {
     banner.textContent = `KW ${isoWeek(new Date())} - ${phase}. ${reviewCount} Wirkannahmen prüfpflichtig, ${openCount} Klärpunkte offen${target ? `, Zieltermin Entscheidungsvorlage: ${formatDateShort(target)}` : ''}.`;
+  }
+  const phasePill = document.getElementById('phasePillLabel');
+  if (phasePill) phasePill.textContent = target ? `${phase} · Ziel ${formatDateShort(target)}` : phase;
+  const stepper = document.getElementById('phaseStepper');
+  if (stepper) {
+    stepper.innerHTML = processPhases.map(([, label], index) => `
+      <span class="${index < currentIndex ? 'done' : index === currentIndex ? 'current' : ''}" title="${esc(label)}">
+        <i></i><b>${esc(label)}</b>
+      </span>
+    `).join('');
   }
   const counter = document.getElementById('clarificationCounter');
   if (counter) counter.textContent = openCount ? `${openCount} Klärpunkte offen` : 'Keine offenen Klärpunkte';
@@ -669,19 +807,59 @@ function metricsForModel(model) {
     const p = engineParams(model.inputs || {});
     const result = calcPortfolio({ measures: model.measures || [] }, engineScenarioParams(p, model.scenario || 'basis'));
     const first = result.yearly[0] || { eog: 0 };
+    const impacts = (model.measures || []).filter(measure => measure.active).flatMap(measure => impactAssumptionsFor(measure));
+    const reviewCount = impacts.filter(impact => impact.confidence === 'review' || impact.governance === 'sensitivity').length;
+    const maturity = Math.max(0, Math.min(100, 40 + (result.activeMeasures.length ? 20 : 0) + (impacts.length ? Math.round((impacts.length - reviewCount) / impacts.length * 30) : 0)));
     return {
       irr: result.irr,
       npv: result.npv,
       eog: first.eog,
+      verdict: decisionFor(result).title,
+      maturity,
       activeMeasures: result.activeMeasures.length
     };
   } catch (_error) {
-    return { irr: NaN, npv: NaN, eog: NaN, activeMeasures: 0 };
+    return { irr: NaN, npv: NaN, eog: NaN, verdict: '-', maturity: NaN, activeMeasures: 0 };
   }
 }
 
 function metricSummary(metrics) {
   return `IRR ${Number.isFinite(metrics.irr) ? fmtPct(metrics.irr * 100, 1) : '-'}, Kapitalwert ${Number.isFinite(metrics.npv) ? fmtTeur(metrics.npv, 1) : '-'}, Jahr-1-EOG ${Number.isFinite(metrics.eog) ? fmtTeur(metrics.eog, 1) : '-'}`;
+}
+
+function metricDeltaCell(localMetrics, incomingMetrics, key, formatter) {
+  const localValue = localMetrics[key];
+  const incomingValue = incomingMetrics[key];
+  const delta = Number.isFinite(localValue) && Number.isFinite(incomingValue) ? incomingValue - localValue : NaN;
+  const arrow = Number.isFinite(delta) && Math.abs(delta) > 0.000001 ? delta > 0 ? '↑' : '↓' : '→';
+  return `<td>${formatter(localValue)}</td><td>${formatter(incomingValue)}</td><td class="${delta > 0 ? 'up' : delta < 0 ? 'down' : ''}">${arrow} ${Number.isFinite(delta) ? formatter(Math.abs(delta)) : '-'}</td>`;
+}
+
+function exportSnapshotLabel(author) {
+  return `Stand wie versendet · ${new Date().toLocaleString('de-DE')} · ${author}`;
+}
+
+function createExportSnapshot() {
+  const author = ensureAuthor();
+  const timestamp = new Date().toISOString();
+  history = appendHistoryEvents(history, [{
+    type: 'modelExported',
+    subject: { scope: 'model' },
+    field: 'export',
+    oldValue: null,
+    newValue: timestamp,
+    note: 'Snapshot beim JSON-Export erzeugt.'
+  }], author);
+  history.snapshots = [...(history.snapshots || []), {
+    id: 'snap_export_' + Date.now().toString(36),
+    eventId: history.headId,
+    label: exportSnapshotLabel(author),
+    author,
+    timestamp,
+    phase: processState.phase
+  }];
+  previousModelForHistory = currentModelData();
+  saveToBrowser(true);
 }
 
 function renderEventList(events, emptyText = 'Keine neuen Ereignisse.') {
@@ -711,9 +889,17 @@ function renderMaturityAndClarifications() {
   const maturityNode = document.getElementById('maturityPanel');
   if (maturityNode) {
     maturityNode.innerHTML = `
-      <div><strong>${maturity.score} % Entscheidungsreife</strong> · ${maturity.blockers} Blocker · ${maturity.reviewCount} prüfpflichtige Wirkannahmen</div>
-      <div class="maturity-bar" aria-label="Entscheidungsreife"><span style="width:${maturity.score}%"></span></div>
-      <p class="hint">Bewertet werden Stammdaten, aktive Maßnahmen, belegte Wirkannahmen, offene Klärpunkte und Stabilität der Entscheidungstendenz über alle Szenarien.</p>
+      <div class="maturity-layout">
+        ${maturityRingHtml(maturity.score, maturity.blockers, 96)}
+        <div>
+          <strong>${maturity.score} % Entscheidungsreife</strong> · ${maturity.blockers} Blocker · ${maturity.reviewCount} prüfpflichtige Wirkannahmen
+          <ul>
+            <li>${maturity.reviewCount} Annahmen prüfpflichtig</li>
+            <li>${maturity.openClarifications.length} Klärpunkte offen</li>
+            <li>${maturity.verdictStable ? 'Entscheidungstendenz stabil' : 'Entscheidungstendenz je Szenario unterschiedlich'}</li>
+          </ul>
+        </div>
+      </div>
     `;
   }
   const listNode = document.getElementById('clarificationList');
@@ -748,10 +934,19 @@ function showImportReview(review) {
   body.innerHTML = `
     <p><strong>${relationText}</strong></p>
     <p>Import von ${esc(incomingLatest?.author || 'unbekannt')} · ${incomingLatest ? new Date(incomingLatest.timestamp).toLocaleString('de-DE') : 'ohne Zeitstempel'}</p>
-    <div class="report-summary">
-      <div class="report-box"><strong>Lokal</strong><p>${esc(metricSummary(localMetrics))}</p></div>
-      <div class="report-box"><strong>Import</strong><p>${esc(metricSummary(incomingMetrics))}</p></div>
+    <div class="table-wrap">
+      <table class="delta-table">
+        <thead><tr><th>KPI</th><th>Lokal</th><th>Import</th><th>Delta</th></tr></thead>
+        <tbody>
+          <tr><td>Verdict</td><td>${esc(localMetrics.verdict)}</td><td>${esc(incomingMetrics.verdict)}</td><td>${localMetrics.verdict === incomingMetrics.verdict ? '→ unverändert' : '→ geändert'}</td></tr>
+          <tr><td>IRR</td>${metricDeltaCell(localMetrics, incomingMetrics, 'irr', value => Number.isFinite(value) ? fmtPct(value * 100, 1) : '-')}</tr>
+          <tr><td>Kapitalwert</td>${metricDeltaCell(localMetrics, incomingMetrics, 'npv', value => Number.isFinite(value) ? fmtTeur(value, 1) : '-')}</tr>
+          <tr><td>Jahr-1-EOG</td>${metricDeltaCell(localMetrics, incomingMetrics, 'eog', value => Number.isFinite(value) ? fmtTeur(value, 1) : '-')}</tr>
+          <tr><td>Entscheidungsreife</td>${metricDeltaCell(localMetrics, incomingMetrics, 'maturity', value => Number.isFinite(value) ? `${Math.round(value)} %` : '-')}</tr>
+        </tbody>
+      </table>
     </div>
+    <p class="hint">Kurzfassung lokal: ${esc(metricSummary(localMetrics))}. Kurzfassung Import: ${esc(metricSummary(incomingMetrics))}.</p>
     <h3>Neue Ereignisse im Import</h3>
     ${renderEventList(review.comparison.incomingAfterCommon)}
     ${review.comparison.localAfterCommon.length ? `<h3>Lokale Ereignisse seit gemeinsamem Stand</h3>${renderEventList(review.comparison.localAfterCommon)}` : ''}
@@ -971,7 +1166,7 @@ function applyModelState(state) {
     ? model.selectedId
     : measures[0]?.id;
   scenario = ['basis', 'konservativ', 'wert'].includes(model.scenario) ? model.scenario : 'basis';
-  activeView = ['basis', 'measures', 'results', 'report'].includes(model.activeView) ? model.activeView : activeView;
+  activeView = ['basis', 'measures', 'results', 'report', 'expertWork'].includes(model.activeView) ? model.activeView : activeView;
   meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(model.meetingFocus) ? model.meetingFocus : 'management';
   meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
     ? structuredClone(model.meetingTextOverrides)
@@ -1069,6 +1264,7 @@ function setExpertMode(enabled, persist = true) {
 }
 
 function exportModel() {
+  createExportSnapshot();
   const state = collectModelState();
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1452,7 +1648,7 @@ function renderStickyKpis(result, first, decision) {
   document.getElementById('stickyEog').textContent = fmtTeur(snapshot.eog, 1);
   document.getElementById('stickyIrr').textContent = Number.isFinite(snapshot.irr) ? fmtPct(snapshot.irr * 100, 1) : '-';
   document.getElementById('stickyNpv').textContent = fmtTeur(snapshot.npv, 1);
-  document.getElementById('stickyMaturity').textContent = `${maturity.score} %`;
+  document.getElementById('stickyMaturity').innerHTML = maturityRingHtml(maturity.score, maturity.blockers, 44);
   document.getElementById('stickyMaturityDelta').textContent = `${maturity.blockers} Blocker`;
   document.getElementById('stickyMaturityTile').className = 'sticky-kpi ' + (maturity.blockers === 0 && maturity.score >= 75 ? 'good' : maturity.score >= 50 ? 'warn' : 'bad');
 
@@ -1584,7 +1780,13 @@ function renderMeasures() {
   if (!measures.length) {
     document.getElementById('measureBody').innerHTML = `
       <tr>
-        <td colspan="9">Noch keine Maßnahme angelegt. Lege eine neue Maßnahme geführt an oder lade Demodaten.</td>
+        <td colspan="9">
+          <div class="empty-state compact">
+            <span aria-hidden="true">+</span>
+            <strong>Noch keine Maßnahme angelegt.</strong>
+            <small>Lege eine Maßnahme geführt an oder lade Demodaten.</small>
+          </div>
+        </td>
       </tr>
     `;
     return;
@@ -1600,7 +1802,7 @@ function renderMeasures() {
         <td><div class="pill-row compact">${objectivePills(measure)}</div></td>
         <td>${fmtTeur(measure.cost)}</td>
         <td>${fmtPct(result.activeShare * 100, 0)}</td>
-        <td>${counts.total ? `${counts.total} (${counts.review} prüf.)` : '-'}</td>
+        <td><span class="inline-visual">${measureRiskMiniHtml(measure)}${counts.total ? `${counts.total} (${counts.review} prüf.)` : '-'}</span></td>
         <td>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</td>
         <td><span class="note-indicator ${String(measure.note || '').trim() ? '' : 'empty'}" title="${String(measure.note || '').trim() ? esc(measure.note) : 'Keine Notiz'}">i</span></td>
       </tr>
@@ -1614,6 +1816,7 @@ function selectedMeasure() {
 
 function setView(view) {
   activeView = view;
+  document.body.dataset.view = view;
   document.querySelectorAll('.view-tab').forEach(button => {
     button.classList.toggle('active', button.dataset.view === view);
   });
@@ -2075,14 +2278,95 @@ function riskMatrixHtml(impact) {
   const beforeCol = riskBand(impact.riskProbabilityBefore, [3, 10]);
   const afterCol = riskBand(impact.riskProbabilityAfter, [3, 10]);
   const row = riskBand(impact.riskImpact, [250, 750]);
+  const probabilityMid = [1.5, 6.5, 18];
+  const impactMid = [125, 500, 1000];
+  const colors = [
+    ['#dcefe6', '#f1e8b8', '#f0cfb4'],
+    ['#c8e6d6', '#ead985', '#e7a982'],
+    ['#afd8c5', '#dfbd58', '#d97b68']
+  ];
   return `
-    <div class="risk-matrix" aria-label="Risikomatrix vorher nachher">
-      ${[2, 1, 0].map(y => [0, 1, 2].map(x => {
-        const before = x === beforeCol && y === row;
-        const after = x === afterCol && y === row;
-        return `<span class="${before ? 'before' : ''} ${after ? 'after' : ''}">${before ? 'vor' : after ? 'nach' : ''}</span>`;
+    <svg class="risk-matrix-svg" viewBox="0 0 132 112" role="img" aria-label="Risikomatrix vorher nachher">
+      <text x="6" y="12">Schaden</text>
+      <text x="54" y="108">Wahrscheinlichkeit</text>
+      ${[2, 1, 0].map((y, rowIndex) => [0, 1, 2].map(x => {
+        const px = 28 + x * 30;
+        const py = 18 + rowIndex * 26;
+        const impactIndex = y;
+        return `<rect x="${px}" y="${py}" width="28" height="24" rx="4" fill="${colors[impactIndex][x]}" data-risk-cell="true" data-risk-probability="${probabilityMid[x]}" data-risk-impact="${impactMid[impactIndex]}" data-impact-id="${esc(impact.id)}"></rect>`;
       }).join('')).join('')}
+      <line x1="${42 + beforeCol * 30}" y1="${30 + (2 - row) * 26}" x2="${42 + afterCol * 30}" y2="${30 + (2 - row) * 26}" stroke="#40505f" stroke-width="1.5" marker-end="url(#arrow-${esc(impact.id)})"></line>
+      <defs><marker id="arrow-${esc(impact.id)}" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#40505f"></path></marker></defs>
+      <circle cx="${42 + beforeCol * 30}" cy="${30 + (2 - row) * 26}" r="5" fill="#16202a"></circle>
+      <circle cx="${42 + afterCol * 30}" cy="${30 + (2 - row) * 26}" r="6" fill="none" stroke="#16202a" stroke-width="2"></circle>
+    </svg>
+  `;
+}
+
+function riskMatrixMiniHtml(impact) {
+  if (!impact || impact.area !== 'risk' || impact.legacyFlat) return '';
+  const beforeCol = riskBand(impact.riskProbabilityBefore, [3, 10]);
+  const afterCol = riskBand(impact.riskProbabilityAfter, [3, 10]);
+  const row = riskBand(impact.riskImpact, [250, 750]);
+  const colors = [
+    ['#dcefe6', '#f1e8b8', '#f0cfb4'],
+    ['#c8e6d6', '#ead985', '#e7a982'],
+    ['#afd8c5', '#dfbd58', '#d97b68']
+  ];
+  return `
+    <svg class="risk-mini" viewBox="0 0 30 30" role="img" aria-label="Risiko vorher nachher">
+      ${[2, 1, 0].map((y, rowIndex) => [0, 1, 2].map(x => `<rect x="${x * 10}" y="${rowIndex * 10}" width="9" height="9" rx="1.5" fill="${colors[y][x]}"></rect>`).join('')).join('')}
+      <circle cx="${beforeCol * 10 + 4.5}" cy="${(2 - row) * 10 + 4.5}" r="2.6" fill="#16202a"></circle>
+      <circle cx="${afterCol * 10 + 4.5}" cy="${(2 - row) * 10 + 4.5}" r="3.2" fill="none" stroke="#16202a" stroke-width="1.4"></circle>
+    </svg>
+  `;
+}
+
+function measureRiskMiniHtml(measure) {
+  const riskImpact = (measure.impactAssumptions || []).find(impact => impact.area === 'risk');
+  return riskImpact ? riskMatrixMiniHtml(riskImpact) : '';
+}
+
+function phaseStepperHtml() {
+  const currentIndex = processPhases.findIndex(([id]) => id === processState.phase);
+  return `
+    <div class="phase-stepper report-stepper">
+      ${processPhases.map(([, label], index) => `
+        <span class="${index < currentIndex ? 'done' : index === currentIndex ? 'current' : ''}" title="${esc(label)}">
+          <i></i><b>${esc(label)}</b>
+        </span>
+      `).join('')}
     </div>
+  `;
+}
+
+function lifecycleTimelineHtml(measure, params) {
+  if (!measure) return '';
+  const width = 720;
+  const height = 86;
+  const start = Math.min(params.baseYear, Number(measure.year) || params.baseYear);
+  const end = params.baseYear + params.horizon - 1;
+  const span = Math.max(1, end - start);
+  const xForYear = year => 42 + (Math.max(start, Math.min(end, Number(year) || start)) - start) / span * (width - 84);
+  const inService = Number(measure.year) || params.baseYear;
+  const lifeEnd = inService + Math.max(1, Number(measure.life) || 1);
+  const reinvestYear = Number(measure.reinvestCost || 0) > 0 ? lifeEnd : null;
+  const decommissionYear = measure.decommissionYear || (params.sector === 'gas' ? params.kanuEndYear : lifeEnd);
+  const kanuYear = params.sector === 'gas' ? params.kanuEndYear : null;
+  const markers = [
+    [inService, 'Inbetriebnahme', '#006f8f'],
+    [reinvestYear, 'Reinvestition', '#8a6a32'],
+    [decommissionYear, 'Rückbau', '#9a5a4d']
+  ].filter(([year]) => year && year >= start && year <= end);
+  return `
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="86" role="img" aria-label="Lebenszyklus von ${esc(measure.name)}">
+      <line x1="42" y1="44" x2="${width - 42}" y2="44" stroke="#d9e0e8" stroke-width="4" stroke-linecap="round"></line>
+      <rect x="${xForYear(inService)}" y="38" width="${Math.max(8, xForYear(Math.min(end, lifeEnd)) - xForYear(inService))}" height="12" rx="6" fill="#d9eaf0"></rect>
+      ${kanuYear && kanuYear >= start && kanuYear <= end ? `<line x1="${xForYear(kanuYear)}" y1="17" x2="${xForYear(kanuYear)}" y2="68" stroke="#a96500" stroke-dasharray="4 4"></line><text x="${xForYear(kanuYear)}" y="14" text-anchor="middle">KANU</text>` : ''}
+      ${markers.map(([year, label, color]) => `<g><line x1="${xForYear(year)}" y1="28" x2="${xForYear(year)}" y2="60" stroke="${color}" stroke-width="2"></line><circle cx="${xForYear(year)}" cy="44" r="5" fill="${color}"></circle><text x="${xForYear(year)}" y="76" text-anchor="middle">${esc(label)}</text></g>`).join('')}
+      <text x="42" y="26" text-anchor="middle">${start}</text>
+      <text x="${width - 42}" y="26" text-anchor="middle">${end}</text>
+    </svg>
   `;
 }
 
@@ -2253,6 +2537,8 @@ function renderDetail() {
 	          validationNode.innerHTML = '';
 	        }
         renderImpactAssumptions({ impactAssumptions: [] });
+        const timeline = document.getElementById('lifecycleTimeline');
+        if (timeline) timeline.innerHTML = '';
 	        return;
 	      }
   el.mName.value = measure.name;
@@ -2288,6 +2574,8 @@ function renderDetail() {
 	      document.getElementById('selectedPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
 	      renderMeasureValidation(measure);
       renderImpactAssumptions(measure);
+      const timeline = document.getElementById('lifecycleTimeline');
+      if (timeline) timeline.innerHTML = lifecycleTimelineHtml(measure, p);
 	    }
 
 function renderChart(yearly) {
@@ -2407,6 +2695,39 @@ function strategyContributionRows(result) {
   return objectiveRows + unassignedRow;
 }
 
+function strategyContributionBars(result) {
+  const maxInvest = Math.max(1, ...strategy.objectives.map(objective => {
+    return result.results
+      .filter(item => (item.measure.objectiveIds || []).includes(objective.id))
+      .reduce((sum, item) => sum + Number(item.measure.cost || 0), 0);
+  }));
+  const maxEog = Math.max(1, ...strategy.objectives.map(objective => {
+    return result.results
+      .filter(item => (item.measure.objectiveIds || []).includes(objective.id))
+      .reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0);
+  }));
+  if (!strategy.objectives.length) {
+    return '<div class="empty-state"><span aria-hidden="true">◎</span><strong>Noch keine strategischen Ziele hinterlegt.</strong><small>Mit Zielen wird sichtbar, worauf das Budget einzahlt.</small></div>';
+  }
+  return `
+    <div class="goal-bars" aria-label="Zielbeitrag als Balken">
+      ${strategy.objectives.map(objective => {
+        const matching = result.results.filter(item => (item.measure.objectiveIds || []).includes(objective.id));
+        const invest = matching.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0);
+        const eog = matching.reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0);
+        const investWidth = Math.round(invest / maxInvest * 100);
+        const markerLeft = Math.min(100, Math.round(eog / maxEog * 100));
+        return `
+          <div class="goal-bar">
+            <div><strong>${esc(objective.label)}</strong><small>${fmtTeur(invest, 1)} Invest · ${fmtTeur(eog, 1)} EOG Jahr 1</small></div>
+            <div class="goal-track"><span style="width:${investWidth}%"></span><i style="left:${markerLeft}%"></i></div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 function complianceOverviewRows(result) {
   const activeImpacts = allImpactAssumptions(true);
   const lccMeasures = result.activeMeasures.filter(measure =>
@@ -2435,6 +2756,27 @@ function complianceOverviewRows(result) {
       <td>${esc(evidence)}</td>
     </tr>
   `).join('');
+}
+
+function valueLabel(value) {
+  if (value === null || value === undefined || value === '') return '-';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+function eventJournalRows() {
+  const events = [...(history.events || [])].reverse();
+  return events.length
+    ? events.map(event => `
+      <tr>
+        <td>${new Date(event.timestamp).toLocaleString('de-DE')}</td>
+        <td>${esc(event.author || '-')}</td>
+        <td>${esc(event.type || '-')}</td>
+        <td>${esc(event.field || '-')}</td>
+        <td>${esc(valueLabel(event.oldValue))} → ${esc(valueLabel(event.newValue))}</td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="5">Noch keine Ereignisse im Journal.</td></tr>';
 }
 
 function renderReport(result, first, spread, decision) {
@@ -2471,7 +2813,7 @@ function renderReport(result, first, spread, decision) {
   const impactRows = allImpactAssumptions(true).map(item => `
     <tr>
       <td>${esc(item.measure.name)}</td>
-      <td>${impactAreaLabel(item.area)}</td>
+      <td><span class="inline-visual">${riskMatrixMiniHtml(item)}${impactAreaLabel(item.area)}</span></td>
       <td>${esc(item.title)}</td>
       <td>${fmtTeur(item.amount * item.attribution, 1)}</td>
       <td>${confidenceLabels[item.confidence]}</td>
@@ -2515,6 +2857,7 @@ function renderReport(result, first, spread, decision) {
     ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} entsteht im Startjahr ein EOG-Zusatz von ${fmtTeur(first.eog, 1)} in ${periodDetailText(result.p.regulatoryPeriod)}. Der Portfolio-IRR beträgt ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
     : 'Es ist keine aktive Maßnahme ausgewählt. Der Report dokumentiert daher noch keinen belastbaren Business Case.';
   const strategyRows = strategyContributionRows(result) || '<tr><td colspan="5">Noch keine strategischen Ziele hinterlegt.</td></tr>';
+  const strategyBars = strategyContributionBars(result);
   const strategyHint = strategy.sampReference
     ? `Referenz: ${esc(strategy.sampReference)}`
     : 'Noch keine Strategie- oder Planreferenz hinterlegt. Mit einer Referenz bleibt sichtbar, worauf das Budget einzahlt.';
@@ -2585,6 +2928,7 @@ function renderReport(result, first, spread, decision) {
     <section class="report-section">
       <h2>Beitrag zu strategischen Zielen</h2>
       <p class="hint">${strategyHint}</p>
+      ${strategyBars}
       <div class="table-wrap">
         <table>
           <thead><tr><th>Ziel</th><th>Investition</th><th>EOG-Zusatz Jahr 1</th><th>Risikoreduktion p.a.</th><th>Maßnahmen</th></tr></thead>
@@ -2612,6 +2956,7 @@ function renderReport(result, first, spread, decision) {
     <section class="report-section">
       <h2>Klärpunkte und Prozessstand</h2>
       <p class="hint">Ein finaler Entscheidungsreport sollte offene Blocker schließen oder als Restunsicherheit zeichnen.</p>
+      ${phaseStepperHtml()}
       <div class="table-wrap">
         <table>
           <thead><tr><th>Maßnahme</th><th>Klärpunkt</th><th>Bereich</th><th>Zielphase</th><th>Status</th></tr></thead>
@@ -2628,6 +2973,18 @@ function renderReport(result, first, spread, decision) {
           <tbody>${snapshotRows}</tbody>
         </table>
       </div>
+    </section>
+
+    <section class="report-section">
+      <details>
+        <summary>Event-Journal für Audit-Sicht</summary>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Zeit</th><th>Autor</th><th>Ereignis</th><th>Feld</th><th>Alt → Neu</th></tr></thead>
+            <tbody>${eventJournalRows()}</tbody>
+          </table>
+        </div>
+      </details>
     </section>
 
     <section class="report-section">
@@ -2699,8 +3056,10 @@ function renderAll(persist = true) {
   syncSectorDefaults();
   renderGlobalValidation();
   renderScenarioDiff();
+  renderBasisSummaryCards();
   renderStrategyEditor();
   renderMeasures();
+  renderExpertWorkList();
   renderDetail();
   renderPortfolio();
   renderProcessUx();
@@ -2708,6 +3067,7 @@ function renderAll(persist = true) {
   renderMaturityAndClarifications();
   updateActionLabels();
   updateFlowStatus();
+  applyReadonlyMode();
   if (persist) saveToBrowser(true);
 }
 
@@ -2828,6 +3188,10 @@ document.querySelectorAll('[data-role-choice]').forEach(button => {
   });
 });
 
+document.getElementById('dismissProcessNotice').addEventListener('click', () => {
+  document.getElementById('processNotice')?.classList.add('hidden');
+});
+
 document.addEventListener('click', event => {
   if (!event.target.closest('.info-dot') && !event.target.closest('#fieldHelpPopover')) hideFieldHelp();
 });
@@ -2874,6 +3238,10 @@ document.getElementById('measureBody').addEventListener('click', event => {
     openMeasureEditModal();
     return;
   }
+  if (isReadOnlyRole()) {
+    event.target.checked = measure.active;
+    return;
+  }
   if (action === 'active') measure.active = event.target.checked;
   renderAll();
 });
@@ -2893,15 +3261,35 @@ document.getElementById('measureEditModal').addEventListener('click', event => {
   if (event.target.id === 'measureEditModal') closeMeasureEditModal();
 });
 document.getElementById('addImpactAssumption').addEventListener('click', addImpactAssumption);
-document.getElementById('impactAssumptions').addEventListener('change', updateImpactAssumption);
+document.getElementById('impactAssumptions').addEventListener('change', event => {
+  if (isReadOnlyRole()) return;
+  updateImpactAssumption(event);
+});
 document.getElementById('impactAssumptions').addEventListener('click', event => {
+  if (isReadOnlyRole()) return;
   const button = event.target.closest('[data-action="removeImpact"]');
   if (button) {
     removeImpactAssumption(button.dataset.impactId);
     return;
   }
   const convertButton = event.target.closest('[data-action="convertRisk"]');
-  if (convertButton) convertRiskAssumption(convertButton.dataset.impactId);
+  if (convertButton) {
+    convertRiskAssumption(convertButton.dataset.impactId);
+    return;
+  }
+  const riskCell = event.target.closest('[data-risk-cell]');
+  if (riskCell) {
+    const measure = selectedMeasure();
+    const impact = (measure?.impactAssumptions || []).find(item => String(item.id) === riskCell.dataset.impactId);
+    if (!impact) return;
+    impact.area = 'risk';
+    impact.legacyFlat = false;
+    impact.riskProbabilityBefore = Number(riskCell.dataset.riskProbability);
+    impact.riskProbabilityAfter = Math.max(0, Math.round(impact.riskProbabilityBefore / 2 * 10) / 10);
+    impact.riskImpact = Number(riskCell.dataset.riskImpact);
+    impact.amount = riskExpectedValue({ ...impact, area: 'risk', legacyFlat: false });
+    renderAll();
+  }
 });
 document.getElementById('meetingTextCancel').addEventListener('click', closeMeetingTextModal);
 document.getElementById('meetingTextSave').addEventListener('click', saveMeetingTextModal);
@@ -2910,6 +3298,35 @@ document.getElementById('meetingTextModal').addEventListener('click', event => {
   if (event.target.id === 'meetingTextModal') closeMeetingTextModal();
 });
 document.getElementById('openBasisWizard').addEventListener('click', openBasisWizard);
+document.getElementById('toggleBasisEdit').addEventListener('click', () => {
+  if (isReadOnlyRole()) return;
+  basisEditing = !basisEditing;
+  renderAll();
+});
+document.getElementById('basisSummaryCards').addEventListener('click', event => {
+  const button = event.target.closest('[data-action="editBasis"]');
+  if (!button || isReadOnlyRole()) return;
+  basisEditing = true;
+  renderAll();
+});
+document.getElementById('expertWorkList').addEventListener('click', event => {
+  const openButton = event.target.closest('[data-action="openWorkItem"]');
+  if (openButton?.dataset.measureId) {
+    selectedId = openButton.dataset.measureId;
+    setView('measures');
+    renderAll();
+    openMeasureEditModal();
+  }
+  const clarifyButton = event.target.closest('[data-action="toggleClarification"]');
+  if (clarifyButton) toggleClarification(clarifyButton.dataset.clarificationKey);
+});
+document.querySelectorAll('.expert-filter').forEach(button => {
+  button.addEventListener('click', () => {
+    expertFilter = button.dataset.expertFilter;
+    document.querySelectorAll('.expert-filter').forEach(item => item.classList.toggle('active', item === button));
+    renderExpertWorkList();
+  });
+});
 document.getElementById('newMeasure').addEventListener('click', openMeasureWizard);
 document.getElementById('exportModel').addEventListener('click', exportModel);
 document.getElementById('expertModeToggle').addEventListener('change', event => {

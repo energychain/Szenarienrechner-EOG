@@ -11,8 +11,38 @@
   <header>
     <div class="header-inner">
       <div class="header-copy">
-        <h1>Szenario-Rechner regulierte Sparten</h1>
-        <p>Portfolio-App für regulierte Sparten: Basisdaten der Sparte, geplante Maßnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.</p>
+        <h1 title="Portfolio-App für regulierte Sparten: Basisdaten der Sparte, geplante Maßnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.">Szenario-Rechner regulierte Sparten</h1>
+        <div class="header-context" aria-label="Rolle und Prozessphase">
+          <details class="compact-popover role-popover">
+            <summary>Rolle: <span class="role-pill">Modellverantwortung</span></summary>
+            <div class="compact-popover-body role-selector compact" aria-label="Rollenwahl">
+              <button type="button" data-role-choice="owner" class="active"><strong>Modellverantwortung</strong><span>voll bearbeiten</span></button>
+              <button type="button" data-role-choice="expert"><strong>Fachexpertise</strong><span>offene Punkte prüfen</span></button>
+              <button type="button" data-role-choice="management"><strong>Management</strong><span>lesen</span></button>
+              <button type="button" data-role-choice="audit"><strong>Audit</strong><span>Historie und Report</span></button>
+            </div>
+          </details>
+          <details class="compact-popover phase-popover">
+            <summary>Phase: <span id="phasePillLabel">Maßnahmenbewertung</span></summary>
+            <div class="compact-popover-body">
+              <div id="phaseStepper" class="phase-stepper" aria-label="Phasenfortschritt"></div>
+              <div class="process-controls">
+                <label for="processPhase">Phase</label>
+                <select id="processPhase">
+                  <option value="initialisierung">Initialisierung</option>
+                  <option value="datenerhebung">Datenerhebung</option>
+                  <option value="massnahmenbewertung">Maßnahmenbewertung</option>
+                  <option value="konsolidierung">Konsolidierung</option>
+                  <option value="entscheidungsvorlage">Entscheidungsvorlage</option>
+                  <option value="archiv">Beschluss/Archiv</option>
+                </select>
+                <label for="phaseTargetDate">Ziel Entscheidung</label>
+                <input id="phaseTargetDate" type="date">
+              </div>
+            </div>
+          </details>
+          <span id="readonlyPill" class="readonly-pill hidden">Lesemodus</span>
+        </div>
       </div>
       <div class="header-actions" aria-label="Globale Modellaktionen">
         <div class="global-actions">
@@ -66,24 +96,12 @@
     </div>
   </section>
 
-  <section class="process-strip" aria-label="Prozessstand">
+  <section id="processNotice" class="process-notice" aria-label="Prozesshinweis">
     <div>
       <strong id="processBanner">KW - Maßnahmenbewertung.</strong>
-      <span>Rolle: <span class="role-pill">Modellverantwortung</span>. Der Prozessstand wird im Modell-JSON mitgeführt.</span>
+      <span>Der Prozessstand wird im Modell-JSON mitgeführt.</span>
     </div>
-    <div class="process-controls">
-      <label for="processPhase">Phase</label>
-      <select id="processPhase">
-        <option value="initialisierung">Initialisierung</option>
-        <option value="datenerhebung">Datenerhebung</option>
-        <option value="massnahmenbewertung">Maßnahmenbewertung</option>
-        <option value="konsolidierung">Konsolidierung</option>
-        <option value="entscheidungsvorlage">Entscheidungsvorlage</option>
-        <option value="archiv">Beschluss/Archiv</option>
-      </select>
-      <label for="phaseTargetDate">Ziel Entscheidung</label>
-      <input id="phaseTargetDate" type="date">
-    </div>
+    <button type="button" id="dismissProcessNotice" aria-label="Prozesshinweis ausblenden">×</button>
   </section>
 
   <nav class="view-tabs" aria-label="Arbeitsfluss">
@@ -103,20 +121,18 @@
       <span class="step-main">Report</span>
       <span class="step-status" id="status-report">noch offen</span>
     </button>
-  </nav>
-
-  <section class="mode-strip" aria-label="Ansichtsmodus">
-    <div>
-      <strong>Einfache Ansicht</strong>
-      <span>Nur die wichtigsten Felder. Erweiterte Annahmen behalten sichtbare Standardwerte.</span>
-    </div>
-    <label class="switch-row" for="expertModeToggle">
+    <label class="switch-row compact-switch" for="expertModeToggle">
       <input id="expertModeToggle" type="checkbox">
       Expertenmodus
     </label>
-  </section>
+  </nav>
 
   <section class="sticky-kpis" aria-label="Live-Wirkung">
+    <div class="sticky-kpi" id="stickyMaturityTile">
+      <div class="label">Entscheidungsreife</div>
+      <div class="value" id="stickyMaturity">-</div>
+      <div class="delta" id="stickyMaturityDelta"></div>
+    </div>
     <div class="sticky-kpi" id="stickyVerdictTile">
       <div class="label">Verdict</div>
       <div class="value" id="stickyVerdict">-</div>
@@ -127,26 +143,23 @@
       <div class="value" id="stickyEog">-</div>
       <div class="delta" id="stickyEogDelta"></div>
     </div>
-    <div class="sticky-kpi">
+    <div class="sticky-kpi secondary-kpi">
       <div class="label">IRR</div>
       <div class="value" id="stickyIrr">-</div>
       <div class="delta" id="stickyIrrDelta"></div>
     </div>
-    <div class="sticky-kpi">
+    <div class="sticky-kpi secondary-kpi">
       <div class="label">Kapitalwert</div>
       <div class="value" id="stickyNpv">-</div>
       <div class="delta" id="stickyNpvDelta"></div>
-    </div>
-    <div class="sticky-kpi" id="stickyMaturityTile">
-      <div class="label">Entscheidungsreife</div>
-      <div class="value" id="stickyMaturity">-</div>
-      <div class="delta" id="stickyMaturityDelta"></div>
     </div>
   </section>
 
   <main>
     <section class="panel app-view" data-view-panel="basis" aria-label="Basisdaten und Szenario">
-      <div class="group">
+      <div id="basisSummaryCards" class="summary-card-grid" aria-label="Grundlagen-Zusammenfassung"></div>
+
+      <div class="group basis-edit-section">
         <h2>Basisdaten Sparte</h2>
         <div class="grid2">
           <div>
@@ -194,7 +207,7 @@
         </div>
       </div>
 
-      <div class="group">
+      <div class="group basis-edit-section">
         <div class="section-head-row">
           <div>
             <h2>Strategische Ziele</h2>
@@ -207,7 +220,7 @@
         <div id="strategyObjectives" class="objective-list"></div>
       </div>
 
-      <div class="group">
+      <div class="group basis-edit-section">
         <h2>Szenario</h2>
         <div class="segmented" aria-label="Szenarioauswahl">
           <button type="button" class="scenario active" data-scenario="basis">Basis</button>
@@ -246,7 +259,7 @@
 	        <div id="globalValidation" class="validation-messages" role="status" aria-live="polite"></div>
 	      </div>
 
-      <div class="group">
+      <div class="group basis-edit-section">
         <h2>Portfolio-Wirkung</h2>
         <div class="grid2">
           <div>
@@ -265,6 +278,7 @@
         <h2>Stammdaten prüfen</h2>
         <div class="action-row">
           <button type="button" id="openBasisWizard" class="primary">Stammdaten prüfen</button>
+          <button type="button" id="toggleBasisEdit">Bearbeiten einblenden</button>
         </div>
         <p class="hint">Der Wizard führt die wichtigsten Stammdaten und Szenarioannahmen einmal strukturiert durch.</p>
       </div>
@@ -296,6 +310,22 @@
           </table>
         </div>
       </div>
+    </section>
+
+    <section class="panel app-view hidden" data-view-panel="expertWork" aria-label="Offene Punkte Fachexpertise">
+      <div class="section-head-row">
+        <div>
+          <h2>Deine offenen Punkte</h2>
+          <p class="hint">Prüfpflichtige Wirkannahmen und Klärpunkte aus dem Modell. Eintrag öffnen, Annahme prüfen, Status setzen.</p>
+        </div>
+        <div class="segmented compact-segmented" aria-label="Bereich filtern">
+          <button type="button" class="expert-filter active" data-expert-filter="all">Alle</button>
+          <button type="button" class="expert-filter" data-expert-filter="technik">Technik</button>
+          <button type="button" class="expert-filter" data-expert-filter="vnb">VNB</button>
+          <button type="button" class="expert-filter" data-expert-filter="controlling">Controlling</button>
+        </div>
+      </div>
+      <div id="expertWorkList" class="clarification-list"></div>
     </section>
 
     <div class="stack wide app-view hidden" data-view-panel="results">
@@ -638,6 +668,7 @@
         <div class="group">
           <h3>Lebenszyklus der Maßnahme</h3>
           <p class="hint">Errichtung ist oben erfasst. Betrieb, Erneuerung und Rückbau sind standardmäßig 0 und im Expertenmodus änderbar.</p>
+          <div id="lifecycleTimeline" class="lifecycle-timeline" aria-label="Lebenszyklus-Zeitstrahl"></div>
           <div class="grid2">
             <div>
               <label for="mOpexPa">Betriebskosten TEUR p.a.</label>
