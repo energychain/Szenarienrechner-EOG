@@ -11,7 +11,25 @@ const requiredDocs = [
   'MODEL.md',
   'RELEASE.md',
   'DATA_FORMAT.md',
-  'GOVERNANCE.md'
+  'GOVERNANCE.md',
+  'docs/ecosystem/index.md',
+  'docs/handbook/regulierte-finanzplanung-vnb.md',
+  'docs/regulatory-map.md',
+  'docs/maturity-model.md',
+  'docs/decision-artifacts.md',
+  'docs/templates/massnahmensteckbrief.md',
+  'docs/templates/gremienvorlage.md',
+  'docs/templates/klaerpunktliste.md',
+  'docs/templates/datenanforderung.md',
+  'docs/templates/workshop-agenda.md',
+  'docs/guides/management.md',
+  'docs/guides/controlling.md',
+  'docs/guides/regulierung.md',
+  'docs/guides/asset-management.md',
+  'docs/guides/anlagenbuchhaltung.md',
+  'docs/examples/strom-ortsnetz.md',
+  'docs/examples/gas-transformation.md',
+  'docs/examples/spartenportfolio.md'
 ];
 
 function assert(condition, message) {
@@ -23,7 +41,7 @@ function assert(condition, message) {
 for (const path of requiredDocs) {
   assert(existsSync(path), `${path} is missing.`);
   const content = readFileSync(path, 'utf8');
-  assert(content.includes('Szenarienrechner-EOG'), `${path} must name the project.`);
+  assert(content.includes('Szenarienrechner-EOG') || path.startsWith('docs/templates/') || path.startsWith('docs/guides/') || path.startsWith('docs/examples/'), `${path} must name the project or be a role/template/example page.`);
 }
 
 const contributing = readFileSync('CONTRIBUTING.md', 'utf8');
