@@ -57,4 +57,17 @@ assert(dataFormat.includes('## Minimaler Projektumschlag'), 'DATA_FORMAT must do
 assert(dataFormat.includes('## Migrationsregeln'), 'DATA_FORMAT must document migration handling.');
 assert(dataFormat.includes('synthetisch'), 'DATA_FORMAT must document synthetic demo data.');
 
+const story = readFileSync('docs/story/planungsrunde-userstory.md', 'utf8');
+assert(story.includes('Szenarienrechner-EOG') || story.includes('EOG-Planungsrunde'), 'Story doc must name the planning context.');
+assert(story.includes('Bidirektionale Navigation'), 'Story doc must explain bidirectional navigation.');
+for (const id of ['kickoff', 'initialisierung', 'datenerhebung', 'massnahmenbewertung', 'technik-rueckkopplung', 'konsolidierung', 'entscheidungsvorlage', 'gremium', 'archiv']) {
+  assert(story.includes(`id="${id}"`), `Story doc is missing anchor ${id}.`);
+  assert(story.includes(`?story=${id}`), `Story doc is missing app deep link for ${id}.`);
+}
+const imageRefs = [...story.matchAll(/!\[[^\]]*\]\((screenshots\/[^)]+\.png)\)/g)].map(match => `docs/story/${match[1]}`);
+assert(imageRefs.length >= 9, 'Story doc must reference at least nine screenshots.');
+for (const imagePath of imageRefs) {
+  assert(existsSync(imagePath), `Story screenshot is missing: ${imagePath}`);
+}
+
 console.log('Documentation checks passed.');

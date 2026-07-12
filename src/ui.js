@@ -26,6 +26,12 @@ import {
   shouldShowPlanningResume
 } from './planning-resume.js';
 import { fieldHelp } from './contextual-help.js';
+import {
+  appStateForStoryMilestone,
+  storyMilestoneForPhase,
+  storyMilestoneFromUrl,
+  storyUrlForMilestone
+} from './story-navigation.js';
 import { imprintSections } from './trust-content.js';
 
 const initialMeasures = [];
@@ -1102,6 +1108,13 @@ function renderProcessUx() {
   }
   const counter = document.getElementById('clarificationCounter');
   if (counter) counter.textContent = openCount ? `${openCount} Klärpunkte offen` : 'Keine offenen Klärpunkte';
+  const storyMilestone = storyMilestoneForPhase(processState.phase, activeView);
+  const storyLink = document.getElementById('storyContextLink');
+  if (storyLink) {
+    storyLink.href = storyUrlForMilestone(storyMilestone.id);
+    storyLink.textContent = `Story: ${storyMilestone.label}`;
+    storyLink.title = storyMilestone.note;
+  }
 }
 
 function isoWeek(date) {
@@ -2087,6 +2100,85 @@ function applyDemoModel() {
   setView(activeView);
   renderAll();
   setStorageStatus('Demodaten wurden geladen und im Browser gespeichert.');
+}
+
+const storyResumeText = {
+  kickoff: {
+    statusNote: 'Kick-off: Rollen, Zielbild und Datenquellen werden geklärt, bevor Detailwerte eingetragen werden.',
+    nextStep: 'Geführten Start öffnen und je Feld Quelle, fachliche Verantwortung und Klärbedarf bestimmen.',
+    owner: 'Modellverantwortung',
+    dueDate: '2027-01-20'
+  },
+  initialisierung: {
+    statusNote: 'Initialisierung: Stammdaten-Wizard strukturiert die erste Datenerhebung mit fachlicher Kontext-Hilfe.',
+    nextStep: 'EOG, Kapitalbasis, Jahresarbeit und Verfahren mit Regulierungsmanagement, Anlagenbuchhaltung und Abrechnung abstimmen.',
+    owner: 'Modellverantwortung / Regulierungsmanagement',
+    dueDate: '2027-02-03'
+  },
+  datenerhebung: {
+    statusNote: 'Datenerhebung: Quellen für EOG, Kapitalbasis und Jahresarbeit sind verteilt; Ist-Werte werden belastbar gemacht.',
+    nextStep: 'Regulierungsmanagement, Anlagenbuchhaltung und Abrechnung liefern die abgestimmten Werte.',
+    owner: 'Modellverantwortung / Controlling',
+    dueDate: '2027-02-14'
+  },
+  massnahmenbewertung: {
+    statusNote: 'Maßnahmenbewertung: neue Fakten aus Technik und Einkauf verändern Kostenpfad, Aktivierbarkeit und Priorisierung.',
+    nextStep: 'Maßnahmenkatalog prüfen, offene Wirkannahmen markieren und Sensitivitäten für unsichere Effekte bilden.',
+    owner: 'Technik / Controlling',
+    dueDate: '2027-03-28'
+  },
+  'technik-rueckkopplung': {
+    statusNote: 'Technische Rückkopplung: Wirkannahmen sind plausibel, bleiben aber teilweise prüfpflichtig.',
+    nextStep: 'Technik und Regulierungsmanagement entscheiden, welche Wirkungen in den Basiscase und welche nur in Sensitivitäten gehen.',
+    owner: 'Netzbetrieb / Regulierungsmanagement',
+    dueDate: '2027-04-18'
+  },
+  konsolidierung: {
+    statusNote: 'Konsolidierung: Kosten, Aktivierbarkeit und wesentliche Wirkannahmen sind zusammengeführt.',
+    nextStep: 'Management entscheidet, ob das Portfolio mit Auflagen in die Entscheidungsvorlage geht.',
+    owner: 'Projektlenkung',
+    dueDate: '2027-05-09'
+  },
+  entscheidungsvorlage: {
+    statusNote: 'Entscheidungsvorlage: priorisierte Maßnahmen, Kennzahlen und offene Prüfpunkte sind im Report zusammengeführt.',
+    nextStep: 'Beschlussvorschlag mit Auflagen finalisieren und an das zuständige Gremium geben.',
+    owner: 'Modellverantwortung / Geschäftsführung',
+    dueDate: '2027-06-20'
+  },
+  gremium: {
+    statusNote: 'Gremienvorlage: Einseiter übersetzt Modelllogik, Kennzahlen und Auflagen in beschlussfähige Sprache.',
+    nextStep: 'Beschluss fassen und Monitoringpunkte in die Umsetzung übergeben.',
+    owner: 'Gremium / Modellverantwortung',
+    dueDate: '2027-06-20'
+  },
+  archiv: {
+    statusNote: 'Beschluss gefasst: Portfolio wird umgesetzt, Auflagen werden als Nachweis- und Monitoringpunkte weitergeführt.',
+    nextStep: 'JSON-Modell und Report als Entscheidungsstand archivieren; Review nach erster Umsetzungsetappe.',
+    owner: 'Modellverantwortung / Audit',
+    dueDate: '2027-09-30'
+  }
+};
+
+function applyStoryDeepLink() {
+  const milestone = storyMilestoneFromUrl(window.location.href);
+  if (!new URL(window.location.href).searchParams.has('story') && !window.location.hash.startsWith('#story')) return;
+  const state = appStateForStoryMilestone(milestone);
+  if (state.shouldLoadDemo) applyDemoModel();
+  else hideStartScreen();
+  processState = normalizeProcessState({
+    ...processState,
+    phase: state.phase,
+    resume: storyResumeText[milestone.id] || storyResumeText.kickoff
+  });
+  activeView = state.view;
+  meetingFocus = state.focus;
+  reportMode = state.reportMode;
+  document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
+  document.querySelectorAll('.report-mode').forEach(btn => btn.classList.toggle('active', btn.dataset.reportMode === reportMode));
+  setView(activeView);
+  renderAll(false);
+  setStorageStatus(`Story-Meilenstein geöffnet: ${milestone.label}.`);
+  if (milestone.id === 'initialisierung') openBasisWizard();
 }
 
 function openLoadModal() {
@@ -4736,3 +4828,4 @@ if (!loadFromBrowser()) {
   previousModelForHistory = currentModelData();
   showStartScreen();
 }
+applyStoryDeepLink();

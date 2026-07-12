@@ -52,6 +52,7 @@ Der Rechner bildet ein generisches Planungsmodell fuer regulierte Sparten ab. Er
 
 Weitere Projektdokumente:
 
+- `docs/story/planungsrunde-userstory.md`: fiktive mehrmonatige Planungsrunde mit Screenshots und Deep Links in die Anwendung.
 - `MODEL.md`: Modellueberblick und Rechenkontext.
 - `GOVERNANCE.md`: Maintainer-, Review- und Neutralitaetsregeln.
 - `DATA_FORMAT.md`: lokaler Speicher, JSON-Export und Importgrundsaetze.
