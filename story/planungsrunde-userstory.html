@@ -5,45 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fiktive Userstory · Szenarienrechner-EOG</title>
   <style>
-    :root { color-scheme: light; --ink: #102033; --muted: #5b6b7f; --line: #d8e1ec; --brand: #007ea7; --soft: #eef8fb; --paper: #ffffff; --bg: #f4f7fa; }
+    :root { color-scheme: light; --ink: #102033; --muted: #5b6b7f; --line: #d8e1ec; --brand: #007ea7; --soft: #eef8fb; --paper: #ffffff; --bg: #f4f7fa; --accent: #f59e0b; }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.65; }
-    header { background: var(--paper); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1; }
-    header a { color: var(--brand); font-weight: 700; text-decoration: none; }
+    header { background: rgba(255, 255, 255, 0.94); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1; display: flex; gap: 1rem; justify-content: space-between; align-items: center; }
+    header a, header button { color: var(--brand); font-weight: 700; text-decoration: none; }
+    header button { border: 1px solid #8ac6da; background: var(--soft); border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font: inherit; }
     main { max-width: 1040px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
     article { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1.25rem, 2vw, 2.5rem); box-shadow: 0 18px 40px rgba(16, 32, 51, 0.08); }
-    h1 { font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.1; margin: 0 0 1rem; }
-    h2 { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 2rem; font-size: clamp(1.45rem, 2.5vw, 2.1rem); }
+    h1 { font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -0.035em; }
+    h2 { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 2rem; font-size: clamp(1.45rem, 2.5vw, 2.1rem); break-after: avoid; }
+    h3 { margin-top: 1.8rem; break-after: avoid; }
     h1 + p, h2 + p { color: var(--muted); }
     a { color: var(--brand); }
     p a:first-child:last-child { display: inline-block; border: 1px solid #8ac6da; background: var(--soft); border-radius: 999px; padding: 0.45rem 0.9rem; font-weight: 700; text-decoration: none; }
     img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 14px 35px rgba(16, 32, 51, 0.12); }
-    figure { margin: 1.25rem 0 1.75rem; }
-    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.96rem; }
+    figure { margin: 1.25rem 0 1.75rem; break-inside: avoid; page-break-inside: avoid; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.96rem; break-inside: avoid; }
     th, td { border: 1px solid var(--line); padding: 0.75rem; vertical-align: top; }
     th { background: #edf4f8; text-align: left; }
     code { background: #edf2f7; border-radius: 0.3rem; padding: 0.1rem 0.3rem; }
     hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
     footer { color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem; text-align: center; }
+    @page { size: A4; margin: 15mm 13mm 17mm; }
+    @media print {
+      :root { --ink: #111827; --muted: #374151; --line: #b8c2ce; --paper: #ffffff; --bg: #ffffff; --brand: #004f68; --soft: #ffffff; }
+      body { background: #ffffff; font-size: 10.8pt; line-height: 1.48; }
+      header { position: static; border: 0; padding: 0 0 8mm; }
+      header button { display: none; }
+      main { max-width: none; padding: 0; }
+      article { border: 0; border-radius: 0; box-shadow: none; padding: 0; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; margin-top: 12mm; padding-top: 7mm; break-after: avoid; }
+      h3, p, li, table { orphans: 3; widows: 3; }
+      p a:first-child:last-child { border-radius: 0; border-color: var(--line); padding: 2mm 3mm; }
+      img { max-height: 145mm; object-fit: contain; box-shadow: none; border-radius: 2mm; }
+      figure, table, tr { break-inside: avoid; page-break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+      footer { border-top: 1px solid var(--line); padding-top: 4mm; }
+    }
   </style>
 </head>
 <body>
-  <header><a href="../index.html">← Zur Anwendung</a></header>
+  <header><a href="../index.html">← Zur Anwendung</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
   <main>
     <article>
-<h1>Fiktive Userstory: Eine komplette EOG-Planungsrunde über mehrere Monate</h1>
-<p><strong>Projektkontext:</strong> Diese Story beschreibt einen fiktiven Regionalversorger, der ein Investitionsportfolio für eine regulierte Sparte vorbereitet. Alle Rollen, Zahlen, Namen und Termine sind synthetisch. Die Story zeigt nicht nur die Bedienung der App, sondern vor allem, wie neue Fakten, Meetings, Rückfragen und Entscheidungen über mehrere Monate den weiteren Planungsweg beeinflussen.</p>
-<p><strong>Ziel der Runde:</strong> Aus einem ersten, unscharfen Maßnahmenbündel soll bis zur Entscheidungsvorlage ein nachvollziehbares Portfolio werden: fachlich begründet, kaufmännisch prüfbar, regulatorisch transparent und später wieder aufgreifbar.</p>
+<h1>Userstory: Finanzplanung regulierter Sparten im Verteilnetz</h1>
+<p><strong>Projektkontext:</strong> Diese Story beschreibt einen fiktiven Regionalversorger, der seine Investitions- und Finanzplanung für regulierte Verteilnetze vorbereitet. Alle Rollen, Zahlen, Namen und Termine sind synthetisch. Die Story zeigt nicht nur die Bedienung der App, sondern vor allem, wie aus technischen Maßnahmen, kaufmännischen Budgets, regulatorischen Wirkungen und offenen Klärpunkten ein entscheidungsfähiger Planungsstand entsteht.</p>
+<p><strong>Positionierung der App:</strong> Der Szenarienrechner ist kein reiner EOG-Rechner. Er ist ein offline lauffähiger Struktur- und Entscheidungsraum für die Finanzplanung regulierter Sparten. EOG-Wirkungen sind darin ein zentraler Teil, aber nicht der einzige. Ein EVU muss zugleich Wirtschaftsplan, Kapitalbindung, Aktivierbarkeit, Finanzierung, Abschreibung, Betriebskosten, technische Risiken, regulatorische Anerkennung und Gremienfähigkeit zusammenführen.</p>
+<p><strong>Wofür die App gedacht ist:</strong> Sie hilft, eine Planungsrunde so zu führen, dass Fachbereiche nicht nebeneinander in Excel, PowerPoint und Protokollen arbeiten, sondern ihre Annahmen in einem gemeinsamen Modell sichtbar machen. Die App ersetzt keine regulatorische Prüfung und keine Unternehmensentscheidung. Sie macht transparent, welche Werte belastbar sind, welche Wirkannahmen nur Sensitivitäten sind und welche offenen Punkte vor einer Beschlussfassung nachverfolgt werden müssen.</p>
+<p><strong>Typische Ausgangslage in einem EVU:</strong></p>
+<ul>
+<li>Asset Management und Netzbetrieb melden technische Erneuerungs-, Automatisierungs- oder Transformationsbedarfe.</li>
+<li>Controlling und Finanzierung müssen die Maßnahmen in Wirtschaftsplan, Liquidität und Kapitalbindung einordnen.</li>
+<li>Regulierungsmanagement bewertet, welche Kosten und Wirkungen in der Erlöslogik überhaupt eine Rolle spielen können.</li>
+<li>Anlagenbuchhaltung und Bilanzierung prüfen Aktivierbarkeit, Nutzungsdauer und Abgrenzung zu Aufwand.</li>
+<li>Management und Gremien brauchen am Ende keine Detailtabelle, sondern eine nachvollziehbare Beschlusslage mit Auflagen.</li>
+</ul>
+<p><strong>Beratungslogik hinter der Story:</strong> Ein externer Senior Consultant würde den Prozess nicht mit einer fertigen Rechenantwort beginnen. Er würde zunächst klären, welche Entscheidung vorbereitet wird, welche Datenquellen belastbar sind, welche Annahmen nur Arbeitshypothesen sind und wie die spätere Vorlage erklärbar bleibt. Genau diesen Beratungsprozess bildet die Story ab.</p>
+<p><strong>Ziel der Runde:</strong> Aus einem ersten, unscharfen Maßnahmenbündel soll bis zur Entscheidungsvorlage ein nachvollziehbares Portfolio werden: fachlich begründet, kaufmännisch prüfbar, regulatorisch transparent, finanzierungsseitig plausibel und später wieder aufgreifbar.</p>
 <p><strong>Rollen in der Story:</strong></p>
 <ul>
-<li><strong>Modellverantwortung:</strong> hält das Modell zusammen, dokumentiert Arbeitsstand und nächsten Schritt.</li>
-<li><strong>Regulierungsmanagement:</strong> liefert EOG-, Kapitalbasis- und Anerkennungsannahmen.</li>
-<li><strong>Anlagenbuchhaltung / Bilanzierung:</strong> prüft Aktivierbarkeit und Nutzungsdauern.</li>
-<li><strong>Netzbetrieb / Asset Management:</strong> bewertet technische Notwendigkeit, Risiken und Wirkannahmen.</li>
-<li><strong>Controlling / Finanzierung:</strong> plausibilisiert Kosten, Kapitalwert, IRR, FK-Zins und Wirtschaftsplananschluss.</li>
+<li><strong>Modellverantwortung:</strong> hält das Modell zusammen, dokumentiert Arbeitsstand, offene Punkte und nächsten Schritt.</li>
+<li><strong>Regulierungsmanagement:</strong> liefert EOG-, Kapitalbasis-, Anerkennungs- und Verfahrensannahmen.</li>
+<li><strong>Anlagenbuchhaltung / Bilanzierung:</strong> prüft Aktivierbarkeit, Nutzungsdauern, HGB-Sicht und Abgrenzung zwischen Investition und Aufwand.</li>
+<li><strong>Netzbetrieb / Asset Management:</strong> bewertet technische Notwendigkeit, Risiken, Umsetzungszeitpunkt und Wirkannahmen.</li>
+<li><strong>Controlling / Finanzierung:</strong> plausibilisiert Kosten, Kapitalwert, IRR, FK-Zins, Budgetpfad und Wirtschaftsplananschluss.</li>
 <li><strong>Management / Gremium:</strong> trifft keine Rechenentscheidung, sondern eine governance-fähige Investitionsentscheidung mit Auflagen.</li>
 </ul>
 <hr>
+<h2>Wie diese Story zu lesen ist</h2>
+<p>Die Story folgt einer mehrmonatigen Planungsrunde. Jeder Meilenstein zeigt drei Ebenen:</p>
+<ul>
+<li><strong>Prozess:</strong> Was passiert im EVU gerade organisatorisch?</li>
+<li><strong>Fachliche Klärung:</strong> Welche kaufmännischen, regulatorischen oder technischen Fragen werden sichtbar?</li>
+<li><strong>App-Nutzung:</strong> Welche App-Funktion unterstützt die Arbeit, ohne die Entscheidung zu automatisieren?</li>
+</ul>
+<p>Die Screenshots sind Momentaufnahmen synthetischer Demodaten. Sie sollen Wiedererkennung schaffen: Kick-off, Datenanforderung, Maßnahmenkatalog, Technikrückkopplung, Managementkonsolidierung, Entscheidungsvorlage, Gremium und späterer Re-Entry.</p>
 <h2>Bidirektionale Navigation</h2>
 <p>Diese Story ist mit der Live-Anwendung verknüpft:</p>
 <ul>
@@ -52,78 +90,92 @@
 <li>Die App-Links nutzen synthetische Demodaten und setzen Phase, Sicht und Arbeitsstand passend zum Story-Meilenstein.</li>
 </ul>
 <a id="kickoff"></a>
-<h2>Meilenstein 0 — Kick-off: Noch keine Tabellen, erst Orientierung</h2>
+<h2>Meilenstein 0 — Kick-off: Finanzplanung zuerst als gemeinsamer Entscheidungsprozess</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=kickoff">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/01-startscreen-kickoff.png" alt="Startscreen Kick-off" loading="lazy"></figure>
+<figure><img src="screenshots/01-startscreen-kickoff.png" alt="Startscreen Kick-off"></figure>
 <p><strong>Zeitpunkt:</strong> Anfang Januar 2027</p>
-<p>Die Planungsrunde beginnt nicht mit einem vollständigen Modell, sondern mit einem gemeinsamen Verständnis: Was soll entschieden werden? Welche Rolle hat wer? Welche Daten bleiben lokal? Die Modellverantwortliche öffnet die App im Kick-off und zeigt zuerst den geführten Einstieg.</p>
+<p>Die Planungsrunde beginnt nicht mit einer fertigen Excel-Tabelle, sondern mit der Frage, welche Entscheidung vorbereitet werden soll. Im Raum sitzen Modellverantwortung, Regulierungsmanagement, Controlling, Asset Management und später auch Bilanzierung. Alle kennen einen Teil der Wahrheit: Technik kennt die Notwendigkeit, Controlling kennt das Budget, Regulierungsmanagement kennt den regulatorischen Rahmen, aber niemand besitzt allein die entscheidungsreife Gesamtsicht.</p>
+<p>Die Modellverantwortliche öffnet die App im Kick-off und zeigt zuerst den geführten Einstieg. Der wichtigste Effekt ist nicht die erste Zahl, sondern die gemeinsame Sprache: Maßnahme, Aktivierung, EOG-Wirkung, Kapitalbindung, Risiko, Wirkannahme, Klärpunkt und Beschlussauflage werden voneinander getrennt.</p>
+<p><strong>Warum dieser Schritt wichtig ist:</strong> In vielen EVU-Planungsrunden werden technische Notwendigkeit, regulatorische Anerkennung und kaufmännische Finanzierbarkeit zu früh vermischt. Dadurch entstehen scheinbar eindeutige Prioritäten, obwohl wesentliche Annahmen noch offen sind. Die App soll diesen Reflex bremsen: Erst verstehen, dann anpassen.</p>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
-<li>Die Startseite erklärt den Zweck des Rechners und die Offline-/lokale Datenhaltung.</li>
-<li>Die Runde wählt zunächst <strong>Modellverantwortung</strong>, weil die Stammdaten und Maßnahmen aktiv aufgebaut werden sollen.</li>
-<li>Noch wird kein Beschluss vorbereitet; der Rechner dient als gemeinsamer Strukturrahmen.</li>
+<li>Die Startseite erklärt den Zweck des Werkzeugs und die lokale Datenhaltung.</li>
+<li>Die Runde wählt zunächst <strong>Modellverantwortung</strong>, weil Stammdaten und Maßnahmen aktiv aufgebaut werden sollen.</li>
+<li>Noch wird kein Beschluss vorbereitet; die App dient als Strukturrahmen für die kommenden Termine.</li>
+<li>Der Prozesshinweis oben zeigt den aktuellen Stand und macht deutlich, dass die Datei einen Planungsprozess begleitet.</li>
 </ul>
 <p><strong>Neue Fakten / offene Punkte:</strong></p>
 <ul>
 <li>Das Portfolio soll zunächst synthetisch vorbereitet und später mit internen Ist-Werten befüllt werden.</li>
-<li>Noch unklar sind: bestehende EOG, regulatorische Kapitalbasis, Jahresarbeit, Aktivierbarkeit einzelner Maßnahmen und belastbare Wirkannahmen.</li>
+<li>Noch unklar sind bestehende EOG, regulatorische Kapitalbasis, Jahresarbeit, Aktivierbarkeit einzelner Maßnahmen und belastbare Wirkannahmen.</li>
+<li>Noch offen ist, welche Maßnahmen im Basisszenario entscheidungsrelevant sind und welche nur als Sensitivität betrachtet werden.</li>
 </ul>
 <p><strong>Entscheidung für den weiteren Weg:</strong></p>
-<p>Die Runde entscheidet, nicht direkt alle Felder zu befüllen. Stattdessen wird der geführte Start genutzt, damit jedes Feld mit Quelle und fachlichem Kontext verstanden wird.</p>
+<p>Die Runde entscheidet, nicht direkt alle Felder zu befüllen. Stattdessen wird der geführte Start genutzt, damit jedes Feld mit Quelle, Zuständigkeit und fachlichem Kontext verstanden wird.</p>
 <hr>
 <a id="initialisierung"></a>
-<h2>Meilenstein 1 — Initialisierung: Geführter Start mit fachlicher Kontext-Hilfe</h2>
+<h2>Meilenstein 1 — Initialisierung: Aus Eingabefeldern wird eine Datenanforderung</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=initialisierung">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/02-guided-start-context-help.png" alt="Geführter Start mit Kontext-Hilfe" loading="lazy"></figure>
+<figure><img src="screenshots/02-guided-start-context-help.png" alt="Geführter Start mit Kontext-Hilfe"></figure>
 <p><strong>Zeitpunkt:</strong> Mitte Januar 2027</p>
-<p>Im ersten Arbeitsmeeting öffnet die Modellverantwortliche den Stammdaten-Wizard. Beim Feld <strong>Startjahr</strong> wird die neue Kontext-Hilfe angeklickt. Der Hinweis erklärt nicht nur, wie das Feld zu bedienen ist, sondern warum das Jahr fachlich wichtig ist: Es beeinflusst Regulierungsperiode, Kostenbasis und Cashflow-Zeitpunkt.</p>
+<p>Im ersten Arbeitsmeeting öffnet die Modellverantwortliche den Stammdaten-Wizard. Beim Feld <strong>Startjahr</strong> wird die Kontext-Hilfe angeklickt. Der Hinweis erklärt nicht nur, wie das Feld zu bedienen ist, sondern warum das Jahr fachlich wichtig ist: Es beeinflusst Regulierungsperiode, Kostenbasis, Abschreibungsbeginn und Cashflow-Zeitpunkt.</p>
+<p>Ein Mitarbeiter aus dem Controlling erkennt hier seine eigene Tätigkeit wieder: Es geht nicht um „eine Zahl eingeben“, sondern um die Anschlussfähigkeit an Wirtschaftsplanung, Mittelfristplanung und spätere Budgetfreigabe. Das Regulierungsmanagement erkennt zugleich, dass die Erlöslogik nicht isoliert betrachtet werden darf, sondern mit Verfahren, Kapitalbasis und Datenstand verbunden ist.</p>
+<p><strong>Fachliche Klärung:</strong></p>
+<table><thead><tr>
+<th>Eingabe</th>
+<th>Typische Quelle</th>
+<th>Warum sie für die Finanzplanung relevant ist</th>
+</tr></thead><tbody>
+<tr>
+<td>Sparte</td>
+<td>Spartenleitung und Regulierungsmanagement</td>
+<td>bestimmt regulatorischen Kontext, Maßnahmentypen und ggf. Transformationslogik</td>
+</tr>
+<tr>
+<td>Startjahr</td>
+<td>Projektplan und Wirtschaftsplanung</td>
+<td>legt fest, ab wann Kapitalbindung, Abschreibung und Planansätze wirken</td>
+</tr>
+<tr>
+<td>Regulierungsverfahren</td>
+<td>aktueller Regulierungsbescheid</td>
+<td>beeinflusst, welche Wirkungen individuell betrachtet werden können</td>
+</tr>
+<tr>
+<td>Bestehende EOG</td>
+<td>Regulierungsmanagement / Erlös- oder Netzentgeltkalkulation</td>
+<td>Referenz für indikative Erlös- und Entgeltwirkung</td>
+</tr>
+<tr>
+<td>Kapitalbasis</td>
+<td>Anlagenbuchhaltung und regulatorisches Anlagevermögen</td>
+<td>Grundlage für Kapitalbindung und regulatorische Wirkung</td>
+</tr>
+<tr>
+<td>Jahresarbeit</td>
+<td>Abrechnung, Mengenplanung oder testierter Jahresabschluss</td>
+<td>Brücke zur indikativen Netzentgelt- oder Kundenauswirkung</td>
+</tr>
+</tbody></table>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
 <li>Die Wizard-Schritte strukturieren die Stammdatenerhebung.</li>
 <li>Die <code>i</code>-Hilfen werden gezielt geöffnet, wenn die Runde unsicher ist, wo ein Wert herkommt.</li>
 <li>Statt sofort eine Zahl einzutragen, wird je Feld eine Quelle bestimmt.</li>
+<li>Offene Werte werden als Arbeitsstand behandelt, nicht als verdeckte Defaults.</li>
 </ul>
-<p><strong>Neue Fakten / Arbeitsannahmen:</strong></p>
-<table><thead><tr>
-<th>Eingabe</th>
-<th>Erste Quelle / Klärung</th>
-</tr></thead><tbody>
-<tr>
-<td>Sparte</td>
-<td>Spartenleitung und Regulierungsmanagement</td>
-</tr>
-<tr>
-<td>Startjahr</td>
-<td>Projektplan und Wirtschaftsplanung</td>
-</tr>
-<tr>
-<td>Regulierungsverfahren</td>
-<td>aktueller Regulierungsbescheid</td>
-</tr>
-<tr>
-<td>Bestehende EOG</td>
-<td>Regulierungsmanagement / Erlös- oder Netzentgeltkalkulation</td>
-</tr>
-<tr>
-<td>Kapitalbasis</td>
-<td>Anlagenbuchhaltung und regulatorisches Anlagevermögen</td>
-</tr>
-<tr>
-<td>Jahresarbeit</td>
-<td>Abrechnung, Mengenplanung oder testierter Jahresabschluss</td>
-</tr>
-</tbody></table>
 <p><strong>Rückkopplung:</strong></p>
-<p>Das Meeting zeigt, dass die App nicht nur Eingabemaske ist. Sie erzeugt eine Datenanforderungsliste: Wer liefert welche Zahl, und welche Zahl ist nur vorläufig?</p>
+<p>Das Meeting zeigt, dass die App nicht nur Eingabemaske ist. Sie erzeugt eine Datenanforderungsliste: Wer liefert welche Zahl, welche Zahl ist vorläufig, und welche Zahl kann später im Gremium erklärt werden?</p>
 <p><strong>Entscheidung für den weiteren Weg:</strong></p>
 <p>Die Initialisierung wird abgeschlossen. Als nächster Schritt wird eine Datensichtung mit Regulierungsmanagement, Anlagenbuchhaltung und Abrechnung angesetzt.</p>
 <hr>
 <a id="datenerhebung"></a>
-<h2>Meilenstein 2 — Datenerhebung: Arbeitsstand und nächste Abstimmung dokumentieren</h2>
+<h2>Meilenstein 2 — Datenerhebung: Finanzplanung braucht Quellen, nicht nur Werte</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=datenerhebung">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/03-datenerhebung-status.png" alt="Datenerhebung mit Prozessstatus" loading="lazy"></figure>
+<figure><img src="screenshots/03-datenerhebung-status.png" alt="Datenerhebung mit Prozessstatus"></figure>
 <p><strong>Zeitpunkt:</strong> Februar 2027</p>
-<p>Nach zwei Wochen liegen erste Werte vor. Die Modellverantwortliche lädt ein Beispielmodell und trägt im Prozessbereich ein, wo die Runde steht: Kick-off abgeschlossen, Quellen verteilt, Ist-Werte in Klärung.</p>
+<p>Nach zwei Wochen liegen erste Werte vor. Die Modellverantwortliche lädt ein Beispielmodell und trägt im Prozessbereich ein, wo die Runde steht: Kick-off abgeschlossen, Quellen verteilt, Ist-Werte in Klärung. Der Hinweis ist bewusst kein Pop-up, das eine einmalige Information zeigt. Er ist ein Prozessstatus: Wenn jemand die Datei später öffnet, sieht er sofort, wo die Planung zuletzt stand.</p>
+<p><strong>Fachliche Einordnung:</strong> Datenerhebung ist in regulierten Sparten selten trivial. Ein HGB-Buchwert ist nicht automatisch die regulatorische Kapitalbasis. Eine technische Mengenannahme ist nicht automatisch die abrechnungsseitige Jahresarbeit. Und ein genehmigtes Budget ist nicht automatisch regulatorisch anerkannt. Genau diese Unterschiede werden in der App sichtbar gehalten.</p>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
 <li>Im Phasen-Popover wird die Phase auf <strong>Datenerhebung</strong> gesetzt.</li>
@@ -136,16 +188,18 @@
 <li>Die Jahresarbeit ist nicht aus einer technischen Schätzung zu übernehmen, sondern aus Abrechnung/Mengenplanung.</li>
 <li>Die regulatorische Kapitalbasis weicht voraussichtlich vom HGB-Buchwert ab.</li>
 <li>Ein Teil der geplanten Maßnahmen ist noch nicht entscheidungsreif, weil Aktivierbarkeit und Wirkannahmen offen sind.</li>
+<li>Der Wirtschaftsplan enthält Budgetpositionen, die für die regulatorische Betrachtung noch fachlich aufgeteilt werden müssen.</li>
 </ul>
 <p><strong>Einfluss auf den weiteren Weg:</strong></p>
-<p>Die Datenerhebung verhindert einen typischen Fehler: frühe Scheingenauigkeit. Wo Werte fehlen, bleibt der Planungsstand explizit offen. Das Modell wird nicht als Wahrheit behandelt, sondern als nachvollziehbarer Arbeitsstand.</p>
+<p>Die Datenerhebung verhindert frühe Scheingenauigkeit. Wo Werte fehlen, bleibt der Planungsstand explizit offen. Das Modell wird nicht als Wahrheit behandelt, sondern als nachvollziehbarer Arbeitsstand.</p>
 <hr>
 <a id="massnahmenbewertung"></a>
-<h2>Meilenstein 3 — Maßnahmenbewertung: Erste Fakten verändern das Portfolio</h2>
+<h2>Meilenstein 3 — Maßnahmenbewertung: Vom Budgettopf zum steuerbaren Portfolio</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=massnahmenbewertung">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/04-massnahmenkatalog-erste-fakten.png" alt="Maßnahmenkatalog mit ersten Fakten" loading="lazy"></figure>
+<figure><img src="screenshots/04-massnahmenkatalog-erste-fakten.png" alt="Maßnahmenkatalog mit ersten Fakten"></figure>
 <p><strong>Zeitpunkt:</strong> Ende März 2027</p>
-<p>Die technischen Fachbereiche liefern neue Fakten: Zwei Automatisierungsmaßnahmen bleiben prioritär, einzelne Ersatzinvestitionen werden in eine konservative Sensitivität verschoben. Einkauf und Projektleitung aktualisieren Kosten und Inbetriebnahmejahre.</p>
+<p>Die technischen Fachbereiche liefern neue Fakten: Zwei Automatisierungsmaßnahmen bleiben prioritär, einzelne Ersatzinvestitionen werden in eine konservative Sensitivität verschoben. Einkauf und Projektleitung aktualisieren Kosten und Inbetriebnahmejahre. Damit verändert sich die Planungsfrage: Es geht nicht mehr um „haben wir genug Budget?“, sondern um „welche Maßnahmen tragen regulatorisch, technisch und finanzwirtschaftlich gemeinsam?“</p>
+<p><strong>Beraterperspektive:</strong> Ein Senior Consultant würde hier das Portfolio nicht einfach nach höchstem IRR sortieren. Er würde fragen: Welche Maßnahme ist technisch notwendig? Welche Maßnahme ist aktivierbar? Welche Wirkung ist belegt? Welche Wirkung ist nur eine Annahme? Welche Maßnahme bindet Kapital, ohne zeitnah in der Erlöslogik sichtbar zu werden? Welche Auflage muss in die Entscheidung?</p>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
 <li>Die Runde wechselt in den <strong>Maßnahmenkatalog</strong>.</li>
@@ -153,39 +207,45 @@
 <li>Kosten, erwartete Aktivierung, Wirkannahmen und Notizen werden je Maßnahme sichtbar.</li>
 <li>Offene Punkte bleiben im Katalog markiert, statt in Meetingprotokollen zu verschwinden.</li>
 </ul>
-<p><strong>Neue Fakten:</strong></p>
+<p><strong>Neue Fakten und Wirkung im Modell:</strong></p>
 <table><thead><tr>
 <th>Fakt</th>
 <th>Wirkung im Modell</th>
+<th>Fachliche Bedeutung</th>
 </tr></thead><tbody>
 <tr>
 <td>Einkauf bestätigt höhere Kosten für eine Automatisierungsmaßnahme</td>
 <td>Kapitalwert und IRR werden neu bewertet</td>
+<td>Budget und Finanzierungspfad müssen aktualisiert werden</td>
 </tr>
 <tr>
-<td>Technik bestätigt, dass eine Maßnahme später in Betrieb geht</td>
+<td>Technik bestätigt spätere Inbetriebnahme</td>
 <td>AfA- und EOG-Wirkung verschieben sich</td>
+<td>Zeitpunkt der Kapitalbindung und Ergebniswirkung ändern sich</td>
 </tr>
 <tr>
 <td>Bilanzierung stuft einen Kostenanteil als unsicher aktivierbar ein</td>
 <td>Erwartete Kapitalbasis sinkt bzw. wird risikogewichtet</td>
+<td>Nicht jede Ausgabe wird automatisch investiv wirksam</td>
 </tr>
 <tr>
 <td>Regulierungsmanagement markiert Wirkannahmen als prüfpflichtig</td>
 <td>Entscheidungsreife bleibt begrenzt</td>
+<td>Die Vorlage braucht Auflagen oder Sensitivitäten</td>
 </tr>
 </tbody></table>
 <p><strong>Rückkopplung:</strong></p>
-<p>Das Portfolio wird nicht linear „durchgerechnet“. Neue Fakten ändern Prioritäten. Die App macht sichtbar, welche Maßnahme wirtschaftlich trägt und welche nur mit ergänzender Begründung sinnvoll bleibt.</p>
+<p>Das Portfolio wird nicht linear „durchgerechnet“. Neue Fakten ändern Prioritäten. Die App macht sichtbar, welche Maßnahme wirtschaftlich trägt, welche regulatorisch erklärbar ist und welche nur mit ergänzender Begründung sinnvoll bleibt.</p>
 <p><strong>Entscheidung für den weiteren Weg:</strong></p>
 <p>Die Runde vereinbart eine technische Rückkopplung: Wirkannahmen, Risikowerte und Aktivierbarkeit werden nicht pauschal akzeptiert, sondern je Maßnahme überprüft.</p>
 <hr>
 <a id="technik-rueckkopplung"></a>
-<h2>Meilenstein 4 — Technische Rückkopplung: Wirkannahmen bleiben prüfpflichtig</h2>
+<h2>Meilenstein 4 — Technische Rückkopplung: Wirkannahmen sind keine stillen Erfolgsversprechen</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=technik-rueckkopplung">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/05-technik-rueckkopplung-results.png" alt="Technische Rückkopplung in der Entscheidungsansicht" loading="lazy"></figure>
+<figure><img src="screenshots/05-technik-rueckkopplung-results.png" alt="Technische Rückkopplung in der Entscheidungsansicht"></figure>
 <p><strong>Zeitpunkt:</strong> April 2027</p>
 <p>Im Techniktermin wird klar: Die Maßnahmen sind plausibel, aber nicht alle Wirkungen sind gleich belastbar. Manche Qualitäts- oder Effizienzannahmen beruhen auf Betriebserfahrung, andere nur auf Expertenschätzung. Eine Risikoannahme soll nicht in den Basiscase, sondern nur in eine Sensitivität.</p>
+<p><strong>Fachliche Aufklärungsarbeit:</strong> Für viele Planungsrunden ist dies der entscheidende Schritt. Eine Maßnahme kann technisch sinnvoll sein und trotzdem für eine Beschlussvorlage noch nicht vollständig belastbar sein. Umgekehrt kann eine Maßnahme kaufmännisch attraktiv wirken, aber auf einer Annahme beruhen, die im Regulierungs- oder Prüfkontext nicht tragfähig ist. Die App zwingt diese Differenzierung nicht dogmatisch auf, aber sie macht sie sichtbar.</p>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
 <li>Die App steht auf Phase <strong>Maßnahmenbewertung</strong>.</li>
@@ -198,16 +258,18 @@
 <li>Technische Wirkung ja, aber nicht vollständig nachgewiesen.</li>
 <li>Risikoannahmen bleiben für die Beschlusslage erklärungsbedürftig.</li>
 <li>Der Modellwert verbessert sich, aber die Governance-Hinweise verhindern eine zu einfache Ampelentscheidung.</li>
+<li>Die spätere Vorlage braucht eine Sprache für Auflagen, nicht nur für Kennzahlen.</li>
 </ul>
 <p><strong>Einfluss auf den weiteren Weg:</strong></p>
 <p>Die App führt zu einer differenzierten Entscheidungsvorbereitung: Das Portfolio kann wirtschaftlich tragfähig sein, obwohl einzelne Wirkannahmen noch Auflagen haben. Damit entsteht eine Beschlussoption mit Bedingungen statt ein hartes Ja/Nein.</p>
 <hr>
 <a id="konsolidierung"></a>
-<h2>Meilenstein 5 — Konsolidierung: Management betrachtet Entscheidung und Haken gemeinsam</h2>
+<h2>Meilenstein 5 — Konsolidierung: Management betrachtet Finanzbild, Erlöslogik und Haken gemeinsam</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=konsolidierung">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/06-konsolidierung-managemententscheidung.png" alt="Konsolidierung mit Managemententscheidung" loading="lazy"></figure>
+<figure><img src="screenshots/06-konsolidierung-managemententscheidung.png" alt="Konsolidierung mit Managemententscheidung"></figure>
 <p><strong>Zeitpunkt:</strong> Mai 2027</p>
-<p>Nach mehreren Fachterminen liegen Kosten, Aktivierbarkeit und wesentliche Wirkannahmen vor. Das Managementmeeting soll keine Detaildebatte wiederholen, sondern entscheiden, ob das Portfolio als beschlussreife Vorlage weitergeführt wird.</p>
+<p>Nach mehreren Fachterminen liegen Kosten, Aktivierbarkeit und wesentliche Wirkannahmen vor. Das Managementmeeting soll keine Detaildebatte wiederholen, sondern entscheiden, ob das Portfolio als beschlussreife Vorlage weitergeführt wird. Die App zeigt deshalb nicht nur Einzelwerte, sondern eine Managementsicht: Entscheidungsreife, Verdict, Jahr-1-Wirkung, IRR, Kapitalwert, Auflagen und nächster Schritt.</p>
+<p><strong>Warum die Positionierung nicht zu EOG-lastig sein darf:</strong> Die EOG ist für regulierte Sparten zentral, aber das Management entscheidet nicht allein über eine Erlösobergrenzenwirkung. Es entscheidet über Kapitalbindung, Umsetzungsrisiko, Finanzierungsfähigkeit, Ergebniswirkung, technische Notwendigkeit und regulatorische Erklärbarkeit. Die App soll diese Perspektiven zusammenführen, statt eine einzelne Kennzahl zum Entscheidungskriterium zu machen.</p>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
 <li>Die Phase wird auf <strong>Konsolidierung</strong> gesetzt.</li>
@@ -220,16 +282,18 @@
 <li>Controlling bestätigt, dass die Kosten in den Wirtschaftsplan eingepasst werden können.</li>
 <li>Finanzierung aktualisiert den FK-Zins; der Finanzierungsspread bleibt tragfähig.</li>
 <li>Regulierungsmanagement akzeptiert die Methodik, verlangt aber Nachverfolgung einzelner Wirkannahmen.</li>
+<li>Asset Management bestätigt, welche Maßnahmen technisch nicht beliebig verschiebbar sind.</li>
 </ul>
 <p><strong>Entscheidung für den weiteren Weg:</strong></p>
 <p>Das Management entscheidet: Die Vorlage soll erstellt werden, aber mit Auflagen. Die App wird damit nicht zum automatischen Genehmigungswerkzeug, sondern zum transparenten Entscheidungsdokument.</p>
 <hr>
 <a id="entscheidungsvorlage"></a>
-<h2>Meilenstein 6 — Entscheidungsvorlage: Report bündelt Stand, Fakten und nächsten Schritt</h2>
+<h2>Meilenstein 6 — Entscheidungsvorlage: Aus Planung wird eine prüfbare Managementunterlage</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=entscheidungsvorlage">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/07-management-report-entscheidungsvorlage.png" alt="Management-Report Entscheidungsvorlage" loading="lazy"></figure>
+<figure><img src="screenshots/07-management-report-entscheidungsvorlage.png" alt="Management-Report Entscheidungsvorlage"></figure>
 <p><strong>Zeitpunkt:</strong> Juni 2027</p>
-<p>Vor der Gremiensitzung erstellt die Modellverantwortliche den Management-Report. Besonders wichtig ist der neue Abschnitt <strong>Arbeitsstand und nächster Schritt</strong>: Nach Monaten von Meetings kann jede Person sofort sehen, was beschlossen wurde, was offen bleibt und welche Auflage in die Vorlage geht.</p>
+<p>Vor der Gremiensitzung erstellt die Modellverantwortliche den Management-Report. Besonders wichtig ist der Abschnitt <strong>Arbeitsstand und nächster Schritt</strong>: Nach Monaten von Meetings kann jede Person sofort sehen, was beschlossen werden soll, was offen bleibt und welche Auflage in die Vorlage geht.</p>
+<p><strong>Was ein EVU-Mitarbeiter hier wiedererkennen soll:</strong> Eine Entscheidungsvorlage entsteht selten aus einem einzigen Rechenlauf. Sie entsteht aus abgestimmten Teilbeiträgen: Technik liefert Notwendigkeit und Zeitpunkt, Controlling liefert Budgetanschluss, Regulierungsmanagement liefert Anerkennungslogik, Bilanzierung liefert Aktivierbarkeit und Management verdichtet dies zu einer tragfähigen Beschlussoption.</p>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
 <li>Die Phase steht auf <strong>Entscheidungsvorlage</strong>.</li>
@@ -242,6 +306,7 @@
 <li>Das Portfolio ist wirtschaftlich tragfähig.</li>
 <li>Es gibt weiterhin Blocker bzw. prüfpflichtige Wirkannahmen.</li>
 <li>Die Vorlage enthält deshalb keine blinde Freigabe, sondern eine Freigabe mit Nachverfolgung.</li>
+<li>Die finanzielle Sicht bleibt anschlussfähig an Wirtschaftsplan und Controlling, ohne regulatorische Wirkungen zu überdehnen.</li>
 </ul>
 <p><strong>Einfluss auf den weiteren Weg:</strong></p>
 <p>Die Entscheidung wird anschlussfähig: Wer später in das Modell schaut, sieht nicht nur Zahlen, sondern auch die damalige Begründung und die vereinbarte Weiterarbeit.</p>
@@ -249,14 +314,16 @@
 <a id="gremium"></a>
 <h2>Meilenstein 7 — Gremienvorlage: Aus Modelllogik wird ein beschlussfähiger Text</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=gremium">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/08-gremienvorlage-beschluss.png" alt="Gremienvorlage Beschluss" loading="lazy"></figure>
+<figure><img src="screenshots/08-gremienvorlage-beschluss.png" alt="Gremienvorlage Beschluss"></figure>
 <p><strong>Zeitpunkt:</strong> Ende Juni 2027</p>
 <p>Für das Gremium wird die Einseiter-Ansicht genutzt. Die Modellverantwortliche trägt das Gremium, Sitzungsdatum und einen neutralen Beschlussvorschlag ein. Die Vorlage übersetzt die Rechen- und Governance-Logik in verständliche Entscheidungssprache.</p>
+<p><strong>Aufklärungsleistung der App:</strong> Gremien benötigen keine technische Detailmodellierung, aber sie benötigen eine faire Darstellung der Entscheidungsgrundlage. Dazu gehören: Warum ist die Maßnahme erforderlich? Welche finanzielle Wirkung wird erwartet? Welche regulatorische Annahme liegt zugrunde? Welche Risiken bleiben? Welche Auflage wird beschlossen? Die App liefert dafür eine Struktur, keine automatische Beschlussempfehlung.</p>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
 <li>Im Report wird von <strong>Management-Report</strong> auf <strong>Gremienvorlage (1 Seite)</strong> gewechselt.</li>
 <li>Gremium, Datum und Beschlussvorschlag werden gepflegt.</li>
 <li>Die Vorlage enthält Kennzahlen, Begründung, Risiken, Auflagen und Arbeitsstand.</li>
+<li>Die Druck-/PDF-Fähigkeit der Story und der Vorlage unterstützt Weitergabe und Archivierung.</li>
 </ul>
 <p><strong>Entscheidung:</strong></p>
 <p>Das Gremium beschließt das priorisierte Maßnahmenpaket vorbehaltlich der dokumentierten Prüfauflagen. Die App dient dabei als Nachweis, welche Annahmen im Moment der Entscheidung galten.</p>
@@ -266,21 +333,25 @@
 <a id="archiv"></a>
 <h2>Meilenstein 8 — Beschluss und Archiv: Wiederaufnahme nach Monaten bleibt möglich</h2>
 <p><a href="https://energychain.github.io/Szenarienrechner-EOG/?story=archiv">Zur passenden Stelle in der Anwendung springen</a></p>
-<figure><img src="screenshots/09-archiv-reentry-abschluss.png" alt="Archiv und Re-Entry nach Beschluss" loading="lazy"></figure>
+<figure><img src="screenshots/09-archiv-reentry-abschluss.png" alt="Archiv und Re-Entry nach Beschluss"></figure>
 <p><strong>Zeitpunkt:</strong> September 2027</p>
 <p>Drei Monate nach dem Beschluss wird die Datei erneut geöffnet. Ohne alte Protokolle zu suchen, sieht die Modellverantwortliche im Prozessbereich: Beschluss gefasst, Umsetzung läuft, Auflagen bleiben Monitoringpunkte, Review nach erster Umsetzungsetappe.</p>
+<p><strong>Warum das im EVU-Alltag wichtig ist:</strong> Planungs- und Investitionsentscheidungen werden häufig über Monate weitergereicht. Personen wechseln, Termine verschieben sich, Annahmen altern. Ein wiederaufnahmefähiges Modell hilft, nicht wieder bei null zu beginnen. Es zeigt, welche Annahmen galten, welche Fragen offen waren und welche nächste Prüfung vereinbart wurde.</p>
 <p><strong>Nutzung der App zu diesem Zeitpunkt:</strong></p>
 <ul>
 <li>Die Phase wird auf <strong>Beschluss/Archiv</strong> gesetzt.</li>
 <li>Arbeitsstand, nächster Schritt, Zuständigkeit und Fälligkeit bleiben im Modell-JSON gespeichert.</li>
 <li>Das Modell kann zusammen mit Report und JSON-Export als Entscheidungsstand abgelegt werden.</li>
+<li>Die Historie unterstützt spätere Nachvollziehbarkeit, ohne ein Backend oder eine zentrale Plattform vorauszusetzen.</li>
 </ul>
 <p><strong>Was die Story zeigen soll:</strong></p>
-<p>1. Die App begleitet keine Einmalrechnung, sondern einen mehrmonatigen Planungsprozess.</p>
-<p>2. Neue Fakten ändern Maßnahmen, Szenarien, Aktivierbarkeit und Entscheidungsreife.</p>
-<p>3. Rückkopplungen aus Technik, Regulierungsmanagement, Controlling und Finanzierung werden sichtbar gehalten.</p>
-<p>4. Die Entscheidung bleibt menschlich und governance-basiert; die App liefert Transparenz, Rechenpfad und Erinnerbarkeit.</p>
-<p>5. Der neue Prozessstatus verhindert, dass nach Wochen unklar ist, was zuletzt galt und was als Nächstes passieren sollte.</p>
+<ul>
+<li>Die App begleitet keine Einmalrechnung, sondern einen mehrmonatigen Finanzplanungsprozess.</li>
+<li>Neue Fakten ändern Maßnahmen, Szenarien, Aktivierbarkeit, Kapitalbindung und Entscheidungsreife.</li>
+<li>Rückkopplungen aus Technik, Regulierungsmanagement, Controlling und Finanzierung werden sichtbar gehalten.</li>
+<li>Die Entscheidung bleibt menschlich und governance-basiert; die App liefert Transparenz, Rechenpfad und Erinnerbarkeit.</li>
+<li>Der Prozessstatus verhindert, dass nach Wochen unklar ist, was zuletzt galt und was als Nächstes passieren sollte.</li>
+</ul>
 <hr>
 <h2>Kurzfazit</h2>
 <p>Die fiktive Planungsrunde zeigt drei zentrale Nutzungsmuster:</p>
@@ -289,7 +360,7 @@
 <li><strong>Während der Runde:</strong> Maßnahmen, Szenarien und Wirkannahmen werden iterativ angepasst, ohne offene Punkte zu verstecken.</li>
 <li><strong>Am Ende und danach:</strong> Report, Gremienvorlage und Prozessstatus konservieren nicht nur Kennzahlen, sondern auch Arbeitsstand, Auflagen und nächsten Schritt.</li>
 </ul>
-<p>Damit wird die App zu einem Begleiter für echte Planungsarbeit: nicht als deterministische Entscheidungsmaschine, sondern als nachvollziehbarer, lokaler und prüfbarer Entscheidungsraum.</p>
+<p>Damit wird die App zu einem Begleiter für echte Finanzplanung in regulierten Sparten: nicht als deterministische Entscheidungsmaschine, nicht als isolierter EOG-Rechner, sondern als nachvollziehbarer, lokaler und prüfbarer Entscheidungsraum für VNB-Portfolios.</p>
     </article>
     <footer>Szenarienrechner-EOG · synthetische Userstory · Apache-2.0</footer>
   </main>
