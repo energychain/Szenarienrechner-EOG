@@ -1,6 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 const requiredDocs = [
+  'docs/adr/0001-offline-first-single-file.md',
+  'docs/adr/0002-dom-free-calculation-engine.md',
+  'docs/adr/0003-synthetic-demo-data.md',
   'CONTRIBUTING.md',
   'SECURITY.md',
   'CHANGELOG.md',
@@ -38,6 +41,13 @@ assert(roadmap.includes('UI-Modularisierung'), 'ROADMAP must include UI modulari
 const model = readFileSync('MODEL.md', 'utf8');
 assert(model.includes('REGULATORY_ASSUMPTIONS.md'), 'MODEL must reference regulatory assumptions.');
 assert(model.includes('Erlösobergrenze'), 'MODEL must document EOG context.');
+
+const adrIndex = readFileSync('docs/adr/0001-offline-first-single-file.md', 'utf8');
+assert(adrIndex.includes('Offline-first'), 'ADR 0001 must document offline-first rationale.');
+const adrEngine = readFileSync('docs/adr/0002-dom-free-calculation-engine.md', 'utf8');
+assert(adrEngine.includes('DOM-freier Rechenkern'), 'ADR 0002 must document the DOM-free engine.');
+const adrDemo = readFileSync('docs/adr/0003-synthetic-demo-data.md', 'utf8');
+assert(adrDemo.includes('synthetische Demodaten'), 'ADR 0003 must document synthetic demo data.');
 
 const dataFormat = readFileSync('DATA_FORMAT.md', 'utf8');
 assert(dataFormat.includes('localStorage'), 'DATA_FORMAT must document localStorage scope.');
