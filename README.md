@@ -46,6 +46,7 @@ Der Rechner bildet ein generisches Planungsmodell fuer regulierte Sparten ab. Er
 
 Weitere Projektdokumente:
 
+- `HERMES_BRIEFING.md`: Maintainer-Briefing fuer die fachliche Linie und Uebergabe an Hermes.
 - `MODEL.md`: Modellueberblick und Rechenkontext.
 - `GOVERNANCE.md`: Maintainer-, Review- und Neutralitaetsregeln.
 - `DATA_FORMAT.md`: lokaler Speicher, JSON-Export und Importgrundsaetze.

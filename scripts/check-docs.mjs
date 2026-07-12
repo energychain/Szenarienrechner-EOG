@@ -5,6 +5,7 @@ const requiredDocs = [
   'docs/adr/0002-dom-free-calculation-engine.md',
   'docs/adr/0003-synthetic-demo-data.md',
   'CONTRIBUTING.md',
+  'HERMES_BRIEFING.md',
   'SECURITY.md',
   'CHANGELOG.md',
   'ROADMAP.md',
@@ -41,6 +42,11 @@ assert(roadmap.includes('UI-Modularisierung'), 'ROADMAP must include UI modulari
 const model = readFileSync('MODEL.md', 'utf8');
 assert(model.includes('REGULATORY_ASSUMPTIONS.md'), 'MODEL must reference regulatory assumptions.');
 assert(model.includes('Erlösobergrenze'), 'MODEL must document EOG context.');
+assert(model.includes('Klärpunkt'), 'MODEL must keep unexplained effects as clarification points.');
+
+const briefing = readFileSync('HERMES_BRIEFING.md', 'utf8');
+assert(briefing.includes('Governance-Werkzeug'), 'HERMES_BRIEFING must preserve the governance-tool framing.');
+assert(briefing.includes('Keine Netzwerkabhaengigkeit'), 'HERMES_BRIEFING must preserve the offline-first red line.');
 
 const adrIndex = readFileSync('docs/adr/0001-offline-first-single-file.md', 'utf8');
 assert(adrIndex.includes('Offline-first'), 'ADR 0001 must document offline-first rationale.');

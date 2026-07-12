@@ -8,6 +8,7 @@ Szenarienrechner-EOG ist ein generisches Open-Source-Werkzeug fuer Szenario-, Po
 - Demodaten muessen eindeutig synthetisch sein. Verwende neutrale Namen wie `Beispielnetz`, `Demogebiet Alpha` oder `synthetische Störungsanalyse`.
 - Keine Rechts-, Steuer-, Wirtschaftspruefungs- oder Regulierungsberatung in App oder Dokumentation behaupten.
 - Fachliche Annahmen muessen transparent dokumentiert werden. Siehe `REGULATORY_ASSUMPTIONS.md` und `MODEL.md`.
+- `HERMES_BRIEFING.md` enthaelt zusaetzliches Maintainer-Grounding. Neue Nutzer- oder Produktdokumentation muss trotzdem fuer sich selbst verstaendlich und neutral bleiben.
 - Die App bleibt offline-first: keine Telemetrie, keine externen Skripte, keine Netzwerkzugriffe im gebauten Artefakt.
 
 ## Arbeitsmodus

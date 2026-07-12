@@ -15,6 +15,8 @@ Das Modell soll Massnahmenportfolios vergleichbar machen:
 
 Es ersetzt keine Rechts- oder Regulierungsberatung und keine unternehmensspezifische Bescheidpruefung.
 
+Nicht jede Budgetmassnahme braucht eine klassische Renditerechnung. Relevante Zusatzmassnahmen brauchen aber eine nachvollziehbare wirtschaftliche Wirklogik: Welche Annahme macht die Massnahme entscheidungsfaehig, welche Evidenz stuetzt sie, und welcher Klärpunkt bleibt offen?
+
 ## Zentrale Eingaben
 
 ### Basisdaten
@@ -55,6 +57,8 @@ Jede Annahme soll nachvollziehbar machen:
 - ob sie in der Berechnung aktiv ist oder nur dokumentiert wird,
 - welche Evidenz oder Quelle dahinter steht.
 
+Wenn ein Effekt nicht sauber erklaert werden kann, ist er kein Ergebnis-KPI, sondern ein Klärpunkt. Portfolioeffekte duerfen nicht stillschweigend einzelnen Massnahmen zugerechnet werden; Attribution ist selbst eine Governance-Annahme.
+
 ## Vereinfachtes Verfahren
 
 Beim vereinfachten Verfahren werden individuelle Q- und Effizienzeffekte vorsichtig behandelt. Die App dokumentiert Annahmen weiter, rechnet sie aber nicht automatisch als individuelle Erlöswirkung, wenn der gewaehlte Verfahrenskontext das nicht traegt.
@@ -72,6 +76,8 @@ Das Modell erzeugt unter anderem:
 - Kapitalwert- und Renditeindikatoren,
 - indikative Tarif-/Haushaltswirkung,
 - Governance- und Entscheidungsindikatoren.
+
+Die Ergebnis- und Controlling-Sicht ist indikativ. Handelsbilanz, Steuern, Eigenleistungen, Umlagen, konkrete Entgeltsystematik und unternehmensspezifische Bescheide muessen fuer produktive Entscheidungen separat uebergeleitet werden.
 
 ## Technische Abgrenzung
 

@@ -35,6 +35,13 @@ Diese Roadmap beschreibt risikoarme naechste Schritte fuer Szenarienrechner-EOG.
 - Browser-/DOM-Test fuer Beispielprojekt, Szenariowechsel, Import/Export und Report-Erzeugung einfuehren.
 - Historie und Audit-Pfade gegen Regressionen absichern.
 
+## Phase 4b: Plausibilitaet und Klaerpunkte
+
+- Plausibilitaetschecks fuer Portfolio-Attribution, Doppelzaehlung und widerspruechliche Wirkannahmen ergaenzen.
+- Offene Klärpunkte bis zur Entscheidung sichtbarer nachverfolgen.
+- Reportvarianten fuer Management, Regulierungsmanagement, Controlling und Audit ausbauen, ohne neue Fachlogik zu verstecken.
+- Die Bruecke zwischen regulatorischer EOG-Sicht und HGB-/Controlling-Perspektive expliziter dokumentieren.
+
 ## Phase 5: UI-Modularisierung
 
 `src/ui.js` schrittweise und ohne Big-Bang-Refactor zerlegen:

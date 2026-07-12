@@ -9,6 +9,7 @@ Szenarienrechner-EOG ist ein neutrales Public-OSS-Projekt. Governance bedeutet h
 - Offline-first und keine Telemetrie.
 - Fachliche Annahmen sind sichtbar, versionierbar und pruefpflichtig.
 - Tests und Dokumentation sind Teil des Produkts, nicht Beiwerk.
+- `HERMES_BRIEFING.md` beschreibt die Maintainer-Uebergabe und die fachliche Produktlinie. Es ergaenzt diese Governance, ersetzt aber keine oeffentliche Produktdokumentation.
 
 ## Rollen im Projekt
 
@@ -52,6 +53,16 @@ Diese Aenderungen koennen risikoarm umgesetzt werden, solange Tests gruen bleibe
 - synthetische Demodaten klarer kennzeichnen,
 - Import-/Export-Dokumentation,
 - Release- und Sicherheitsdokumentation.
+
+## Automations- und Agentenarbeit
+
+Automatisierte Beitraege, insbesondere durch Hermes oder andere Coding Agents, muessen denselben Review-Massstab einhalten wie menschliche Beitraege:
+
+- keine automatische fachliche Wahrheit oder Freigabe aus Kennzahlen ableiten,
+- offene Klaerpunkte sichtbar lassen statt sie durch Defaults zu verstecken,
+- Wirkannahmen nicht ohne Kausalkette, Evidenz und Governance-Status in harte Ergebniswerte verwandeln,
+- technische Refactorings klein halten und gegen bestehende Tests verifizieren,
+- bei fachlichen Unsicherheiten stoppen und eine fachliche Entscheidung einholen.
 
 ## Neutralitätsprüfung
 

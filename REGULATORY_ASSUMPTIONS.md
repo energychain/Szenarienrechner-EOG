@@ -49,6 +49,7 @@ Die App referenziert folgende oeffentliche Quellenebenen als Modellkontext:
 - Wirkannahmen statt versteckter Excel-Zellen: Jede Q-/Effizienz-/Risikoannahme braucht Kausalkette, Evidenz und Governance-Status.
 - Szenarien statt Scheingenauigkeit: Konservativ-, Basis- und Wert-Sicht trennen Annahmen von Stammdaten.
 - Rollen- und Historienmodell: Management, Fachbereich, Modellverantwortung und Audit brauchen unterschiedliche Sichten auf dieselben Daten.
+- Klaerpunkte statt falscher Gewissheit: Nicht erklaerbare Effekte bleiben pruefpflichtige Annahmen und werden nicht automatisch zu entscheidungsleitenden Kennzahlen.
 
 ## Public-OSS-Abgrenzung
 
