@@ -6,6 +6,7 @@ import {
   irr,
   npv,
   params,
+  regulatoryParameterSet,
   regulatoryPeriodFor,
   scenarioParams
 } from '../src/engine.js';
@@ -64,6 +65,16 @@ describe('financial helpers', () => {
 });
 
 describe('regulatoryPeriodFor', () => {
+  it('documents the public regulatory parameter set and source boundary', () => {
+    expect(regulatoryParameterSet.id).toBe('regulatory-parameters-2026-07');
+    expect(regulatoryParameterSet.scope).toContain('keine Rechts- oder Regulierungsberatung');
+    expect(regulatoryParameterSet.sources).toEqual(expect.arrayContaining([
+      expect.stringContaining('ARegV'),
+      expect.stringContaining('KANU'),
+      expect.stringContaining('NEST/RAMEN')
+    ]));
+  });
+
   it('handles gas period boundaries and 5-year future periods', () => {
     expect(regulatoryPeriodFor('gas', 2022)).toMatchObject({ id: 'RP4', start: 2023, end: 2027 });
     expect(regulatoryPeriodFor('gas', 2027)).toMatchObject({ id: 'RP4', start: 2023, end: 2027 });
