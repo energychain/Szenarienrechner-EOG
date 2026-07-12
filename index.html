@@ -305,14 +305,56 @@
         <h2>Maßnahmenkatalog</h2>
         <div class="action-row">
           <button type="button" id="newMeasure" class="primary">Neue Maßnahme geführt</button>
+          <button type="button" id="bulkImportMeasures">CSV/Excel importieren</button>
+          <button type="button" id="exportCatalogCsv">Katalog CSV</button>
           <button type="button" id="toggleAllInCatalog">Alle aktivieren</button>
+        </div>
+        <div class="catalog-controls">
+          <input id="catalogSearch" type="search" placeholder="Suche nach Name, ID, Bereich, Tag">
+          <select id="catalogGroupBy" aria-label="Gruppieren">
+            <option value="orgUnit">nach Bereich</option>
+            <option value="type">nach Typ</option>
+            <option value="year">nach Jahr</option>
+            <option value="target">nach Ziel</option>
+          </select>
+          <select id="catalogTypeFilter" aria-label="Typ filtern">
+            <option value="all">alle Typen</option>
+            <option value="wahl">Wahl</option>
+            <option value="noRegret">No-Regret</option>
+            <option value="risiko">Risiko</option>
+          </select>
+          <select id="catalogActiveFilter" aria-label="Aktiv filtern">
+            <option value="all">aktiv + inaktiv</option>
+            <option value="active">nur aktiv</option>
+            <option value="inactive">nur inaktiv</option>
+          </select>
+          <input id="catalogYearFrom" type="number" placeholder="Jahr von">
+          <input id="catalogYearTo" type="number" placeholder="bis">
+          <input id="catalogTagFilter" type="text" placeholder="Tag">
+          <label class="checkbox-inline"><input id="catalogOpenOnly" type="checkbox"> offene Punkte</label>
+          <label class="checkbox-inline"><input id="catalogImportedOnly" type="checkbox"> Import unbestätigt</label>
+        </div>
+        <div class="catalog-controls compact">
+          <button type="button" class="catalog-quick" data-quick="npv">Top 10 Kapitalwert</button>
+          <button type="button" class="catalog-quick" data-quick="risk">Top 10 Risiko</button>
+          <button type="button" class="catalog-quick" data-quick="cost">Top 10 Kosten</button>
+          <select id="bulkOrgUnit" aria-label="Bulk Bereich setzen"><option value="">Bereich setzen...</option></select>
+          <select id="bulkObjective" aria-label="Bulk Ziel zuordnen"><option value="">Ziel zuordnen...</option></select>
+          <input id="bulkTag" type="text" placeholder="Tag vergeben">
+          <button type="button" id="bulkActivate">Auswahl aktiv</button>
+          <button type="button" id="bulkDeactivate">Auswahl inaktiv</button>
+          <button type="button" id="bulkSetOrgUnit">Bereich setzen</button>
+          <button type="button" id="bulkAssignObjective">Ziel zuordnen</button>
+          <button type="button" id="bulkAddTag">Tag vergeben</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
+                <th>Auswahl</th>
                 <th>Aktiv</th>
                 <th>Maßnahme</th>
+                <th>Bereich</th>
                 <th>Jahr</th>
                 <th>Ziele</th>
                 <th>Kosten</th>
@@ -322,10 +364,10 @@
                 <th>Notiz</th>
               </tr>
             </thead>
-            <tbody id="measureBody"></tbody>
-          </table>
+              <tbody id="measureBody"></tbody>
+            </table>
+          </div>
         </div>
-      </div>
     </section>
 
     <section class="panel app-view hidden" data-view-panel="expertWork" aria-label="Offene Punkte Fachexpertise">
@@ -414,6 +456,11 @@
             <div class="value" id="kpiTariff">-</div>
             <div class="sub" id="kpiTariffSub">Jahresarbeit eintragen</div>
           </div>
+          <div class="kpi">
+            <div class="label">EBIT-Wirkung Jahr 1</div>
+            <div class="value" id="kpiEbit">-</div>
+            <div class="sub" id="kpiEbitSub">indikative Ergebnissicht</div>
+          </div>
         </div>
       </section>
 
@@ -490,9 +537,14 @@
       <details class="panel-details">
         <summary>Jahrestabelle und Rechenpfad anzeigen</summary>
         <div>
+          <div class="segmented compact-segmented" aria-label="Sicht Jahrestabelle">
+            <button type="button" class="year-view active" data-year-view="regulatory">Regulatorische Sicht</button>
+            <button type="button" class="year-view" data-year-view="earnings">Ergebnissicht</button>
+          </div>
+          <p id="resultViewCaveat" class="hint hidden">Indikative Ergebnissicht ohne Steuern, Eigenleistungen und Konzerneffekte - Überleitung mit dem Controlling abstimmen.</p>
           <div class="table-wrap">
             <table>
-              <thead>
+              <thead id="yearHead">
                 <tr>
 	                  <th>Jahr</th>
 	                  <th>RP</th>
@@ -532,6 +584,13 @@
           <div>
             <label for="committeeBody">Gremium</label>
             <input id="committeeBody" type="text" value="Gemeinderat">
+          </div>
+          <div>
+            <label for="committeeAudience">Adressat</label>
+            <select id="committeeAudience">
+              <option value="kommunal">Kommunales Gremium</option>
+              <option value="vorstand">Vorstand</option>
+            </select>
           </div>
           <div>
             <label for="committeeMeetingDate">Sitzungsdatum</label>
@@ -642,6 +701,24 @@
     </div>
   </div>
 
+  <div id="bulkImportModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bulkImportTitle">
+    <div class="dialog wide-dialog">
+      <div class="dialog-head">
+        <h2 id="bulkImportTitle">Maßnahmenliste importieren</h2>
+        <div id="bulkImportStepper" class="stepper"></div>
+      </div>
+      <div id="bulkImportBody" class="dialog-body"></div>
+      <div class="dialog-foot">
+        <button type="button" id="bulkImportCancel">Abbrechen</button>
+        <div class="dialog-actions">
+          <button type="button" id="bulkImportBack">Zurück</button>
+          <button type="button" id="bulkImportNext" class="primary">Weiter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <input id="bulkImportFile" class="hidden" type="file" accept=".csv,.txt,text/csv,text/plain">
+
   <div id="importReviewModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="importReviewTitle">
     <div class="dialog">
       <div class="dialog-head">
@@ -673,6 +750,19 @@
             <div>
               <label for="mName">Name</label>
               <input id="mName" type="text">
+            </div>
+            <div>
+              <label for="mExternalId">Externe ID</label>
+              <input id="mExternalId" type="text" placeholder="PSP / Projektnummer">
+            </div>
+            <div>
+              <label for="mOrgUnit">Bereich / Gesellschaft</label>
+              <input id="mOrgUnit" type="text" list="orgUnitOptions">
+              <datalist id="orgUnitOptions"></datalist>
+            </div>
+            <div>
+              <label for="mTags">Tags</label>
+              <input id="mTags" type="text" placeholder="RP5, Pflicht">
             </div>
             <div>
               <label for="mType">Typ</label>
@@ -713,6 +803,10 @@
             <div>
               <label for="mLife">normale ND Jahre</label>
               <input id="mLife" type="number" min="1" step="1">
+            </div>
+            <div>
+              <label for="mHgbLife">HGB-ND Jahre</label>
+              <input id="mHgbLife" type="number" min="1" step="1">
             </div>
             <div>
               <label for="mDepr">AfA-Szenario</label>

@@ -121,6 +121,15 @@ describe('calcMeasure depreciation scenarios', () => {
     expect(result.totex.nominal).toBeCloseTo(1210, 4);
     expect(result.totex.discounted).toBeGreaterThan(1000);
   });
+
+  it('calculates an indicative HGB result bridge in parallel to the regulatory path', () => {
+    const p = params({ ...baseInputs, horizon: 20 });
+    const result = calcMeasure(baseMeasure({ life: 10, hgbLife: 20 }), p);
+
+    expect(result.rows[0].hgbDepreciation).toBeCloseTo(50, 4);
+    expect(result.rows[0].bridge).toBeCloseTo(50, 4);
+    expect(result.rows.reduce((sum, row) => sum + row.bridge, 0)).toBeCloseTo(0, 4);
+  });
 });
 
 describe('scenario and portfolio parameters', () => {

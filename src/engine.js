@@ -204,6 +204,7 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   const opexDeltaPa = finiteNumber(measure.opexDeltaPa);
   const reinvestCost = finiteNumber(measure.reinvestCost);
   const decommissionCost = finiteNumber(measure.decommissionCost);
+  const hgbLife = Math.max(1, Math.round(finiteNumber(measure.hgbLife, measure.life)));
   const defaultDecommissionYear = p.sector === 'gas'
     ? p.kanuEndYear
     : start + Math.max(1, Math.round(finiteNumber(measure.life))) - 1;
@@ -241,6 +242,11 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     const decommission = year === decommissionYear ? -decommissionCost : 0;
     const reinvestDecommission = reinvest + decommission;
     const eog = depreciation + capitalReturn + firstYearOpex + yearlyQE + yearlyRisk + lifecycleOpex + reinvestDecommission;
+    const hgbDepreciation = year >= start && year < start + hgbLife
+      ? Math.min(active.activated / hgbLife, active.activated)
+      : 0;
+    const ebit = eog - hgbDepreciation - (year >= start ? opexPa : 0) + (year >= start ? opexDeltaPa : 0);
+    const bridge = depreciation - hgbDepreciation;
 
     if (year >= start) rest = Math.max(0, rest - depreciation);
     rows.push({
@@ -252,6 +258,9 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
       risk: yearlyRisk,
       opexRisk: firstYearOpex + yearlyRisk,
       reinvestDecommission,
+      hgbDepreciation,
+      ebit,
+      bridge,
       eog
     });
   }
@@ -295,6 +304,10 @@ export function calcPortfolio(model, p) {
     risk: 0,
     opexRisk: 0,
     reinvestDecommission: 0,
+    hgbDepreciation: 0,
+    ebit: 0,
+    bridge: 0,
+    bridgeCumulative: 0,
     eog: 0
   }));
 
@@ -307,6 +320,9 @@ export function calcPortfolio(model, p) {
       yearly[i].risk += row.risk;
       yearly[i].opexRisk += row.opexRisk;
       yearly[i].reinvestDecommission += row.reinvestDecommission;
+      yearly[i].hgbDepreciation += row.hgbDepreciation;
+      yearly[i].ebit += row.ebit;
+      yearly[i].bridge += row.bridge;
       yearly[i].eog += row.eog;
     });
   });
@@ -323,8 +339,11 @@ export function calcPortfolio(model, p) {
     nominal: sum.nominal + result.totex.nominal,
     discounted: sum.discounted + result.totex.discounted
   }), { nominal: 0, discounted: 0 });
+  let bridgeCumulative = 0;
   yearly.forEach(row => {
     row.regulatoryPeriod = regulatoryPeriodFor(p.sector, row.year);
+    bridgeCumulative += row.bridge;
+    row.bridgeCumulative = bridgeCumulative;
   });
 
   return {

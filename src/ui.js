@@ -182,10 +182,10 @@ const inputIds = [
 ];
 
 const detailIds = [
-  'mName', 'mType', 'mCost', 'mYear', 'mSecure', 'mUncertain',
+  'mName', 'mExternalId', 'mOrgUnit', 'mTags', 'mType', 'mCost', 'mYear', 'mSecure', 'mUncertain',
   'mProbability', 'mOpexRecognition', 'mLife', 'mDepr', 'mQDirect',
   'mEDirect', 'mRiskAvoided', 'mPortfolioShare', 'mOpexPa',
-  'mOpexDeltaPa', 'mReinvestCost', 'mDecommissionCost',
+  'mOpexDeltaPa', 'mReinvestCost', 'mDecommissionCost', 'mHgbLife',
   'mDecommissionYear', 'mNote'
 ];
 
@@ -208,6 +208,9 @@ const fieldHelp = {
   qDelta: 'Geschätzte Qualitätswirkung auf die relevante Portfolio-Basis. Der Euro-Effekt entsteht erst über Basis x Delta x Attribution.',
   eDelta: 'Geschätzte Effizienz- oder EOG-Wirkung auf Portfolioebene. Sie sollte nur angesetzt werden, wenn ein plausibler kausaler Zusammenhang besteht.',
   mName: 'Eindeutige Bezeichnung der Maßnahme. Sie sollte fachlich wiedererkennbar sein, damit Annahmen später prüfbar bleiben.',
+  mExternalId: 'Schlüssel aus dem führenden System, zum Beispiel PSP-Element oder Projektnummer. Damit erkennt der Massenimport Updates statt Duplikate.',
+  mOrgUnit: 'Organisationseinheit oder Gesellschaft, aus der die Maßnahme stammt. Der Katalog kann danach gruppieren und aggregieren.',
+  mTags: 'Freie Schlagworte für Filter und Klausuren, zum Beispiel RP5, Pflicht oder Klausur-09. Mehrere Tags mit Komma trennen.',
   mType: 'Einordnung der Maßnahme. Wahlmaßnahmen werden als wirtschaftliche Entscheidung betrachtet; Risiko- und Pflichtnähe beeinflussen die Begründung.',
   mCost: 'Gesamtkosten der Maßnahme in TEUR. Die Rendite wird gegen diese Gesamtkosten gestellt, auch wenn nur ein Teil davon aktiviert wird.',
   mYear: 'Jahr der Inbetriebnahme. Erst ab diesem Jahr entstehen Abschreibung, Verzinsung und direkte Zusatzwirkungen im Modell.',
@@ -226,6 +229,7 @@ const fieldHelp = {
   mReinvestCost: 'Erneuerungskosten, falls innerhalb des Betrachtungshorizonts nach Nutzungsdauer erneut investiert werden muss.',
   mDecommissionCost: 'Rückbau- oder Entsorgungskosten. Bei Gas können diese rund um das KANU-Zieljahr entscheidungsrelevant sein.',
   mDecommissionYear: 'Jahr, in dem Rückbau- oder Entsorgungskosten anfallen. Ohne Eingabe nutzt das Modell bei Gas das KANU-Zieljahr, sonst das Ende der Nutzungsdauer.',
+  mHgbLife: 'Nutzungsdauer in der Handelsbilanz. Weicht sie von der regulatorischen ab, entsteht eine zeitliche Lücke zwischen Erlös und Aufwand - die Ergebnissicht zeigt, wie groß sie ist.',
   strategySampReference: 'Falls es einen strategischen Anlagenmanagementplan oder eine Unternehmensstrategie gibt: hier referenzieren. Gibt es keinen, einfach die wichtigsten Ziele der Sparte eintragen.',
   objectiveIds: 'Welchem übergeordneten Ziel dient die Maßnahme? Damit bleibt im Budget sichtbar, wofür investiert wird und was wegfällt, wenn gestrichen wird.',
   evidenceType: 'Art der Datenbasis. Messdaten und dokumentierte Betriebserfahrung erhöhen die Entscheidungsreife stärker als eine offene Schätzung.',
@@ -233,12 +237,13 @@ const fieldHelp = {
   riskProbabilityAfter: 'Wie oft pro Jahr tritt das Schadensereignis mit Maßnahme ein? Die Differenz zu vorher wird mit der Schadenshöhe bewertet.',
   riskImpact: 'Schadenshöhe je Ereignis in TEUR, inklusive Folgekosten, Sanktionen oder Wiederherstellungskosten.',
   committeeBody: 'Gremium, fuer das eine knappe Vorlage erstellt wird, zum Beispiel Gemeinderat, Aufsichtsrat oder Werksausschuss.',
+  committeeAudience: 'Adressat der Vorlage. Kommunal übersetzt stärker in Wirkung für Bürger; Vorstand zeigt wirtschaftliche Kennzahlen und Bereichsbeiträge direkter.',
   committeeMeetingDate: 'Sitzungsdatum fuer die Gremienvorlage. Leer lassen, wenn noch kein Termin feststeht.',
   committeeProposalText: 'Optionaler Beschlussvorschlag in Alltagssprache. Wenn leer, formuliert die Vorlage einen neutralen Vorschlag.',
   mNote: 'Arbeitsnotiz für Meeting, Klärpunkte oder Governance-Auflagen. Die Notiz wird gespeichert, in der Übersicht markiert und im Report ausgewiesen.'
 };
 
-const committeeIds = ['committeeBody', 'committeeMeetingDate', 'committeeProposalText'];
+const committeeIds = ['committeeBody', 'committeeAudience', 'committeeMeetingDate', 'committeeProposalText'];
 const el = Object.fromEntries([...inputIds, ...detailIds, ...committeeIds].map(id => [id, document.getElementById(id)]));
 let measures = structuredClone(initialMeasures);
 let selectedId = measures[0]?.id;
@@ -256,7 +261,7 @@ const authorKey = 'regulierte-sparten-szenario-rechner-author';
 const lastSeenEventKey = 'regulierte-sparten-szenario-rechner-last-seen-event';
 const roleKey = 'regulierte-sparten-szenario-rechner-role';
 const legacyStorageKeys = [];
-const modelVersion = 5;
+const modelVersion = 6;
 const appVersion = '0.3.0-dev';
 const processPhases = [
   ['initialisierung', 'Initialisierung'],
@@ -291,6 +296,51 @@ let clarificationStatus = {};
 let pendingImportReview = null;
 let basisEditing = false;
 let expertFilter = 'all';
+let resultViewMode = 'regulatory';
+let catalogGroupBy = 'orgUnit';
+let catalogFilters = defaultCatalogFilters();
+let selectedCatalogIds = new Set();
+let collapsedCatalogGroups = {};
+let quickCatalogMode = '';
+let bulkImportState = null;
+let importMapping = {};
+
+const bulkImportSteps = ['Einlesen', 'Spalten zuordnen', 'Prüfbericht'];
+const importFields = [
+  ['ignore', 'Ignorieren'],
+  ['externalId', 'Externe ID / PSP'],
+  ['name', 'Bezeichnung'],
+  ['orgUnit', 'Bereich / OE'],
+  ['type', 'Typ'],
+  ['cost', 'Kosten TEUR'],
+  ['year', 'Inbetriebnahmejahr'],
+  ['life', 'Nutzungsdauer'],
+  ['hgbLife', 'HGB-Nutzungsdauer'],
+  ['secure', 'sicher aktivierbar %'],
+  ['uncertain', 'unsicher aktivierbar %'],
+  ['probability', 'Wahrscheinlichkeit %'],
+  ['opexRecognition', 'OPEX-Anerkennung %'],
+  ['active', 'aktiv'],
+  ['tags', 'Tags'],
+  ['templateId', 'Vorlage']
+];
+const importHeaderSynonyms = {
+  externalId: ['psp', 'psp-element', 'projektnr', 'projektnummer', 'projekt-id', 'id', 'sap'],
+  name: ['bezeichnung', 'maßnahme', 'massnahme', 'projektname', 'projekt', 'titel', 'name'],
+  orgUnit: ['bereich', 'gesellschaft', 'oe', 'organisation', 'orgunit', 'kostenstelle'],
+  type: ['typ', 'maßnahmenart', 'massnahmenart', 'kategorie'],
+  cost: ['invest', 'kosten', 'budget', 'budget teur', 'invest teur', 'capex', 'betrag'],
+  year: ['ibn', 'inbetriebnahme', 'jahr', 'startjahr', 'baujahr'],
+  life: ['nd', 'nutzungsdauer', 'regulatorische nd', 'afa'],
+  hgbLife: ['hgb nd', 'hgb-nutzungsdauer', 'handelsrechtliche nd'],
+  secure: ['sicher', 'sicher aktivierbar', 'aktivierbar sicher'],
+  uncertain: ['unsicher', 'unsicher aktivierbar', 'aktivierbar unsicher'],
+  probability: ['wahrscheinlichkeit', 'eintritt', 'p50'],
+  opexRecognition: ['opex-anerkennung', 'opex anerkennung', 'anerkennung'],
+  active: ['aktiv', 'einplanen', 'auswahl'],
+  tags: ['tags', 'schlagworte', 'label'],
+  templateId: ['vorlage', 'template', 'templateid']
+};
 
 const impactAreaLabels = {
   qElement: 'Q-Element',
@@ -299,6 +349,36 @@ const impactAreaLabels = {
   risk: 'Risiko',
   portfolio: 'Portfolio'
 };
+
+function defaultCatalogFilters() {
+  return {
+    search: '',
+    type: 'all',
+    active: 'all',
+    openOnly: false,
+    importedOnly: false,
+    yearFrom: '',
+    yearTo: '',
+    tag: ''
+  };
+}
+
+function parseTags(value) {
+  if (Array.isArray(value)) return value.map(item => String(item).trim()).filter(Boolean);
+  return String(value || '').split(/[;,]/).map(item => item.trim()).filter(Boolean);
+}
+
+function tagsText(tags) {
+  return parseTags(tags).join(', ');
+}
+
+function orgUnitValues() {
+  return [...new Set(measures.map(measure => String(measure.orgUnit || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
+}
+
+function hasOpenMeasureItem(measure) {
+  return impactCounts(measure).review > 0 || String(measure.note || '').trim().length > 0;
+}
 
 const confidenceLabels = {
   proven: 'belegt',
@@ -472,6 +552,7 @@ const measureTemplates = [
 function defaultCommittee() {
   return {
     body: 'Gemeinderat',
+    audience: 'kommunal',
     meetingDate: '',
     proposalText: ''
   };
@@ -497,6 +578,7 @@ function normalizeCommittee(value = {}) {
   const defaults = defaultCommittee();
   return {
     body: String(value.body || defaults.body),
+    audience: value.audience === 'vorstand' ? 'vorstand' : 'kommunal',
     meetingDate: String(value.meetingDate || ''),
     proposalText: String(value.proposalText || '')
   };
@@ -506,6 +588,7 @@ function syncCommitteeFields() {
   if (!el.committeeBody) return;
   if (document.activeElement && committeeIds.includes(document.activeElement.id)) return;
   el.committeeBody.value = committee.body;
+  el.committeeAudience.value = committee.audience;
   el.committeeMeetingDate.value = committee.meetingDate;
   el.committeeProposalText.value = committee.proposalText;
 }
@@ -513,6 +596,7 @@ function syncCommitteeFields() {
 function collectCommitteeFields() {
   committee = normalizeCommittee({
     body: el.committeeBody.value,
+    audience: el.committeeAudience.value,
     meetingDate: el.committeeMeetingDate.value,
     proposalText: el.committeeProposalText.value
   });
@@ -707,6 +791,11 @@ function normalizeMeasureForUi(measure, index = 0) {
     ...newMeasureTemplate(index + 1),
     ...measure,
     id: String(measure.id || 'import_' + Date.now().toString(36) + '_' + index),
+    externalId: String(measure.externalId || ''),
+    orgUnit: String(measure.orgUnit || ''),
+    tags: parseTags(measure.tags),
+    hgbLife: Number(measure.hgbLife) || Number(measure.life) || 1,
+    importStatus: String(measure.importStatus || ''),
     objectiveIds: Array.isArray(measure.objectiveIds) ? measure.objectiveIds.map(String) : [],
     templateId: String(measure.templateId || ''),
     templateVersion: String(measure.templateVersion || ''),
@@ -758,7 +847,10 @@ function measureFromTemplate(template) {
     probability: template.probability,
     opexRecognition: template.opexRecognition,
     life: template.life,
+    hgbLife: template.hgbLife || template.life,
     depr: el.sector.value === 'strom' ? 'normal' : template.depr,
+    orgUnit: template.orgUnit || '',
+    tags: ['Vorlage'],
     templateId: template.templateId,
     templateVersion: template.templateVersion,
     impactAssumptions: (template.impactSkeletons || []).map((impact, index) => normalizeTemplateImpact(impact, index, year)),
@@ -1340,6 +1432,9 @@ function currentModelData() {
     process: structuredClone(processState),
     strategy: structuredClone(strategy),
     committee: structuredClone(committee),
+    importMapping: structuredClone(importMapping),
+    catalogGroupBy,
+    resultViewMode,
     inputs: Object.fromEntries(inputIds.map(id => [id, el[id].value])),
     measures: structuredClone(measures),
     meetingTextOverrides: structuredClone(meetingTextOverrides),
@@ -1371,6 +1466,9 @@ function legacyModelFromState(state) {
     process: state.process || defaultProcessState(),
     strategy: state.strategy || defaultStrategy(),
     committee: state.committee || defaultCommittee(),
+    importMapping: state.importMapping || {},
+    catalogGroupBy: state.catalogGroupBy || 'orgUnit',
+    resultViewMode: state.resultViewMode || 'regulatory',
     inputs: state.inputs,
     measures: state.measures,
     meetingTextOverrides: state.meetingTextOverrides || {},
@@ -1426,6 +1524,9 @@ function applyModelState(state) {
   processState = normalizeProcessState(model.process);
   strategy = normalizeStrategy(model.strategy);
   committee = normalizeCommittee(model.committee);
+  importMapping = model.importMapping && typeof model.importMapping === 'object' ? structuredClone(model.importMapping) : {};
+  catalogGroupBy = ['orgUnit', 'type', 'year', 'target'].includes(model.catalogGroupBy) ? model.catalogGroupBy : 'orgUnit';
+  resultViewMode = ['regulatory', 'earnings'].includes(model.resultViewMode) ? model.resultViewMode : 'regulatory';
   clarificationStatus = model.clarificationStatus && typeof model.clarificationStatus === 'object'
     ? structuredClone(model.clarificationStatus)
     : {};
@@ -1551,6 +1652,399 @@ function importModelFile(file) {
     }
   });
   reader.readAsText(file);
+}
+
+function normalizeHeader(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replaceAll('\ufeff', '')
+    .replaceAll('.', '')
+    .replaceAll('_', ' ')
+    .replaceAll('-', ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function detectDelimiter(text) {
+  const first = String(text || '').split(/\r?\n/).find(line => line.trim()) || '';
+  const candidates = [';', '\t', ','];
+  return candidates
+    .map(delimiter => ({ delimiter, count: first.split(delimiter).length }))
+    .sort((a, b) => b.count - a.count)[0]?.delimiter || ';';
+}
+
+function parseDelimitedRows(text, delimiter = detectDelimiter(text)) {
+  return String(text || '')
+    .replaceAll('\r\n', '\n')
+    .replaceAll('\r', '\n')
+    .split('\n')
+    .filter(line => line.trim())
+    .map(line => line.split(delimiter).map(cell => cell.trim().replace(/^"|"$/g, '').replaceAll('""', '"')));
+}
+
+function autoMapHeaders(headers) {
+  const previous = importMapping && typeof importMapping === 'object' ? importMapping : {};
+  const mapped = {};
+  headers.forEach((header, index) => {
+    const normalized = normalizeHeader(header);
+    const previousMatch = previous[header] || previous[normalized];
+    if (previousMatch && importFields.some(([field]) => field === previousMatch)) {
+      mapped[index] = previousMatch;
+      return;
+    }
+    const match = Object.entries(importHeaderSynonyms).find(([, synonyms]) => synonyms.some(synonym => normalized === normalizeHeader(synonym) || normalized.includes(normalizeHeader(synonym))));
+    mapped[index] = match?.[0] || 'ignore';
+  });
+  return mapped;
+}
+
+function parseGermanNumber(value, fallback = 0) {
+  const text = String(value ?? '').trim();
+  if (!text) return fallback;
+  const normalized = text
+    .replace(/\s/g, '')
+    .replace(/\.(?=\d{3}(\D|$))/g, '')
+    .replace(',', '.')
+    .replace(/[^\d.+-]/g, '');
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function parseBooleanCell(value, fallback = false) {
+  const text = String(value ?? '').trim().toLowerCase();
+  if (!text) return fallback;
+  return ['1', 'ja', 'j', 'yes', 'x', 'true', 'aktiv'].includes(text);
+}
+
+function importValue(row, mapping, field) {
+  const index = Object.entries(mapping).find(([, mappedField]) => mappedField === field)?.[0];
+  return index === undefined ? '' : row[Number(index)] ?? '';
+}
+
+function importedMeasureFromRow(row, mapping, index) {
+  const templateId = String(importValue(row, mapping, 'templateId') || '').trim();
+  const template = measureTemplates.find(item => item.templateId === templateId || item.name.toLowerCase() === templateId.toLowerCase());
+  const base = template ? measureFromTemplate(template) : newMeasureTemplate(measures.length + index + 1);
+  const name = String(importValue(row, mapping, 'name') || base.name).trim();
+  const year = Math.round(parseGermanNumber(importValue(row, mapping, 'year'), base.year));
+  const cost = parseGermanNumber(importValue(row, mapping, 'cost'), base.cost);
+  if (!name) return { error: 'Bezeichnung fehlt' };
+  if (!Number.isFinite(cost) || cost <= 0) return { error: 'Kosten unlesbar oder <= 0' };
+  if (!Number.isFinite(year) || year < 2000 || year > 2100) return { error: 'Jahr außerhalb plausibler Grenzen' };
+  const tags = parseTags(importValue(row, mapping, 'tags') || base.tags);
+  const measure = normalizeMeasureForUi({
+    ...base,
+    id: base.id || 'import_' + Date.now().toString(36) + '_' + index,
+    active: importValue(row, mapping, 'active') === '' ? false : parseBooleanCell(importValue(row, mapping, 'active')),
+    externalId: String(importValue(row, mapping, 'externalId') || '').trim(),
+    name,
+    orgUnit: String(importValue(row, mapping, 'orgUnit') || base.orgUnit || '').trim(),
+    type: ['wahl', 'noRegret', 'risiko'].includes(String(importValue(row, mapping, 'type')).trim()) ? String(importValue(row, mapping, 'type')).trim() : base.type,
+    cost,
+    year,
+    life: Math.max(1, Math.round(parseGermanNumber(importValue(row, mapping, 'life'), base.life))),
+    hgbLife: Math.max(1, Math.round(parseGermanNumber(importValue(row, mapping, 'hgbLife'), base.hgbLife || base.life))),
+    secure: clamp(parseGermanNumber(importValue(row, mapping, 'secure'), base.secure), 0, 100),
+    uncertain: clamp(parseGermanNumber(importValue(row, mapping, 'uncertain'), base.uncertain), 0, 100),
+    probability: clamp(parseGermanNumber(importValue(row, mapping, 'probability'), base.probability), 0, 100),
+    opexRecognition: clamp(parseGermanNumber(importValue(row, mapping, 'opexRecognition'), base.opexRecognition), 0, 100),
+    tags: tags.length ? tags : base.tags,
+    importStatus: 'unconfirmed',
+    note: String(base.note || '').trim()
+      ? base.note
+      : 'Aus Import angelegt. Fachliche Annahmen und lokale Werte prüfen.'
+  }, measures.length + index);
+  return { measure };
+}
+
+function buildBulkImportPlan() {
+  if (!bulkImportState) return { added: [], updated: [], skipped: [] };
+  const existingByExternalId = new Map(measures.filter(measure => measure.externalId).map(measure => [String(measure.externalId), measure]));
+  const added = [];
+  const updated = [];
+  const skipped = [];
+  bulkImportState.rows.forEach((row, index) => {
+    const parsed = importedMeasureFromRow(row, bulkImportState.mapping, index);
+    if (parsed.error) {
+      skipped.push({ index: index + 2, reason: parsed.error });
+      return;
+    }
+    const existing = parsed.measure.externalId ? existingByExternalId.get(parsed.measure.externalId) : null;
+    if (existing) {
+      updated.push({ existing, incoming: parsed.measure, index: index + 2 });
+    } else {
+      added.push({ incoming: parsed.measure, index: index + 2 });
+    }
+  });
+  return { added, updated, skipped };
+}
+
+function renderBulkImportModal() {
+  if (!bulkImportState) return;
+  const body = document.getElementById('bulkImportBody');
+  const stepper = document.getElementById('bulkImportStepper');
+  const back = document.getElementById('bulkImportBack');
+  const next = document.getElementById('bulkImportNext');
+  stepper.innerHTML = bulkImportSteps.map((label, index) => `<span class="${index === bulkImportState.step ? 'active' : ''}">${index + 1}. ${esc(label)}</span>`).join('');
+  back.disabled = bulkImportState.step === 0;
+  next.textContent = bulkImportState.step === 2 ? 'Übernehmen' : 'Weiter';
+  if (bulkImportState.step === 0) {
+    body.innerHTML = `
+      <div class="stack">
+        <p class="hint">CSV-Datei wählen oder Zellen direkt aus Excel einfügen. Semikolon, Komma und Tab werden automatisch erkannt.</p>
+        <div class="action-row">
+          <button type="button" id="chooseBulkImportFile">CSV-Datei wählen</button>
+          <button type="button" id="downloadCsvTemplate">CSV-Vorlage herunterladen</button>
+        </div>
+        <textarea id="bulkImportPaste" rows="8" placeholder="Excel-Zellbereich hier einfügen">${esc(bulkImportState.rawText || '')}</textarea>
+        ${bulkImportState.headers.length ? `<h3>Vorschau</h3><div class="table-wrap">${previewTableHtml([bulkImportState.headers, ...bulkImportState.rows.slice(0, 10)])}</div>` : ''}
+      </div>
+    `;
+    return;
+  }
+  if (bulkImportState.step === 1) {
+    body.innerHTML = `
+      <p class="hint">Prüfe die Zuordnung. Nicht erkannte Spalten bleiben auf „Ignorieren“.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Spalte</th><th>Zuordnung</th><th>Beispiel</th></tr></thead>
+          <tbody>${bulkImportState.headers.map((header, index) => `
+            <tr>
+              <td>${esc(header)}</td>
+              <td><select data-import-column="${index}">${importFields.map(([field, label]) => `<option value="${field}" ${bulkImportState.mapping[index] === field ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></td>
+              <td>${esc(bulkImportState.rows[0]?.[index] || '')}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+    `;
+    return;
+  }
+  const plan = buildBulkImportPlan();
+  body.innerHTML = `
+    <div class="import-summary">
+      <div><strong>${plan.added.length}</strong><span>neu</span></div>
+      <div><strong>${plan.updated.length}</strong><span>Updates</span></div>
+      <div><strong>${plan.skipped.length}</strong><span>übersprungen</span></div>
+    </div>
+    <p class="hint">Importierte Maßnahmen starten inaktiv, sofern die Spalte „aktiv“ nicht ausdrücklich gesetzt ist. Wirkannahmen und Notizen bleiben bei Updates erhalten.</p>
+    ${plan.skipped.length ? `<h3>Übersprungene Zeilen</h3><ul>${plan.skipped.slice(0, 8).map(item => `<li>Zeile ${item.index}: ${esc(item.reason)}</li>`).join('')}</ul>` : ''}
+    <h3>Vorschau Übernahme</h3>
+    <div class="table-wrap"><table><thead><tr><th>Art</th><th>ID</th><th>Maßnahme</th><th>Kosten</th><th>Jahr</th><th>Bereich</th></tr></thead><tbody>
+      ${[...plan.added.map(item => ['neu', item.incoming]), ...plan.updated.map(item => ['Update', item.incoming])].slice(0, 12).map(([kind, measure]) => `
+        <tr><td>${kind}</td><td>${esc(measure.externalId || '-')}</td><td>${esc(measure.name)}</td><td>${fmtTeur(measure.cost)}</td><td>${measure.year}</td><td>${esc(measure.orgUnit || '-')}</td></tr>
+      `).join('')}
+    </tbody></table></div>
+  `;
+}
+
+function previewTableHtml(rows) {
+  if (!rows.length) return '';
+  return `<table><tbody>${rows.map((row, rowIndex) => `<tr>${row.map(cell => rowIndex === 0 ? `<th>${esc(cell)}</th>` : `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+function loadBulkImportText(text) {
+  const delimiter = detectDelimiter(text);
+  const parsed = parseDelimitedRows(text, delimiter);
+  const headers = parsed[0] || [];
+  bulkImportState = {
+    ...(bulkImportState || { step: 0 }),
+    rawText: text,
+    delimiter,
+    headers,
+    rows: parsed.slice(1),
+    mapping: autoMapHeaders(headers)
+  };
+  renderBulkImportModal();
+}
+
+function openBulkImportModal() {
+  if (isReadOnlyRole()) return;
+  bulkImportState = {
+    step: 0,
+    rawText: '',
+    delimiter: ';',
+    headers: [],
+    rows: [],
+    mapping: {}
+  };
+  document.getElementById('bulkImportModal').classList.remove('hidden');
+  renderBulkImportModal();
+}
+
+function closeBulkImportModal() {
+  document.getElementById('bulkImportModal').classList.add('hidden');
+  bulkImportState = null;
+}
+
+function bulkImportForward() {
+  if (!bulkImportState) return;
+  if (bulkImportState.step === 0) {
+    const pasted = document.getElementById('bulkImportPaste')?.value || bulkImportState.rawText || '';
+    if (pasted.trim()) {
+      const delimiter = detectDelimiter(pasted);
+      const parsed = parseDelimitedRows(pasted, delimiter);
+      const headers = parsed[0] || [];
+      bulkImportState = {
+        ...bulkImportState,
+        rawText: pasted,
+        delimiter,
+        headers,
+        rows: parsed.slice(1),
+        mapping: autoMapHeaders(headers)
+      };
+    }
+    if (!bulkImportState.headers.length || !bulkImportState.rows.length) {
+      setStorageStatus('Bitte CSV-Datei wählen oder Excel-Daten einfügen.');
+      return;
+    }
+    bulkImportState.step = 1;
+    renderBulkImportModal();
+    return;
+  }
+  if (bulkImportState.step === 1) {
+    document.querySelectorAll('[data-import-column]').forEach(select => {
+      bulkImportState.mapping[Number(select.dataset.importColumn)] = select.value;
+    });
+    importMapping = Object.fromEntries(bulkImportState.headers.map((header, index) => [normalizeHeader(header), bulkImportState.mapping[index]]));
+    bulkImportState.step = 2;
+    renderBulkImportModal();
+    return;
+  }
+  applyBulkImport();
+}
+
+function bulkImportBack() {
+  if (!bulkImportState || bulkImportState.step === 0) return;
+  bulkImportState.step -= 1;
+  renderBulkImportModal();
+}
+
+function applyBulkImport() {
+  const plan = buildBulkImportPlan();
+  const importedFields = new Set(Object.values(bulkImportState.mapping).filter(field => field !== 'ignore'));
+  const updateFieldNames = ['name', 'orgUnit', 'type', 'cost', 'year', 'life', 'hgbLife', 'secure', 'uncertain', 'probability', 'opexRecognition', 'active', 'tags', 'templateId'];
+  measures = measures.map(measure => {
+    const update = plan.updated.find(item => item.existing.id === measure.id);
+    if (!update) return measure;
+    const patch = {};
+    updateFieldNames.forEach(field => {
+      if (importedFields.has(field)) patch[field] = update.incoming[field];
+    });
+    return normalizeMeasureForUi({
+      ...measure,
+      ...patch,
+      externalId: update.incoming.externalId || measure.externalId,
+      importStatus: 'unconfirmed'
+    });
+  });
+  const newMeasures = plan.added.map(item => normalizeMeasureForUi({
+    ...item.incoming,
+    id: 'import_' + Date.now().toString(36) + '_' + item.index
+  }));
+  measures = [...measures, ...newMeasures];
+  selectedId = newMeasures[0]?.id || selectedId;
+  history = appendHistoryEvents(history, [{
+    type: 'bulkImport',
+    subject: { scope: 'measures' },
+    field: 'measures',
+    oldValue: null,
+    newValue: { added: plan.added.length, updated: plan.updated.length, skipped: plan.skipped.length, columns: Object.fromEntries(Object.entries(bulkImportState.mapping).map(([index, field]) => [bulkImportState.headers[Number(index)], field])) },
+    note: `Massenimport: ${plan.added.length} neu, ${plan.updated.length} aktualisiert, ${plan.skipped.length} übersprungen.`
+  }], ensureAuthor());
+  previousModelForHistory = currentModelData();
+  closeBulkImportModal();
+  setStorageStatus(`Import übernommen: ${plan.added.length} neu, ${plan.updated.length} Updates.`);
+  renderAll();
+}
+
+function csvEscape(value) {
+  const text = String(value ?? '');
+  return /[;"\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function downloadText(filename, text, type = 'text/csv') {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportCatalogCsv() {
+  const p = currentParams();
+  const rows = filteredMeasures(p).map(measure => {
+    const result = calcMeasure(measure, p, portfolioEffectFor(measure, p));
+    return [
+      measure.externalId,
+      measure.name,
+      measure.orgUnit,
+      measure.type,
+      measure.year,
+      measure.cost,
+      measure.life,
+      measure.hgbLife || measure.life,
+      measure.active ? 'ja' : 'nein',
+      tagsText(measure.tags),
+      Number.isFinite(result.irr) ? (result.irr * 100).toFixed(2).replace('.', ',') : '',
+      result.npv.toFixed(2).replace('.', ','),
+      (result.rows[0]?.eog || 0).toFixed(2).replace('.', ','),
+      (result.rows[0]?.ebit || 0).toFixed(2).replace('.', ',')
+    ];
+  });
+  const header = ['externalId', 'name', 'orgUnit', 'type', 'year', 'costTeur', 'life', 'hgbLife', 'active', 'tags', 'irrPct', 'npvTeur', 'eogJ1Teur', 'ebitJ1Teur'];
+  const csv = [header, ...rows].map(row => row.map(csvEscape).join(';')).join('\n');
+  downloadText('szenario-rechner-katalog.csv', csv);
+  setStorageStatus('Katalog-CSV wurde vorbereitet.');
+}
+
+function downloadCsvTemplate() {
+  const rows = [
+    ['externalId', 'name', 'orgUnit', 'type', 'year', 'costTeur', 'life', 'hgbLife', 'active', 'tags', 'templateId'],
+    ['PSP-1001', 'Ersatz Ortsnetzstation Muster', 'Netze Strom', 'wahl', '2028', '150', '35', '35', 'nein', 'RP5, Pflicht', 'tpl_ons_ersatz'],
+    ['PSP-2001', 'GDRA-Modernisierung Muster', 'Netze Gas', 'risiko', '2029', '420', '30', '30', 'nein', 'Gas, Sicherheit', 'tpl_gdra_modernisierung']
+  ];
+  downloadText('szenario-rechner-import-vorlage.csv', rows.map(row => row.map(csvEscape).join(';')).join('\n'));
+}
+
+function selectedCatalogMeasures() {
+  return measures.filter(measure => selectedCatalogIds.has(measure.id));
+}
+
+function applyBulkAction(action) {
+  if (isReadOnlyRole()) return;
+  const selected = selectedCatalogMeasures();
+  if (!selected.length) {
+    setStorageStatus('Keine Maßnahmen ausgewählt.');
+    return;
+  }
+  const orgUnit = document.getElementById('bulkOrgUnit')?.value || '';
+  const objectiveId = document.getElementById('bulkObjective')?.value || '';
+  const tag = document.getElementById('bulkTag')?.value.trim() || '';
+  measures = measures.map(measure => {
+    if (!selectedCatalogIds.has(measure.id)) return measure;
+    if (action === 'activate') return { ...measure, active: true };
+    if (action === 'deactivate') return { ...measure, active: false };
+    if (action === 'orgUnit' && orgUnit) return { ...measure, orgUnit };
+    if (action === 'objective' && objectiveId) return { ...measure, objectiveIds: [...new Set([...(measure.objectiveIds || []), objectiveId])] };
+    if (action === 'tag' && tag) return { ...measure, tags: [...new Set([...parseTags(measure.tags), tag])] };
+    return measure;
+  });
+  history = appendHistoryEvents(history, [{
+    type: 'bulkAction',
+    subject: { scope: 'measures' },
+    field: action,
+    oldValue: null,
+    newValue: { count: selected.length, orgUnit, objectiveId, tag },
+    note: `Bulk-Aktion ${action} auf ${selected.length} Maßnahmen.`
+  }], ensureAuthor());
+  previousModelForHistory = currentModelData();
+  setStorageStatus(`Bulk-Aktion auf ${selected.length} Maßnahmen angewendet.`);
+  renderAll();
 }
 
 function clearBrowserData() {
@@ -2042,8 +2536,8 @@ function renderMeetingFocus(result, first, spread) {
     ],
     controlling: [
       meetingCard('controlling', 'investmentVolume', 'Investitionsvolumen', fmtTeur(result.invest), `${result.activeMeasures.length} aktive Maßnahmen im Szenario.`),
-      meetingCard('controlling', 'npv', 'Kapitalwert', fmtTeur(result.npv, 1), `Gegen Diskontsatz ${fmtPct(result.p.discountRate * 100, 1)} gerechnet.`),
-      meetingCard('controlling', 'resultLogic', 'Ergebnislogik', spreadText, `Spread zum FK-Zins. Controlling sollte Szenario, Budgetwirkung und Ergebnisbeitrag konsistent übernehmen.`)
+      meetingCard('controlling', 'ebitYearOne', 'EBIT-Effekt Jahr 1', fmtTeur(first.ebit || 0, 1), 'Indikative Ergebnissicht: Erlöswirkung minus HGB-AfA und Netto-OPEX.'),
+      meetingCard('controlling', 'bridge', 'Überleitung kumuliert', fmtTeur(result.yearly.at(-1)?.bridgeCumulative || 0, 1), 'Timing-Differenz aus regulatorischer AfA minus HGB-AfA; mit Controlling abstimmen.')
     ],
     finanzierung: [
       meetingCard('finanzierung', 'financingHurdle', 'Finanzierungshürde', fmtPct(result.p.financingRate * 100, 1), 'FK-Zins als Mindestschwelle für die Renditebetrachtung.'),
@@ -2056,10 +2550,12 @@ function renderMeetingFocus(result, first, spread) {
 
 function renderMeasures() {
   const p = currentParams();
+  syncCatalogControls();
+  const filtered = filteredMeasures(p);
   if (!measures.length) {
     document.getElementById('measureBody').innerHTML = `
       <tr>
-        <td colspan="9">
+        <td colspan="11">
           <div class="empty-state compact">
             <span aria-hidden="true">+</span>
             <strong>Noch keine Maßnahme angelegt.</strong>
@@ -2070,14 +2566,41 @@ function renderMeasures() {
     `;
     return;
   }
-  document.getElementById('measureBody').innerHTML = measures.map(measure => {
+  if (!filtered.length) {
+    document.getElementById('measureBody').innerHTML = `
+      <tr><td colspan="11"><div class="empty-state compact"><span aria-hidden="true">?</span><strong>Keine Maßnahme passt zum Filter.</strong><small>Filter zurücksetzen oder Katalog CSV exportieren.</small></div></td></tr>
+    `;
+    return;
+  }
+  const grouped = groupMeasures(filtered, p);
+  document.getElementById('measureBody').innerHTML = grouped.map(group => {
+    const collapsed = group.collapsed;
+    const rows = collapsed ? '' : group.measures.map(measure => measureRowHtml(measure, p)).join('');
+    return `
+      <tr class="group-row" data-group-key="${esc(group.key)}">
+        <td colspan="11">
+          <button type="button" data-action="toggleGroup" data-group-key="${esc(group.key)}">${collapsed ? '+' : '-'}</button>
+          <strong>${esc(group.label)}</strong>
+          <span>${group.measures.length} Maßnahmen · ${fmtTeur(group.cost, 1)} Kosten · ${fmtTeur(group.eog, 1)} Jahr-1-EOG · ${fmtPct(group.activeShare * 100, 0)} aktiv · ${group.review} prüfpflichtig</span>
+        </td>
+      </tr>
+      ${rows}
+    `;
+  }).join('');
+}
+
+function measureRowHtml(measure, p) {
     const result = calcMeasure(measure, p, portfolioEffectFor(measure, p));
     const counts = impactCounts(measure);
     const templateBadge = measure.templateId ? `<span class="pill warn">aus Vorlage ${esc(measure.templateVersion || '')}</span>` : '';
+    const importBadge = measure.importStatus === 'unconfirmed' ? '<span class="pill warn">Import prüfen</span>' : '';
+    const tags = parseTags(measure.tags);
     return `
       <tr class="${measure.id === selectedId ? 'selected' : ''}" data-id="${measure.id}">
+        <td><input type="checkbox" data-action="selectBulk" data-id="${measure.id}" ${selectedCatalogIds.has(measure.id) ? 'checked' : ''}></td>
         <td><input type="checkbox" data-action="active" data-id="${measure.id}" ${measure.active ? 'checked' : ''}></td>
-        <td><button type="button" data-action="select" data-id="${measure.id}">${measure.name}</button><div class="pill-row compact">${templateBadge}</div></td>
+        <td><button type="button" data-action="select" data-id="${measure.id}">${esc(measure.name)}</button><div class="pill-row compact">${templateBadge}${importBadge}${tags.slice(0, 3).map(tag => `<span class="pill">${esc(tag)}</span>`).join('')}</div><small>${esc(measure.externalId || '')}</small></td>
+        <td>${esc(measure.orgUnit || '-')}</td>
         <td>${measure.year}</td>
         <td><div class="pill-row compact">${objectivePills(measure)}</div></td>
         <td>${fmtTeur(measure.cost)}</td>
@@ -2087,7 +2610,94 @@ function renderMeasures() {
         <td><span class="note-indicator ${String(measure.note || '').trim() ? '' : 'empty'}" title="${String(measure.note || '').trim() ? esc(measure.note) : 'Keine Notiz'}">i</span></td>
       </tr>
     `;
-  }).join('');
+}
+
+function filteredMeasures(p) {
+  const query = catalogFilters.search.toLowerCase();
+  let list = measures.filter(measure => {
+    const tags = parseTags(measure.tags);
+    const haystack = [measure.name, measure.externalId, measure.orgUnit, measure.type, ...tags].join(' ').toLowerCase();
+    if (query && !haystack.includes(query)) return false;
+    if (catalogFilters.type !== 'all' && measure.type !== catalogFilters.type) return false;
+    if (catalogFilters.active === 'active' && !measure.active) return false;
+    if (catalogFilters.active === 'inactive' && measure.active) return false;
+    if (catalogFilters.openOnly && !hasOpenMeasureItem(measure)) return false;
+    if (catalogFilters.importedOnly && measure.importStatus !== 'unconfirmed') return false;
+    if (catalogFilters.yearFrom && Number(measure.year) < Number(catalogFilters.yearFrom)) return false;
+    if (catalogFilters.yearTo && Number(measure.year) > Number(catalogFilters.yearTo)) return false;
+    if (catalogFilters.tag && !tags.some(tag => tag.toLowerCase().includes(catalogFilters.tag.toLowerCase()))) return false;
+    return true;
+  });
+  if (quickCatalogMode) {
+    list = list.map(measure => ({ measure, result: calcMeasure(measure, p, portfolioEffectFor(measure, p)) }))
+      .sort((a, b) => {
+        if (quickCatalogMode === 'risk') return b.result.riskReductionPa - a.result.riskReductionPa;
+        if (quickCatalogMode === 'cost') return Number(b.measure.cost) - Number(a.measure.cost);
+        return b.result.npv - a.result.npv;
+      })
+      .slice(0, 10)
+      .map(item => item.measure);
+  }
+  return list;
+}
+
+function groupKeyForMeasure(measure) {
+  if (catalogGroupBy === 'type') return measure.type || 'ohne Typ';
+  if (catalogGroupBy === 'year') return String(measure.year || 'ohne Jahr');
+  if (catalogGroupBy === 'target') return (measure.objectiveIds || [])[0] || 'ohne Ziel';
+  return measure.orgUnit || 'ohne Bereich';
+}
+
+function groupLabelForKey(key) {
+  if (catalogGroupBy === 'target') {
+    return strategy.objectives.find(objective => objective.id === key)?.label || key;
+  }
+  if (catalogGroupBy === 'type') {
+    return key === 'noRegret' ? 'No-Regret' : key === 'risiko' ? 'Risiko' : key === 'wahl' ? 'Wahl' : key;
+  }
+  return key;
+}
+
+function groupMeasures(list, p) {
+  const groups = new Map();
+  list.forEach(measure => {
+    const key = groupKeyForMeasure(measure);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(measure);
+  });
+  return [...groups.entries()].sort(([a], [b]) => groupLabelForKey(a).localeCompare(groupLabelForKey(b), 'de')).map(([key, groupList]) => {
+    const results = groupList.map(measure => calcMeasure(measure, p, portfolioEffectFor(measure, p)));
+    return {
+      key,
+      label: groupLabelForKey(key),
+      measures: groupList,
+      collapsed: collapsedCatalogGroups[key] ?? measures.length > 30,
+      cost: groupList.reduce((sum, measure) => sum + Number(measure.cost || 0), 0),
+      eog: results.reduce((sum, result) => sum + (result.rows[0]?.eog || 0), 0),
+      activeShare: groupList.length ? groupList.filter(measure => measure.active).length / groupList.length : 0,
+      review: groupList.reduce((sum, measure) => sum + impactCounts(measure).review, 0)
+    };
+  });
+}
+
+function syncCatalogControls() {
+  const group = document.getElementById('catalogGroupBy');
+  if (group && group.value !== catalogGroupBy) group.value = catalogGroupBy;
+  const orgOptions = orgUnitValues();
+  const datalist = document.getElementById('orgUnitOptions');
+  if (datalist) datalist.innerHTML = orgOptions.map(value => `<option value="${esc(value)}"></option>`).join('');
+  const bulkOrg = document.getElementById('bulkOrgUnit');
+  if (bulkOrg) {
+    const current = bulkOrg.value;
+    bulkOrg.innerHTML = '<option value="">Bereich setzen...</option>' + orgOptions.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+    bulkOrg.value = current;
+  }
+  const bulkObjective = document.getElementById('bulkObjective');
+  if (bulkObjective) {
+    const current = bulkObjective.value;
+    bulkObjective.innerHTML = '<option value="">Ziel zuordnen...</option>' + strategy.objectives.map(objective => `<option value="${esc(objective.id)}">${esc(objective.label)}</option>`).join('');
+    bulkObjective.value = current;
+  }
 }
 
 function selectedMeasure() {
@@ -2124,6 +2734,10 @@ function newMeasureTemplate() {
     eDirect: 0,
     riskAvoided: 0,
     portfolioShare: 0,
+    externalId: '',
+    orgUnit: '',
+    tags: [],
+    hgbLife: 40,
     objectiveIds: [],
     templateId: '',
     templateVersion: '',
@@ -2850,6 +3464,9 @@ function renderDetail() {
 	        return;
 	      }
   el.mName.value = measure.name;
+  el.mExternalId.value = measure.externalId || '';
+  el.mOrgUnit.value = measure.orgUnit || '';
+  el.mTags.value = tagsText(measure.tags);
   el.mType.value = measure.type;
   el.mCost.value = measure.cost;
   el.mYear.value = measure.year;
@@ -2867,6 +3484,7 @@ function renderDetail() {
   el.mOpexDeltaPa.value = measure.opexDeltaPa || 0;
   el.mReinvestCost.value = measure.reinvestCost || 0;
   el.mDecommissionCost.value = measure.decommissionCost || 0;
+  el.mHgbLife.value = measure.hgbLife || measure.life || 1;
   el.mDecommissionYear.value = measure.decommissionYear ?? '';
   el.mNote.value = measure.note || '';
   renderMeasureObjectives(measure);
@@ -2940,6 +3558,36 @@ function renderChart(yearly) {
 }
 
 function renderYears(result) {
+  const head = document.getElementById('yearHead');
+  const caveat = document.getElementById('resultViewCaveat');
+  document.querySelectorAll('.year-view').forEach(button => button.classList.toggle('active', button.dataset.yearView === resultViewMode));
+  if (resultViewMode === 'earnings') {
+    if (caveat) caveat.classList.remove('hidden');
+    head.innerHTML = `
+      <tr>
+        <th>Jahr</th><th>RP</th><th>Erlöswirkung</th><th>HGB-AfA</th><th>OPEX netto</th><th>EBIT-Effekt</th><th>Überleitung</th><th>kumuliert</th>
+      </tr>
+    `;
+    document.getElementById('yearBody').innerHTML = result.yearly.map(row => `
+      <tr>
+        <td>${row.year}</td>
+        <td>${periodText(row.regulatoryPeriod)}</td>
+        <td>${fmtTeur(row.eog, 1)}</td>
+        <td>${fmtTeur(row.hgbDepreciation, 1)}</td>
+        <td>${fmtTeur(row.opex, 1)}</td>
+        <td>${fmtTeur(row.ebit, 1)}</td>
+        <td>${fmtTeur(row.bridge, 1)}</td>
+        <td>${fmtTeur(row.bridgeCumulative, 1)}</td>
+      </tr>
+    `).join('');
+    return;
+  }
+  if (caveat) caveat.classList.add('hidden');
+  head.innerHTML = `
+    <tr>
+      <th>Jahr</th><th>RP</th><th>Basis-EOG</th><th>AfA</th><th>Verzinsung</th><th>Q/E</th><th>Risiko</th><th>OPEX</th><th>Rückbau/Reinvest</th><th>EOG Zusatz</th><th>EOG gesamt</th>
+    </tr>
+  `;
   document.getElementById('yearBody').innerHTML = result.yearly.map(row => `
     <tr>
       <td>${row.year}</td>
@@ -3183,21 +3831,34 @@ function committeeProposal(result) {
 }
 
 function committeeReportHtml(result, first, spread) {
+  const isBoardAudience = committee.audience === 'vorstand';
   const tariff = tariffImpactLine(result.tariffImpact);
   const openItems = clarificationItems().filter(item => item.status !== 'closed');
   const reviewItems = reviewRequiredImpacts(true);
   const latestSnapshot = (history.snapshots || []).at(-1);
   const activeNames = result.activeMeasures.map(measure => measure.name).slice(0, 4).join(', ') || 'noch keine aktive Maßnahme';
+  const ebitYearOne = first?.ebit || 0;
+  const ebitFiveYears = result.yearly.slice(0, 5).reduce((sum, row) => sum + (row.ebit || 0), 0);
+  const bridgeFiveYears = result.yearly.slice(0, 5).reduce((sum, row) => sum + (row.bridge || 0), 0);
+  const orgUnitRows = [...new Map(result.results.map(item => [item.measure.orgUnit || 'ohne Bereich', []])).keys()].map(orgUnit => {
+    const matching = result.results.filter(item => (item.measure.orgUnit || 'ohne Bereich') === orgUnit);
+    return {
+      orgUnit,
+      invest: matching.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0),
+      eog: matching.reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0),
+      ebit: matching.reduce((sum, item) => sum + (item.rows[0]?.ebit || 0), 0)
+    };
+  }).sort((a, b) => b.invest - a.invest);
   const riskText = result.riskPa > 0
     ? `Die erfassten Risikodaten zeigen eine erwartete Risikoreduktion von ${fmtTeur(result.riskPa, 1)} pro Jahr. Dieser Wert entsteht aus Eintrittswahrscheinlichkeit vorher/nachher und Schadenshöhe.`
     : 'Für den Arbeitsstand ist noch keine belastbare Risikoreduktion hinterlegt.';
-  const financeLine = `Für Rückfragen: IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}, Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}.`;
+  const financeLine = `Für Rückfragen: IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}, Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}, EBIT Jahr 1 ${fmtTeur(ebitYearOne, 1)}.`;
   return `
     <article class="committee-page">
       <header class="committee-head">
         <div>
-          <h1>Gremienvorlage Investitionsbewertung</h1>
-          <p>${esc(committee.body || 'Gremium')}${committee.meetingDate ? ` · Sitzung ${esc(formatDateShort(committee.meetingDate))}` : ''}</p>
+          <h1>${isBoardAudience ? 'Vorstandsvorlage Investitionsbewertung' : 'Gremienvorlage Investitionsbewertung'}</h1>
+          <p>${esc(committee.body || (isBoardAudience ? 'Vorstand' : 'Gremium'))}${committee.meetingDate ? ` · Sitzung ${esc(formatDateShort(committee.meetingDate))}` : ''}</p>
         </div>
         <div>
           <strong>${result.p.sector === 'gas' ? 'Gas' : 'Strom'}</strong><br>
@@ -3210,7 +3871,9 @@ function committeeReportHtml(result, first, spread) {
       </section>
       <section>
         <h2>Worum es geht</h2>
-        <p>${esc(plainCommitteeStory(result, first))}</p>
+        <p>${esc(isBoardAudience
+          ? `${plainCommitteeStory(result, first)} Wirtschaftlich ergibt sich ein IRR von ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, ein Kapitalwert von ${fmtTeur(result.npv, 1)} und ein Spread von ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}.`
+          : plainCommitteeStory(result, first))}</p>
         <p class="committee-muted">Betrachtete Maßnahmen: ${esc(activeNames)}.</p>
       </section>
       <section class="committee-grid">
@@ -3218,11 +3881,26 @@ function committeeReportHtml(result, first, spread) {
           <h2>Was es kostet</h2>
           <p>Investition: <strong>${fmtTeur(result.invest)}</strong>. Lebenszykluskosten über den Horizont: <strong>${fmtTeur(result.totex.nominal, 1)}</strong>.</p>
         </div>
-        <div>
-          <h2>Was es für Bürger bedeutet</h2>
-          <p>${esc(tariff.sentence)}</p>
-        </div>
+        ${isBoardAudience
+          ? `<div>
+              <h2>Ergebniswirkung</h2>
+              <p>EBIT-Effekt Jahr 1: <strong>${fmtTeur(ebitYearOne, 1)}</strong>. Kumuliert über fünf Jahre: <strong>${fmtTeur(ebitFiveYears, 1)}</strong>; Überleitung regulatorische zu handelsrechtlicher AfA: <strong>${fmtTeur(bridgeFiveYears, 1)}</strong>.</p>
+              <p class="committee-muted">Indikative Ergebnissicht ohne Steuern, Eigenleistungen und Konzerneffekte.</p>
+            </div>`
+          : `<div>
+              <h2>Was es für Bürger bedeutet</h2>
+              <p>${esc(tariff.sentence)}</p>
+            </div>`}
       </section>
+      ${isBoardAudience ? `
+        <section>
+          <h2>Beitrag je Bereich</h2>
+          <table class="compact-table">
+            <thead><tr><th>Bereich</th><th>Investition</th><th>zulässige Erlöse Jahr 1</th><th>EBIT Jahr 1</th></tr></thead>
+            <tbody>${orgUnitRows.slice(0, 6).map(row => `<tr><td>${esc(row.orgUnit)}</td><td>${fmtTeur(row.invest, 1)}</td><td>${fmtTeur(row.eog, 1)}</td><td>${fmtTeur(row.ebit, 1)}</td></tr>`).join('')}</tbody>
+          </table>
+        </section>
+      ` : ''}
       <section>
         <h2>Was passiert, wenn wir es nicht tun</h2>
         <p>${esc(riskText)}</p>
@@ -3493,6 +4171,8 @@ function renderPortfolio() {
   const tariff = tariffImpactLine(result.tariffImpact);
   document.getElementById('kpiTariff').textContent = tariff.value;
   document.getElementById('kpiTariffSub').textContent = tariff.sub;
+  document.getElementById('kpiEbit').textContent = fmtTeur(first.ebit || 0, 1);
+  document.getElementById('kpiEbitSub').textContent = 'bis Jahr 5 kumuliert ' + fmtTeur(result.yearly.slice(0, 5).reduce((sum, row) => sum + (row.ebit || 0), 0), 1);
   document.getElementById('kpiPortfolioEffect').textContent = fmtTeur(result.qePa + result.impactPa, 1);
   document.getElementById('kpiPortfolioSub').textContent = 'davon Risiko ' + fmtTeur(result.riskPa, 1) + ' p.a.';
   document.getElementById('kpiTotalEog').textContent = fmtTeur(result.p.baseEog + first.eog, 1);
@@ -3547,8 +4227,11 @@ function renderAll(persist = true) {
 function updateSelectedFromDetail() {
   const measure = selectedMeasure();
   if (!measure) return;
-  Object.assign(measure, {
+	Object.assign(measure, {
 	        name: el.mName.value,
+	        externalId: el.mExternalId.value.trim(),
+	        orgUnit: el.mOrgUnit.value.trim(),
+	        tags: parseTags(el.mTags.value),
 	        type: el.mType.value,
 	        cost: num('mCost'),
 	        year: Math.round(num('mYear')),
@@ -3566,6 +4249,7 @@ function updateSelectedFromDetail() {
 	        opexDeltaPa: num('mOpexDeltaPa'),
 	        reinvestCost: num('mReinvestCost'),
 	        decommissionCost: num('mDecommissionCost'),
+	        hgbLife: Math.max(1, Math.round(num('mHgbLife') || num('mLife'))),
 	        decommissionYear: el.mDecommissionYear.value === '' ? '' : Math.round(num('mDecommissionYear')),
 	        note: el.mNote.value
   });
@@ -3702,7 +4386,19 @@ document.getElementById('clarificationList').addEventListener('click', event => 
 document.getElementById('measureBody').addEventListener('click', event => {
   const action = event.target.dataset.action;
   const id = event.target.dataset.id;
-  if (!action || !id) return;
+  if (!action) return;
+  if (action === 'toggleGroup') {
+    const key = event.target.dataset.groupKey;
+    collapsedCatalogGroups = { ...collapsedCatalogGroups, [key]: !(collapsedCatalogGroups[key] ?? measures.length > 30) };
+    renderMeasures();
+    return;
+  }
+  if (action === 'selectBulk') {
+    if (event.target.checked) selectedCatalogIds.add(id);
+    else selectedCatalogIds.delete(id);
+    return;
+  }
+  if (!id) return;
   const measure = measures.find(item => item.id === id);
   if (!measure) return;
   if (action === 'select') {
@@ -3717,6 +4413,92 @@ document.getElementById('measureBody').addEventListener('click', event => {
   }
   if (action === 'active') measure.active = event.target.checked;
   renderAll();
+});
+
+document.querySelectorAll('.year-view').forEach(button => {
+  button.addEventListener('click', () => {
+    resultViewMode = button.dataset.yearView === 'earnings' ? 'earnings' : 'regulatory';
+    renderPortfolio();
+    saveToBrowser(true);
+  });
+});
+
+document.getElementById('catalogSearch').addEventListener('input', event => {
+  catalogFilters = { ...catalogFilters, search: event.target.value };
+  renderMeasures();
+});
+document.getElementById('catalogGroupBy').addEventListener('change', event => {
+  catalogGroupBy = event.target.value;
+  collapsedCatalogGroups = {};
+  renderAll();
+});
+document.getElementById('catalogTypeFilter').addEventListener('change', event => {
+  catalogFilters = { ...catalogFilters, type: event.target.value };
+  renderMeasures();
+});
+document.getElementById('catalogActiveFilter').addEventListener('change', event => {
+  catalogFilters = { ...catalogFilters, active: event.target.value };
+  renderMeasures();
+});
+document.getElementById('catalogYearFrom').addEventListener('input', event => {
+  catalogFilters = { ...catalogFilters, yearFrom: event.target.value };
+  renderMeasures();
+});
+document.getElementById('catalogYearTo').addEventListener('input', event => {
+  catalogFilters = { ...catalogFilters, yearTo: event.target.value };
+  renderMeasures();
+});
+document.getElementById('catalogTagFilter').addEventListener('input', event => {
+  catalogFilters = { ...catalogFilters, tag: event.target.value };
+  renderMeasures();
+});
+document.getElementById('catalogOpenOnly').addEventListener('change', event => {
+  catalogFilters = { ...catalogFilters, openOnly: event.target.checked };
+  renderMeasures();
+});
+document.getElementById('catalogImportedOnly').addEventListener('change', event => {
+  catalogFilters = { ...catalogFilters, importedOnly: event.target.checked };
+  renderMeasures();
+});
+document.querySelectorAll('.catalog-quick').forEach(button => {
+  button.addEventListener('click', () => {
+    quickCatalogMode = quickCatalogMode === button.dataset.quick ? '' : button.dataset.quick;
+    document.querySelectorAll('.catalog-quick').forEach(item => item.classList.toggle('active', quickCatalogMode === item.dataset.quick));
+    renderMeasures();
+  });
+});
+document.getElementById('bulkActivate').addEventListener('click', () => applyBulkAction('activate'));
+document.getElementById('bulkDeactivate').addEventListener('click', () => applyBulkAction('deactivate'));
+document.getElementById('bulkSetOrgUnit').addEventListener('click', () => applyBulkAction('orgUnit'));
+document.getElementById('bulkAssignObjective').addEventListener('click', () => applyBulkAction('objective'));
+document.getElementById('bulkAddTag').addEventListener('click', () => applyBulkAction('tag'));
+document.getElementById('bulkImportMeasures').addEventListener('click', openBulkImportModal);
+document.getElementById('exportCatalogCsv').addEventListener('click', exportCatalogCsv);
+document.getElementById('bulkImportCancel').addEventListener('click', closeBulkImportModal);
+document.getElementById('bulkImportBack').addEventListener('click', bulkImportBack);
+document.getElementById('bulkImportNext').addEventListener('click', bulkImportForward);
+document.getElementById('bulkImportModal').addEventListener('click', event => {
+  if (event.target.id === 'bulkImportModal') closeBulkImportModal();
+  if (event.target.id === 'chooseBulkImportFile') document.getElementById('bulkImportFile').click();
+  if (event.target.id === 'downloadCsvTemplate') downloadCsvTemplate();
+});
+document.getElementById('bulkImportBody').addEventListener('input', event => {
+  if (event.target.id === 'bulkImportPaste' && bulkImportState) {
+    bulkImportState.rawText = event.target.value;
+  }
+});
+document.getElementById('bulkImportBody').addEventListener('change', event => {
+  if (event.target.dataset.importColumn && bulkImportState) {
+    bulkImportState.mapping[Number(event.target.dataset.importColumn)] = event.target.value;
+  }
+});
+document.getElementById('bulkImportFile').addEventListener('change', event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.addEventListener('load', () => loadBulkImportText(String(reader.result || '')));
+  reader.readAsText(file);
+  event.target.value = '';
 });
 
 document.getElementById('openHelp').addEventListener('click', openHelpModal);
@@ -3801,10 +4583,12 @@ document.querySelectorAll('.expert-filter').forEach(button => {
   });
 });
 committeeIds.forEach(id => {
-  el[id].addEventListener('input', () => {
+  const syncCommitteeInput = () => {
     collectCommitteeFields();
     renderAll();
-  });
+  };
+  el[id].addEventListener('input', syncCommitteeInput);
+  el[id].addEventListener('change', syncCommitteeInput);
 });
 
 document.querySelectorAll('.report-mode').forEach(button => {
