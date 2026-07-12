@@ -52,8 +52,15 @@ Der Rechner bildet ein generisches Planungsmodell fuer regulierte Sparten ab. Er
 
 Weitere Projektdokumente:
 
+- `docs/ecosystem/index.md`: Übersicht zum Beratungs-/Methodik-Ökosystem mit Navigation zu Handbuch, Vorlagen, Lernpfaden und Fallstudien.
+- `docs/handbook/regulierte-finanzplanung-vnb.md`: Methodikhandbuch für regulierte Finanzplanung kleiner VNBs.
+- `docs/regulatory-map.md`: öffentliche Quellen und Einordnung zu Strom/Gas-Regulatorik.
+- `docs/templates/`: Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung und Workshopagenda.
+- `docs/guides/`: rollenbasierte Lernpfade für Management, Controlling, Regulierung, Asset Management und Anlagenbuchhaltung.
+- `docs/examples/`: synthetische Fallstudien für Strom, Gas und Spartenportfolio.
 - `docs/story/planungsrunde-userstory.md`: Markdown-Quelle der fiktiven mehrmonatigen Planungsrunde.
 - `dist/story/planungsrunde-userstory.html`: aus der Markdown-Quelle gebauter HTML-Story-Export für GitHub Pages und Browser-Nutzung.
+- `dist/docs/index.html`: aus den Ökosystem-Dokumenten gebauter HTML/PDF-Einstieg für GitHub Pages und Browser-Nutzung.
 - `MODEL.md`: Modellueberblick und Rechenkontext.
 - `GOVERNANCE.md`: Maintainer-, Review- und Neutralitaetsregeln.
 - `DATA_FORMAT.md`: lokaler Speicher, JSON-Export und Importgrundsaetze.
