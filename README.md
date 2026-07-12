@@ -2,6 +2,12 @@
 
 Portfolio-App fuer regulierte Sparten: Basisdaten der Sparte, geplante Massnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.
 
+Die App ist ein generisches Open-Source-Werkzeug. Demodaten, Namen, Annahmen und Gremientexte sind synthetisch und duerfen nicht als Referenz auf reale Netzbetreiber, Projekte oder interne Unterlagen gelesen werden.
+
+## Projektstatus
+
+Szenarienrechner-EOG ist ein offline-first Public-OSS-Projekt. Die naechsten Ausbauschritte stehen in `ROADMAP.md`. Beitraege folgen `CONTRIBUTING.md`; Sicherheits- und Vertrauensannahmen stehen in `SECURITY.md`.
+
 ## Entwicklung
 
 ```bash
@@ -11,15 +17,15 @@ npm run dev
 
 Der Rechenkern liegt DOM-frei in `src/engine.js`, die UI in `src/ui.js`, das Styling in `src/styles.css`.
 
-Die App ist ein generisches Open-Source-Werkzeug. Demodaten, Namen, Annahmen und Gremientexte sind synthetisch und duerfen nicht als Referenz auf reale Netzbetreiber, Projekte oder interne Unterlagen gelesen werden.
-
 ## Qualitaetssicherung
 
 ```bash
 npm run lint
 npm test
 npm run typecheck
-npm run build
+npm run build:release
+npm run test:distribution
+npm run test:docs
 ```
 
 ## Auslieferung
@@ -28,7 +34,7 @@ npm run build
 npm run build:release
 ```
 
-`dist/szenarienrechner-eog.html` ist das offline lauffaehige Single-File-Deliverable. `dist/index.html` bleibt das technische Vite-Buildartefakt.
+`dist/szenarienrechner-eog.html` ist das offline lauffaehige Single-File-Deliverable. `dist/index.html` bleibt das technische Vite-Buildartefakt. Details stehen in `RELEASE.md`.
 
 ## Lizenz
 
@@ -37,6 +43,13 @@ Der Code steht unter Apache License 2.0, siehe `LICENSE`. App-Footer, Repository
 ## Fachliche Annahmen und Grenzen
 
 Der Rechner bildet ein generisches Planungsmodell fuer regulierte Sparten ab. Er ersetzt keine Rechts-, Steuer-, Wirtschaftspruefungs- oder Regulierungsberatung. Regulatorische Parameter, Periodenlogik und Modellgrenzen sind in `REGULATORY_ASSUMPTIONS.md` dokumentiert und muessen vor produktiven Entscheidungen gegen den jeweils aktuellen Stand von Gesetzgebung, Festlegungen und unternehmensspezifischen Bescheiden geprueft werden.
+
+Weitere Projektdokumente:
+
+- `MODEL.md`: Modellueberblick und Rechenkontext.
+- `GOVERNANCE.md`: Maintainer-, Review- und Neutralitaetsregeln.
+- `DATA_FORMAT.md`: lokaler Speicher, JSON-Export und Importgrundsaetze.
+- `CHANGELOG.md`: Aenderungshistorie.
 
 ## Offline-Verteilung und Verifikation
 
@@ -52,8 +65,9 @@ IT-Pruefung:
 
 ```bash
 npm ci
-npm run build
-sha256sum dist/index.html
+npm run build:release
+npm run test:distribution
+sha256sum dist/szenarienrechner-eog.html
 ```
 
 Beim lokalen Oeffnen zeigt der F12-Netzwerk-Tab keine Requests. Der CSP-Meta-Tag ist im Quelltext der HTML-Datei sichtbar.

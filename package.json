@@ -7,9 +7,10 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "build:release": "npm run build && cp dist/index.html dist/szenarienrechner-eog.html",
-    "lint": "eslint src tests",
+    "lint": "eslint src tests scripts",
     "test": "vitest run",
     "test:distribution": "node scripts/check-distribution.mjs",
+    "test:docs": "node scripts/check-docs.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
