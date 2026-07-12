@@ -1,4 +1,3 @@
-// @ts-expect-error Node built-in types are not part of the app typecheck scope.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
