@@ -1568,6 +1568,20 @@ function saveToBrowser(silent = true) {
   }
 }
 
+function loadEmbeddedModelState() {
+  const node = document.getElementById('embedded-model-state');
+  if (!node?.textContent?.trim()) return false;
+  try {
+    applyModelState(JSON.parse(node.textContent));
+    saveToBrowser(true);
+    setStorageStatus('HTML-Datei mit eingebettetem Datenstand geladen.');
+    return true;
+  } catch (_error) {
+    setStorageStatus('Eingebetteter HTML-Datenstand konnte nicht geladen werden.');
+    return false;
+  }
+}
+
 function loadFromBrowser() {
   try {
     const raw = localStorage.getItem(storageKey);
@@ -1620,20 +1634,50 @@ function setExpertMode(enabled, persist = true) {
   if (persist) saveExpertMode();
 }
 
-function exportModel() {
-  createExportSnapshot();
-  const state = collectModelState();
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
-  const stamp = state.savedAt.slice(0, 19).replaceAll(':', '').replace('T', '-');
   anchor.href = url;
-  anchor.download = 'regulierte-sparten-szenario-rechner-' + stamp + '.json';
+  anchor.download = filename;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+function exportStamp(state) {
+  return state.savedAt.slice(0, 19).replaceAll(':', '').replace('T', '-');
+}
+
+function exportModel() {
+  createExportSnapshot();
+  const state = collectModelState();
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  downloadBlob(blob, 'regulierte-sparten-szenario-rechner-' + exportStamp(state) + '.json');
   setStorageStatus('JSON-Datei wurde zum Download vorbereitet.');
+}
+
+function jsonForHtmlScript(value) {
+  return JSON.stringify(value, null, 2)
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026');
+}
+
+function htmlWithEmbeddedModelState(html, state) {
+  const cleaned = String(html).replace(/\n?\s*<script id="embedded-model-state" type="application\/json">[\s\S]*?<\/script>/g, '');
+  const embeddedStateScript = `\n  <script id="embedded-model-state" type="application/json">${jsonForHtmlScript(state)}</script>\n`;
+  if (cleaned.includes('</body>')) return cleaned.replace('</body>', `${embeddedStateScript}</body>`);
+  return `${cleaned}${embeddedStateScript}`;
+}
+
+function exportSelfContainedHtml() {
+  createExportSnapshot();
+  const state = collectModelState();
+  const html = '<!DOCTYPE html>\n' + htmlWithEmbeddedModelState(document.documentElement.outerHTML, state);
+  const blob = new Blob([html], { type: 'text/html' });
+  downloadBlob(blob, 'szenarienrechner-eog-mit-daten-' + exportStamp(state) + '.html');
+  setStorageStatus('HTML-Datei mit eingebettetem Datenstand wurde zum Download vorbereitet.');
 }
 
 function importModelFile(file) {
@@ -4725,6 +4769,7 @@ document.getElementById('templateGallery').addEventListener('click', event => {
   if (card) addMeasureFromTemplate(card.dataset.templateId);
 });
 document.getElementById('exportModel').addEventListener('click', exportModel);
+document.getElementById('exportSelfContainedHtml').addEventListener('click', exportSelfContainedHtml);
 document.getElementById('expertModeToggle').addEventListener('change', event => {
   setExpertMode(event.target.checked);
 });
@@ -4822,7 +4867,7 @@ document.querySelectorAll('.action-menu-list button').forEach(button => {
   });
 });
 
-if (!loadFromBrowser()) {
+if (!loadEmbeddedModelState() && !loadFromBrowser()) {
   setView(activeView);
   renderAll(false);
   previousModelForHistory = currentModelData();
