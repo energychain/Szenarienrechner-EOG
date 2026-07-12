@@ -174,6 +174,13 @@
             <input id="baseYear" type="number" value="2027" min="2025" step="1">
           </div>
           <div>
+            <label for="regulationProcedure">Regulierungsverfahren</label>
+            <select id="regulationProcedure">
+              <option value="standard">Standardverfahren</option>
+              <option value="simplified">Vereinfachtes Verfahren (§ 24 ARegV)</option>
+            </select>
+          </div>
+          <div>
             <label for="baseEog">bestehende EOG TEUR p.a.</label>
             <input id="baseEog" type="number" value="20000" min="0" step="100">
           </div>
@@ -188,6 +195,14 @@
           <div>
             <label for="financingRate">Fremdkapitalzins %</label>
             <input id="financingRate" type="number" value="5.0" min="0" step="0.1">
+          </div>
+          <div>
+            <label for="annualEnergyGwh">verteilte Jahresarbeit GWh</label>
+            <input id="annualEnergyGwh" type="number" value="" min="0" step="0.1" placeholder="optional">
+          </div>
+          <div>
+            <label for="householdConsumptionKwh">Durchschnittshaushalt kWh/a</label>
+            <input id="householdConsumptionKwh" type="number" value="" min="0" step="100" placeholder="automatisch">
           </div>
         </div>
         <p class="hint" id="sectorHint">Gas: KANU-Szenarien und Q-Element sind prüfpflichtige Annahmen.</p>
@@ -272,6 +287,7 @@
           </div>
         </div>
         <p class="hint">Zusatznutzen p.a. = bestehende EOG x Delta x Attribution. Bei Gas ist Q als prüfpflichtiges Szenario markiert.</p>
+        <p id="simplifiedHint" class="hint warning hidden">Im vereinfachten Verfahren werden individuelle Q-/Effizienzeffekte in der Rechnung neutralisiert. Werte bleiben dokumentiert und können bei Wechsel zurück ins Standardverfahren wieder wirken.</p>
       </div>
 
       <div>
@@ -393,6 +409,11 @@
             <div class="value" id="kpiNpv">-</div>
             <div class="sub" id="kpiNpvSub">gegen Diskontsatz</div>
           </div>
+          <div class="kpi">
+            <div class="label">Entgeltwirkung indikativ</div>
+            <div class="value" id="kpiTariff">-</div>
+            <div class="sub" id="kpiTariffSub">Jahresarbeit eintragen</div>
+          </div>
         </div>
       </section>
 
@@ -499,7 +520,28 @@
 
     <section class="panel app-view hidden" data-view-panel="report" aria-label="Management-Report">
       <div class="report-actions">
+        <div class="segmented report-mode-switch" aria-label="Reportart">
+          <button type="button" class="report-mode active" data-report-mode="management">Management-Report</button>
+          <button type="button" class="report-mode" data-report-mode="committee">Gremienvorlage (1 Seite)</button>
+        </div>
         <button type="button" id="printReportFromView" class="primary">Report drucken</button>
+      </div>
+      <div class="group committee-fields">
+        <h2>Gremienvorlage</h2>
+        <div class="grid2">
+          <div>
+            <label for="committeeBody">Gremium</label>
+            <input id="committeeBody" type="text" value="Gemeinderat">
+          </div>
+          <div>
+            <label for="committeeMeetingDate">Sitzungsdatum</label>
+            <input id="committeeMeetingDate" type="date">
+          </div>
+          <div class="wide-field">
+            <label for="committeeProposalText">Beschlussvorschlag</label>
+            <textarea id="committeeProposalText" placeholder="optional"></textarea>
+          </div>
+        </div>
       </div>
       <div id="reportPage" class="report-page"></div>
     </section>
@@ -576,6 +618,25 @@
       </div>
       <div class="dialog-foot">
         <button type="button" id="loadCancel">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="templateModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="templateTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="templateTitle">Neue Maßnahme anlegen</h2>
+      </div>
+      <div class="dialog-body">
+        <p class="hint">Branchen-Richtwerte zur Orientierung. Keine Kalkulationsgrundlage - lokale Werte gehen vor.</p>
+        <div class="template-actions">
+          <button type="button" id="blankMeasureWizard" class="primary">Leer geführt starten</button>
+        </div>
+        <div id="templateGallery" class="template-gallery"></div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="templateCancel">Schließen</button>
         <div></div>
       </div>
     </div>
@@ -806,6 +867,7 @@
               <li>Szenarien vergleichen und Finanzierungsspread, Kapitalwert und EOG-Wirkung bewerten.</li>
               <li>Die Entscheidung nicht aus dem Rechner ableiten lassen, sondern die Annahmen und das Ergebnis als Entscheidungsgrundlage nutzen.</li>
             </ol>
+            <p>Kleinere Netzbetreiber können mit einem vereinfachten Verfahren arbeiten, bei dem einzelne Größen pauschal behandelt werden. Wenn dieses Verfahren gewählt ist, dokumentiert die App Qualitäts- und Effizienzeffekte weiter, behandelt sie aber nicht als individuellen Erlösbeitrag. Details zur Teilnahme und Auslegung sollten mit Regulierungsmanagement oder Beratung geklärt werden.</p>
           </div>
           <div class="note warning">
             Der Rechner ersetzt keine regulatorische Prüfung und keinen Beschluss. Er schafft eine gemeinsame, nachvollziehbare Entscheidungsgrundlage für Governance, Priorisierung und Finanzierung.

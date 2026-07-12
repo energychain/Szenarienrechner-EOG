@@ -76,6 +76,7 @@ export function impactAssumptionsFor(measure = {}) {
 
 function impactIncludedInScenario(impact, p) {
   if (impact.governance === 'excluded') return false;
+  if (p.regulationProcedure === 'simplified' && (impact.area === 'qElement' || impact.area === 'efficiency')) return false;
   if (p.assumptionMode === 'approvedOnly') return impact.confidence === 'proven' && impact.governance === 'basis';
   if (p.assumptionMode === 'includeReview') return impact.governance !== 'excluded';
   return impact.governance === 'basis' && impact.confidence !== 'review';
@@ -152,8 +153,12 @@ export function irr(flows) {
 export function params(inputs, overrides = {}) {
   const sector = String(inputs.sector || 'gas');
   const baseYear = Math.round(finiteNumber(inputs.baseYear));
+  const regulationProcedure = inputs.regulationProcedure === 'simplified' ? 'simplified' : 'standard';
+  const qDelta = regulationProcedure === 'simplified' ? 0 : finiteNumber(inputs.qDelta) / 100;
+  const eDelta = regulationProcedure === 'simplified' ? 0 : finiteNumber(inputs.eDelta) / 100;
   return {
     sector,
+    regulationProcedure,
     baseYear,
     regulatoryPeriod: regulatoryPeriodFor(sector, baseYear),
     baseEog: finiteNumber(inputs.baseEog),
@@ -166,8 +171,10 @@ export function params(inputs, overrides = {}) {
     degressiveRate: clamp(finiteNumber(inputs.degressiveRate), 0, 12) / 100,
     taxFactor: finiteNumber(inputs.taxFactor) / 100,
     attribution: clamp(finiteNumber(inputs.portfolioAttribution), 0, 100) / 100,
-    qDelta: finiteNumber(inputs.qDelta) / 100,
-    eDelta: finiteNumber(inputs.eDelta) / 100,
+    qDelta,
+    eDelta,
+    annualEnergyGwh: finiteNumber(inputs.annualEnergyGwh, NaN),
+    householdConsumptionKwh: finiteNumber(inputs.householdConsumptionKwh, sector === 'gas' ? 15000 : 2900),
     assumptionMode: 'basis',
     ...overrides
   };
@@ -320,7 +327,41 @@ export function calcPortfolio(model, p) {
     row.regulatoryPeriod = regulatoryPeriodFor(p.sector, row.year);
   });
 
-  return { p, activeMeasures, results, yearly, invest, activated, irr: resultIrr, npv: resultNpv, qePa, impactPa, riskPa, totex };
+  return {
+    p,
+    activeMeasures,
+    results,
+    yearly,
+    invest,
+    activated,
+    irr: resultIrr,
+    npv: resultNpv,
+    qePa,
+    impactPa,
+    riskPa,
+    totex,
+    tariffImpact: tariffImpactFor(yearly[0]?.eog || 0, p)
+  };
+}
+
+export function tariffImpactFor(eogTeur, p) {
+  const annualEnergyGwh = finiteNumber(p.annualEnergyGwh, NaN);
+  const householdConsumptionKwh = finiteNumber(p.householdConsumptionKwh, p.sector === 'gas' ? 15000 : 2900);
+  if (!Number.isFinite(annualEnergyGwh) || annualEnergyGwh <= 0) {
+    return {
+      available: false,
+      ctPerKwh: NaN,
+      householdEurPerYear: NaN,
+      caveat: 'Indikativ. Die tatsächliche Wälzung folgt der Entgeltsystematik (Kundengruppen, Leistungspreise, Periodenlogik) und kann deutlich abweichen.'
+    };
+  }
+  const ctPerKwh = finiteNumber(eogTeur) * 100000 / (annualEnergyGwh * 1000000);
+  return {
+    available: true,
+    ctPerKwh,
+    householdEurPerYear: ctPerKwh * householdConsumptionKwh / 100,
+    caveat: 'Indikativ. Die tatsächliche Wälzung folgt der Entgeltsystematik (Kundengruppen, Leistungspreise, Periodenlogik) und kann deutlich abweichen.'
+  };
 }
 
 export function scenarioParams(baseParams, name) {

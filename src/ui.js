@@ -58,6 +58,8 @@ const demoMeasures = [
   {
     id: 'demo_station_replacement',
     active: true,
+    templateId: 'tpl_fernwirk_trafo',
+    templateVersion: '2026-07',
     name: 'Ersatz Trafostation mit Fernwirkfähigkeit',
     type: 'wahl',
     cost: 540,
@@ -173,7 +175,8 @@ const demoMeasures = [
 ];
 
 const inputIds = [
-  'sector', 'baseYear', 'baseEog', 'rab', 'returnRate', 'financingRate',
+  'sector', 'regulationProcedure', 'baseYear', 'baseEog', 'rab', 'returnRate', 'financingRate',
+  'annualEnergyGwh', 'householdConsumptionKwh',
   'horizon', 'discountRate', 'kanuEndYear', 'degressiveRate', 'taxFactor',
   'portfolioAttribution', 'qDelta', 'eDelta'
 ];
@@ -188,11 +191,14 @@ const detailIds = [
 
 const fieldHelp = {
   sector: 'Legt fest, welche regulatorische Logik gilt. Gas kann KANU-Szenarien enthalten; Strom ist bei Qualitäts- und Effizienzthemen anders zu bewerten.',
+  regulationProcedure: 'Kleinere Netzbetreiber können ein vereinfachtes Verfahren nutzen, bei dem einige Größen pauschal festgelegt sind. Das Modell blendet dann Effekte aus, die individuell nicht erlöswirksam werden - so bleibt die Rechnung ehrlich.',
   baseYear: 'Startjahr der Betrachtung. Der Rechner leitet daraus je Sparte die passende Regulierungsperiode ab und rechnet alle Jahreswerte relativ zu diesem Jahr.',
   baseEog: 'Bestehende Erlösobergrenze der Sparte pro Jahr. Sie ist Bezugsgröße für Portfolioeffekte und zeigt, wie stark eine Maßnahme das Gesamtbild verändert.',
   rab: 'Regulatorisch gebundene Kapitalbasis. Sie hilft, Investitionen relativ zur bestehenden Kapitalbindung und zur künftigen Verzinsungsbasis einzuordnen.',
   returnRate: 'Regulatorische Kapitalverzinsung. Sie wirkt nur auf anerkanntes, aktiviertes Kapital und ist nicht automatisch die Rendite der Gesamtkosten.',
   financingRate: 'Kosten des eingesetzten Fremdkapitals. Der Vergleich mit IRR und Kapitalwert zeigt, ob eine Maßnahme den Finanzierungsspread trägt.',
+  annualEnergyGwh: 'Verteilte Jahresarbeit der Sparte. Nur damit kann der Rechner den zulässigen Mehrerlös grob in Cent je Kilowattstunde und Euro je Durchschnittshaushalt übersetzen.',
+  householdConsumptionKwh: 'Typischer Jahresverbrauch eines Durchschnittshaushalts. Gas nutzt ohne Eingabe 15.000 kWh, Strom 2.900 kWh. Der Wert ist nur eine Kommunikationsgröße.',
   horizon: 'Zeitraum der Auswertung. Ein längerer Horizont zeigt vollständige Abschreibungs- und Verzinsungspfade, erhöht aber die Unsicherheit.',
   discountRate: 'Abzinsungssatz für den Kapitalwert. Er bildet die Mindestverzinsung oder Opportunitätskosten des Kapitals ab.',
   kanuEndYear: 'Zieljahr für beschleunigte Gas-Abschreibungen. Es verschiebt EOG-Wirkung, Restwertpfad und Kapitalbindung über die Zeit.',
@@ -226,14 +232,19 @@ const fieldHelp = {
   riskProbabilityBefore: 'Wie oft pro Jahr tritt das Schadensereignis ohne Maßnahme ein? 10 % bedeutet statistisch ungefähr alle 10 Jahre.',
   riskProbabilityAfter: 'Wie oft pro Jahr tritt das Schadensereignis mit Maßnahme ein? Die Differenz zu vorher wird mit der Schadenshöhe bewertet.',
   riskImpact: 'Schadenshöhe je Ereignis in TEUR, inklusive Folgekosten, Sanktionen oder Wiederherstellungskosten.',
+  committeeBody: 'Gremium, fuer das eine knappe Vorlage erstellt wird, zum Beispiel Gemeinderat, Aufsichtsrat oder Werksausschuss.',
+  committeeMeetingDate: 'Sitzungsdatum fuer die Gremienvorlage. Leer lassen, wenn noch kein Termin feststeht.',
+  committeeProposalText: 'Optionaler Beschlussvorschlag in Alltagssprache. Wenn leer, formuliert die Vorlage einen neutralen Vorschlag.',
   mNote: 'Arbeitsnotiz für Meeting, Klärpunkte oder Governance-Auflagen. Die Notiz wird gespeichert, in der Übersicht markiert und im Report ausgewiesen.'
 };
 
-const el = Object.fromEntries([...inputIds, ...detailIds].map(id => [id, document.getElementById(id)]));
+const committeeIds = ['committeeBody', 'committeeMeetingDate', 'committeeProposalText'];
+const el = Object.fromEntries([...inputIds, ...detailIds, ...committeeIds].map(id => [id, document.getElementById(id)]));
 let measures = structuredClone(initialMeasures);
 let selectedId = measures[0]?.id;
 let scenario = 'basis';
 let activeView = 'basis';
+let reportMode = 'management';
 let meetingFocus = 'management';
 let meetingTextOverrides = {};
 let meetingTextEdit = null;
@@ -274,6 +285,7 @@ let previousModelForHistory = null;
 let suppressHistoryEvents = false;
 let processState = defaultProcessState();
 let strategy = defaultStrategy();
+let committee = defaultCommittee();
 let currentRole = 'owner';
 let clarificationStatus = {};
 let pendingImportReview = null;
@@ -308,6 +320,163 @@ const evidenceTypeLabels = {
   open: 'noch offen'
 };
 
+const measureTemplates = [
+  {
+    templateId: 'tpl_ons_ersatz',
+    templateVersion: '2026-07',
+    sector: 'strom',
+    icon: '⚡',
+    name: 'Ersatz Ortsnetzstation',
+    costRange: [80, 150, 250],
+    life: 35,
+    depr: 'normal',
+    secure: 80,
+    uncertain: 20,
+    probability: 50,
+    opexRecognition: 60,
+    impactSkeletons: [
+      { area: 'risk', title: 'Vermiedener alterungsbedingter Ausfall', confidence: 'review', governance: 'sensitivity', chain: 'Ersatz senkt Ausfallwahrscheinlichkeit einer kritischen Station.', evidence: '', evidenceType: 'open', riskProbabilityBefore: 5, riskProbabilityAfter: 2, riskImpact: 250 }
+    ],
+    checkHints: ['Zustandsbewertung vorhanden?', 'Tiefbau im Zieljahr möglich?', 'Stationsstandort abgestimmt?']
+  },
+  {
+    templateId: 'tpl_fernwirk_trafo',
+    templateVersion: '2026-07',
+    sector: 'strom',
+    icon: '↔',
+    name: 'Trafostation mit Fernwirkfähigkeit',
+    costRange: [120, 220, 380],
+    life: 35,
+    depr: 'normal',
+    secure: 75,
+    uncertain: 25,
+    probability: 55,
+    opexRecognition: 55,
+    impactSkeletons: [
+      { area: 'qElement', title: 'Schnellere Wiederversorgung durch Fernwirkung', amount: 10, confidence: 'review', governance: 'sensitivity', chain: 'Fernsteuerung verkürzt Such- und Schaltzeiten bei Störungen.', evidence: '', evidenceType: 'open' },
+      { area: 'risk', title: 'Vermiedene Folgekosten bei Stationsausfall', confidence: 'assumption', governance: 'sensitivity', chain: 'Fernwirkung reduziert Eskalationsrisiko bei Folgefehlern.', evidence: '', evidenceType: 'expert', riskProbabilityBefore: 6, riskProbabilityAfter: 2, riskImpact: 300 }
+    ],
+    checkHints: ['Fernwirkanbindung verfügbar?', 'Störungsminuten historisch belegbar?']
+  },
+  {
+    templateId: 'tpl_kabelersatz_ms',
+    templateVersion: '2026-07',
+    sector: 'strom',
+    icon: '━',
+    name: 'Kabelersatz NS/MS je km',
+    costRange: [180, 320, 550],
+    life: 45,
+    depr: 'normal',
+    secure: 80,
+    uncertain: 20,
+    probability: 45,
+    opexRecognition: 60,
+    impactSkeletons: [
+      { area: 'risk', title: 'Vermiedener Kabelfehler', confidence: 'review', governance: 'sensitivity', chain: 'Ersatz senkt die Eintrittswahrscheinlichkeit alterungsbedingter Kabelfehler.', evidence: '', evidenceType: 'open', riskProbabilityBefore: 7, riskProbabilityAfter: 2, riskImpact: 400 }
+    ],
+    checkHints: ['Kabellänge und Tiefbauanteil lokal geprüft?', 'Mit Straßenbau koordinierbar?']
+  },
+  {
+    templateId: 'tpl_netzautomatisierung',
+    templateVersion: '2026-07',
+    sector: 'strom',
+    icon: '●',
+    name: 'Netzautomatisierung/Fernwirktechnik',
+    costRange: [250, 600, 1200],
+    life: 15,
+    depr: 'normal',
+    secure: 70,
+    uncertain: 30,
+    probability: 60,
+    opexRecognition: 60,
+    impactSkeletons: [
+      { area: 'qElement', title: 'Weniger lange Versorgungsunterbrechungen', amount: 15, confidence: 'review', governance: 'sensitivity', chain: 'Automatisierung grenzt Fehler schneller ein und verkürzt Wiederversorgung.', evidence: '', evidenceType: 'open' },
+      { area: 'efficiency', title: 'Weniger manuelle Schalt- und Entstörungsfahrten', amount: 8, confidence: 'assumption', governance: 'sensitivity', chain: 'Fernsteuerung reduziert manuelle Einsätze.', evidence: '', evidenceType: 'expert' }
+    ],
+    checkHints: ['Störungsstatistik und Schaltzeiten vorhanden?', 'IT-/Leittechnikaufwand eingepreist?']
+  },
+  {
+    templateId: 'tpl_sensorik',
+    templateVersion: '2026-07',
+    sector: 'strom',
+    icon: '◌',
+    name: 'Sensorik/Zustandsüberwachung',
+    costRange: [80, 220, 500],
+    life: 12,
+    depr: 'normal',
+    secure: 55,
+    uncertain: 35,
+    probability: 60,
+    opexRecognition: 50,
+    impactSkeletons: [
+      { area: 'efficiency', title: 'Gezieltere Instandhaltung', amount: 10, confidence: 'review', governance: 'sensitivity', chain: 'Zustandsdaten reduzieren ungeplante oder pauschale Instandhaltung.', evidence: '', evidenceType: 'open' }
+    ],
+    checkHints: ['Datenprozess nach Einführung geklärt?', 'Betriebskosten der Plattform berücksichtigt?']
+  },
+  {
+    templateId: 'tpl_gdra_modernisierung',
+    templateVersion: '2026-07',
+    sector: 'gas',
+    icon: '◇',
+    name: 'GDRA-Modernisierung',
+    costRange: [180, 450, 900],
+    life: 40,
+    depr: 'kanuLinear',
+    secure: 75,
+    uncertain: 25,
+    probability: 50,
+    opexRecognition: 70,
+    impactSkeletons: [
+      { area: 'risk', title: 'Vermiedene Versorgungsunterbrechung', confidence: 'review', governance: 'sensitivity', chain: 'Modernisierung senkt Ausfallwahrscheinlichkeit und Folgekosten der Anlage.', evidence: '', evidenceType: 'open', riskProbabilityBefore: 5, riskProbabilityAfter: 2, riskImpact: 800 }
+    ],
+    checkHints: ['KANU-Zieljahr/Rückbaupfad berücksichtigt?', 'Ersatzteil- und Zustandslage dokumentiert?']
+  },
+  {
+    templateId: 'tpl_gas_leitung',
+    templateVersion: '2026-07',
+    sector: 'gas',
+    icon: '═',
+    name: 'Leitungsersatz Gas je km',
+    costRange: [250, 600, 1100],
+    life: 45,
+    depr: 'kanuLinear',
+    secure: 80,
+    uncertain: 20,
+    probability: 45,
+    opexRecognition: 70,
+    impactSkeletons: [
+      { area: 'risk', title: 'Vermiedener Schadensfall Leitungsabschnitt', confidence: 'review', governance: 'sensitivity', chain: 'Ersatz reduziert Eintrittswahrscheinlichkeit und Folgekosten im Abschnitt.', evidence: '', evidenceType: 'open', riskProbabilityBefore: 6, riskProbabilityAfter: 1.5, riskImpact: 900 }
+    ],
+    checkHints: ['Schadenshistorie und Materialklasse belegt?', 'Rückbau-/Stilllegungspfad geprüft?']
+  },
+  {
+    templateId: 'tpl_messtechnik_betrieb',
+    templateVersion: '2026-07',
+    sector: 'both',
+    icon: '▣',
+    name: 'Messtechnik/Digitalisierung Betrieb',
+    costRange: [60, 180, 420],
+    life: 12,
+    depr: 'normal',
+    secure: 60,
+    uncertain: 30,
+    probability: 60,
+    opexRecognition: 50,
+    impactSkeletons: [
+      { area: 'efficiency', title: 'Weniger manueller Betriebsaufwand', amount: 8, confidence: 'review', governance: 'sensitivity', chain: 'Digitale Mess- und Betriebsdaten ersetzen manuelle Erfassung und verbessern Einsatzsteuerung.', evidence: '', evidenceType: 'open' }
+    ],
+    checkHints: ['Schnittstellen und Betriebskosten geklärt?', 'Doppelzählung mit OPEX-Einsparung vermeiden?']
+  }
+];
+
+function defaultCommittee() {
+  return {
+    body: 'Gemeinderat',
+    meetingDate: '',
+    proposalText: ''
+  };
+}
+
 function defaultProcessState() {
   const phaseTargets = Object.fromEntries(processPhases.map(([id]) => [id, '']));
   return {
@@ -322,6 +491,31 @@ function defaultStrategy() {
     sampReference: '',
     objectives: structuredClone(defaultObjectives)
   };
+}
+
+function normalizeCommittee(value = {}) {
+  const defaults = defaultCommittee();
+  return {
+    body: String(value.body || defaults.body),
+    meetingDate: String(value.meetingDate || ''),
+    proposalText: String(value.proposalText || '')
+  };
+}
+
+function syncCommitteeFields() {
+  if (!el.committeeBody) return;
+  if (document.activeElement && committeeIds.includes(document.activeElement.id)) return;
+  el.committeeBody.value = committee.body;
+  el.committeeMeetingDate.value = committee.meetingDate;
+  el.committeeProposalText.value = committee.proposalText;
+}
+
+function collectCommitteeFields() {
+  committee = normalizeCommittee({
+    body: el.committeeBody.value,
+    meetingDate: el.committeeMeetingDate.value,
+    proposalText: el.committeeProposalText.value
+  });
 }
 
 function normalizeStrategy(value = {}) {
@@ -462,6 +656,14 @@ function fmtPct(value, digits = 1) {
   }).format(value) + ' %';
 }
 
+function fmtEur(value, digits = 0) {
+  if (!Number.isFinite(value)) return '-';
+  return new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  }).format(value) + ' EUR';
+}
+
 function fmtPlain(value, digits = 0) {
   return new Intl.NumberFormat('de-DE', {
     minimumFractionDigits: digits,
@@ -506,6 +708,8 @@ function normalizeMeasureForUi(measure, index = 0) {
     ...measure,
     id: String(measure.id || 'import_' + Date.now().toString(36) + '_' + index),
     objectiveIds: Array.isArray(measure.objectiveIds) ? measure.objectiveIds.map(String) : [],
+    templateId: String(measure.templateId || ''),
+    templateVersion: String(measure.templateVersion || ''),
     opexPa: Number(measure.opexPa) || 0,
     opexDeltaPa: Number(measure.opexDeltaPa) || 0,
     reinvestCost: Number(measure.reinvestCost) || 0,
@@ -516,6 +720,49 @@ function normalizeMeasureForUi(measure, index = 0) {
       evidenceType: impact.evidenceType || 'open',
       legacyFlat: impact.area === 'risk' && impact.legacyFlat !== false && !Number(impact.riskImpact)
     }))
+  };
+}
+
+function normalizeTemplateImpact(template, index, year) {
+  const impact = structuredClone(template);
+  return {
+    ...newImpactAssumptionTemplate({ year }),
+    ...impact,
+    id: 'impact_tpl_' + Date.now().toString(36) + '_' + index,
+    confidence: impact.confidence || 'review',
+    governance: impact.governance || 'sensitivity',
+    startYear: year,
+    endYear: '',
+    evidence: impact.evidence || '',
+    evidenceType: impact.evidenceType || 'open',
+    note: impact.note || 'Richtwert aus Vorlage lokal prüfen und bestätigen.',
+    legacyFlat: false
+  };
+}
+
+function measureFromTemplate(template) {
+  const year = Math.max(Math.round(num('baseYear')) || new Date().getFullYear(), new Date().getFullYear());
+  const typicalCost = template.costRange?.[1] || 0;
+  const checkNote = template.checkHints?.length
+    ? 'Aus Vorlage angelegt. Lokal prüfen: ' + template.checkHints.join(' · ')
+    : 'Aus Vorlage angelegt. Richtwerte lokal prüfen.';
+  return {
+    ...newMeasureTemplate(measures.length + 1),
+    id: 'measure_' + Date.now().toString(36),
+    active: true,
+    name: template.name,
+    cost: typicalCost,
+    year,
+    secure: template.secure,
+    uncertain: template.uncertain,
+    probability: template.probability,
+    opexRecognition: template.opexRecognition,
+    life: template.life,
+    depr: el.sector.value === 'strom' ? 'normal' : template.depr,
+    templateId: template.templateId,
+    templateVersion: template.templateVersion,
+    impactAssumptions: (template.impactSkeletons || []).map((impact, index) => normalizeTemplateImpact(impact, index, year)),
+    note: checkNote
   };
 }
 
@@ -1085,12 +1332,14 @@ function rememberSeenHead() {
 function currentModelData() {
   return {
     activeView,
+    reportMode,
     meetingFocus,
     scenario,
     selectedId,
     role: currentRole,
     process: structuredClone(processState),
     strategy: structuredClone(strategy),
+    committee: structuredClone(committee),
     inputs: Object.fromEntries(inputIds.map(id => [id, el[id].value])),
     measures: structuredClone(measures),
     meetingTextOverrides: structuredClone(meetingTextOverrides),
@@ -1114,12 +1363,14 @@ function collectModelState() {
 function legacyModelFromState(state) {
   return {
     activeView: state.activeView,
+    reportMode: state.reportMode || 'management',
     meetingFocus: state.meetingFocus,
     scenario: state.scenario,
     selectedId: state.selectedId,
     role: state.role || 'owner',
     process: state.process || defaultProcessState(),
     strategy: state.strategy || defaultStrategy(),
+    committee: state.committee || defaultCommittee(),
     inputs: state.inputs,
     measures: state.measures,
     meetingTextOverrides: state.meetingTextOverrides || {},
@@ -1167,12 +1418,14 @@ function applyModelState(state) {
     : measures[0]?.id;
   scenario = ['basis', 'konservativ', 'wert'].includes(model.scenario) ? model.scenario : 'basis';
   activeView = ['basis', 'measures', 'results', 'report', 'expertWork'].includes(model.activeView) ? model.activeView : activeView;
+  reportMode = ['management', 'committee'].includes(model.reportMode) ? model.reportMode : 'management';
   meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(model.meetingFocus) ? model.meetingFocus : 'management';
   meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
     ? structuredClone(model.meetingTextOverrides)
     : {};
   processState = normalizeProcessState(model.process);
   strategy = normalizeStrategy(model.strategy);
+  committee = normalizeCommittee(model.committee);
   clarificationStatus = model.clarificationStatus && typeof model.clarificationStatus === 'object'
     ? structuredClone(model.clarificationStatus)
     : {};
@@ -1312,11 +1565,14 @@ function clearBrowserData() {
 function applyDemoModel() {
   hideStartScreen();
   el.sector.value = 'strom';
+  el.regulationProcedure.value = 'standard';
   el.baseYear.value = '2027';
   el.baseEog.value = '20000';
   el.rab.value = '85000';
   el.returnRate.value = '5.0';
   el.financingRate.value = '5.0';
+  el.annualEnergyGwh.value = '520';
+  el.householdConsumptionKwh.value = '2900';
   el.horizon.value = '20';
   el.discountRate.value = '5.0';
   el.kanuEndYear.value = '2045';
@@ -1329,6 +1585,11 @@ function applyDemoModel() {
   strategy = normalizeStrategy({
     sampReference: 'AMP-Fragment Stromverteilung, Budgetrunde 2027, Bezug SAMP Kapitel Versorgungssicherheit',
     objectives: defaultObjectives
+  });
+  committee = normalizeCommittee({
+    body: 'Werksausschuss',
+    meetingDate: '',
+    proposalText: 'Der Werksausschuss nimmt die Investitionsbewertung zur Kenntnis und beauftragt die Verwaltung, die offenen Annahmen vor der Budgetfreigabe zu klären.'
   });
   selectedId = measures[0]?.id;
   scenario = 'basis';
@@ -1564,6 +1825,20 @@ function renderGlobalValidation() {
       el[id].setAttribute('aria-invalid', 'true');
     }
   });
+  const simplified = el.regulationProcedure.value === 'simplified';
+  document.body.classList.toggle('simplified-procedure', simplified);
+  const simplifiedHint = document.getElementById('simplifiedHint');
+  if (simplifiedHint) simplifiedHint.classList.toggle('hidden', !simplified);
+  ['qDelta', 'eDelta'].forEach(id => {
+    if (el[id]) el[id].disabled = simplified || isReadOnlyRole();
+  });
+  if (simplified && (num('qDelta') !== 0 || num('eDelta') !== 0)) {
+    messages.push('Vereinfachtes Verfahren: Q-/Effizienzeffekte bleiben dokumentiert, werden aber rechnerisch neutralisiert.');
+  }
+  const simplifiedImpacts = allImpactAssumptions(true).filter(item => item.area === 'qElement' || item.area === 'efficiency');
+  if (simplified && simplifiedImpacts.length) {
+    messages.push(`${simplifiedImpacts.length} Q-/Effizienz-Wirkannahmen sind dokumentiert, im vereinfachten Verfahren aber nicht erlöswirksam.`);
+  }
   node.classList.toggle('active', messages.length > 0);
   node.innerHTML = messages.length
     ? `<strong>Szenarioannahmen begrenzt</strong><ul>${messages.map(message => `<li>${esc(message)}</li>`).join('')}</ul>`
@@ -1687,9 +1962,10 @@ function renderManagementSummary(result, first, spread, decision) {
     ? `Der IRR liegt ${pp(spreadAbs)} ${trendWord(spread)} dem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
     : 'Der Spread zum FK-Zins ist nicht berechenbar.';
   const activeText = result.activeMeasures.length === 1 ? '1 aktive Maßnahme' : result.activeMeasures.length + ' aktive Maßnahmen';
+  const tariff = tariffImpactLine(result.tariffImpact);
 
   document.getElementById('managementStory').textContent = result.activeMeasures.length
-    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} entsteht im ersten Jahr ein EOG-Zusatz von ${fmtTeur(first.eog, 1)} in ${periodDetailText(result.p.regulatoryPeriod)}; der Portfolio-IRR beträgt ${irrText}. ${spreadSentence}`
+    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} entsteht im ersten Jahr ein EOG-Zusatz von ${fmtTeur(first.eog, 1)} in ${periodDetailText(result.p.regulatoryPeriod)}; der Portfolio-IRR beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht das rechnerisch etwa ${tariff.value}.` : ''}`
     : 'Es ist keine aktive Maßnahme ausgewählt. Für eine Entscheidung müssen zuerst Maßnahmen aktiviert oder angelegt werden.';
 
   const knowledgeEffect = result.qePa + result.impactPa;
@@ -1698,6 +1974,9 @@ function renderManagementSummary(result, first, spread, decision) {
       ? `Dokumentierte Portfolio- und Wirkannahmen von ${fmtTeur(knowledgeEffect, 1)} p.a. sind entscheidungsrelevant und müssen kausal sowie regulatorisch begründet bleiben.`
       : 'Die Wirtschaftlichkeit hängt vor allem an Aktivierbarkeit, Anerkennungsfähigkeit, Timing und Risikowert der Maßnahmen.'
     : 'Ohne aktive Maßnahme gibt es keinen belastbaren Business Case.';
+  if (result.activeMeasures.length && result.tariffImpact.available) {
+    document.getElementById('managementCaveat').textContent += ' Entgeltwirkung indikativ: ' + result.tariffImpact.caveat;
+  }
 
   document.getElementById('managementNextStep').textContent = result.activeMeasures.length
     ? 'Im Meeting die drei offenen Annahmen festziehen: Aktivierungsprofil, regulatorische Anerkennung und zurechenbare Portfolio-/Risikowirkung.'
@@ -1794,10 +2073,11 @@ function renderMeasures() {
   document.getElementById('measureBody').innerHTML = measures.map(measure => {
     const result = calcMeasure(measure, p, portfolioEffectFor(measure, p));
     const counts = impactCounts(measure);
+    const templateBadge = measure.templateId ? `<span class="pill warn">aus Vorlage ${esc(measure.templateVersion || '')}</span>` : '';
     return `
       <tr class="${measure.id === selectedId ? 'selected' : ''}" data-id="${measure.id}">
         <td><input type="checkbox" data-action="active" data-id="${measure.id}" ${measure.active ? 'checked' : ''}></td>
-        <td><button type="button" data-action="select" data-id="${measure.id}">${measure.name}</button></td>
+        <td><button type="button" data-action="select" data-id="${measure.id}">${measure.name}</button><div class="pill-row compact">${templateBadge}</div></td>
         <td>${measure.year}</td>
         <td><div class="pill-row compact">${objectivePills(measure)}</div></td>
         <td>${fmtTeur(measure.cost)}</td>
@@ -1845,6 +2125,8 @@ function newMeasureTemplate() {
     riskAvoided: 0,
     portfolioShare: 0,
     objectiveIds: [],
+    templateId: '',
+    templateVersion: '',
     opexPa: 0,
     opexDeltaPa: 0,
     reinvestCost: 0,
@@ -1858,9 +2140,12 @@ function newMeasureTemplate() {
 function basisDraft() {
   return {
     sector: el.sector.value,
+    regulationProcedure: el.regulationProcedure.value,
     baseYear: Math.round(num('baseYear')),
     baseEog: num('baseEog'),
     rab: num('rab'),
+    annualEnergyGwh: el.annualEnergyGwh.value,
+    householdConsumptionKwh: el.householdConsumptionKwh.value,
     returnRate: num('returnRate'),
     financingRate: num('financingRate'),
     horizon: Math.round(num('horizon')),
@@ -1926,10 +2211,17 @@ function renderBasisWizardStep() {
         <div>
           <label for="w_baseYear">Startjahr</label>
           <input id="w_baseYear" type="number" value="${d.baseYear}" min="2025" step="1">
-	            </div>
-	          </div>
-	          <p class="hint">Der Rechner leitet daraus ${periodDetailText(draftPeriod)} mit Kostenbasis ${draftPeriod.costBaseYear} ab.</p>
-	        `;
+        </div>
+        <div>
+          <label for="w_regulationProcedure">Regulierungsverfahren</label>
+          <select id="w_regulationProcedure">
+            <option value="standard" ${d.regulationProcedure !== 'simplified' ? 'selected' : ''}>Standardverfahren</option>
+            <option value="simplified" ${d.regulationProcedure === 'simplified' ? 'selected' : ''}>Vereinfachtes Verfahren (§ 24 ARegV)</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint">Der Rechner leitet daraus ${periodDetailText(draftPeriod)} mit Kostenbasis ${draftPeriod.costBaseYear} ab. Im vereinfachten Verfahren werden individuelle Qualitäts- und Effizienzeffekte im Modell neutral behandelt.</p>
+    `;
   }
   if (wizard.step === 1) {
     return `
@@ -1943,8 +2235,16 @@ function renderBasisWizardStep() {
           <label for="w_rab">regulierte Kapitalbasis TEUR</label>
           <input id="w_rab" type="number" value="${d.rab}" min="0" step="500">
         </div>
+        <div>
+          <label for="w_annualEnergyGwh">verteilte Jahresarbeit GWh</label>
+          <input id="w_annualEnergyGwh" type="number" value="${esc(d.annualEnergyGwh)}" min="0" step="0.1" placeholder="optional">
+        </div>
+        <div>
+          <label for="w_householdConsumptionKwh">Durchschnittshaushalt kWh/a</label>
+          <input id="w_householdConsumptionKwh" type="number" value="${esc(d.householdConsumptionKwh)}" min="0" step="100" placeholder="automatisch">
+        </div>
       </div>
-      <p class="hint">Diese Werte sind der Anker für Portfolioeffekte und relative Bewertung.</p>
+      <p class="hint">Diese Werte sind der Anker für Portfolioeffekte und relative Bewertung. Die Jahresarbeit übersetzt Mehrerlöse indikativ in eine Haushaltswirkung.</p>
     `;
   }
   if (wizard.step === 2) {
@@ -2006,11 +2306,14 @@ function renderBasisWizardStep() {
     <h3>Stammdaten bestätigen</h3>
     ${reviewRows([
       ['Sparte', d.sector === 'gas' ? 'Gas' : 'Strom'],
+      ['Verfahren', d.regulationProcedure === 'simplified' ? 'Vereinfachtes Verfahren' : 'Standardverfahren'],
       ['Startjahr', d.baseYear],
       ['Regulierungsperiode', periodDetailText(draftPeriod)],
       ['Kostenbasis', draftPeriod.costBaseYear],
       ['Bestehende EOG', fmtTeur(d.baseEog)],
       ['Regulierte Kapitalbasis', fmtTeur(d.rab)],
+      ['Jahresarbeit', d.annualEnergyGwh ? `${d.annualEnergyGwh} GWh` : 'nicht eingetragen'],
+      ['Durchschnittshaushalt', d.householdConsumptionKwh ? `${d.householdConsumptionKwh} kWh/a` : 'automatisch'],
       ['Kapitalverzinsung', fmtPct(d.returnRate)],
       ['Fremdkapitalzins', fmtPct(d.financingRate)],
       ['Horizont', d.horizon + ' Jahre'],
@@ -2137,8 +2440,8 @@ function collectWizardStep() {
   if (!wizard) return;
   const d = wizard.draft;
   if (wizard.type === 'basis') {
-    if (wizard.step === 0) Object.assign(d, { sector: modalValue('w_sector'), baseYear: Math.round(modalNumber('w_baseYear')) });
-    if (wizard.step === 1) Object.assign(d, { baseEog: modalNumber('w_baseEog'), rab: modalNumber('w_rab') });
+    if (wizard.step === 0) Object.assign(d, { sector: modalValue('w_sector'), regulationProcedure: modalValue('w_regulationProcedure'), baseYear: Math.round(modalNumber('w_baseYear')) });
+    if (wizard.step === 1) Object.assign(d, { baseEog: modalNumber('w_baseEog'), rab: modalNumber('w_rab'), annualEnergyGwh: modalValue('w_annualEnergyGwh'), householdConsumptionKwh: modalValue('w_householdConsumptionKwh') });
     if (wizard.step === 2) Object.assign(d, { returnRate: modalNumber('w_returnRate'), financingRate: modalNumber('w_financingRate'), horizon: Math.round(modalNumber('w_horizon')), discountRate: modalNumber('w_discountRate') });
     if (wizard.step === 3) Object.assign(d, { kanuEndYear: Math.round(modalNumber('w_kanuEndYear')), degressiveRate: modalNumber('w_degressiveRate'), taxFactor: modalNumber('w_taxFactor'), portfolioAttribution: modalNumber('w_portfolioAttribution'), qDelta: modalNumber('w_qDelta'), eDelta: modalNumber('w_eDelta') });
   } else {
@@ -2418,8 +2721,11 @@ function renderImpactAssumptions(measure) {
   const node = document.getElementById('impactAssumptions');
   if (!node) return;
   const assumptions = impactAssumptionsFor(measure);
-  const rows = assumptions.map(impact => `
-    <article class="impact-card" data-impact-id="${esc(impact.id)}">
+  const simplified = el.regulationProcedure.value === 'simplified';
+  const rows = assumptions.map(impact => {
+    const isNeutralized = simplified && (impact.area === 'qElement' || impact.area === 'efficiency');
+    return `
+    <article class="impact-card ${isNeutralized ? 'neutralized-impact' : ''}" data-impact-id="${esc(impact.id)}">
       <div class="impact-card-head">
         <div>
           <strong>${esc(impact.title)}</strong>
@@ -2430,6 +2736,7 @@ function renderImpactAssumptions(measure) {
           <button type="button" data-action="removeImpact" data-impact-id="${esc(impact.id)}" class="small-danger">Entfernen</button>
         </div>
       </div>
+      ${isNeutralized ? '<div class="note warning">Im vereinfachten Verfahren wird diese Q-/Effizienzwirkung nur dokumentiert und nicht erlöswirksam gerechnet.</div>' : ''}
       <div class="grid2 compact-grid">
         <div>
           <label>Titel</label>
@@ -2469,7 +2776,8 @@ function renderImpactAssumptions(measure) {
       <label>Prüf- oder Freigabehinweis</label>
       <textarea data-impact-field="note" data-impact-id="${esc(impact.id)}" placeholder="Was muss vor Beschluss/Freigabe noch bestätigt werden?">${esc(impact.note)}</textarea>
     </article>
-  `).join('');
+  `;
+  }).join('');
   node.innerHTML = rows || '<p class="hint">Noch keine Wirkannahme erfasst. Direkte Q-/E- oder Risikowerte sollten künftig hier mit Quelle, Kausalkette und Vertrauensstufe dokumentiert werden.</p>';
 }
 
@@ -2649,6 +2957,49 @@ function renderYears(result) {
   `).join('');
 }
 
+function renderTemplateGallery() {
+  const gallery = document.getElementById('templateGallery');
+  if (!gallery) return;
+  const sector = el.sector.value;
+  const templates = measureTemplates.filter(template => template.sector === 'both' || template.sector === sector);
+  gallery.innerHTML = templates.map(template => `
+    <button type="button" class="template-card" data-template-id="${esc(template.templateId)}">
+      <span class="template-icon" aria-hidden="true">${esc(template.icon || '+')}</span>
+      <strong>${esc(template.name)}</strong>
+      <span>${template.sector === 'both' ? 'Gas/Strom' : template.sector === 'gas' ? 'Gas' : 'Strom'} · typisch ${fmtTeur(template.costRange[1])}</span>
+      <small>Spanne ${fmtTeur(template.costRange[0])} bis ${fmtTeur(template.costRange[2])} · Stand ${esc(template.templateVersion)}</small>
+    </button>
+  `).join('');
+}
+
+function openTemplateModal() {
+  if (isReadOnlyRole()) return;
+  renderTemplateGallery();
+  document.getElementById('templateModal').classList.remove('hidden');
+}
+
+function closeTemplateModal() {
+  document.getElementById('templateModal').classList.add('hidden');
+}
+
+function startBlankMeasureWizard() {
+  closeTemplateModal();
+  openMeasureWizard();
+}
+
+function addMeasureFromTemplate(templateId) {
+  const template = measureTemplates.find(item => item.templateId === templateId);
+  if (!template) return;
+  const measure = measureFromTemplate(template);
+  measures = [...measures, measure];
+  selectedId = measure.id;
+  setView('measures');
+  closeTemplateModal();
+  renderAll();
+  openMeasureEditModal();
+  setStorageStatus('Maßnahme aus Vorlage angelegt. Richtwerte bitte lokal prüfen.');
+}
+
 function renderScenarios() {
   const rows = ['basis', 'konservativ', 'wert'].map(name => {
     const result = currentPortfolio(currentScenarioParams(name));
@@ -2665,6 +3016,13 @@ function renderScenarios() {
     `;
   });
   document.getElementById('scenarioBody').innerHTML = rows.join('');
+}
+
+function renderReportMode() {
+  document.querySelectorAll('.report-mode').forEach(button => {
+    button.classList.toggle('active', button.dataset.reportMode === reportMode);
+  });
+  document.body.dataset.reportMode = reportMode;
 }
 
 function scenarioLabel(name) {
@@ -2728,6 +3086,31 @@ function strategyContributionBars(result) {
   `;
 }
 
+function tariffImpactLine(tariffImpact) {
+  if (!tariffImpact?.available) {
+    return {
+      value: 'Jahresarbeit fehlt',
+      sub: 'Jahresarbeit eintragen',
+      sentence: 'Die indikative Entgeltwirkung kann erst gezeigt werden, wenn die verteilte Jahresarbeit eingetragen ist.'
+    };
+  }
+  const household = tariffImpact.householdEurPerYear;
+  const value = household > 0 && household < 1
+    ? 'unter 1 EUR/Jahr je Haushalt'
+    : '~' + fmtEur(household, household < 10 ? 1 : 0) + '/Jahr je Haushalt';
+  return {
+    value,
+    sub: fmtPlain(tariffImpact.ctPerKwh, 3) + ' ct/kWh',
+    sentence: `Für einen Durchschnittshaushalt entspricht das rechnerisch etwa ${value}. ${tariffImpact.caveat}`
+  };
+}
+
+function regulationProcedureNote(result) {
+  return result.p.regulationProcedure === 'simplified'
+    ? 'Modell im vereinfachten Verfahren nach § 24 ARegV; qualitäts- und effizienzbezogene Einzeleffekte werden pauschaliert und hier rechnerisch neutral behandelt.'
+    : '';
+}
+
 function complianceOverviewRows(result) {
   const activeImpacts = allImpactAssumptions(true);
   const lccMeasures = result.activeMeasures.filter(measure =>
@@ -2779,9 +3162,94 @@ function eventJournalRows() {
     : '<tr><td colspan="5">Noch keine Ereignisse im Journal.</td></tr>';
 }
 
+function plainCommitteeStory(result, first) {
+  if (!result.activeMeasures.length) {
+    return 'Es ist noch keine aktive Maßnahme ausgewählt. Die Vorlage dokumentiert daher einen Arbeitsstand ohne Beschlussreife.';
+  }
+  const activeText = result.activeMeasures.length === 1 ? 'eine aktive Maßnahme' : `${result.activeMeasures.length} aktive Maßnahmen`;
+  const tariff = tariffImpactLine(result.tariffImpact);
+  const tariffText = result.tariffImpact.available
+    ? ` Für einen Durchschnittshaushalt entspricht das rechnerisch etwa ${tariff.value}.`
+    : '';
+  return `Das Modell bewertet ${activeText} mit ${fmtTeur(result.invest)} Investition. Im ersten Jahr steigen die zulässigen Erlöse modellhaft um ${fmtTeur(first.eog, 1)}.${tariffText}`;
+}
+
+function committeeProposal(result) {
+  const text = String(committee.proposalText || '').trim();
+  if (text) return text;
+  return result.activeMeasures.length
+    ? 'Das Gremium nimmt die dargestellte Maßnahmebewertung zur Kenntnis und beauftragt die Verwaltung, die offenen Punkte vor einer finalen Budgetfreigabe zu klären.'
+    : 'Das Gremium nimmt den Arbeitsstand zur Kenntnis. Eine Beschlussfassung wird nach Ergänzung aktiver Maßnahmen vorbereitet.';
+}
+
+function committeeReportHtml(result, first, spread) {
+  const tariff = tariffImpactLine(result.tariffImpact);
+  const openItems = clarificationItems().filter(item => item.status !== 'closed');
+  const reviewItems = reviewRequiredImpacts(true);
+  const latestSnapshot = (history.snapshots || []).at(-1);
+  const activeNames = result.activeMeasures.map(measure => measure.name).slice(0, 4).join(', ') || 'noch keine aktive Maßnahme';
+  const riskText = result.riskPa > 0
+    ? `Die erfassten Risikodaten zeigen eine erwartete Risikoreduktion von ${fmtTeur(result.riskPa, 1)} pro Jahr. Dieser Wert entsteht aus Eintrittswahrscheinlichkeit vorher/nachher und Schadenshöhe.`
+    : 'Für den Arbeitsstand ist noch keine belastbare Risikoreduktion hinterlegt.';
+  const financeLine = `Für Rückfragen: IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}, Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}.`;
+  return `
+    <article class="committee-page">
+      <header class="committee-head">
+        <div>
+          <h1>Gremienvorlage Investitionsbewertung</h1>
+          <p>${esc(committee.body || 'Gremium')}${committee.meetingDate ? ` · Sitzung ${esc(formatDateShort(committee.meetingDate))}` : ''}</p>
+        </div>
+        <div>
+          <strong>${result.p.sector === 'gas' ? 'Gas' : 'Strom'}</strong><br>
+          Stand ${esc(phaseLabel())} · ${esc(localAuthor() || 'ohne Autor')}
+        </div>
+      </header>
+      <section>
+        <h2>Anlass und Beschlussvorschlag</h2>
+        <p>${esc(committeeProposal(result))}</p>
+      </section>
+      <section>
+        <h2>Worum es geht</h2>
+        <p>${esc(plainCommitteeStory(result, first))}</p>
+        <p class="committee-muted">Betrachtete Maßnahmen: ${esc(activeNames)}.</p>
+      </section>
+      <section class="committee-grid">
+        <div>
+          <h2>Was es kostet</h2>
+          <p>Investition: <strong>${fmtTeur(result.invest)}</strong>. Lebenszykluskosten über den Horizont: <strong>${fmtTeur(result.totex.nominal, 1)}</strong>.</p>
+        </div>
+        <div>
+          <h2>Was es für Bürger bedeutet</h2>
+          <p>${esc(tariff.sentence)}</p>
+        </div>
+      </section>
+      <section>
+        <h2>Was passiert, wenn wir es nicht tun</h2>
+        <p>${esc(riskText)}</p>
+      </section>
+      <section>
+        <h2>Offene Punkte und Auflagen</h2>
+        ${openItems.length || reviewItems.length
+          ? `<p>${openItems.length} offene Klärpunkte, ${reviewItems.length} prüfpflichtige Annahmen.</p><ul>${[...openItems.slice(0, 4).map(item => item.title), ...reviewItems.slice(0, 3).map(item => item.title)].slice(0, 6).map(item => `<li>${esc(item)}</li>`).join('')}</ul>`
+          : '<p>Für diesen Stand sind keine offenen Blocker dokumentiert.</p>'}
+      </section>
+      <footer class="committee-foot">
+        <span>Erstellt mit Szenario-Rechner · Modellstand ${latestSnapshot ? esc(latestSnapshot.label) : new Date().toLocaleDateString('de-DE')}</span>
+        <span>Unterschrift: __________________________</span>
+      </footer>
+      <p class="committee-footnote">${esc(financeLine)}</p>
+      ${regulationProcedureNote(result) ? `<p class="committee-footnote">${esc(regulationProcedureNote(result))}</p>` : ''}
+    </article>
+  `;
+}
+
 function renderReport(result, first, spread, decision) {
   const report = document.getElementById('reportPage');
   if (!report) return;
+  if (reportMode === 'committee') {
+    report.innerHTML = committeeReportHtml(result, first, spread);
+    return;
+  }
   const activeText = result.activeMeasures.length === 1 ? '1 aktive Maßnahme' : result.activeMeasures.length + ' aktive Maßnahmen';
   const scenarioRows = ['basis', 'konservativ', 'wert'].map(name => {
     const scenarioResult = currentPortfolio(currentScenarioParams(name));
@@ -3022,6 +3490,9 @@ function renderPortfolio() {
   document.getElementById('kpiIrr').textContent = Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-';
   document.getElementById('kpiIrrSub').textContent = 'FK-Zins ' + fmtPct(result.p.financingRate * 100, 1);
   document.getElementById('kpiNpv').textContent = fmtTeur(result.npv, 1);
+  const tariff = tariffImpactLine(result.tariffImpact);
+  document.getElementById('kpiTariff').textContent = tariff.value;
+  document.getElementById('kpiTariffSub').textContent = tariff.sub;
   document.getElementById('kpiPortfolioEffect').textContent = fmtTeur(result.qePa + result.impactPa, 1);
   document.getElementById('kpiPortfolioSub').textContent = 'davon Risiko ' + fmtTeur(result.riskPa, 1) + ' p.a.';
   document.getElementById('kpiTotalEog').textContent = fmtTeur(result.p.baseEog + first.eog, 1);
@@ -3054,6 +3525,7 @@ function syncSectorDefaults() {
 
 function renderAll(persist = true) {
   syncSectorDefaults();
+  syncCommitteeFields();
   renderGlobalValidation();
   renderScenarioDiff();
   renderBasisSummaryCards();
@@ -3065,6 +3537,7 @@ function renderAll(persist = true) {
   renderProcessUx();
   renderChangeSinceSeen();
   renderMaturityAndClarifications();
+  renderReportMode();
   updateActionLabels();
   updateFlowStatus();
   applyReadonlyMode();
@@ -3327,7 +3800,31 @@ document.querySelectorAll('.expert-filter').forEach(button => {
     renderExpertWorkList();
   });
 });
-document.getElementById('newMeasure').addEventListener('click', openMeasureWizard);
+committeeIds.forEach(id => {
+  el[id].addEventListener('input', () => {
+    collectCommitteeFields();
+    renderAll();
+  });
+});
+
+document.querySelectorAll('.report-mode').forEach(button => {
+  button.addEventListener('click', () => {
+    reportMode = button.dataset.reportMode;
+    collectCommitteeFields();
+    renderAll();
+  });
+});
+
+document.getElementById('newMeasure').addEventListener('click', openTemplateModal);
+document.getElementById('blankMeasureWizard').addEventListener('click', startBlankMeasureWizard);
+document.getElementById('templateCancel').addEventListener('click', closeTemplateModal);
+document.getElementById('templateModal').addEventListener('click', event => {
+  if (event.target.id === 'templateModal') closeTemplateModal();
+});
+document.getElementById('templateGallery').addEventListener('click', event => {
+  const card = event.target.closest('[data-template-id]');
+  if (card) addMeasureFromTemplate(card.dataset.templateId);
+});
 document.getElementById('exportModel').addEventListener('click', exportModel);
 document.getElementById('expertModeToggle').addEventListener('change', event => {
   setExpertMode(event.target.checked);

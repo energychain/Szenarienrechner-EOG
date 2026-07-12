@@ -24,7 +24,10 @@ const baseInputs = {
   taxFactor: 0,
   portfolioAttribution: 25,
   qDelta: 0,
-  eDelta: 0
+  eDelta: 0,
+  regulationProcedure: 'standard',
+  annualEnergyGwh: '',
+  householdConsumptionKwh: ''
 };
 
 function baseMeasure(overrides = {}) {
@@ -142,6 +145,40 @@ describe('scenario and portfolio parameters', () => {
     expect(noAttribution.qePa).toBeCloseTo(0, 4);
     expect(fullAttribution.qePa).toBeCloseTo(100, 4);
     expect(fullAttribution.yearly[0].qAndE).toBeCloseTo(100, 4);
+  });
+
+  it('neutralizes q and efficiency effects in simplified regulation procedure without dropping other effects', () => {
+    const model = {
+      measures: [baseMeasure({
+        impactAssumptions: [
+          { id: 'q', area: 'qElement', amount: 25, confidence: 'assumption', governance: 'basis', startYear: 2028, attribution: 100 },
+          { id: 'e', area: 'efficiency', amount: 15, confidence: 'assumption', governance: 'basis', startYear: 2028, attribution: 100 },
+          { id: 'r', area: 'risk', riskProbabilityBefore: 10, riskProbabilityAfter: 5, riskImpact: 200, confidence: 'assumption', governance: 'basis', startYear: 2028, attribution: 100 }
+        ]
+      })]
+    };
+    const standard = calcPortfolio(model, params({ ...baseInputs, qDelta: 1, portfolioAttribution: 100 }));
+    const simplified = calcPortfolio(model, params({ ...baseInputs, qDelta: 1, portfolioAttribution: 100, regulationProcedure: 'simplified' }));
+
+    expect(standard.yearly[0].qAndE).toBeCloseTo(140, 4);
+    expect(simplified.yearly[0].qAndE).toBeCloseTo(0, 4);
+    expect(simplified.yearly[0].risk).toBeCloseTo(10, 4);
+  });
+
+  it('calculates indicative tariff impact when annual energy is available', () => {
+    const model = { measures: [baseMeasure()] };
+    const result = calcPortfolio(model, params({ ...baseInputs, annualEnergyGwh: 50, householdConsumptionKwh: 3000 }));
+
+    expect(result.tariffImpact.available).toBe(true);
+    expect(result.tariffImpact.ctPerKwh).toBeCloseTo(result.yearly[0].eog * 100000 / 50000000, 6);
+    expect(result.tariffImpact.householdEurPerYear).toBeCloseTo(result.tariffImpact.ctPerKwh * 30, 6);
+  });
+
+  it('keeps tariff impact unavailable without annual energy', () => {
+    const model = { measures: [baseMeasure()] };
+    const result = calcPortfolio(model, params({ ...baseInputs, annualEnergyGwh: '' }));
+
+    expect(result.tariffImpact.available).toBe(false);
   });
 });
 

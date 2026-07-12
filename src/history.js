@@ -213,7 +213,7 @@ function diffMeasureEvents(previous, next) {
     const nextMeasure = nextMeasures.get(measureId);
     const subject = { measureId };
     if (!previousMeasure && nextMeasure) {
-      events.push({ type: 'measureAdded', subject, field: 'measures', oldValue: null, newValue: nextMeasure });
+      events.push({ type: nextMeasure.templateId ? 'measureAddedFromTemplate' : 'measureAdded', subject, field: 'measures', oldValue: null, newValue: nextMeasure });
       return;
     }
     if (previousMeasure && !nextMeasure) {
@@ -247,7 +247,26 @@ export function diffModelEvents(previous, next) {
     ...diffMeasureEvents(previous, next)
   ];
   diffScalarFields(events, previous, next, ['scenario'], 'scenarioChanged', { scope: 'scenario' });
+  diffScalarFields(events, previous, next, ['reportMode'], 'reportModeChanged', { scope: 'report' });
   diffScalarFields(events, previous, next, ['role'], 'roleChanged', { scope: 'role' });
+  if (!valuesEqual(previous.strategy || {}, next.strategy || {})) {
+    events.push({
+      type: 'strategyChanged',
+      subject: { scope: 'strategy' },
+      field: 'strategy',
+      oldValue: previous.strategy || {},
+      newValue: next.strategy || {}
+    });
+  }
+  if (!valuesEqual(previous.committee || {}, next.committee || {})) {
+    events.push({
+      type: 'committeeChanged',
+      subject: { scope: 'committee' },
+      field: 'committee',
+      oldValue: previous.committee || {},
+      newValue: next.committee || {}
+    });
+  }
   if (!valuesEqual(previous.meetingTextOverrides || {}, next.meetingTextOverrides || {})) {
     events.push({
       type: 'meetingTextOverridesChanged',
