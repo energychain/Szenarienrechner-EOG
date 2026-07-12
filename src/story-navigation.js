@@ -1,4 +1,4 @@
-export const storyBasePath = 'story/planungsrunde-userstory.md';
+export const storyBasePath = 'story/planungsrunde-userstory.html';
 
 export const storyMilestones = [
   {
