@@ -36,5 +36,9 @@ describe('story HTML rendering', () => {
     expect(story).toContain('externer Senior Consultant');
     expect(story).toContain('Wirtschaftsplan');
     expect(story).toContain('VNB-Portfolios');
+    expect(story).toContain('Öffentliche Quellen zum Weiterlesen');
+    expect(story).toContain('STROMDAO GmbH und Cernion');
+    expect(story).toContain('https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Netzentgelte/Anreizregulierung/start.html');
+    expect(story).toContain('https://cernion.de/');
   });
 });
