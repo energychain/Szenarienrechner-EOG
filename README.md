@@ -66,9 +66,11 @@ Die Datei kommt zum Nutzer, nicht der Nutzer zur URL. Die Anwendung wird als ein
 
 - Keine Netzwerkverbindung: CSP-erzwungen mit `connect-src 'none'` und `default-src 'none'`.
 - Keine Telemetrie, keine Cookies, keine externen Skripte, Styles, Fonts oder Bilder.
-- Speicherung erfolgt nur im lokalen Browserprofil (`localStorage`) und ueber manuellen JSON-Export.
+- Speicherung erfolgt nur im lokalen Browserprofil (`localStorage`) und ueber manuelle Exporte.
+- `Daten herunterladen` erzeugt weiterhin ein separates JSON-Modell fuer Archivierung und Versionsvergleich.
+- `HTML mit Daten speichern` erzeugt eine weitergabefaehige Single-File-App, in der der aktuelle Modellstand als eingebetteter JSON-Block enthalten ist. Beim Oeffnen dieser Datei wird der eingebettete Stand vor eventuell vorhandenen Browserdaten geladen und wieder lokal gespeichert.
 - Funktion `Browserdaten löschen` entfernt die lokal gespeicherten Modelle aus dem Browserprofil.
-- Shared-/Terminal-PCs: Modelle koennen im Browserprofil verbleiben; nach Nutzung Browserdaten loeschen oder nur mit manuellem JSON-Export arbeiten.
+- Shared-/Terminal-PCs: Modelle koennen im Browserprofil und in manuell erzeugten Exportdateien verbleiben; nach Nutzung Browserdaten loeschen und Exportdateien nach den eigenen IT-Vorgaben schuetzen oder loeschen.
 
 IT-Pruefung:
 
