@@ -36,6 +36,12 @@ npm run build:release
 
 `dist/szenarienrechner-eog.html` ist das offline lauffaehige Single-File-Deliverable. `dist/index.html` bleibt das technische Vite-Buildartefakt. Details stehen in `RELEASE.md`.
 
+Optional stellt GitHub Pages den aktuellen `main`-Stand als statische Browser-Version bereit:
+
+- https://energychain.github.io/Szenarienrechner-EOG/
+
+Auch diese Variante bleibt clientseitig: Die HTML-Datei wird von GitHub Pages geladen, danach erfolgen keine fachlichen Server-Uploads, keine Telemetrie und keine Netzwerk-APIs aus der App heraus. Sensible Planungsdaten sollten weiterhin bevorzugt ueber lokale Offline-Dateien und manuelle JSON-Exporte bearbeitet werden.
+
 ## Lizenz
 
 Der Code steht unter Apache License 2.0, siehe `LICENSE`. App-Footer, Repository-Lizenz und Dokumentation verwenden dieselbe Lizenzangabe.
