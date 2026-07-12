@@ -8,6 +8,7 @@ import {
   portfolioEffectFor,
   regulatoryParameterSet,
   regulatoryPeriodFor,
+  riskExpectedValue,
   scenarioParams as engineScenarioParams
 } from './engine.js';
 import {
@@ -41,10 +42,16 @@ const demoMeasures = [
     eDirect: 0,
     riskAvoided: 0,
     portfolioShare: 35,
+    objectiveIds: ['obj_supply', 'obj_eff'],
+    opexPa: 18,
+    opexDeltaPa: 10,
+    reinvestCost: 120,
+    decommissionCost: 25,
+    decommissionYear: 2042,
     impactAssumptions: [
-      {'id':'impact_demo_grid_q','area':'qElement','title':'Weniger lange Versorgungsunterbrechungen','amount':15,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung grenzt Fehler schneller ein und verkürzt Wiederversorgung im Schwerpunktgebiet.','evidence':'Betriebserfahrung aus Störungsanalyse Nord 2024-2026','note':'Mit Regulierungsmanagement auf Q-Systematik prüfen.'},
-      {'id':'impact_demo_grid_e','area':'efficiency','title':'Weniger manuelle Entstörung und Schaltaufwand','amount':8,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Fernsteuerung reduziert Anfahrten und manuelle Schalthandlungen.','evidence':'Expertenschätzung Netzbetrieb','note':''},
-      {'id':'impact_demo_grid_risk','area':'risk','title':'Vermiedene Großstörung im Schwerpunktgebiet','amount':20,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung reduziert Eskalationsrisiko bei Folgefehlern.','evidence':'Risikoworkshop offen','note':'Nur als Sensitivität bis Freigabe.'}
+      {'id':'impact_demo_grid_q','area':'qElement','title':'Weniger lange Versorgungsunterbrechungen','amount':15,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung grenzt Fehler schneller ein und verkürzt Wiederversorgung im Schwerpunktgebiet.','evidence':'Betriebserfahrung aus Störungsanalyse Nord 2024-2026','evidenceType':'operations','note':'Mit Regulierungsmanagement auf Q-Systematik prüfen.'},
+      {'id':'impact_demo_grid_e','area':'efficiency','title':'Weniger manuelle Entstörung und Schaltaufwand','amount':8,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Fernsteuerung reduziert Anfahrten und manuelle Schalthandlungen.','evidence':'Expertenschätzung Netzbetrieb','evidenceType':'expert','note':''},
+      {'id':'impact_demo_grid_risk','area':'risk','title':'Vermiedene Großstörung im Schwerpunktgebiet','confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung reduziert Eskalationsrisiko bei Folgefehlern.','evidence':'Risikoworkshop offen','evidenceType':'open','riskProbabilityBefore':8,'riskProbabilityAfter':3,'riskImpact':400,'note':'Nur als Sensitivität bis Freigabe.'}
     ],
     note: 'Abstimmen, ob der Qualitätsbeitrag separat messbar ist oder nur als Portfolioeffekt angesetzt wird.'
   },
@@ -65,9 +72,15 @@ const demoMeasures = [
     eDirect: 0,
     riskAvoided: 0,
     portfolioShare: 25,
+    objectiveIds: ['obj_supply'],
+    opexPa: 6,
+    opexDeltaPa: 4,
+    reinvestCost: 0,
+    decommissionCost: 15,
+    decommissionYear: 2045,
     impactAssumptions: [
-      {'id':'impact_demo_station_q','area':'qElement','title':'Fernwirkfähigkeit reduziert Ausfallminuten','amount':10,'confidence':'proven','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Störung wird schneller erkannt und eingegrenzt; Wiederversorgungszeit sinkt.','evidence':'Historische Störungen vergleichbarer Stationen','note':''},
-      {'id':'impact_demo_station_risk','area':'risk','title':'Vermiedene Folgekosten bei Stationsausfall','amount':18,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Ersatz reduziert Eintrittswahrscheinlichkeit alterungsbedingter Ausfälle.','evidence':'Asset-Zustandsbewertung und Betriebsschätzung','note':''}
+      {'id':'impact_demo_station_q','area':'qElement','title':'Fernwirkfähigkeit reduziert Ausfallminuten','amount':10,'confidence':'proven','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Störung wird schneller erkannt und eingegrenzt; Wiederversorgungszeit sinkt.','evidence':'Historische Störungen vergleichbarer Stationen','evidenceType':'measurement','note':''},
+      {'id':'impact_demo_station_risk','area':'risk','title':'Vermiedene Folgekosten bei Stationsausfall','confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Ersatz reduziert Eintrittswahrscheinlichkeit alterungsbedingter Ausfälle.','evidence':'Asset-Zustandsbewertung und Betriebsschätzung','evidenceType':'operations','riskProbabilityBefore':6,'riskProbabilityAfter':1.5,'riskImpact':400,'note':''}
     ],
     note: 'Technische Umsetzbarkeit im geplanten Inbetriebnahmejahr bestätigen.'
   },
@@ -88,9 +101,15 @@ const demoMeasures = [
     eDirect: 0,
     riskAvoided: 0,
     portfolioShare: 20,
+    objectiveIds: ['obj_supply', 'obj_decarb'],
+    opexPa: 8,
+    opexDeltaPa: 14,
+    reinvestCost: 0,
+    decommissionCost: 80,
+    decommissionYear: 2045,
     impactAssumptions: [
-      {'id':'impact_demo_pressure_e','area':'efficiency','title':'Weniger ungeplante Instandsetzung','amount':6,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Modernisierung senkt wiederkehrende Störungs- und Instandsetzungsaufwände.','evidence':'Instandhaltungsplanung','note':''},
-      {'id':'impact_demo_pressure_risk','area':'risk','title':'Vermiedene Versorgungsunterbrechung','amount':28,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Zustandsrisiko sinkt, monetäre Höhe ist noch nicht freigegeben.','evidence':'Asset-Risikomatrix offen','note':'Prüfung durch Betrieb und VNB erforderlich.'}
+      {'id':'impact_demo_pressure_e','area':'efficiency','title':'Weniger ungeplante Instandsetzung','amount':6,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Modernisierung senkt wiederkehrende Störungs- und Instandsetzungsaufwände.','evidence':'Instandhaltungsplanung','evidenceType':'operations','note':''},
+      {'id':'impact_demo_pressure_risk','area':'risk','title':'Vermiedene Versorgungsunterbrechung','confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Zustandsrisiko sinkt, monetäre Höhe ist noch nicht freigegeben.','evidence':'Asset-Risikomatrix offen','evidenceType':'open','riskProbabilityBefore':5,'riskProbabilityAfter':2,'riskImpact':930,'note':'Prüfung durch Betrieb und VNB erforderlich.'}
     ],
     note: ''
   },
@@ -111,9 +130,15 @@ const demoMeasures = [
     eDirect: 0,
     riskAvoided: 0,
     portfolioShare: 20,
+    objectiveIds: ['obj_supply', 'obj_eff'],
+    opexPa: 22,
+    opexDeltaPa: 16,
+    reinvestCost: 180,
+    decommissionCost: 10,
+    decommissionYear: 2040,
     impactAssumptions: [
-      {'id':'impact_demo_sensor_q','area':'qElement','title':'Frühere Fehlererkennung verbessert Qualitätskennzahl','amount':18,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Sensorik liefert Zustandsdaten vor Störungen; konkrete Q-Wirkung muss aus Ereignisdaten abgeleitet werden.','evidence':'Noch keine belastbare Historie','note':'Prüfpflichtig bis Datengrundlage vorliegt.'},
-      {'id':'impact_demo_sensor_e','area':'efficiency','title':'Gezieltere Instandhaltung','amount':12,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Zustandsdaten reduzieren Blindleistung in Inspektion und Instandhaltung.','evidence':'Betriebsschätzung','note':''}
+      {'id':'impact_demo_sensor_q','area':'qElement','title':'Frühere Fehlererkennung verbessert Qualitätskennzahl','amount':18,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Sensorik liefert Zustandsdaten vor Störungen; konkrete Q-Wirkung muss aus Ereignisdaten abgeleitet werden.','evidence':'Noch keine belastbare Historie','evidenceType':'open','note':'Prüfpflichtig bis Datengrundlage vorliegt.'},
+      {'id':'impact_demo_sensor_e','area':'efficiency','title':'Gezieltere Instandhaltung','amount':12,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Zustandsdaten reduzieren Blindleistung in Inspektion und Instandhaltung.','evidence':'Betriebsschätzung','evidenceType':'expert','note':''}
     ],
     note: 'Datengrundlage für Q-/E-Wirkung mit Betrieb und Regulierungsmanagement klären.'
   },
@@ -134,8 +159,14 @@ const demoMeasures = [
     eDirect: 0,
     riskAvoided: 0,
     portfolioShare: 0,
+    objectiveIds: ['obj_supply', 'obj_decarb'],
+    opexPa: 4,
+    opexDeltaPa: 9,
+    reinvestCost: 0,
+    decommissionCost: 95,
+    decommissionYear: 2045,
     impactAssumptions: [
-      {'id':'impact_demo_line_risk','area':'risk','title':'Vermiedener Schadensfall kritischer Leitungsabschnitt','amount':45,'confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Ersatz senkt Ausfallwahrscheinlichkeit und Folgekosten im kritischen Abschnitt.','evidence':'Risikowert aus Asset-Management noch zu validieren','note':'Nur Sensitivität bis Schadenshöhe und Eintrittswahrscheinlichkeit bestätigt sind.'}
+      {'id':'impact_demo_line_risk','area':'risk','title':'Vermiedener Schadensfall kritischer Leitungsabschnitt','confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Ersatz senkt Ausfallwahrscheinlichkeit und Folgekosten im kritischen Abschnitt.','evidence':'Risikowert aus Asset-Management noch zu validieren','evidenceType':'open','riskProbabilityBefore':7,'riskProbabilityAfter':1,'riskImpact':750,'note':'Nur Sensitivität bis Schadenshöhe und Eintrittswahrscheinlichkeit bestätigt sind.'}
     ],
     note: 'Risikowert validieren: Schadenshöhe, Eintrittswahrscheinlichkeit und mögliche Bauabhängigkeiten.'
   }
@@ -150,7 +181,9 @@ const inputIds = [
 const detailIds = [
   'mName', 'mType', 'mCost', 'mYear', 'mSecure', 'mUncertain',
   'mProbability', 'mOpexRecognition', 'mLife', 'mDepr', 'mQDirect',
-  'mEDirect', 'mRiskAvoided', 'mPortfolioShare', 'mNote'
+  'mEDirect', 'mRiskAvoided', 'mPortfolioShare', 'mOpexPa',
+  'mOpexDeltaPa', 'mReinvestCost', 'mDecommissionCost',
+  'mDecommissionYear', 'mNote'
 ];
 
 const fieldHelp = {
@@ -182,6 +215,17 @@ const fieldHelp = {
   mEDirect: 'Direkte Effizienz- oder EOG-Wirkung in TEUR pro Jahr. Nur ansetzen, wenn sie der Maßnahme belastbar zurechenbar ist.',
   mRiskAvoided: 'Monetarisierter vermiedener Risikowert pro Jahr, z.B. vermiedene Störungen, Sanktionen oder Folgekosten.',
   mPortfolioShare: 'Anteil, mit dem diese Maßnahme am globalen Q-/E-Portfolioeffekt beteiligt ist. Die Summe sollte fachlich plausibel bleiben.',
+  mOpexPa: 'Laufende Kosten, die die Maßnahme selbst verursacht, zum Beispiel Wartung, Software oder Personal. Erst mit Betriebs- und Rückbaukosten zeigt sich, was eine Anlage über ihr Leben wirklich kostet.',
+  mOpexDeltaPa: 'Vermiedene laufende Kosten der Altanlage oder des bisherigen Prozesses. Dieser Wert senkt die Lebenszykluskosten, sollte aber nicht zusätzlich als Effizienz-Wirkannahme doppelt angesetzt werden.',
+  mReinvestCost: 'Erneuerungskosten, falls innerhalb des Betrachtungshorizonts nach Nutzungsdauer erneut investiert werden muss.',
+  mDecommissionCost: 'Rückbau- oder Entsorgungskosten. Bei Gas können diese rund um das KANU-Zieljahr entscheidungsrelevant sein.',
+  mDecommissionYear: 'Jahr, in dem Rückbau- oder Entsorgungskosten anfallen. Ohne Eingabe nutzt das Modell bei Gas das KANU-Zieljahr, sonst das Ende der Nutzungsdauer.',
+  strategySampReference: 'Falls es einen strategischen Anlagenmanagementplan oder eine Unternehmensstrategie gibt: hier referenzieren. Gibt es keinen, einfach die wichtigsten Ziele der Sparte eintragen.',
+  objectiveIds: 'Welchem übergeordneten Ziel dient die Maßnahme? Damit bleibt im Budget sichtbar, wofür investiert wird und was wegfällt, wenn gestrichen wird.',
+  evidenceType: 'Art der Datenbasis. Messdaten und dokumentierte Betriebserfahrung erhöhen die Entscheidungsreife stärker als eine offene Schätzung.',
+  riskProbabilityBefore: 'Wie oft pro Jahr tritt das Schadensereignis ohne Maßnahme ein? 10 % bedeutet statistisch ungefähr alle 10 Jahre.',
+  riskProbabilityAfter: 'Wie oft pro Jahr tritt das Schadensereignis mit Maßnahme ein? Die Differenz zu vorher wird mit der Schadenshöhe bewertet.',
+  riskImpact: 'Schadenshöhe je Ereignis in TEUR, inklusive Folgekosten, Sanktionen oder Wiederherstellungskosten.',
   mNote: 'Arbeitsnotiz für Meeting, Klärpunkte oder Governance-Auflagen. Die Notiz wird gespeichert, in der Übersicht markiert und im Report ausgewiesen.'
 };
 
@@ -201,7 +245,7 @@ const authorKey = 'regulierte-sparten-szenario-rechner-author';
 const lastSeenEventKey = 'regulierte-sparten-szenario-rechner-last-seen-event';
 const roleKey = 'regulierte-sparten-szenario-rechner-role';
 const legacyStorageKeys = [];
-const modelVersion = 4;
+const modelVersion = 5;
 const appVersion = '0.3.0-dev';
 const processPhases = [
   ['initialisierung', 'Initialisierung'],
@@ -218,12 +262,18 @@ const roleProfiles = {
   management: { label: 'Management', view: 'results', focus: 'management', expert: false },
   audit: { label: 'Audit', view: 'report', focus: 'controlling', expert: true }
 };
+const defaultObjectives = [
+  { id: 'obj_supply', label: 'Versorgungssicherheit', note: '' },
+  { id: 'obj_decarb', label: 'KANU-/Dekarbonisierungspfad', note: '' },
+  { id: 'obj_eff', label: 'Effizienz/Kostenpfad', note: '' }
+];
 let storageStatusTimer = null;
 let expertMode = false;
 let history = emptyHistory();
 let previousModelForHistory = null;
 let suppressHistoryEvents = false;
 let processState = defaultProcessState();
+let strategy = defaultStrategy();
 let currentRole = 'owner';
 let clarificationStatus = {};
 let pendingImportReview = null;
@@ -248,12 +298,41 @@ const governanceLabels = {
   excluded: 'nur dokumentiert'
 };
 
+const evidenceTypeLabels = {
+  measurement: 'Messdaten',
+  operations: 'Betriebserfahrung',
+  expert: 'Expertenschätzung',
+  study: 'externe Studie',
+  open: 'noch offen'
+};
+
 function defaultProcessState() {
   const phaseTargets = Object.fromEntries(processPhases.map(([id]) => [id, '']));
   return {
     phase: 'massnahmenbewertung',
     phaseTargets,
     startedAt: new Date().toISOString()
+  };
+}
+
+function defaultStrategy() {
+  return {
+    sampReference: '',
+    objectives: structuredClone(defaultObjectives)
+  };
+}
+
+function normalizeStrategy(value = {}) {
+  const objectives = Array.isArray(value.objectives) && value.objectives.length
+    ? value.objectives
+    : defaultObjectives;
+  return {
+    sampReference: String(value.sampReference || ''),
+    objectives: objectives.map((objective, index) => ({
+      id: String(objective.id || `obj_${index + 1}`),
+      label: String(objective.label || `Ziel ${index + 1}`),
+      note: String(objective.note || '')
+    }))
   };
 }
 
@@ -302,7 +381,9 @@ const expertFieldIds = [
   'rab', 'returnRate', 'financingRate', 'discountRate', 'kanuEndYear',
   'degressiveRate', 'taxFactor', 'portfolioAttribution', 'qDelta', 'eDelta',
   'mType', 'mSecure', 'mUncertain', 'mProbability', 'mOpexRecognition',
-  'mDepr', 'mQDirect', 'mEDirect', 'mRiskAvoided', 'mPortfolioShare'
+  'mDepr', 'mQDirect', 'mEDirect', 'mRiskAvoided', 'mPortfolioShare',
+  'mOpexPa', 'mOpexDeltaPa', 'mReinvestCost', 'mDecommissionCost',
+  'mDecommissionYear'
 ];
 
 function periodText(period) {
@@ -381,16 +462,32 @@ function newImpactAssumptionTemplate(measure = selectedMeasure()) {
     attribution: 100,
     chain: '',
     evidence: '',
+    evidenceType: 'open',
+    legacyFlat: false,
+    riskProbabilityBefore: 0,
+    riskProbabilityAfter: 0,
+    riskImpact: 0,
     note: ''
   };
 }
 
 function normalizeMeasureForUi(measure, index = 0) {
+  const impacts = Array.isArray(measure.impactAssumptions) ? structuredClone(measure.impactAssumptions) : [];
   return {
     ...newMeasureTemplate(index + 1),
     ...measure,
     id: String(measure.id || 'import_' + Date.now().toString(36) + '_' + index),
-    impactAssumptions: Array.isArray(measure.impactAssumptions) ? structuredClone(measure.impactAssumptions) : []
+    objectiveIds: Array.isArray(measure.objectiveIds) ? measure.objectiveIds.map(String) : [],
+    opexPa: Number(measure.opexPa) || 0,
+    opexDeltaPa: Number(measure.opexDeltaPa) || 0,
+    reinvestCost: Number(measure.reinvestCost) || 0,
+    decommissionCost: Number(measure.decommissionCost) || 0,
+    decommissionYear: measure.decommissionYear ?? '',
+    impactAssumptions: impacts.map(impact => ({
+      ...impact,
+      evidenceType: impact.evidenceType || 'open',
+      legacyFlat: impact.area === 'risk' && impact.legacyFlat !== false && !Number(impact.riskImpact)
+    }))
   };
 }
 
@@ -405,6 +502,49 @@ function impactAreaLabel(area) {
 
 function impactGovernanceLabel(governance) {
   return governanceLabels[governance] || 'Sensitivität';
+}
+
+function objectiveLabel(id) {
+  return strategy.objectives.find(objective => objective.id === id)?.label || id;
+}
+
+function renderStrategyEditor() {
+  const ref = document.getElementById('strategySampReference');
+  if (ref) ref.value = strategy.sampReference;
+  const list = document.getElementById('strategyObjectives');
+  if (!list) return;
+  list.innerHTML = strategy.objectives.map((objective, index) => `
+    <article class="objective-item" data-objective-id="${esc(objective.id)}">
+      <div>
+        <label for="objectiveLabel_${index}">Ziel</label>
+        <input id="objectiveLabel_${index}" type="text" data-objective-field="label" data-objective-id="${esc(objective.id)}" value="${esc(objective.label)}">
+      </div>
+      <div>
+        <label for="objectiveNote_${index}">Notiz</label>
+        <input id="objectiveNote_${index}" type="text" data-objective-field="note" data-objective-id="${esc(objective.id)}" value="${esc(objective.note)}" placeholder="optional">
+      </div>
+      <button type="button" data-action="removeObjective" data-objective-id="${esc(objective.id)}" ${strategy.objectives.length <= 1 ? 'disabled' : ''}>Entfernen</button>
+    </article>
+  `).join('');
+}
+
+function renderMeasureObjectives(measure) {
+  const node = document.getElementById('measureObjectives');
+  if (!node) return;
+  const selected = new Set(measure?.objectiveIds || []);
+  node.innerHTML = strategy.objectives.map(objective => `
+    <label class="check-option">
+      <input type="checkbox" data-objective-id="${esc(objective.id)}" ${selected.has(objective.id) ? 'checked' : ''}>
+      <span>${esc(objective.label)}</span>
+    </label>
+  `).join('') || '<p class="hint">Noch keine Ziele hinterlegt.</p>';
+}
+
+function objectivePills(measure) {
+  const ids = Array.isArray(measure.objectiveIds) ? measure.objectiveIds : [];
+  return ids.length
+    ? ids.map(id => `<span class="pill">${esc(objectiveLabel(id))}</span>`).join('')
+    : '<span class="pill warn">ohne Ziel</span>';
 }
 
 function allImpactAssumptions(filterActive = false) {
@@ -755,6 +895,7 @@ function currentModelData() {
     selectedId,
     role: currentRole,
     process: structuredClone(processState),
+    strategy: structuredClone(strategy),
     inputs: Object.fromEntries(inputIds.map(id => [id, el[id].value])),
     measures: structuredClone(measures),
     meetingTextOverrides: structuredClone(meetingTextOverrides),
@@ -783,6 +924,7 @@ function legacyModelFromState(state) {
     selectedId: state.selectedId,
     role: state.role || 'owner',
     process: state.process || defaultProcessState(),
+    strategy: state.strategy || defaultStrategy(),
     inputs: state.inputs,
     measures: state.measures,
     meetingTextOverrides: state.meetingTextOverrides || {},
@@ -835,6 +977,7 @@ function applyModelState(state) {
     ? structuredClone(model.meetingTextOverrides)
     : {};
   processState = normalizeProcessState(model.process);
+  strategy = normalizeStrategy(model.strategy);
   clarificationStatus = model.clarificationStatus && typeof model.clarificationStatus === 'object'
     ? structuredClone(model.clarificationStatus)
     : {};
@@ -987,6 +1130,10 @@ function applyDemoModel() {
   el.qDelta.value = '0.6';
   el.eDelta.value = '0.2';
   measures = structuredClone(demoMeasures);
+  strategy = normalizeStrategy({
+    sampReference: 'AMP-Fragment Stromverteilung, Budgetrunde 2027, Bezug SAMP Kapitel Versorgungssicherheit',
+    objectives: defaultObjectives
+  });
   selectedId = measures[0]?.id;
   scenario = 'basis';
   activeView = 'results';
@@ -1437,7 +1584,7 @@ function renderMeasures() {
   if (!measures.length) {
     document.getElementById('measureBody').innerHTML = `
       <tr>
-        <td colspan="8">Noch keine Maßnahme angelegt. Lege eine neue Maßnahme geführt an oder lade Demodaten.</td>
+        <td colspan="9">Noch keine Maßnahme angelegt. Lege eine neue Maßnahme geführt an oder lade Demodaten.</td>
       </tr>
     `;
     return;
@@ -1450,6 +1597,7 @@ function renderMeasures() {
         <td><input type="checkbox" data-action="active" data-id="${measure.id}" ${measure.active ? 'checked' : ''}></td>
         <td><button type="button" data-action="select" data-id="${measure.id}">${measure.name}</button></td>
         <td>${measure.year}</td>
+        <td><div class="pill-row compact">${objectivePills(measure)}</div></td>
         <td>${fmtTeur(measure.cost)}</td>
         <td>${fmtPct(result.activeShare * 100, 0)}</td>
         <td>${counts.total ? `${counts.total} (${counts.review} prüf.)` : '-'}</td>
@@ -1493,6 +1641,12 @@ function newMeasureTemplate() {
     eDirect: 0,
     riskAvoided: 0,
     portfolioShare: 0,
+    objectiveIds: [],
+    opexPa: 0,
+    opexDeltaPa: 0,
+    reinvestCost: 0,
+    decommissionCost: 0,
+    decommissionYear: '',
     impactAssumptions: [],
     note: ''
   };
@@ -1911,6 +2065,71 @@ function selectOptions(options, selected) {
     .join('');
 }
 
+function riskBand(value, thresholds) {
+  if (value <= thresholds[0]) return 0;
+  if (value <= thresholds[1]) return 1;
+  return 2;
+}
+
+function riskMatrixHtml(impact) {
+  const beforeCol = riskBand(impact.riskProbabilityBefore, [3, 10]);
+  const afterCol = riskBand(impact.riskProbabilityAfter, [3, 10]);
+  const row = riskBand(impact.riskImpact, [250, 750]);
+  return `
+    <div class="risk-matrix" aria-label="Risikomatrix vorher nachher">
+      ${[2, 1, 0].map(y => [0, 1, 2].map(x => {
+        const before = x === beforeCol && y === row;
+        const after = x === afterCol && y === row;
+        return `<span class="${before ? 'before' : ''} ${after ? 'after' : ''}">${before ? 'vor' : after ? 'nach' : ''}</span>`;
+      }).join('')).join('')}
+    </div>
+  `;
+}
+
+function riskFieldsHtml(impact) {
+  if (impact.area !== 'risk') {
+    return `
+      <div>
+        <label>Wert TEUR p.a.</label>
+        <input type="number" data-impact-field="amount" data-impact-id="${esc(impact.id)}" value="${impact.amount}" step="1">
+      </div>
+    `;
+  }
+  if (impact.legacyFlat) {
+    return `
+      <div class="wide-field">
+        <div class="note warning">
+          Bisheriger pauschaler Risikowert: ${fmtTeur(impact.amount, 1)} p.a. Für bessere Nachvollziehbarkeit auf Wahrscheinlichkeit mal Schadenshöhe umstellen.
+          <button type="button" data-action="convertRisk" data-impact-id="${esc(impact.id)}">Umstellen</button>
+        </div>
+      </div>
+      <div>
+        <label>Wert TEUR p.a.</label>
+        <input type="number" data-impact-field="amount" data-impact-id="${esc(impact.id)}" value="${impact.amount}" step="1">
+      </div>
+    `;
+  }
+  return `
+    <div>
+      <label>Wahrscheinlichkeit vorher % p.a.</label>
+      <input type="number" data-impact-field="riskProbabilityBefore" data-impact-id="${esc(impact.id)}" value="${impact.riskProbabilityBefore}" min="0" max="100" step="0.1">
+    </div>
+    <div>
+      <label>Wahrscheinlichkeit nachher % p.a.</label>
+      <input type="number" data-impact-field="riskProbabilityAfter" data-impact-id="${esc(impact.id)}" value="${impact.riskProbabilityAfter}" min="0" max="100" step="0.1">
+    </div>
+    <div>
+      <label>Schadenshöhe TEUR je Ereignis</label>
+      <input type="number" data-impact-field="riskImpact" data-impact-id="${esc(impact.id)}" value="${impact.riskImpact}" min="0" step="1">
+    </div>
+    <div class="risk-calculation">
+      <strong>Erwartungswert:</strong> ${fmtTeur(riskExpectedValue(impact), 1)} p.a.
+      <span class="hint">Risikomatrix vorher/nachher</span>
+      ${riskMatrixHtml(impact)}
+    </div>
+  `;
+}
+
 function renderImpactAssumptions(measure) {
   const node = document.getElementById('impactAssumptions');
   if (!node) return;
@@ -1936,10 +2155,7 @@ function renderImpactAssumptions(measure) {
           <label>Wirkbereich</label>
           <select data-impact-field="area" data-impact-id="${esc(impact.id)}">${selectOptions(impactAreaLabels, impact.area)}</select>
         </div>
-        <div>
-          <label>Wert TEUR p.a.</label>
-          <input type="number" data-impact-field="amount" data-impact-id="${esc(impact.id)}" value="${impact.amount}" step="1">
-        </div>
+        ${riskFieldsHtml(impact)}
         <div>
           <label>Attribution %</label>
           <input type="number" data-impact-field="attribution" data-impact-id="${esc(impact.id)}" value="${impact.attribution * 100}" min="0" max="100" step="1">
@@ -1964,6 +2180,7 @@ function renderImpactAssumptions(measure) {
       <label>Kausalkette</label>
       <textarea data-impact-field="chain" data-impact-id="${esc(impact.id)}" placeholder="Maßnahme verändert welchen technischen/regulatorischen Treiber?">${esc(impact.chain)}</textarea>
       <label>Datenbasis / Quelle</label>
+      <select data-impact-field="evidenceType" data-impact-id="${esc(impact.id)}">${selectOptions(evidenceTypeLabels, impact.evidenceType)}</select>
       <textarea data-impact-field="evidence" data-impact-id="${esc(impact.id)}" placeholder="Historie, Betriebserfahrung, Gutachten, Regulierungsmanagement ...">${esc(impact.evidence)}</textarea>
       <label>Prüf- oder Freigabehinweis</label>
       <textarea data-impact-field="note" data-impact-id="${esc(impact.id)}" placeholder="Was muss vor Beschluss/Freigabe noch bestätigt werden?">${esc(impact.note)}</textarea>
@@ -1979,11 +2196,32 @@ function updateImpactAssumption(event) {
   if (!field || !id || !measure) return;
   const impact = (measure.impactAssumptions || []).find(item => String(item.id) === id);
   if (!impact) return;
-  const numericFields = new Set(['amount', 'attribution', 'startYear', 'endYear']);
+  const numericFields = new Set(['amount', 'attribution', 'startYear', 'endYear', 'riskProbabilityBefore', 'riskProbabilityAfter', 'riskImpact']);
   impact[field] = numericFields.has(field) ? event.target.value === '' ? '' : Number(event.target.value) : event.target.value;
+  if (field === 'area' && impact.area === 'risk' && impact.amount > 0 && !impact.riskImpact) {
+    impact.legacyFlat = true;
+  }
+  if (['riskProbabilityBefore', 'riskProbabilityAfter', 'riskImpact'].includes(field)) {
+    impact.legacyFlat = false;
+    impact.amount = riskExpectedValue({ ...impact, area: 'risk', legacyFlat: false });
+  }
   if (field === 'confidence' && impact.confidence === 'review' && impact.governance === 'basis') {
     impact.governance = 'sensitivity';
   }
+  renderAll();
+}
+
+function convertRiskAssumption(id) {
+  const measure = selectedMeasure();
+  if (!measure) return;
+  const impact = (measure.impactAssumptions || []).find(item => String(item.id) === id);
+  if (!impact) return;
+  const amount = Number(impact.amount) || 0;
+  impact.legacyFlat = false;
+  impact.riskProbabilityBefore = impact.riskProbabilityBefore || (amount > 0 ? 10 : 0);
+  impact.riskProbabilityAfter = impact.riskProbabilityAfter || 0;
+  impact.riskImpact = impact.riskImpact || (amount > 0 ? Math.round(amount / 0.1) : 0);
+  impact.amount = riskExpectedValue({ ...impact, area: 'risk', legacyFlat: false });
   renderAll();
 }
 
@@ -2031,12 +2269,19 @@ function renderDetail() {
   el.mEDirect.value = measure.eDirect;
   el.mRiskAvoided.value = measure.riskAvoided;
   el.mPortfolioShare.value = measure.portfolioShare;
+  el.mOpexPa.value = measure.opexPa || 0;
+  el.mOpexDeltaPa.value = measure.opexDeltaPa || 0;
+  el.mReinvestCost.value = measure.reinvestCost || 0;
+  el.mDecommissionCost.value = measure.decommissionCost || 0;
+  el.mDecommissionYear.value = measure.decommissionYear ?? '';
   el.mNote.value = measure.note || '';
+  renderMeasureObjectives(measure);
 
   const p = currentParams();
   const result = calcMeasure(measure, p, portfolioEffectFor(measure, p));
 	      const pills = [
 	        ['aktivierbar ' + fmtTeur(result.activated), 'good'],
+    ['TOTEX ' + fmtTeur(result.totex.nominal, 1), 'warn'],
     ['IRR ' + (Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'), Number.isFinite(result.irr) && result.irr >= p.financingRate ? 'good' : 'warn'],
     [measure.type === 'noRegret' ? 'No-Regret' : measure.type === 'risiko' ? 'Risiko' : 'Wahl', measure.type === 'noRegret' ? 'warn' : 'good']
 	      ];
@@ -2055,7 +2300,9 @@ function renderChart(yearly) {
     ['depreciation', '#006f8f', 'AfA'],
     ['capitalReturn', '#4b8f6f', 'Verzinsung'],
     ['qAndE', '#c78a22', 'Q/E'],
-    ['opexRisk', '#7b6a9a', 'OPEX/Risiko']
+    ['risk', '#7b6a9a', 'Risiko'],
+    ['opex', '#8a6a32', 'OPEX'],
+    ['reinvestDecommission', '#9a5a4d', 'Rückbau/Reinvest']
   ];
   const stackTotal = row => segments.reduce((sum, [key]) => sum + Math.max(0, row[key]), 0);
   const max = Math.max(1, ...yearly.map(stackTotal));
@@ -2081,7 +2328,9 @@ function renderChart(yearly) {
       `AfA: ${fmtTeur(row.depreciation, 1)}`,
       `Verzinsung: ${fmtTeur(row.capitalReturn, 1)}`,
       `Q/E: ${fmtTeur(row.qAndE, 1)}`,
-      `OPEX/Risiko: ${fmtTeur(row.opexRisk, 1)}`,
+      `Risiko: ${fmtTeur(row.risk, 1)}`,
+      `OPEX: ${fmtTeur(row.opex, 1)}`,
+      `Rückbau/Reinvest: ${fmtTeur(row.reinvestDecommission, 1)}`,
       `EOG Zusatz: ${fmtTeur(row.eog, 1)}`
     ].join('\n');
     return `<g tabindex="0" aria-label="${esc(tooltip)}"><title>${esc(tooltip)}</title>${parts}</g>${label}`;
@@ -2103,7 +2352,9 @@ function renderYears(result) {
       <td>${fmtTeur(row.depreciation, 1)}</td>
       <td>${fmtTeur(row.capitalReturn, 1)}</td>
       <td>${fmtTeur(row.qAndE, 1)}</td>
-      <td>${fmtTeur(row.opexRisk, 1)}</td>
+      <td>${fmtTeur(row.risk, 1)}</td>
+      <td>${fmtTeur(row.opex, 1)}</td>
+      <td>${fmtTeur(row.reinvestDecommission, 1)}</td>
       <td>${fmtTeur(row.eog, 1)}</td>
       <td>${fmtTeur(result.p.baseEog + row.eog, 1)}</td>
     </tr>
@@ -2132,6 +2383,60 @@ function scenarioLabel(name) {
   return name === 'basis' ? 'Basis' : name === 'konservativ' ? 'Konservativ' : 'Wert';
 }
 
+function strategyContributionRows(result) {
+  const objectiveRows = strategy.objectives.map(objective => {
+    const matching = result.results.filter(item => (item.measure.objectiveIds || []).includes(objective.id));
+    const invest = matching.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0);
+    const firstEog = matching.reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0);
+    const risk = matching.reduce((sum, item) => sum + item.riskReductionPa, 0);
+    const names = matching.map(item => item.measure.name).join(', ');
+    return `
+      <tr>
+        <td>${esc(objective.label)}</td>
+        <td>${fmtTeur(invest, 1)}</td>
+        <td>${fmtTeur(firstEog, 1)}</td>
+        <td>${fmtTeur(risk, 1)}</td>
+        <td>${names ? esc(names) : '-'}</td>
+      </tr>
+    `;
+  }).join('');
+  const unassigned = result.results.filter(item => !(item.measure.objectiveIds || []).length);
+  const unassignedRow = unassigned.length
+    ? `<tr class="warn-row"><td>Ohne Zielzuordnung</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + item.riskReductionPa, 0), 1)}</td><td>${esc(unassigned.map(item => item.measure.name).join(', '))}</td></tr>`
+    : '';
+  return objectiveRows + unassignedRow;
+}
+
+function complianceOverviewRows(result) {
+  const activeImpacts = allImpactAssumptions(true);
+  const lccMeasures = result.activeMeasures.filter(measure =>
+    Number(measure.opexPa || 0) ||
+    Number(measure.opexDeltaPa || 0) ||
+    Number(measure.reinvestCost || 0) ||
+    Number(measure.decommissionCost || 0)
+  ).length;
+  const riskImpacts = activeImpacts.filter(impact => impact.area === 'risk').length;
+  const linkedMeasures = result.activeMeasures.filter(measure => (measure.objectiveIds || []).length).length;
+  const sourcedImpacts = activeImpacts.filter(impact => impact.evidenceType && impact.evidenceType !== 'open').length;
+  const eventCount = history.events?.length || 0;
+  const snapshotCount = history.snapshots?.length || 0;
+  const rows = [
+    ['Entscheidungen auf Lebenszyklusbasis', 'TOTEX/LCC-Cashflows je Maßnahme', `${lccMeasures} aktive Maßnahmen mit Lebenszyklusdaten, TOTEX ${fmtTeur(result.totex.nominal, 1)} nominal`],
+    ['Risikobasierte Priorisierung', 'Wahrscheinlichkeit x Schadenshöhe, vorher/nachher', `${riskImpacts} Risiko-Wirkannahmen, Risikoreduktion ${fmtTeur(result.riskPa, 1)} p.a.`],
+    ['Line of Sight Strategie zu Maßnahme', 'Zielkatalog und Zielzuordnung', `${linkedMeasures} von ${result.activeMeasures.length} aktiven Maßnahmen mit Zielzuordnung`],
+    ['Dokumentierte Annahmen und Datenqualität', 'Vertrauensstufe, Evidenztyp, Kausalkette', `${sourcedImpacts} von ${activeImpacts.length} Wirkannahmen mit belastbarer Quellenart`],
+    ['Nachvollziehbarkeit von Änderungen', 'Event-Log und Snapshots', `${eventCount} Ereignisse, ${snapshotCount} Snapshots im Modell-JSON`],
+    ['Bewertungs- und Entscheidungskriterien', 'Verdict-Schwellen und Szenariovergleich', `IRR, Kapitalwert, Spread und drei Szenarien im Report ausgewiesen`]
+  ];
+  return rows.map(([requirement, functionText, evidence]) => `
+    <tr>
+      <td>${esc(requirement)}</td>
+      <td>${esc(functionText)}</td>
+      <td>${esc(evidence)}</td>
+    </tr>
+  `).join('');
+}
+
 function renderReport(result, first, spread, decision) {
   const report = document.getElementById('reportPage');
   if (!report) return;
@@ -2155,12 +2460,14 @@ function renderReport(result, first, spread, decision) {
       <td>${esc(item.measure.name)}</td>
       <td>${item.measure.year}</td>
       <td>${fmtTeur(item.measure.cost)}</td>
+      <td>${fmtTeur(item.totex.nominal, 1)}</td>
+      <td><div class="pill-row compact">${objectivePills(item.measure)}</div></td>
       <td>${fmtPct(item.activeShare * 100, 0)}</td>
       <td>${impactCounts(item.measure).total || '-'}</td>
       <td>${Number.isFinite(item.irr) ? fmtPct(item.irr * 100, 1) : '-'}</td>
       <td>${String(item.measure.note || '').trim() ? 'Ja' : '-'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="7">Keine aktive Maßnahme im Report.</td></tr>';
+  `).join('') || '<tr><td colspan="9">Keine aktive Maßnahme im Report.</td></tr>';
   const impactRows = allImpactAssumptions(true).map(item => `
     <tr>
       <td>${esc(item.measure.name)}</td>
@@ -2207,6 +2514,10 @@ function renderReport(result, first, spread, decision) {
   const story = result.activeMeasures.length
     ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} entsteht im Startjahr ein EOG-Zusatz von ${fmtTeur(first.eog, 1)} in ${periodDetailText(result.p.regulatoryPeriod)}. Der Portfolio-IRR beträgt ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
     : 'Es ist keine aktive Maßnahme ausgewählt. Der Report dokumentiert daher noch keinen belastbaren Business Case.';
+  const strategyRows = strategyContributionRows(result) || '<tr><td colspan="5">Noch keine strategischen Ziele hinterlegt.</td></tr>';
+  const strategyHint = strategy.sampReference
+    ? `Referenz: ${esc(strategy.sampReference)}`
+    : 'Noch keine Strategie- oder Planreferenz hinterlegt. Mit einer Referenz bleibt sichtbar, worauf das Budget einzahlt.';
 
   report.innerHTML = `
     <div class="report-head">
@@ -2244,6 +2555,7 @@ function renderReport(result, first, spread, decision) {
       <h2>Kernkennzahlen</h2>
       <div class="kpis">
         <div class="kpi"><div class="label">Investition</div><div class="value">${fmtTeur(result.invest)}</div><div class="sub">${activeText}</div></div>
+        <div class="kpi"><div class="label">TOTEX Horizont</div><div class="value">${fmtTeur(result.totex.nominal, 1)}</div><div class="sub">diskontiert ${fmtTeur(result.totex.discounted, 1)}</div></div>
         <div class="kpi"><div class="label">EOG-Zusatz Jahr 1</div><div class="value">${fmtTeur(first.eog, 1)}</div><div class="sub">${result.p.baseYear} / ${periodText(result.p.regulatoryPeriod)}</div></div>
         <div class="kpi"><div class="label">Portfolio IRR</div><div class="value">${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</div><div class="sub">Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}</div></div>
         <div class="kpi"><div class="label">Kapitalwert</div><div class="value">${fmtTeur(result.npv, 1)}</div><div class="sub">Diskontsatz ${fmtPct(result.p.discountRate * 100, 1)}</div></div>
@@ -2264,8 +2576,19 @@ function renderReport(result, first, spread, decision) {
       <h2>Aktive Maßnahmen</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Maßnahme</th><th>Jahr</th><th>Kosten</th><th>aktiv.</th><th>Wirkannahmen</th><th>IRR</th><th>Notiz</th></tr></thead>
+          <thead><tr><th>Maßnahme</th><th>Jahr</th><th>CAPEX</th><th>TOTEX</th><th>Ziele</th><th>aktiv.</th><th>Wirkannahmen</th><th>IRR</th><th>Notiz</th></tr></thead>
           <tbody>${measureRows}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h2>Beitrag zu strategischen Zielen</h2>
+      <p class="hint">${strategyHint}</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ziel</th><th>Investition</th><th>EOG-Zusatz Jahr 1</th><th>Risikoreduktion p.a.</th><th>Maßnahmen</th></tr></thead>
+          <tbody>${strategyRows}</tbody>
         </table>
       </div>
     </section>
@@ -2311,6 +2634,19 @@ function renderReport(result, first, spread, decision) {
       <h2>Offene Punkte aus Maßnahmennotizen</h2>
       <div class="note-list">${notesHtml}</div>
     </section>
+
+    <section class="report-section">
+      <details>
+        <summary>Konformitätsübersicht für Audit-/Expertensicht</summary>
+        <p class="hint">Die Anwendung ersetzt kein Managementsystem. Sie liefert ein dokumentiertes Entscheidungsartefakt innerhalb des Asset-Management-Systems.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Anforderung vereinfacht</th><th>App-Funktion</th><th>Nachweis im Modell</th></tr></thead>
+            <tbody>${complianceOverviewRows(result)}</tbody>
+          </table>
+        </div>
+      </details>
+    </section>
   `;
 }
 
@@ -2321,7 +2657,7 @@ function renderPortfolio() {
   const spread = Number.isFinite(result.irr) ? result.irr - result.p.financingRate : NaN;
 
   document.getElementById('kpiInvest').textContent = fmtTeur(result.invest);
-  document.getElementById('kpiInvestSub').textContent = result.activeMeasures.length + ' aktive Maßnahmen';
+  document.getElementById('kpiInvestSub').textContent = result.activeMeasures.length + ' aktive Maßnahmen · TOTEX ' + fmtTeur(result.totex.nominal, 1);
   document.getElementById('kpiActivated').textContent = fmtTeur(result.activated);
   document.getElementById('kpiActivatedSub').textContent = fmtPct(activatedShare, 1) + ' der Investitionen';
   document.getElementById('kpiEog').textContent = fmtTeur(first.eog, 1);
@@ -2330,7 +2666,7 @@ function renderPortfolio() {
   document.getElementById('kpiIrrSub').textContent = 'FK-Zins ' + fmtPct(result.p.financingRate * 100, 1);
   document.getElementById('kpiNpv').textContent = fmtTeur(result.npv, 1);
   document.getElementById('kpiPortfolioEffect').textContent = fmtTeur(result.qePa + result.impactPa, 1);
-  document.getElementById('kpiPortfolioSub').textContent = 'p.a. aus Q/E und Wirkannahmen';
+  document.getElementById('kpiPortfolioSub').textContent = 'davon Risiko ' + fmtTeur(result.riskPa, 1) + ' p.a.';
   document.getElementById('kpiTotalEog').textContent = fmtTeur(result.p.baseEog + first.eog, 1);
   document.getElementById('kpiSpread').textContent = Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-';
 
@@ -2363,6 +2699,7 @@ function renderAll(persist = true) {
   syncSectorDefaults();
   renderGlobalValidation();
   renderScenarioDiff();
+  renderStrategyEditor();
   renderMeasures();
   renderDetail();
   renderPortfolio();
@@ -2392,8 +2729,65 @@ function updateSelectedFromDetail() {
 	        eDirect: num('mEDirect'),
 	        riskAvoided: num('mRiskAvoided'),
 	        portfolioShare: num('mPortfolioShare'),
+	        opexPa: num('mOpexPa'),
+	        opexDeltaPa: num('mOpexDeltaPa'),
+	        reinvestCost: num('mReinvestCost'),
+	        decommissionCost: num('mDecommissionCost'),
+	        decommissionYear: el.mDecommissionYear.value === '' ? '' : Math.round(num('mDecommissionYear')),
 	        note: el.mNote.value
   });
+  renderAll();
+}
+
+function updateStrategyReference(event) {
+  strategy = { ...strategy, sampReference: event.target.value };
+  renderAll();
+}
+
+function updateObjective(event) {
+  const id = event.target.dataset.objectiveId;
+  const field = event.target.dataset.objectiveField;
+  if (!id || !field) return;
+  strategy = {
+    ...strategy,
+    objectives: strategy.objectives.map(objective => objective.id === id
+      ? { ...objective, [field]: event.target.value }
+      : objective)
+  };
+  renderAll();
+}
+
+function addObjective() {
+  const id = 'obj_' + Date.now().toString(36);
+  strategy = {
+    ...strategy,
+    objectives: [...strategy.objectives, { id, label: 'Neues Ziel', note: '' }]
+  };
+  renderAll();
+}
+
+function removeObjective(id) {
+  if (strategy.objectives.length <= 1) return;
+  strategy = {
+    ...strategy,
+    objectives: strategy.objectives.filter(objective => objective.id !== id)
+  };
+  measures = measures.map(measure => ({
+    ...measure,
+    objectiveIds: (measure.objectiveIds || []).filter(objectiveId => objectiveId !== id)
+  }));
+  renderAll();
+}
+
+function toggleMeasureObjective(event) {
+  const measure = selectedMeasure();
+  if (!measure) return;
+  const id = event.target.dataset.objectiveId;
+  if (!id) return;
+  const ids = new Set(measure.objectiveIds || []);
+  if (event.target.checked) ids.add(id);
+  else ids.delete(id);
+  measure.objectiveIds = [...ids];
   renderAll();
 }
 
@@ -2402,6 +2796,14 @@ el.sector.addEventListener('change', renderAll);
 detailIds.forEach(id => el[id].addEventListener('input', updateSelectedFromDetail));
 el.mType.addEventListener('change', updateSelectedFromDetail);
 el.mDepr.addEventListener('change', updateSelectedFromDetail);
+document.getElementById('strategySampReference').addEventListener('input', updateStrategyReference);
+document.getElementById('strategyObjectives').addEventListener('input', updateObjective);
+document.getElementById('strategyObjectives').addEventListener('click', event => {
+  const button = event.target.closest('[data-action="removeObjective"]');
+  if (button) removeObjective(button.dataset.objectiveId);
+});
+document.getElementById('addObjective').addEventListener('click', addObjective);
+document.getElementById('measureObjectives').addEventListener('change', toggleMeasureObjective);
 enhanceHelpLabels();
 loadRole();
 applyRole(currentRole, false);
@@ -2494,8 +2896,12 @@ document.getElementById('addImpactAssumption').addEventListener('click', addImpa
 document.getElementById('impactAssumptions').addEventListener('change', updateImpactAssumption);
 document.getElementById('impactAssumptions').addEventListener('click', event => {
   const button = event.target.closest('[data-action="removeImpact"]');
-  if (!button) return;
-  removeImpactAssumption(button.dataset.impactId);
+  if (button) {
+    removeImpactAssumption(button.dataset.impactId);
+    return;
+  }
+  const convertButton = event.target.closest('[data-action="convertRisk"]');
+  if (convertButton) convertRiskAssumption(convertButton.dataset.impactId);
 });
 document.getElementById('meetingTextCancel').addEventListener('click', closeMeetingTextModal);
 document.getElementById('meetingTextSave').addEventListener('click', saveMeetingTextModal);
@@ -2578,6 +2984,7 @@ document.getElementById('resetModel').addEventListener('click', () => {
   scenario = 'basis';
   meetingFocus = 'management';
   processState = defaultProcessState();
+  strategy = defaultStrategy();
   clarificationStatus = {};
   meetingTextOverrides = {};
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === 'basis'));

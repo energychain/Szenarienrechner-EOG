@@ -83,6 +83,7 @@ describe('calcMeasure depreciation scenarios', () => {
     expect(result.rows[0].depreciation).toBeCloseTo(100, 4);
     expect(result.rows[0].capitalReturn).toBeCloseTo(47.5, 4);
     expect(result.rows[0].eog).toBeCloseTo(147.5, 4);
+    expect(result.totex.nominal).toBeCloseTo(1000, 4);
   });
 
   it('calculates KANU linear depreciation for gas', () => {
@@ -98,6 +99,24 @@ describe('calcMeasure depreciation scenarios', () => {
     expect(result.rows[0].depreciation).toBeCloseTo(120, 4);
     expect(result.rows[0].capitalReturn).toBeCloseTo(47, 4);
     expect(result.rows[0].eog).toBeCloseTo(167, 4);
+  });
+
+  it('adds lifecycle cash flows and TOTEX without changing defaults', () => {
+    const p = params({ ...baseInputs, horizon: 4 });
+    const result = calcMeasure(baseMeasure({
+      opexPa: 20,
+      opexDeltaPa: 5,
+      reinvestCost: 100,
+      decommissionCost: 50,
+      decommissionYear: 2030,
+      life: 2
+    }), p);
+
+    expect(result.rows[0].opex).toBeCloseTo(-15, 4);
+    expect(result.rows[0].eog).toBeCloseTo(522.5, 4);
+    expect(result.rows[2].reinvestDecommission).toBeCloseTo(-150, 4);
+    expect(result.totex.nominal).toBeCloseTo(1210, 4);
+    expect(result.totex.discounted).toBeGreaterThan(1000);
   });
 });
 
@@ -146,8 +165,22 @@ describe('documented impact assumptions', () => {
       area: 'risk',
       title: 'Prüfpflichtiger Risikowert',
       amount: 30,
+      legacyFlat: true,
       confidence: 'review',
       governance: 'sensitivity',
+      startYear: 2028,
+      attribution: 100
+    },
+    {
+      id: 'r2',
+      area: 'risk',
+      title: 'Risiko aus Eintrittswahrscheinlichkeit mal Schaden',
+      riskProbabilityBefore: 12,
+      riskProbabilityAfter: 2,
+      riskImpact: 200,
+      confidence: 'assumption',
+      governance: 'basis',
+      evidenceType: 'operations',
       startYear: 2028,
       attribution: 100
     }
@@ -163,6 +196,14 @@ describe('documented impact assumptions', () => {
       attribution: 0.5,
       endYear: null
     });
+    expect(impacts[2]).toMatchObject({
+      area: 'risk',
+      amount: 20,
+      evidenceType: 'operations',
+      riskProbabilityBefore: 12,
+      riskProbabilityAfter: 2,
+      riskImpact: 200
+    });
   });
 
   it('includes basis assumptions and keeps review items for value sensitivity', () => {
@@ -171,11 +212,13 @@ describe('documented impact assumptions', () => {
     const conservative = calcPortfolio(model, scenarioParams(params(baseInputs), 'konservativ'));
     const value = calcPortfolio(model, scenarioParams(params(baseInputs), 'wert'));
 
-    expect(basis.impactPa).toBeCloseTo(6, 4);
+    expect(basis.impactPa).toBeCloseTo(26, 4);
     expect(basis.yearly[0].qAndE).toBeCloseTo(6, 4);
-    expect(basis.yearly[0].opexRisk).toBeCloseTo(0, 4);
+    expect(basis.yearly[0].risk).toBeCloseTo(20, 4);
+    expect(basis.yearly[0].opexRisk).toBeCloseTo(20, 4);
+    expect(basis.riskPa).toBeCloseTo(20, 4);
     expect(conservative.impactPa).toBeCloseTo(0, 4);
-    expect(value.impactPa).toBeCloseTo(36, 4);
-    expect(value.yearly[0].opexRisk).toBeCloseTo(30, 4);
+    expect(value.impactPa).toBeCloseTo(56, 4);
+    expect(value.yearly[0].opexRisk).toBeCloseTo(50, 4);
   });
 });

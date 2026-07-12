@@ -195,6 +195,19 @@
       </div>
 
       <div class="group">
+        <div class="section-head-row">
+          <div>
+            <h2>Strategische Ziele</h2>
+            <p class="hint">Damit im Budget sichtbar bleibt, worauf die Maßnahmen einzahlen. Die Referenz kann ein Plan, eine Strategie oder eine Arbeitsfassung sein.</p>
+          </div>
+          <button type="button" id="addObjective">Ziel hinzufügen</button>
+        </div>
+        <label for="strategySampReference">Strategie-/Plan-Referenz</label>
+        <input id="strategySampReference" type="text" placeholder="z.B. SAMP Stadtwerke X, Version 2.1, Kap. 4">
+        <div id="strategyObjectives" class="objective-list"></div>
+      </div>
+
+      <div class="group">
         <h2>Szenario</h2>
         <div class="segmented" aria-label="Szenarioauswahl">
           <button type="button" class="scenario active" data-scenario="basis">Basis</button>
@@ -271,6 +284,7 @@
                 <th>Aktiv</th>
                 <th>Maßnahme</th>
                 <th>Jahr</th>
+                <th>Ziele</th>
                 <th>Kosten</th>
                 <th>aktiv.</th>
                 <th>Wirkannahmen</th>
@@ -396,7 +410,9 @@
 	          <span><i style="background:#006f8f"></i>AfA</span>
 	          <span><i style="background:#4b8f6f"></i>Verzinsung</span>
 	          <span><i style="background:#c78a22"></i>Q/E</span>
-	          <span><i style="background:#7b6a9a"></i>OPEX/Risiko</span>
+	          <span><i style="background:#7b6a9a"></i>Risiko</span>
+	          <span><i style="background:#8a6a32"></i>OPEX</span>
+	          <span><i style="background:#9a5a4d"></i>Rückbau/Reinvest</span>
 	        </div>
 	        <div id="chart" class="chart"></div>
 	      </section>
@@ -433,7 +449,9 @@
                   <th>AfA</th>
                   <th>Verzinsung</th>
                   <th>Q/E</th>
-                  <th>OPEX/Risiko</th>
+                  <th>Risiko</th>
+                  <th>OPEX</th>
+                  <th>Rückbau/Reinvest</th>
                   <th>EOG Zusatz</th>
                   <th>EOG gesamt</th>
                 </tr>
@@ -581,6 +599,10 @@
               <label for="mYear">Inbetriebnahme</label>
               <input id="mYear" type="number" min="2025" step="1">
             </div>
+            <div class="wide-field">
+              <label>Trägt bei zu</label>
+              <div id="measureObjectives" class="checkbox-grid"></div>
+            </div>
             <div>
               <label for="mSecure">sicher aktivierbar %</label>
               <input id="mSecure" type="number" min="0" max="100" step="1">
@@ -613,6 +635,33 @@
 	          <p class="hint expert-defaults">Erweiterte Maßnahmeannahmen aktiv mit Defaults: 70 % sicher aktivierbar, 30 % unsicher, 50 % Wahrscheinlichkeit, OPEX-Anerkennung 70 %. Im Expertenmodus lassen sie sich ändern.</p>
 	          <div id="measureValidation" class="validation-messages" role="status" aria-live="polite"></div>
 	        </div>
+        <div class="group">
+          <h3>Lebenszyklus der Maßnahme</h3>
+          <p class="hint">Errichtung ist oben erfasst. Betrieb, Erneuerung und Rückbau sind standardmäßig 0 und im Expertenmodus änderbar.</p>
+          <div class="grid2">
+            <div>
+              <label for="mOpexPa">Betriebskosten TEUR p.a.</label>
+              <input id="mOpexPa" type="number" step="1">
+            </div>
+            <div>
+              <label for="mOpexDeltaPa">vermiedene Betriebskosten TEUR p.a.</label>
+              <input id="mOpexDeltaPa" type="number" step="1">
+            </div>
+            <div>
+              <label for="mReinvestCost">Reinvestition TEUR</label>
+              <input id="mReinvestCost" type="number" min="0" step="1">
+            </div>
+            <div>
+              <label for="mDecommissionCost">Rückbau/Entsorgung TEUR</label>
+              <input id="mDecommissionCost" type="number" min="0" step="1">
+            </div>
+            <div>
+              <label for="mDecommissionYear">Rückbaujahr</label>
+              <input id="mDecommissionYear" type="number" step="1" placeholder="automatisch">
+            </div>
+          </div>
+          <p class="hint expert-defaults">Defaults: keine zusätzlichen Betriebs-, Reinvestitions- oder Rückbaukosten. Bei Gas sind Rückbaukosten und Restwertrisiko rund um das KANU-Zieljahr besonders relevant.</p>
+        </div>
         <div>
           <h3>Direkte Zusatzwirkung</h3>
           <div class="grid2">
@@ -709,6 +758,14 @@
               <li>Die Entscheidung wird nachvollziehbar: wirtschaftlich tragfähig, Grenzfall oder nur über Risiko, Pflicht oder Strategie begründbar.</li>
               <li>Daten können als JSON exportiert und in einem anderen Browser wieder importiert werden. Damit bleiben Rechenstand und Annahmen prüfbar.</li>
             </ul>
+          </div>
+          <div>
+            <h3>Gute Budgetentscheidungen - die vier Prinzipien</h3>
+            <p><strong>Ganze Lebensdauer statt Anschaffungspreis.</strong> Was kostet die Anlage über ihr Leben? Die App rechnet Betrieb, Erneuerung und Rückbau in Rendite und Kapitalwert ein. Zu finden: Maßnahme bearbeiten → Lebenszyklus.</p>
+            <p><strong>Risiken in Zahlen statt Bauchgefühl.</strong> Was passiert, wenn wir es nicht tun? Wahrscheinlichkeit mal Schadenshöhe ergibt einen jährlichen Risikowert, vorher/nachher vergleichbar. Zu finden: Wirkannahme → Risiko.</p>
+            <p><strong>Jede Maßnahme zahlt auf ein Ziel ein.</strong> Warum diese Maßnahme und nicht eine andere? Jede Maßnahme kann einem strategischen Ziel zugeordnet werden; der Report zeigt, wohin das Budget wirkt. Zu finden: Grundlagen → Strategische Ziele.</p>
+            <p><strong>Belegte Annahmen statt versteckter Zahlen.</strong> Woher kommt diese Zahl? Jede Wirkannahme trägt Quelle, Vertrauensstufe und Verlauf. Zu finden: Wirkannahmen, Report-Anhang.</p>
+            <p>Diese vier Prinzipien entsprechen dem internationalen Standard für Anlagenmanagement (ISO 55001). Man muss den Standard nicht kennen, um das Tool zu nutzen; wer nach ihm arbeitet oder auditiert wird, findet die Zuordnung im Report-Anhang „Konformitätsübersicht“.</p>
           </div>
           <div>
             <h3>Typischer Ablauf</h3>

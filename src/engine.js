@@ -30,6 +30,14 @@ function finiteNumber(value, fallback = 0) {
 const impactAreas = new Set(['qElement', 'efficiency', 'costBase', 'risk', 'portfolio']);
 const impactConfidences = new Set(['proven', 'assumption', 'review']);
 const impactGovernanceStates = new Set(['basis', 'sensitivity', 'excluded']);
+const evidenceTypes = new Set(['measurement', 'operations', 'expert', 'study', 'open']);
+
+export function riskExpectedValue(impact = {}) {
+  if (impact.area !== 'risk' || impact.legacyFlat) return finiteNumber(impact.amount);
+  const before = clamp(finiteNumber(impact.riskProbabilityBefore), 0, 100) / 100;
+  const after = clamp(finiteNumber(impact.riskProbabilityAfter), 0, 100) / 100;
+  return Math.max(0, before - after) * finiteNumber(impact.riskImpact);
+}
 
 export function normalizeImpactAssumption(impact = {}, index = 0, measure = {}) {
   const area = impactAreas.has(impact.area) ? impact.area : 'efficiency';
@@ -44,7 +52,7 @@ export function normalizeImpactAssumption(impact = {}, index = 0, measure = {}) 
     id: String(impact.id || 'impact_' + index),
     area,
     title: String(impact.title || 'Wirkannahme'),
-    amount: finiteNumber(impact.amount),
+    amount: area === 'risk' && !impact.legacyFlat ? riskExpectedValue({ ...impact, area }) : finiteNumber(impact.amount),
     confidence,
     governance,
     startYear,
@@ -52,6 +60,11 @@ export function normalizeImpactAssumption(impact = {}, index = 0, measure = {}) 
     attribution: clamp(finiteNumber(impact.attribution, 100), 0, 100) / 100,
     chain: String(impact.chain || ''),
     evidence: String(impact.evidence || ''),
+    evidenceType: evidenceTypes.has(impact.evidenceType) ? impact.evidenceType : 'open',
+    legacyFlat: Boolean(impact.legacyFlat),
+    riskProbabilityBefore: clamp(finiteNumber(impact.riskProbabilityBefore), 0, 100),
+    riskProbabilityAfter: clamp(finiteNumber(impact.riskProbabilityAfter), 0, 100),
+    riskImpact: finiteNumber(impact.riskImpact),
     note: String(impact.note || '')
   };
 }
@@ -180,6 +193,15 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   const start = Math.round(finiteNumber(measure.year));
   const qAndE = finiteNumber(measure.qDirect) + finiteNumber(measure.eDirect) + portfolioEffectPa;
   const risk = finiteNumber(measure.riskAvoided);
+  const opexPa = finiteNumber(measure.opexPa);
+  const opexDeltaPa = finiteNumber(measure.opexDeltaPa);
+  const reinvestCost = finiteNumber(measure.reinvestCost);
+  const decommissionCost = finiteNumber(measure.decommissionCost);
+  const defaultDecommissionYear = p.sector === 'gas'
+    ? p.kanuEndYear
+    : start + Math.max(1, Math.round(finiteNumber(measure.life))) - 1;
+  const decommissionYear = Math.round(finiteNumber(measure.decommissionYear, defaultDecommissionYear));
+  const reinvestYear = start + Math.max(1, Math.round(finiteNumber(measure.life)));
   let rest = active.activated;
   const rows = [];
 
@@ -207,17 +229,44 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     const impactEffects = year >= start ? impactEffectsForMeasure(measure, p, year) : { qAndE: 0, risk: 0, included: [], sensitivity: [] };
     const yearlyQE = year >= start ? qAndE + impactEffects.qAndE : 0;
     const yearlyRisk = year >= start ? risk + impactEffects.risk : 0;
-    const eog = depreciation + capitalReturn + firstYearOpex + yearlyQE + yearlyRisk;
+    const lifecycleOpex = year >= start ? -opexPa + opexDeltaPa : 0;
+    const reinvest = year === reinvestYear ? -reinvestCost : 0;
+    const decommission = year === decommissionYear ? -decommissionCost : 0;
+    const reinvestDecommission = reinvest + decommission;
+    const eog = depreciation + capitalReturn + firstYearOpex + yearlyQE + yearlyRisk + lifecycleOpex + reinvestDecommission;
 
     if (year >= start) rest = Math.max(0, rest - depreciation);
-    rows.push({ year, depreciation, capitalReturn, qAndE: yearlyQE, opexRisk: firstYearOpex + yearlyRisk, eog });
+    rows.push({
+      year,
+      depreciation,
+      capitalReturn,
+      qAndE: yearlyQE,
+      opex: lifecycleOpex,
+      risk: yearlyRisk,
+      opexRisk: firstYearOpex + yearlyRisk,
+      reinvestDecommission,
+      eog
+    });
   }
 
   const flows = [-finiteNumber(measure.cost), ...rows.map(row => row.eog)];
   const measureIrr = irr(flows);
   const measureNpv = npv(p.discountRate, flows);
   const impactSummary = impactEffectsForMeasure(measure, p, start);
-  return { measure, activated: active.activated, activeShare: active.share, rows, irr: measureIrr, npv: measureNpv, impactSummary };
+  const futureGrossCosts = rows.map(row => Math.max(0, -row.opex) + Math.max(0, -row.reinvestDecommission));
+  const totexNominal = finiteNumber(measure.cost) + futureGrossCosts.reduce((sum, value) => sum + value, 0);
+  const totexDiscounted = finiteNumber(measure.cost) + futureGrossCosts.reduce((sum, value, index) => sum + value / Math.pow(1 + p.discountRate, index + 1), 0);
+  return {
+    measure,
+    activated: active.activated,
+    activeShare: active.share,
+    rows,
+    irr: measureIrr,
+    npv: measureNpv,
+    impactSummary,
+    totex: { nominal: totexNominal, discounted: totexDiscounted },
+    riskReductionPa: impactSummary.risk + risk
+  };
 }
 
 export function portfolioEffectFor(measure, p) {
@@ -235,7 +284,10 @@ export function calcPortfolio(model, p) {
     depreciation: 0,
     capitalReturn: 0,
     qAndE: 0,
+    opex: 0,
+    risk: 0,
     opexRisk: 0,
+    reinvestDecommission: 0,
     eog: 0
   }));
 
@@ -244,7 +296,10 @@ export function calcPortfolio(model, p) {
       yearly[i].depreciation += row.depreciation;
       yearly[i].capitalReturn += row.capitalReturn;
       yearly[i].qAndE += row.qAndE;
+      yearly[i].opex += row.opex;
+      yearly[i].risk += row.risk;
       yearly[i].opexRisk += row.opexRisk;
+      yearly[i].reinvestDecommission += row.reinvestDecommission;
       yearly[i].eog += row.eog;
     });
   });
@@ -256,11 +311,16 @@ export function calcPortfolio(model, p) {
   const resultNpv = invest > 0 ? npv(p.discountRate, flows) : 0;
   const qePa = activeMeasures.reduce((sum, measure) => sum + portfolioEffectFor(measure, p), 0);
   const impactPa = results.reduce((sum, result) => sum + result.impactSummary.qAndE + result.impactSummary.risk, 0);
+  const riskPa = results.reduce((sum, result) => sum + result.riskReductionPa, 0);
+  const totex = results.reduce((sum, result) => ({
+    nominal: sum.nominal + result.totex.nominal,
+    discounted: sum.discounted + result.totex.discounted
+  }), { nominal: 0, discounted: 0 });
   yearly.forEach(row => {
     row.regulatoryPeriod = regulatoryPeriodFor(p.sector, row.year);
   });
 
-  return { p, activeMeasures, results, yearly, invest, activated, irr: resultIrr, npv: resultNpv, qePa, impactPa };
+  return { p, activeMeasures, results, yearly, invest, activated, irr: resultIrr, npv: resultNpv, qePa, impactPa, riskPa, totex };
 }
 
 export function scenarioParams(baseParams, name) {
