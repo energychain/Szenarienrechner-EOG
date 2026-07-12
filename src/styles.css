@@ -796,14 +796,15 @@
     .info-popover {
       position: fixed;
       z-index: 30;
-      width: min(330px, calc(100vw - 28px));
-      padding: 10px 12px;
+      width: min(460px, calc(100vw - 28px));
+      padding: 12px 14px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
       box-shadow: 0 12px 36px rgba(22, 32, 42, .22);
       color: var(--ink);
       font-size: 12px;
+      line-height: 1.45;
     }
 
     .info-popover.hidden {

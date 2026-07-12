@@ -1,0 +1,61 @@
+export const fieldHelp = {
+  sector: 'Legt fest, welche regulatorische Logik gilt. Gas kann KANU-Szenarien enthalten; Strom ist bei Qualitäts- und Effizienzthemen anders zu bewerten. Erfragen kannst du die Zuordnung meist bei Regulierungsmanagement, Controlling oder der Spartenleitung.',
+  regulationProcedure: 'Kleinere Netzbetreiber können ein vereinfachtes Verfahren nutzen, bei dem einige Größen pauschal festgelegt sind. Quelle: Regulierungsmanagement oder aktueller BNetzA-/Landesregulierungsbescheid. Wenn unklar, zunächst Standardverfahren wählen und als Klärpunkt markieren.',
+  baseYear: 'Startjahr der Betrachtung. Häufig das Planjahr der Inbetriebnahme oder das erste Jahr der Wirtschafts-/Mittelfristplanung. Mit Planung/Controlling abstimmen, weil Regulierungsperiode, Kostenbasis und Cashflow-Zeitpunkt daran hängen.',
+  baseEog: 'Bestehende Erlösobergrenze der Sparte pro Jahr in TEUR. Typische Quellen: Regulierungsmanagement, EOG-Bescheid, Erlös-/Netzentgeltkalkulation oder Wirtschaftsplanung. Verwende möglichst den zur Sparte passenden, bereits genehmigten oder intern freigegebenen Wert; Plandeltas separat dokumentieren.',
+  rab: 'Regulatorisch gebundene Kapitalbasis. Ermitteln aus Anlagenbuchhaltung, Regulierungsmanagement oder kalkulatorischem Anlagevermögen der Sparte. Wichtig: Nicht blind HGB-Buchwert übernehmen; regulatorische Restwerte, Abzugskapital und Bescheidlogik können abweichen.',
+  returnRate: 'Regulatorische Kapitalverzinsung. Quelle: aktueller Regulierungsrahmen, Bescheid oder interne Regulierungsprämissen. Sie wirkt nur auf anerkanntes, aktiviertes Kapital und ist nicht automatisch die Rendite der Gesamtkosten.',
+  financingRate: 'Kosten des eingesetzten Fremdkapitals. Typische Quelle: Treasury/Finanzierung, Controlling oder aktuelle Investitionsrechnung. Der Vergleich mit IRR und Kapitalwert zeigt, ob eine Maßnahme den Finanzierungsspread trägt.',
+  annualEnergyGwh: 'Verteilte Jahresarbeit der Sparte. Quelle: Netzabsatz aus Abrechnung, Netzentgeltkalkulation, Mengenplanung oder testiertem Jahresabschluss. Der Wert übersetzt zulässige Mehrerlöse grob in Cent je kWh; ohne ihn bleibt die Entgeltwirkung bewusst ausgeblendet.',
+  householdConsumptionKwh: 'Typischer Jahresverbrauch eines Durchschnittshaushalts. Quelle: interne Standardlast-/Kommunikationsannahmen oder Branchenbenchmarks. Gas nutzt ohne Eingabe 15.000 kWh, Strom 2.900 kWh. Der Wert ist nur eine Kommunikationsgröße, kein Tarifversprechen.',
+  horizon: 'Zeitraum der Auswertung. Wähle ihn so, dass wesentliche AfA-, Reinvestitions- und Rückbauwirkungen sichtbar werden. Für schnelle Vorprüfung reichen oft 5-10 Jahre; für Lebenszyklus-/Gasentscheidungen kann ein längerer Horizont nötig sein.',
+  discountRate: 'Abzinsungssatz für den Kapitalwert. Quelle: Controlling, Investitionsrichtlinie, WACC-/Kapitalkostenannahme oder Finanzierungsvorgabe. Er bildet Mindestverzinsung oder Opportunitätskosten ab und sollte nicht mit regulatorischer Verzinsung verwechselt werden.',
+  kanuEndYear: 'Zieljahr für beschleunigte Gas-Abschreibungen. Quelle: Gasnetz-/Transformationsplanung, Regulierungsmanagement und KANU-Prämissen. Es verschiebt EOG-Wirkung, Restwertpfad und Kapitalbindung über die Zeit; bei Unsicherheit als Szenarioannahme kennzeichnen.',
+  degressiveRate: 'Degressiver AfA-Satz im KANU-Szenario. Quelle: abgestimmtes KANU-/Transformationsszenario oder Regulierungsmanagement. Höhere Werte führen zu schnellerer Refinanzierung, aber auch schneller sinkendem Restbuchwert.',
+  taxFactor: 'Pauschaler Zuschlag für Steuern oder weitere regulatorische Zuschläge. Nur verwenden, wenn diese Wirkung fachlich begründet ist; Quelle kann Steuerabteilung, Controlling oder ein freigegebenes Kalkulationsschema sein.',
+  portfolioAttribution: 'Anteil eines Portfolioeffekts, der den aktiven Maßnahmen zugerechnet wird. Dieser Wert ist eine Governance-Annahme: mit Fachbereich, Asset Management oder Regulierungsmanagement konservativ begründen und Doppelzählungen vermeiden.',
+  qDelta: 'Geschätzte Qualitätswirkung auf die relevante Portfolio-Basis. Typische Quellen: Qualitätskennzahlen, Störungsstatistik, Betriebserfahrung, Netzplanung oder Maßnahmensteckbrief. Der Euro-Effekt entsteht erst über Basis x Delta x Attribution.',
+  eDelta: 'Geschätzte Effizienz- oder EOG-Wirkung auf Portfolioebene. Nur ansetzen, wenn ein plausibler kausaler Zusammenhang besteht; Quelle: Effizienzprogramm, Benchmarking, Prozesscontrolling oder regulatorische Wirkungsanalyse.',
+  mName: 'Eindeutige Bezeichnung der Maßnahme. Sie sollte fachlich wiedererkennbar sein, damit Annahmen später prüfbar bleiben.',
+  mExternalId: 'Schlüssel aus dem führenden System, zum Beispiel PSP-Element oder Projektnummer. Damit erkennt der Massenimport Updates statt Duplikate.',
+  mOrgUnit: 'Organisationseinheit oder Gesellschaft, aus der die Maßnahme stammt. Der Katalog kann danach gruppieren und aggregieren.',
+  mTags: 'Freie Schlagworte für Filter und Klausuren, zum Beispiel RP5, Pflicht oder Klausur-09. Mehrere Tags mit Komma trennen.',
+  mType: 'Einordnung der Maßnahme. Wahlmaßnahmen werden als wirtschaftliche Entscheidung betrachtet; Risiko- und Pflichtnähe beeinflussen die Begründung.',
+  mCost: 'Gesamtkosten der Maßnahme in TEUR. Quelle: Investitionsantrag, Projektkalkulation, Einkaufsschätzung oder Wirtschaftsplan. Die Rendite wird gegen diese Gesamtkosten gestellt, auch wenn nur ein Teil davon aktiviert wird.',
+  mYear: 'Jahr der Inbetriebnahme. Quelle: Projektplan, Bau-/Umsetzungsplanung oder Asset Management. Erst ab diesem Jahr entstehen Abschreibung, Verzinsung und direkte Zusatzwirkungen im Modell.',
+  mSecure: 'Anteil der Kosten, der mit hoher Sicherheit aktivierbar und regulatorisch kapitalwirksam ist. Quelle: Anlagenbuchhaltung, Bilanzierung, Regulierungsmanagement oder Investitionsrichtlinie.',
+  mUncertain: 'Kostenanteil mit unklarer Aktivierung. Typische Fälle: Mischprojekte, IT-/Prozessanteile, Rückbau oder Übergangslösungen. Dieser Anteil wird nur risikogewichtet berücksichtigt.',
+  mProbability: 'Wahrscheinlichkeit, mit der der unsichere Anteil aktivierbar wird. Mit Regulierungsmanagement, Bilanzierung und Projektleitung schätzen; zusammen mit dem unsicheren Anteil bildet sie die erwartete Kapitalbasis.',
+  mOpexRecognition: 'Anteil nicht aktivierter Kosten, der als OPEX anerkannt oder wirtschaftlich berücksichtigt werden kann. Quelle: Regulierungsmanagement, Controlling oder genehmigte OPEX-/Kostenstellenlogik.',
+  mLife: 'Normale Nutzungsdauer für lineare Abschreibung. Quelle: Anlagenbuchhaltung, AfA-Tabelle, technische Nutzungsdauer oder regulatorische Vorgaben. Sie bestimmt, wie schnell die aktivierte Basis über AfA in die EOG zurückfließt.',
+  mDepr: 'Abschreibungsszenario. Bei Gas können KANU-Varianten die zeitliche EOG-Wirkung und den Restwertpfad deutlich verändern.',
+  mQDirect: 'Direkte, separat begründete Qualitätswirkung in TEUR pro Jahr. Nicht mit pauschalen Portfolioeffekten doppelt zählen.',
+  mEDirect: 'Direkte Effizienz- oder EOG-Wirkung in TEUR pro Jahr. Nur ansetzen, wenn sie der Maßnahme belastbar zurechenbar ist.',
+  mRiskAvoided: 'Monetarisierter vermiedener Risikowert pro Jahr, z.B. vermiedene Störungen, Sanktionen oder Folgekosten.',
+  mPortfolioShare: 'Anteil, mit dem diese Maßnahme am globalen Q-/E-Portfolioeffekt beteiligt ist. Die Summe sollte fachlich plausibel bleiben.',
+  mOpexPa: 'Laufende Kosten, die die Maßnahme selbst verursacht, zum Beispiel Wartung, Software oder Personal. Erst mit Betriebs- und Rückbaukosten zeigt sich, was eine Anlage über ihr Leben wirklich kostet.',
+  mOpexDeltaPa: 'Vermiedene laufende Kosten der Altanlage oder des bisherigen Prozesses. Dieser Wert senkt die Lebenszykluskosten, sollte aber nicht zusätzlich als Effizienz-Wirkannahme doppelt angesetzt werden.',
+  mReinvestCost: 'Erneuerungskosten, falls innerhalb des Betrachtungshorizonts nach Nutzungsdauer erneut investiert werden muss.',
+  mDecommissionCost: 'Rückbau- oder Entsorgungskosten. Bei Gas können diese rund um das KANU-Zieljahr entscheidungsrelevant sein.',
+  mDecommissionYear: 'Jahr, in dem Rückbau- oder Entsorgungskosten anfallen. Ohne Eingabe nutzt das Modell bei Gas das KANU-Zieljahr, sonst das Ende der Nutzungsdauer.',
+  mHgbLife: 'Nutzungsdauer in der Handelsbilanz. Weicht sie von der regulatorischen ab, entsteht eine zeitliche Lücke zwischen Erlös und Aufwand - die Ergebnissicht zeigt, wie groß sie ist.',
+  strategySampReference: 'Falls es einen strategischen Anlagenmanagementplan oder eine Unternehmensstrategie gibt: hier referenzieren. Gibt es keinen, einfach die wichtigsten Ziele der Sparte eintragen.',
+  objectiveIds: 'Welchem übergeordneten Ziel dient die Maßnahme? Damit bleibt im Budget sichtbar, wofür investiert wird und was wegfällt, wenn gestrichen wird.',
+  evidenceType: 'Art der Datenbasis. Messdaten und dokumentierte Betriebserfahrung erhöhen die Entscheidungsreife stärker als eine offene Schätzung.',
+  riskProbabilityBefore: 'Wie oft pro Jahr tritt das Schadensereignis ohne Maßnahme ein? 10 % bedeutet statistisch ungefähr alle 10 Jahre.',
+  riskProbabilityAfter: 'Wie oft pro Jahr tritt das Schadensereignis mit Maßnahme ein? Die Differenz zu vorher wird mit der Schadenshöhe bewertet.',
+  riskImpact: 'Schadenshöhe je Ereignis in TEUR, inklusive Folgekosten, Sanktionen oder Wiederherstellungskosten.',
+  committeeBody: 'Gremium, fuer das eine knappe Vorlage erstellt wird, zum Beispiel Gemeinderat, Aufsichtsrat oder Werksausschuss.',
+  committeeAudience: 'Adressat der Vorlage. Kommunal übersetzt stärker in Wirkung für Bürger; Vorstand zeigt wirtschaftliche Kennzahlen und Bereichsbeiträge direkter.',
+  committeeMeetingDate: 'Sitzungsdatum fuer die Gremienvorlage. Leer lassen, wenn noch kein Termin feststeht.',
+  committeeProposalText: 'Optionaler Beschlussvorschlag in Alltagssprache. Wenn leer, formuliert die Vorlage einen neutralen Vorschlag.',
+  mNote: 'Arbeitsnotiz für Meeting, Klärpunkte oder Governance-Auflagen. Die Notiz wird gespeichert, in der Übersicht markiert und im Report ausgewiesen.'
+};
+
+export function hasFieldHelp(id) {
+  return Boolean(fieldHelp[id]);
+}
+
+export function fieldHelpText(id) {
+  return fieldHelp[id] || '';
+}

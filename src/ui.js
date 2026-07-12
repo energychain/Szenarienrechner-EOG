@@ -25,6 +25,7 @@ import {
   normalizePlanningResume,
   shouldShowPlanningResume
 } from './planning-resume.js';
+import { fieldHelp } from './contextual-help.js';
 import { imprintSections } from './trust-content.js';
 
 const initialMeasures = [];
@@ -194,59 +195,6 @@ const detailIds = [
   'mDecommissionYear', 'mNote'
 ];
 
-const fieldHelp = {
-  sector: 'Legt fest, welche regulatorische Logik gilt. Gas kann KANU-Szenarien enthalten; Strom ist bei Qualitäts- und Effizienzthemen anders zu bewerten.',
-  regulationProcedure: 'Kleinere Netzbetreiber können ein vereinfachtes Verfahren nutzen, bei dem einige Größen pauschal festgelegt sind. Das Modell blendet dann Effekte aus, die individuell nicht erlöswirksam werden - so bleibt die Rechnung ehrlich.',
-  baseYear: 'Startjahr der Betrachtung. Der Rechner leitet daraus je Sparte die passende Regulierungsperiode ab und rechnet alle Jahreswerte relativ zu diesem Jahr.',
-  baseEog: 'Bestehende Erlösobergrenze der Sparte pro Jahr. Sie ist Bezugsgröße für Portfolioeffekte und zeigt, wie stark eine Maßnahme das Gesamtbild verändert.',
-  rab: 'Regulatorisch gebundene Kapitalbasis. Sie hilft, Investitionen relativ zur bestehenden Kapitalbindung und zur künftigen Verzinsungsbasis einzuordnen.',
-  returnRate: 'Regulatorische Kapitalverzinsung. Sie wirkt nur auf anerkanntes, aktiviertes Kapital und ist nicht automatisch die Rendite der Gesamtkosten.',
-  financingRate: 'Kosten des eingesetzten Fremdkapitals. Der Vergleich mit IRR und Kapitalwert zeigt, ob eine Maßnahme den Finanzierungsspread trägt.',
-  annualEnergyGwh: 'Verteilte Jahresarbeit der Sparte. Nur damit kann der Rechner den zulässigen Mehrerlös grob in Cent je Kilowattstunde und Euro je Durchschnittshaushalt übersetzen.',
-  householdConsumptionKwh: 'Typischer Jahresverbrauch eines Durchschnittshaushalts. Gas nutzt ohne Eingabe 15.000 kWh, Strom 2.900 kWh. Der Wert ist nur eine Kommunikationsgröße.',
-  horizon: 'Zeitraum der Auswertung. Ein längerer Horizont zeigt vollständige Abschreibungs- und Verzinsungspfade, erhöht aber die Unsicherheit.',
-  discountRate: 'Abzinsungssatz für den Kapitalwert. Er bildet die Mindestverzinsung oder Opportunitätskosten des Kapitals ab.',
-  kanuEndYear: 'Zieljahr für beschleunigte Gas-Abschreibungen. Es verschiebt EOG-Wirkung, Restwertpfad und Kapitalbindung über die Zeit.',
-  degressiveRate: 'Degressiver AfA-Satz im KANU-Szenario. Höhere Werte führen zu schnellerer Refinanzierung, aber auch schneller sinkendem Restbuchwert.',
-  taxFactor: 'Pauschaler Zuschlag für Steuern oder weitere regulatorische Zuschläge. Nur verwenden, wenn diese Wirkung fachlich begründet ist.',
-  portfolioAttribution: 'Anteil eines Portfolioeffekts, der den aktiven Maßnahmen zugerechnet wird. Dieser Wert ist eine Governance-Annahme und sollte konservativ begründet werden.',
-  qDelta: 'Geschätzte Qualitätswirkung auf die relevante Portfolio-Basis. Der Euro-Effekt entsteht erst über Basis x Delta x Attribution.',
-  eDelta: 'Geschätzte Effizienz- oder EOG-Wirkung auf Portfolioebene. Sie sollte nur angesetzt werden, wenn ein plausibler kausaler Zusammenhang besteht.',
-  mName: 'Eindeutige Bezeichnung der Maßnahme. Sie sollte fachlich wiedererkennbar sein, damit Annahmen später prüfbar bleiben.',
-  mExternalId: 'Schlüssel aus dem führenden System, zum Beispiel PSP-Element oder Projektnummer. Damit erkennt der Massenimport Updates statt Duplikate.',
-  mOrgUnit: 'Organisationseinheit oder Gesellschaft, aus der die Maßnahme stammt. Der Katalog kann danach gruppieren und aggregieren.',
-  mTags: 'Freie Schlagworte für Filter und Klausuren, zum Beispiel RP5, Pflicht oder Klausur-09. Mehrere Tags mit Komma trennen.',
-  mType: 'Einordnung der Maßnahme. Wahlmaßnahmen werden als wirtschaftliche Entscheidung betrachtet; Risiko- und Pflichtnähe beeinflussen die Begründung.',
-  mCost: 'Gesamtkosten der Maßnahme in TEUR. Die Rendite wird gegen diese Gesamtkosten gestellt, auch wenn nur ein Teil davon aktiviert wird.',
-  mYear: 'Jahr der Inbetriebnahme. Erst ab diesem Jahr entstehen Abschreibung, Verzinsung und direkte Zusatzwirkungen im Modell.',
-  mSecure: 'Anteil der Kosten, der mit hoher Sicherheit aktivierbar und regulatorisch kapitalwirksam ist.',
-  mUncertain: 'Kostenanteil mit unklarer Aktivierung. Dieser Anteil wird nur risikogewichtet berücksichtigt.',
-  mProbability: 'Wahrscheinlichkeit, mit der der unsichere Anteil aktivierbar wird. Zusammen mit dem unsicheren Anteil bildet sie die erwartete Kapitalbasis.',
-  mOpexRecognition: 'Anteil nicht aktivierter Kosten, der als OPEX anerkannt oder wirtschaftlich berücksichtigt werden kann.',
-  mLife: 'Normale Nutzungsdauer für lineare Abschreibung. Sie bestimmt, wie schnell die aktivierte Basis über AfA in die EOG zurückfließt.',
-  mDepr: 'Abschreibungsszenario. Bei Gas können KANU-Varianten die zeitliche EOG-Wirkung und den Restwertpfad deutlich verändern.',
-  mQDirect: 'Direkte, separat begründete Qualitätswirkung in TEUR pro Jahr. Nicht mit pauschalen Portfolioeffekten doppelt zählen.',
-  mEDirect: 'Direkte Effizienz- oder EOG-Wirkung in TEUR pro Jahr. Nur ansetzen, wenn sie der Maßnahme belastbar zurechenbar ist.',
-  mRiskAvoided: 'Monetarisierter vermiedener Risikowert pro Jahr, z.B. vermiedene Störungen, Sanktionen oder Folgekosten.',
-  mPortfolioShare: 'Anteil, mit dem diese Maßnahme am globalen Q-/E-Portfolioeffekt beteiligt ist. Die Summe sollte fachlich plausibel bleiben.',
-  mOpexPa: 'Laufende Kosten, die die Maßnahme selbst verursacht, zum Beispiel Wartung, Software oder Personal. Erst mit Betriebs- und Rückbaukosten zeigt sich, was eine Anlage über ihr Leben wirklich kostet.',
-  mOpexDeltaPa: 'Vermiedene laufende Kosten der Altanlage oder des bisherigen Prozesses. Dieser Wert senkt die Lebenszykluskosten, sollte aber nicht zusätzlich als Effizienz-Wirkannahme doppelt angesetzt werden.',
-  mReinvestCost: 'Erneuerungskosten, falls innerhalb des Betrachtungshorizonts nach Nutzungsdauer erneut investiert werden muss.',
-  mDecommissionCost: 'Rückbau- oder Entsorgungskosten. Bei Gas können diese rund um das KANU-Zieljahr entscheidungsrelevant sein.',
-  mDecommissionYear: 'Jahr, in dem Rückbau- oder Entsorgungskosten anfallen. Ohne Eingabe nutzt das Modell bei Gas das KANU-Zieljahr, sonst das Ende der Nutzungsdauer.',
-  mHgbLife: 'Nutzungsdauer in der Handelsbilanz. Weicht sie von der regulatorischen ab, entsteht eine zeitliche Lücke zwischen Erlös und Aufwand - die Ergebnissicht zeigt, wie groß sie ist.',
-  strategySampReference: 'Falls es einen strategischen Anlagenmanagementplan oder eine Unternehmensstrategie gibt: hier referenzieren. Gibt es keinen, einfach die wichtigsten Ziele der Sparte eintragen.',
-  objectiveIds: 'Welchem übergeordneten Ziel dient die Maßnahme? Damit bleibt im Budget sichtbar, wofür investiert wird und was wegfällt, wenn gestrichen wird.',
-  evidenceType: 'Art der Datenbasis. Messdaten und dokumentierte Betriebserfahrung erhöhen die Entscheidungsreife stärker als eine offene Schätzung.',
-  riskProbabilityBefore: 'Wie oft pro Jahr tritt das Schadensereignis ohne Maßnahme ein? 10 % bedeutet statistisch ungefähr alle 10 Jahre.',
-  riskProbabilityAfter: 'Wie oft pro Jahr tritt das Schadensereignis mit Maßnahme ein? Die Differenz zu vorher wird mit der Schadenshöhe bewertet.',
-  riskImpact: 'Schadenshöhe je Ereignis in TEUR, inklusive Folgekosten, Sanktionen oder Wiederherstellungskosten.',
-  committeeBody: 'Gremium, fuer das eine knappe Vorlage erstellt wird, zum Beispiel Gemeinderat, Aufsichtsrat oder Werksausschuss.',
-  committeeAudience: 'Adressat der Vorlage. Kommunal übersetzt stärker in Wirkung für Bürger; Vorstand zeigt wirtschaftliche Kennzahlen und Bereichsbeiträge direkter.',
-  committeeMeetingDate: 'Sitzungsdatum fuer die Gremienvorlage. Leer lassen, wenn noch kein Termin feststeht.',
-  committeeProposalText: 'Optionaler Beschlussvorschlag in Alltagssprache. Wenn leer, formuliert die Vorlage einen neutralen Vorschlag.',
-  mNote: 'Arbeitsnotiz für Meeting, Klärpunkte oder Governance-Auflagen. Die Notiz wird gespeichert, in der Übersicht markiert und im Report ausgewiesen.'
-};
 
 const committeeIds = ['committeeBody', 'committeeAudience', 'committeeMeetingDate', 'committeeProposalText'];
 const el = Object.fromEntries([...inputIds, ...detailIds, ...committeeIds].map(id => [id, document.getElementById(id)]));
