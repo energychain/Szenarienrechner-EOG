@@ -4,7 +4,15 @@
 export const regulatoryParameterSet = {
   id: 'regulatory-parameters-2026-07',
   effectiveMonth: '2026-07',
-  source: 'BNetzA-Anreizregulierung / NEST-Rahmenfestlegung, Arbeitsstand fuer Produktisierung',
+  scope: 'Generisches Planungsmodell fuer regulierte Sparten; keine Rechts- oder Regulierungsberatung.',
+  source: 'ARegV, EnWG, BNetzA-Anreizregulierung, KANU-Kontext und NEST/RAMEN-Arbeitsstand; Details siehe REGULATORY_ASSUMPTIONS.md.',
+  sources: [
+    'ARegV: Regulierungsperioden, Erloesobergrenzen, Qualitaetselement und vereinfachtes Verfahren',
+    'EnWG: regulatorischer Rahmen fuer Netzbetrieb und Netzentgelte',
+    'BNetzA: Anreizregulierung, Kapitalkostenabgleich, Qualitaetselement und Regulierungskonto',
+    'BNetzA KANU-Kontext: beschleunigte Abschreibungs- und Restwertfragen fuer Gasnetze',
+    'BNetzA NEST/RAMEN-Kontext: kuenftige Weiterentwicklung des Regulierungsrahmens'
+  ],
   futurePeriodLengthYears: 5,
   regulatoryPeriodsBySector: {
     gas: [

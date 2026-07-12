@@ -11,6 +11,8 @@ npm run dev
 
 Der Rechenkern liegt DOM-frei in `src/engine.js`, die UI in `src/ui.js`, das Styling in `src/styles.css`.
 
+Die App ist ein generisches Open-Source-Werkzeug. Demodaten, Namen, Annahmen und Gremientexte sind synthetisch und duerfen nicht als Referenz auf reale Netzbetreiber, Projekte oder interne Unterlagen gelesen werden.
+
 ## Qualitaetssicherung
 
 ```bash
@@ -23,11 +25,18 @@ npm run build
 ## Auslieferung
 
 ```bash
-npm run build
-cp dist/index.html gas-massnahme-eog-rechner.html
+npm run build:release
 ```
 
-`gas-massnahme-eog-rechner.html` bleibt das offline lauffaehige Single-File-Deliverable.
+`dist/szenarienrechner-eog.html` ist das offline lauffaehige Single-File-Deliverable. `dist/index.html` bleibt das technische Vite-Buildartefakt.
+
+## Lizenz
+
+Der Code steht unter Apache License 2.0, siehe `LICENSE`. App-Footer, Repository-Lizenz und Dokumentation verwenden dieselbe Lizenzangabe.
+
+## Fachliche Annahmen und Grenzen
+
+Der Rechner bildet ein generisches Planungsmodell fuer regulierte Sparten ab. Er ersetzt keine Rechts-, Steuer-, Wirtschaftspruefungs- oder Regulierungsberatung. Regulatorische Parameter, Periodenlogik und Modellgrenzen sind in `REGULATORY_ASSUMPTIONS.md` dokumentiert und muessen vor produktiven Entscheidungen gegen den jeweils aktuellen Stand von Gesetzgebung, Festlegungen und unternehmensspezifischen Bescheiden geprueft werden.
 
 ## Offline-Verteilung und Verifikation
 

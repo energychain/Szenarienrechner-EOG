@@ -28,7 +28,7 @@ const demoMeasures = [
   {
     id: 'demo_grid_automation',
     active: true,
-    name: 'Netzautomatisierung Schwerpunktgebiet Nord',
+    name: 'Netzautomatisierung Demogebiet Alpha',
     type: 'wahl',
     cost: 820,
     year: 2027,
@@ -49,9 +49,9 @@ const demoMeasures = [
     decommissionCost: 25,
     decommissionYear: 2042,
     impactAssumptions: [
-      {'id':'impact_demo_grid_q','area':'qElement','title':'Weniger lange Versorgungsunterbrechungen','amount':15,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung grenzt Fehler schneller ein und verkürzt Wiederversorgung im Schwerpunktgebiet.','evidence':'Betriebserfahrung aus Störungsanalyse Nord 2024-2026','evidenceType':'operations','note':'Mit Regulierungsmanagement auf Q-Systematik prüfen.'},
+      {'id':'impact_demo_grid_q','area':'qElement','title':'Weniger lange Versorgungsunterbrechungen','amount':15,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung grenzt Fehler schneller ein und verkürzt Wiederversorgung im synthetischen Demogebiet.','evidence':'Synthetische Betriebserfahrung aus Demo-Störungsanalyse 2024-2026','evidenceType':'operations','note':'Mit Regulierungsmanagement auf Q-Systematik prüfen.'},
       {'id':'impact_demo_grid_e','area':'efficiency','title':'Weniger manuelle Entstörung und Schaltaufwand','amount':8,'confidence':'assumption','governance':'basis','startYear':2027,'endYear':'','attribution':100,'chain':'Fernsteuerung reduziert Anfahrten und manuelle Schalthandlungen.','evidence':'Expertenschätzung Netzbetrieb','evidenceType':'expert','note':''},
-      {'id':'impact_demo_grid_risk','area':'risk','title':'Vermiedene Großstörung im Schwerpunktgebiet','confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung reduziert Eskalationsrisiko bei Folgefehlern.','evidence':'Risikoworkshop offen','evidenceType':'open','riskProbabilityBefore':8,'riskProbabilityAfter':3,'riskImpact':400,'note':'Nur als Sensitivität bis Freigabe.'}
+      {'id':'impact_demo_grid_risk','area':'risk','title':'Vermiedene Großstörung im Demogebiet','confidence':'review','governance':'sensitivity','startYear':2027,'endYear':'','attribution':100,'chain':'Automatisierung reduziert Eskalationsrisiko bei Folgefehlern.','evidence':'Synthetischer Risikoworkshop offen','evidenceType':'open','riskProbabilityBefore':8,'riskProbabilityAfter':3,'riskImpact':400,'note':'Nur als Sensitivität bis Freigabe.'}
     ],
     note: 'Abstimmen, ob der Qualitätsbeitrag separat messbar ist oder nur als Portfolioeffekt angesetzt wird.'
   },
@@ -2077,7 +2077,7 @@ function applyDemoModel() {
   el.eDelta.value = '0.2';
   measures = structuredClone(demoMeasures);
   strategy = normalizeStrategy({
-    sampReference: 'AMP-Fragment Stromverteilung, Budgetrunde 2027, Bezug SAMP Kapitel Versorgungssicherheit',
+    sampReference: 'Synthetisches AMP-Fragment Stromverteilung, Budgetrunde 2027, Bezug SAMP Kapitel Versorgungssicherheit',
     objectives: defaultObjectives
   });
   committee = normalizeCommittee({

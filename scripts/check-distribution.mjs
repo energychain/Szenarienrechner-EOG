@@ -18,6 +18,11 @@ assert(
 
 assert(!/https?:\/\//i.test(html), 'Built HTML must not contain external http(s) URLs.');
 assert(!/\b(fetch|XMLHttpRequest|WebSocket|EventSource)\s*\(/.test(html), 'Built HTML must not contain network APIs.');
+assert(html.includes('Apache-2.0'), 'Built HTML must show the Apache-2.0 license.');
+assert(!html.includes('CC BY-NC-SA'), 'Built HTML must not contain the old CC BY-NC-SA license label.');
+const legacyReleaseName = ['gas', 'massnahme', 'eog', 'rechner'].join('-') + '.html';
+assert(!readme.includes(legacyReleaseName), 'README must use the neutral release filename.');
+assert(readme.includes('REGULATORY_ASSUMPTIONS.md'), 'README must link the regulatory assumptions document.');
 
 for (const section of imprintSections) {
   assert(readme.includes(section.title), `README is missing imprint heading: ${section.title}`);
