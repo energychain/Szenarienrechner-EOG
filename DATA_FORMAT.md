@@ -20,6 +20,7 @@ Ein Projektstand kann enthalten:
 - Szenarioannahmen,
 - Import-/Review-Informationen,
 - Historienereignisse,
+- Prozessstatus mit kurzer Arbeitsstandnotiz und nächstem Abstimmungsschritt,
 - Report- und Gremienvorlagenzustand.
 
 ## Minimaler Projektumschlag
@@ -39,7 +40,17 @@ Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fac
     "measures": [],
     "assumptions": [],
     "scenarios": [],
-    "history": []
+    "history": [],
+    "process": {
+      "phase": "massnahmenbewertung",
+      "resume": {
+        "statusNote": "Arbeitsstand in einem Satz",
+        "nextStep": "Nächste Abstimmung oder Entscheidung",
+        "owner": "zuständige Rolle oder Gruppe",
+        "dueDate": "2026-01-15",
+        "updatedAt": "2026-01-01T00:00:00.000Z"
+      }
+    }
   }
 }
 ```
