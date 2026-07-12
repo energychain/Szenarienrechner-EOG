@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ökosystem · Szenarienrechner-EOG</title>
+  <style>
+    :root { color-scheme: light; --ink: #102033; --muted: #5b6b7f; --line: #d8e1ec; --brand: #007ea7; --soft: #eef8fb; --paper: #ffffff; --bg: #f4f7fa; --warn: #fff7ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.65; }
+    header { background: rgba(255, 255, 255, 0.94); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1; display: flex; gap: 1rem; justify-content: space-between; align-items: center; }
+    header a, header button { color: var(--brand); font-weight: 700; text-decoration: none; }
+    header button { border: 1px solid #8ac6da; background: var(--soft); border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font: inherit; }
+    main { max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    article { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1.25rem, 2vw, 2.5rem); box-shadow: 0 18px 40px rgba(16, 32, 51, 0.08); }
+    h1 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -0.035em; }
+    h2 { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 2rem; font-size: clamp(1.45rem, 2.5vw, 2.1rem); break-after: avoid; }
+    h3 { margin-top: 1.8rem; break-after: avoid; }
+    h1 + p, h2 + p { color: var(--muted); }
+    a { color: var(--brand); }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.96rem; break-inside: avoid; }
+    th, td { border: 1px solid var(--line); padding: 0.75rem; vertical-align: top; }
+    th { background: #edf4f8; text-align: left; }
+    code { background: #edf2f7; border-radius: 0.3rem; padding: 0.1rem 0.3rem; }
+    blockquote { border-left: 4px solid var(--brand); margin: 1.25rem 0; padding: 0.2rem 1rem; background: var(--soft); }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+    footer { color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem; text-align: center; }
+    @page { size: A4; margin: 15mm 13mm 17mm; }
+    @media print {
+      :root { --ink: #111827; --muted: #374151; --line: #b8c2ce; --paper: #ffffff; --bg: #ffffff; --brand: #004f68; --soft: #ffffff; }
+      body { background: #ffffff; font-size: 10.8pt; line-height: 1.48; }
+      header { position: static; border: 0; padding: 0 0 8mm; }
+      header button { display: none; }
+      main { max-width: none; padding: 0; }
+      article { border: 0; border-radius: 0; box-shadow: none; padding: 0; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; margin-top: 12mm; padding-top: 7mm; break-after: avoid; }
+      h3, p, li, table { orphans: 3; widows: 3; }
+      table, tr, blockquote { break-inside: avoid; page-break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+      footer { border-top: 1px solid var(--line); padding-top: 4mm; }
+    }
+  </style>
+</head>
+<body>
+  <header><a href="../index.html">← Zur Übersicht</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
+  <main>
+    <article>
+<h1>Szenarienrechner-EOG: Ökosystem für regulierte Finanzplanung</h1>
+<p>Der Szenarienrechner-EOG ist kein reiner EOG-Rechner. Er ist ein offener, offline-fähiger Struktur- und Entscheidungsraum für regulierte Finanzplanung in kleinen und mittleren Stadtwerken und Verteilnetzbetreibern.</p>
+<p>Das Ziel des Ökosystems ist, typische Senior-Consulting-Leistungen im Bereich Finanzen, Wirtschaftlichkeit und Regulatorik transparent, wiederholbar und bezahlbar zu machen: Orientierung geben, Daten anfordern, Maßnahmen strukturieren, Annahmen prüfen, Szenarien erklären und Gremienentscheidungen vorbereiten.</p>
+<h2>Produktnarrativ</h2>
+<p>Kleine und mittlere Stadtwerke bearbeiten dieselben regulatorisch komplexen Fragen wie große Netzbetreiber, verfügen aber oft nicht über große Stabsstellen. Genau für kleine und mittlere Stadtwerke unterstützt der Szenarienrechner-EOG diese Organisationen dabei, die Finanzplanung regulierter Sparten in eine gemeinsame Sprache zu übersetzen.</p>
+<p>Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Sie reduziert aber den Bedarf, jedes Strukturierungsproblem sofort als hochpreisiges Senior-Consulting-Projekt einzukaufen.</p>
+<h2>Bausteine des Ökosystems</h2>
+<table><thead><tr>
+<th>Baustein</th>
+<th>Zweck</th>
+<th>Ergebnis für das Stadtwerk</th>
+</tr></thead><tbody>
+<tr>
+<td>Offline-App</td>
+<td>Maßnahmen, Szenarien und Annahmen strukturiert rechnen</td>
+<td>Arbeitsfähiges Modell mit JSON- oder HTML-mit-Daten-Export</td>
+</tr>
+<tr>
+<td>User-Story</td>
+<td>Beratungsprozess in einer fiktiven Planungsrunde zeigen</td>
+<td>Wiedererkennung für EVU-Rollen und PDF-Handout</td>
+</tr>
+<tr>
+<td>Methodikhandbuch</td>
+<td>Regulatorische Finanzplanung verständlich erklären</td>
+<td>Gemeinsame Denkstruktur für Strom/Gas-Portfolios</td>
+</tr>
+<tr>
+<td>Vorlagenpaket</td>
+<td>Typische Consulting-Artefakte bereitstellen</td>
+<td>Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung, Workshopagenda</td>
+</tr>
+<tr>
+<td>Lernpfade</td>
+<td>Rollen spezifisch anleiten</td>
+<td>Management, Controlling, Regulierung, Asset Management, Anlagenbuchhaltung</td>
+</tr>
+<tr>
+<td>Fallstudien</td>
+<td>Synthetische Fälle durchspielen</td>
+<td>Transfer auf Strom, Gas und Spartenportfolio</td>
+</tr>
+<tr>
+<td>Regulatorik-Landkarte</td>
+<td>Öffentliche Quellen einordnen</td>
+<td>Orientierung ohne juristische Vollkommentierung</td>
+</tr>
+<tr>
+<td>Reifegradmodell</td>
+<td>Eigenen Planungsprozess bewerten</td>
+<td>Von Excel-Sammlung zu governance-fähiger Portfolioentscheidung</td>
+</tr>
+<tr>
+<td>Entscheidungsartefakte</td>
+<td>Beschlussfähigkeit herstellen</td>
+<td>Klare Empfehlung, offene Punkte, Evidenz und Verantwortlichkeiten</td>
+</tr>
+</tbody></table>
+<h2>Navigation</h2>
+<ul>
+<li><a href="handbook/regulierte-finanzplanung-vnb.html">Methodikhandbuch</a></li>
+<li><a href="regulatory-map.html">Regulatorik-Landkarte</a></li>
+<li><a href="maturity-model.html">Reifegradmodell</a></li>
+<li><a href="decision-artifacts.html">Entscheidungsartefakte</a></li>
+<li><a href="templates/massnahmensteckbrief.html">Vorlage Maßnahmensteckbrief</a></li>
+<li><a href="templates/gremienvorlage.html">Vorlage Gremienvorlage</a></li>
+<li><a href="templates/klaerpunktliste.html">Vorlage Klärpunktliste</a></li>
+<li><a href="templates/datenanforderung.html">Vorlage Datenanforderung</a></li>
+<li><a href="templates/workshop-agenda.html">Vorlage Workshop-Agenda</a></li>
+<li><a href="guides/management.html">Lernpfad Management</a></li>
+<li><a href="guides/controlling.html">Lernpfad Controlling</a></li>
+<li><a href="guides/regulierung.html">Lernpfad Regulierung</a></li>
+<li><a href="guides/asset-management.html">Lernpfad Asset Management</a></li>
+<li><a href="guides/anlagenbuchhaltung.html">Lernpfad Anlagenbuchhaltung</a></li>
+<li><a href="examples/strom-ortsnetz.html">Fallstudie Strom-Ortsnetz</a></li>
+<li><a href="examples/gas-transformation.html">Fallstudie Gas-Transformation</a></li>
+<li><a href="examples/spartenportfolio.html">Fallstudie Spartenportfolio</a></li>
+</ul>
+<h2>Open Source und Cernion</h2>
+<p>Der Szenarienrechner-EOG ist der offene Einstieg: offline, transparent, generisch und ohne Telemetrie. Cernion von STROMDAO ist der professionelle Ausbaupfad für Datenintegration, kontinuierliche Analysen, MaStR-, Netz- und Vertriebsdatenkontext sowie operative Entscheidungsunterstützung.</p>
+    </article>
+    <footer>Szenarienrechner-EOG · Orientierung und Methodik · Apache-2.0</footer>
+  </main>
+</body>
+</html>

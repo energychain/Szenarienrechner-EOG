@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fallstudie Gas-Transformation · Szenarienrechner-EOG</title>
+  <style>
+    :root { color-scheme: light; --ink: #102033; --muted: #5b6b7f; --line: #d8e1ec; --brand: #007ea7; --soft: #eef8fb; --paper: #ffffff; --bg: #f4f7fa; --warn: #fff7ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.65; }
+    header { background: rgba(255, 255, 255, 0.94); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1; display: flex; gap: 1rem; justify-content: space-between; align-items: center; }
+    header a, header button { color: var(--brand); font-weight: 700; text-decoration: none; }
+    header button { border: 1px solid #8ac6da; background: var(--soft); border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font: inherit; }
+    main { max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    article { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1.25rem, 2vw, 2.5rem); box-shadow: 0 18px 40px rgba(16, 32, 51, 0.08); }
+    h1 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -0.035em; }
+    h2 { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 2rem; font-size: clamp(1.45rem, 2.5vw, 2.1rem); break-after: avoid; }
+    h3 { margin-top: 1.8rem; break-after: avoid; }
+    h1 + p, h2 + p { color: var(--muted); }
+    a { color: var(--brand); }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.96rem; break-inside: avoid; }
+    th, td { border: 1px solid var(--line); padding: 0.75rem; vertical-align: top; }
+    th { background: #edf4f8; text-align: left; }
+    code { background: #edf2f7; border-radius: 0.3rem; padding: 0.1rem 0.3rem; }
+    blockquote { border-left: 4px solid var(--brand); margin: 1.25rem 0; padding: 0.2rem 1rem; background: var(--soft); }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+    footer { color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem; text-align: center; }
+    @page { size: A4; margin: 15mm 13mm 17mm; }
+    @media print {
+      :root { --ink: #111827; --muted: #374151; --line: #b8c2ce; --paper: #ffffff; --bg: #ffffff; --brand: #004f68; --soft: #ffffff; }
+      body { background: #ffffff; font-size: 10.8pt; line-height: 1.48; }
+      header { position: static; border: 0; padding: 0 0 8mm; }
+      header button { display: none; }
+      main { max-width: none; padding: 0; }
+      article { border: 0; border-radius: 0; box-shadow: none; padding: 0; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; margin-top: 12mm; padding-top: 7mm; break-after: avoid; }
+      h3, p, li, table { orphans: 3; widows: 3; }
+      table, tr, blockquote { break-inside: avoid; page-break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+      footer { border-top: 1px solid var(--line); padding-top: 4mm; }
+    }
+  </style>
+</head>
+<body>
+  <header><a href="../index.html">← Zur Übersicht</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
+  <main>
+    <article>
+<h1>Fallstudie: Gas-Transformation</h1>
+<h2>Ausgangslage</h2>
+<p>Ein synthetischer Gas-VNB muss entscheiden, ob alternde Leitungsteile reinvestiert, instand gehalten, perspektivisch umgewidmet oder zurückgebaut werden.</p>
+<h2>Beratungsfrage</h2>
+<p>Wie lassen sich Versorgungspflicht, Restnutzungsdauer, KANU-Kontext, Rückbauoption und Finanzplanung so strukturieren, dass keine Scheingenauigkeit entsteht?</p>
+<h2>App-Nutzung</h2>
+<ul>
+<li>Sparte Gas wählen</li>
+<li>KANU-/Abschreibungsannahmen als Szenario führen</li>
+<li>Rückbau- und Reinvestitionswirkung getrennt betrachten</li>
+<li>Transformationsannahmen als Klärpunkte markieren</li>
+<li>Management-Report für Optionenvergleich nutzen</li>
+</ul>
+<h2>Ergebnis</h2>
+<p>Die Entscheidung bleibt bewusst als Szenario- und Governance-Frage sichtbar, nicht als einfache Renditezahl.</p>
+    </article>
+    <footer>Szenarienrechner-EOG · Orientierung und Methodik · Apache-2.0</footer>
+  </main>
+</body>
+</html>
