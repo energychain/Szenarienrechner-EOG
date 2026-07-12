@@ -24,7 +24,7 @@ describe('story navigation', () => {
     expect(storyMilestoneFromUrl('https://example.test/?story=unknown')).toBe(defaultStoryMilestone);
 
     const url = storyUrlForMilestone('entscheidungsvorlage');
-    expect(url).toBe('story/planungsrunde-userstory.md#entscheidungsvorlage');
+    expect(url).toBe('story/planungsrunde-userstory.html#entscheidungsvorlage');
   });
 
   it('covers every process phase with at least one story milestone', () => {
