@@ -74,6 +74,8 @@ import {
 } from './release-awareness.js';
 import { imprintSections } from './trust-content.js';
 import { demoMeasures, initialMeasures } from './demo-data.js';
+import { downloadBlob, exportStamp, htmlWithEmbeddedModelState } from './export-utils.js';
+import { esc, formatDateShort, fmtEur, fmtPct, fmtPlain, fmtTeur } from './render-utils.js';
 
 const inputIds = [
   'sector', 'regulationProcedure', 'baseYear', 'baseEog', 'rab', 'returnRate', 'financingRate',
@@ -587,44 +589,6 @@ function portfolioModel() {
 
 function currentPortfolio(p = currentParams()) {
   return calcPortfolio(portfolioModel(), p);
-}
-
-function fmtTeur(value, digits = 0) {
-  return new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  }).format(value) + ' TEUR';
-}
-
-function fmtPct(value, digits = 1) {
-  if (!Number.isFinite(value)) return '-';
-  return new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  }).format(value) + ' %';
-}
-
-function fmtEur(value, digits = 0) {
-  if (!Number.isFinite(value)) return '-';
-  return new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  }).format(value) + ' EUR';
-}
-
-function fmtPlain(value, digits = 0) {
-  return new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  }).format(value);
-}
-
-function esc(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
 }
 
 function newImpactAssumptionTemplate(measure = selectedMeasure()) {
@@ -1237,12 +1201,6 @@ function isoWeek(date) {
   tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
   const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
   return Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
-}
-
-function formatDateShort(value) {
-  if (!value) return '';
-  const date = new Date(value + 'T00:00:00');
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
 }
 
 function metricsForModel(model) {
@@ -1867,21 +1825,6 @@ function setExpertMode(enabled, persist = true) {
   if (persist) saveExpertMode();
 }
 
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
-
-function exportStamp(state) {
-  return state.savedAt.slice(0, 19).replaceAll(':', '').replace('T', '-');
-}
-
 function exportModel() {
   createExportSnapshot();
   const state = collectModelState();
@@ -1890,25 +1833,11 @@ function exportModel() {
   setStorageStatus('JSON-Datei wurde zum Download vorbereitet.');
 }
 
-function jsonForHtmlScript(value) {
-  return JSON.stringify(value, null, 2)
-    .replaceAll('<', '\\u003c')
-    .replaceAll('>', '\\u003e')
-    .replaceAll('&', '\\u0026');
-}
-
 function refreshBuildMeta() {
   const commitNode = document.querySelector('meta[name="build-commit"]');
   const timeNode = document.querySelector('meta[name="build-time"]');
   if (commitNode) commitNode.setAttribute('content', buildInfo.buildCommit);
   if (timeNode) timeNode.setAttribute('content', buildInfo.buildTime);
-}
-
-function htmlWithEmbeddedModelState(html, state) {
-  const cleaned = String(html).replace(/\n?\s*<script id="embedded-model-state" type="application\/json">[\s\S]*?<\/script>/g, '');
-  const embeddedStateScript = `\n  <script id="embedded-model-state" type="application/json">${jsonForHtmlScript(state)}</script>\n`;
-  if (cleaned.includes('</body>')) return cleaned.replace('</body>', `${embeddedStateScript}</body>`);
-  return `${cleaned}${embeddedStateScript}`;
 }
 
 function exportSelfContainedHtml() {

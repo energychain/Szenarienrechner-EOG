@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const ui = readFileSync(new URL('../src/ui.js', import.meta.url), 'utf8');
+const exportUtils = readFileSync(new URL('../src/export-utils.js', import.meta.url), 'utf8');
 
 describe('self-contained HTML export with embedded model data', () => {
   it('offers a dedicated HTML export action next to the existing JSON export', () => {
@@ -13,8 +14,9 @@ describe('self-contained HTML export with embedded model data', () => {
 
   it('embeds the current model state as application/json instead of relying on localStorage only', () => {
     expect(ui).toContain('function exportSelfContainedHtml()');
-    expect(ui).toContain('embedded-model-state');
-    expect(ui).toContain('type="application/json"');
+    expect(ui).toContain('htmlWithEmbeddedModelState');
+    expect(exportUtils).toContain('embedded-model-state');
+    expect(exportUtils).toContain('type="application/json"');
     expect(ui).toContain('collectModelState()');
     expect(ui).toContain('document.documentElement.outerHTML');
   });
