@@ -2335,6 +2335,39 @@
       white-space: nowrap;
     }
 
+    .project-role-next-heading {
+      margin: -4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .project-role-next {
+      display: grid;
+      gap: 4px;
+      margin-top: 4px;
+      padding: 8px;
+      border: 1px solid rgba(0, 111, 143, .18);
+      border-radius: 8px;
+      background: #f6fcfe;
+      font-size: 12px;
+    }
+
+    .project-role-next span {
+      color: var(--muted);
+    }
+
+    .project-role-next button {
+      justify-self: start;
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+
+    .project-role-next.done {
+      border-color: var(--line);
+      background: var(--soft);
+      color: var(--muted);
+    }
+
     .project-plan-milestone {
       border: 1px solid var(--line);
       border-radius: 12px;

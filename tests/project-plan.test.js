@@ -7,6 +7,7 @@ import {
   projectPlanEffectiveTaskStates,
   projectPlanMilestoneDate,
   projectPlanNextReadyTask,
+  projectPlanNextReadyTasksByRole,
   projectPlanRoles,
   projectPlanTaskCounts
 } from '../src/project-plan.js';
@@ -79,5 +80,20 @@ describe('project plan', () => {
     expect(states['m3-t1'].dependencyBlocked).toBe(false);
     expect(states['m3-t1'].effectiveStatus).toBe('open');
     expect(projectPlanNextReadyTask(plan).task.id).toBe('m0-t3');
+  });
+
+  it('derives the next due ready task for each role without blocked successors', () => {
+    const plan = createDefaultProjectPlan(2027);
+    findProjectPlanTask(plan, 'm0-t1').task.status = 'done';
+    findProjectPlanTask(plan, 'm1-t6').task.status = 'done';
+
+    const byRole = projectPlanNextReadyTasksByRole(plan);
+
+    expect(byRole.modellverantwortung.task.id).toBe('m0-t2');
+    expect(byRole.controlling.task.id).toBe('m0-t4');
+    expect(byRole.regulierungsmanagement.task.id).toBe('m1-t4');
+    expect(byRole.bilanzierung.task.id).toBe('m1-t5');
+    expect(byRole.assetmanagement).toBeNull();
+    expect(byRole.modellverantwortung.dueDate).toBe('2027-01-02');
   });
 });

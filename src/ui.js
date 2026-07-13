@@ -43,6 +43,7 @@ import {
   projectPlanMilestoneDate,
   projectPlanEffectiveTaskStates,
   projectPlanNextReadyTask,
+  projectPlanNextReadyTasksByRole,
   projectPlanRoles,
   projectPlanStatusLabels,
   projectPlanStatuses,
@@ -1128,16 +1129,19 @@ function renderProjectTimeline(plan) {
 
 function renderProjectRoleSwimlanes(plan) {
   const tasks = (plan.milestones || []).flatMap(milestone => (milestone.tasks || []).map(item => ({ ...item, milestoneTitle: milestone.title })));
+  const nextByRole = projectPlanNextReadyTasksByRole(plan);
   return `
     <div class="project-role-lanes" aria-label="Rollen-Swimlanes">
       ${Object.entries(projectPlanRoles).map(([roleId, label]) => {
         const roleTasks = tasks.filter(item => item.ownerRole === roleId);
         const done = roleTasks.filter(item => item.status === 'done').length;
+        const next = nextByRole[roleId];
         return `
           <section class="project-role-lane">
             <strong>${esc(label)}</strong>
             <span>${done}/${roleTasks.length} erledigt</span>
             <small>${esc(roleTasks.slice(0, 3).map(item => `${item.milestoneId.toUpperCase()} ${item.title}`).join(' · ') || 'keine Aufgabe')}</small>
+            ${next ? `<div class="project-role-next"><b>Nächste:</b> ${esc(next.milestone.id.toUpperCase())} · ${esc(next.task.title)}<span>fällig ${esc(next.dueDate)}</span><button type="button" data-project-jump="${esc(next.task.id)}">Zur Aufgabe</button></div>` : `<div class="project-role-next done"><b>Nächste:</b> keine freigegebene Aufgabe</div>`}
           </section>
         `;
       }).join('')}
@@ -1161,6 +1165,7 @@ function renderProjectPlan() {
       <div><strong>${esc(projectPlanMilestoneDate(projectPlan.baseYear, 6.5))}</strong><span>exemplarischer Gremienpunkt</span></div>
     </div>
     ${nextReady ? `<div class="project-next-task"><strong>Nächste fällige Aufgabe:</strong> ${esc(nextReady.milestone.id.toUpperCase())} · ${esc(nextReady.task.title)} <span>${esc(projectPlanRoles[nextReady.task.ownerRole] || nextReady.task.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, nextReady.milestone.plannedOffsetMonths, nextReady.task.dueOffsetDays))}</span><button type="button" data-project-jump="${esc(nextReady.task.id)}">Zur Aufgabe</button></div>` : `<div class="project-next-task done"><strong>Alle aktuell freigegebenen Aufgaben sind erledigt oder blockiert.</strong></div>`}
+    <p class="project-role-next-heading">Nächste fällige Aufgabe je Rolle steht in den Rollen-Swimlanes.</p>
     ${renderProjectTimeline(projectPlan)}
     ${renderProjectRoleSwimlanes(projectPlan)}
     <div class="project-plan-swimlanes">
