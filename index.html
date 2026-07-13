@@ -476,6 +476,35 @@
         </div>
       </section>
 
+      <section id="eogCashflowBridge" class="panel" aria-label="EOG- und Cashflow-Überleitung">
+        <div class="section-head-row">
+          <div>
+            <h2>Regulatorische EOG-Wirkung ≠ Cashflow</h2>
+            <p class="hint">Die EOG ist eine regulatorische Erlösobergrenze. IRR und Kapitalwert nutzen daraus eine indikative Cashflow-Basis und sind keine garantierten Zahlungsströme.</p>
+          </div>
+        </div>
+        <div class="bridge-grid">
+          <div class="bridge-card regulatory">
+            <div class="label">Modellierte EOG-Wirkung</div>
+            <div class="value" id="cashflowBridgeEog">-</div>
+            <p id="cashflowBridgeEogText">-</p>
+          </div>
+          <div class="bridge-operator" aria-hidden="true">+</div>
+          <div class="bridge-card economic">
+            <div class="label">wirtschaftliche Überleitung</div>
+            <div class="value" id="cashflowBridgeEconomic">-</div>
+            <p id="cashflowBridgeEconomicText">-</p>
+          </div>
+          <div class="bridge-operator" aria-hidden="true">=</div>
+          <div class="bridge-card cashflow">
+            <div class="label">indikative Cashflow-Basis</div>
+            <div class="value" id="cashflowBridgeResult">-</div>
+            <p id="cashflowBridgeResultText">-</p>
+          </div>
+        </div>
+        <p id="cashflowBridgeCaveat" class="hint bridge-caveat">-</p>
+      </section>
+
       <section class="panel" aria-label="Meeting-Fokus">
         <h2>Meeting-Fokus</h2>
         <div class="focus-tabs" aria-label="Gesprächsansicht">
