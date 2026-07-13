@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Validierungsmethodik · Szenarienrechner-EOG</title>
+  <style>
+    :root { color-scheme: light; --ink: #102033; --muted: #5b6b7f; --line: #d8e1ec; --brand: #007ea7; --soft: #eef8fb; --paper: #ffffff; --bg: #f4f7fa; --warn: #fff7ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.65; }
+    header { background: rgba(255, 255, 255, 0.94); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1; display: flex; gap: 1rem; justify-content: space-between; align-items: center; }
+    header a, header button { color: var(--brand); font-weight: 700; text-decoration: none; }
+    header button { border: 1px solid #8ac6da; background: var(--soft); border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font: inherit; }
+    main { max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    article { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1.25rem, 2vw, 2.5rem); box-shadow: 0 18px 40px rgba(16, 32, 51, 0.08); }
+    h1 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -0.035em; }
+    h2 { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 2rem; font-size: clamp(1.45rem, 2.5vw, 2.1rem); break-after: avoid; }
+    h3 { margin-top: 1.8rem; break-after: avoid; }
+    h1 + p, h2 + p { color: var(--muted); }
+    a { color: var(--brand); }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.96rem; break-inside: avoid; }
+    th, td { border: 1px solid var(--line); padding: 0.75rem; vertical-align: top; }
+    th { background: #edf4f8; text-align: left; }
+    code { background: #edf2f7; border-radius: 0.3rem; padding: 0.1rem 0.3rem; }
+    blockquote { border-left: 4px solid var(--brand); margin: 1.25rem 0; padding: 0.2rem 1rem; background: var(--soft); }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+    footer { color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem; text-align: center; }
+    @page { size: A4; margin: 15mm 13mm 17mm; }
+    @media print {
+      :root { --ink: #111827; --muted: #374151; --line: #b8c2ce; --paper: #ffffff; --bg: #ffffff; --brand: #004f68; --soft: #ffffff; }
+      body { background: #ffffff; font-size: 10.8pt; line-height: 1.48; }
+      header { position: static; border: 0; padding: 0 0 8mm; }
+      header button { display: none; }
+      main { max-width: none; padding: 0; }
+      article { border: 0; border-radius: 0; box-shadow: none; padding: 0; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; margin-top: 12mm; padding-top: 7mm; break-after: avoid; }
+      h3, p, li, table { orphans: 3; widows: 3; }
+      table, tr, blockquote { break-inside: avoid; page-break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+      footer { border-top: 1px solid var(--line); padding-top: 4mm; }
+    }
+  </style>
+</head>
+<body>
+  <header><a href="index.html">← Zur Übersicht</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
+  <main>
+    <article>
+<h1>TRL-6-Validierung: real-but-private Benchmarkfall</h1>
+<p>Der Szenarienrechner-EOG ist technisch als deterministischer TRL-5-Prototyp belastbar. Der Sprung zu TRL 6 entsteht nicht durch weitere UI-Funktionen, sondern durch einen kontrollierten Abgleich mit einer realen regulierten Sparte. Diese Seite beschreibt den Prozess, ohne vertrauliche Daten in das öffentliche Repository zu bringen.</p>
+<h2>Ziel der Validierung</h2>
+<p>Die Validierung beantwortet drei Fragen:</p>
+<p>1. Bildet das Modell die interne Finanzplanungslogik eines kleinen oder mittleren VNB nachvollziehbar ab?</p>
+<p>2. Sind Abweichungen gegenüber Wirtschaftsplan, EOG-Bescheid, Kostenprüfung oder internen Regulierungsunterlagen erklärbar?</p>
+<p>3. Welche Modellgrenzen müssen vor produktiver Nutzung fachlich freigegeben oder bewusst als Vereinfachung akzeptiert werden?</p>
+<p>Das Ergebnis ist keine regulatorische Anerkennungsprognose. Es ist ein fachliches Prüfprotokoll zur Eignung des Werkzeugs als Entscheidungs- und Strukturierungshilfe.</p>
+<h2>Grundsatz: privat rechnen, öffentlich nur Methodik zeigen</h2>
+<p>Kurzregel: keine vertraulichen Daten im öffentlichen Repository, keine realen Netzbetreiberbezüge in Beispielen und keine Veröffentlichung interner Bescheid-, Kostenprüfungs- oder Wirtschaftsplandetails.</p>
+<p>Für den Benchmarkfall werden echte Daten ausschließlich lokal oder in einem geschützten Arbeitsraum verarbeitet. Im öffentlichen Repository landen nur:</p>
+<ul>
+<li>die Validierungsmethodik,</li>
+<li>anonymisierte Abweichungstypen,</li>
+<li>generische Lessons Learned,</li>
+<li>gegebenenfalls synthetische Nachbildungsfälle.</li>
+</ul>
+<p>Nicht veröffentlicht werden:</p>
+<ul>
+<li>Name des Netzbetreibers,</li>
+<li>echte EOG-, Kostenprüfungs- oder Wirtschaftsplandaten,</li>
+<li>interne Projektlisten,</li>
+<li>Bescheidinhalte, soweit nicht ohnehin öffentlich,</li>
+<li>vertrauliche Annahmen, Preise, Mengen, Zustandsdaten oder Gremienunterlagen.</li>
+</ul>
+<h2>Benötigte Unterlagen</h2>
+<table><thead><tr>
+<th>Unterlage</th>
+<th>Typischer Lieferant</th>
+<th>Nutzung im Benchmark</th>
+<th>Veröffentlichung</th>
+</tr></thead><tbody>
+<tr>
+<td>Wirtschaftsplan / Investitionsplan</td>
+<td>Controlling</td>
+<td>Budget-, CAPEX-/OPEX- und Zeitlogik prüfen</td>
+<td>nein</td>
+</tr>
+<tr>
+<td>Maßnahmenliste / Projektsteckbriefe</td>
+<td>Asset Management / Technik</td>
+<td>Maßnahmenstruktur, Startjahr, Lebensdauer, Risiken</td>
+<td>nur synthetisch</td>
+</tr>
+<tr>
+<td>Anlagenbuchhaltung / AfA-Informationen</td>
+<td>Anlagenbuchhaltung</td>
+<td>Aktivierung, Nutzungsdauer, HGB-Brücke</td>
+<td>nein</td>
+</tr>
+<tr>
+<td>EOG-Bescheid / Regulierungsdaten</td>
+<td>Regulierungsmanagement</td>
+<td>Erlösobergrenze, Kapitalbasis, Verfahren, Periodenlogik</td>
+<td>nein</td>
+</tr>
+<tr>
+<td>Kostenprüfung / interne Regulierungsunterlagen</td>
+<td>Regulierungsmanagement</td>
+<td>Anerkennungslogik und Abweichungsanalyse</td>
+<td>nein</td>
+</tr>
+<tr>
+<td>Finanzierungsannahmen</td>
+<td>Finanzen / Treasury</td>
+<td>FK-Zins, Diskontsatz, Renditeschwelle</td>
+<td>aggregiert möglich</td>
+</tr>
+<tr>
+<td>Gremienkalender und Beschlusslogik</td>
+<td>Geschäftsführung / Sekretariat</td>
+<td>Entscheidungsvorlage, Fristen, Freigaben</td>
+<td>generisch</td>
+</tr>
+</tbody></table>
+<h2>Validierungsschritte</h2>
+<h3>1. Scope festlegen</h3>
+<p>Eine Sparte wird ausgewählt: Strom oder Gas. Der Benchmark sollte zunächst bewusst klein sein, zum Beispiel ein Maßnahmencluster oder eine Budgetrunde, nicht das gesamte Unternehmen.</p>
+<p>Zu dokumentieren:</p>
+<ul>
+<li>Sparte und Regulierungsverfahren,</li>
+<li>Bezugsjahr und relevante Regulierungsperiode,</li>
+<li>Umfang der Maßnahmen,</li>
+<li>verwendeter Modellstand mit Build-Commit,</li>
+<li>Verantwortliche Rollen.</li>
+</ul>
+<h3>2. Daten in das Modell übertragen</h3>
+<p>Die Eingaben werden aus den vertraulichen Unterlagen in ein lokales Modell überführt. Jede Annahme erhält eine Herkunft:</p>
+<ul>
+<li>belegt,</li>
+<li>Annahme,</li>
+<li>prüfpflichtig,</li>
+<li>bewusst ausgeschlossen.</li>
+</ul>
+<p>Unklare Werte werden nicht geschätzt, um eine grüne Ampel zu erreichen. Sie bleiben Klärpunkte.</p>
+<h3>3. Vergleichsgrößen definieren</h3>
+<p>Mindestens zu vergleichen sind:</p>
+<ul>
+<li>Investitionssumme und aktivierbarer Anteil,</li>
+<li>HGB-/AfA-Sicht,</li>
+<li>modellierte regulatorische EOG-Wirkung,</li>
+<li>indikative Cashflow- und Kapitalwertsicht,</li>
+<li>laufende Wirkung vs. Einmaleffekte,</li>
+<li>konservatives Urteil ohne prüfpflichtige Wirkannahmen.</li>
+</ul>
+<p>Optional:</p>
+<ul>
+<li>Tarif-/Jahresarbeitswirkung,</li>
+<li>Reinvestitions-/Rückbauszenario,</li>
+<li>Portfolio-Attribution und Doppelzählungswarnungen.</li>
+</ul>
+<h3>4. Abweichungen klassifizieren</h3>
+<p>Abweichungen werden nicht sofort als Fehler bewertet. Sie werden einer Ursache zugeordnet:</p>
+<table><thead><tr>
+<th>Abweichungstyp</th>
+<th>Beschreibung</th>
+<th>Folgerung</th>
+</tr></thead><tbody>
+<tr>
+<td>Datenqualität</td>
+<td>Wert fehlt, ist veraltet oder uneinheitlich</td>
+<td>Klärpunkt oder Datenanforderung</td>
+</tr>
+<tr>
+<td>Modellgrenze</td>
+<td>App vereinfacht bewusst</td>
+<td>dokumentieren oder Advanced-Modus bauen</td>
+</tr>
+<tr>
+<td>Timing</td>
+<td>Verzug zwischen Planung, Regulierung und Wirkung</td>
+<td>Wirkungsverzug prüfen</td>
+</tr>
+<tr>
+<td>Anerkennungslogik</td>
+<td>fachliche/regulatorische Spezialfrage</td>
+<td>fachliche Freigabe erforderlich</td>
+</tr>
+<tr>
+<td>Governance</td>
+<td>Annahme trägt Ergebnis, ist aber nicht belegt</td>
+<td>gelbe Auflage, nicht grün</td>
+</tr>
+</tbody></table>
+<h3>5. Fachliche Freigabe</h3>
+<p>Mindestens diese Rollen sollten das Protokoll prüfen:</p>
+<ul>
+<li>Controlling für Wirtschaftsplan-/Budgetlogik,</li>
+<li>Regulierungsmanagement für EOG-/Anerkennungslogik,</li>
+<li>Anlagenbuchhaltung für Aktivierung und Nutzungsdauer,</li>
+<li>Asset Management für technische Plausibilität,</li>
+<li>Management oder Projektsteuerung für Entscheidungsreife.</li>
+</ul>
+<p>Eine fachliche Freigabe bedeutet nicht, dass die App eine Rechtsberatung ersetzt. Sie bedeutet: Die verwendete Modellkonvention ist für diesen Benchmark transparent, nachvollziehbar und als Entscheidungsgrundlage geeignet oder mit Einschränkungen geeignet.</p>
+<h2>Ergebnisformat</h2>
+<p>Das Ergebnis sollte in einem Validierungsprotokoll festgehalten werden. Die Vorlage liegt unter <code>docs/templates/validation-protocol.md</code>.</p>
+<p>Mögliche Abschlussurteile:</p>
+<ul>
+<li>geeignet für strukturierte Entscheidungsunterstützung,</li>
+<li>eingeschränkt geeignet mit dokumentierten Modellgrenzen,</li>
+<li>nicht geeignet ohne weitere Modellanpassungen,</li>
+<li>fachliche Freigabe offen.</li>
+</ul>
+<h2>Öffentliche Kommunikation</h2>
+<p>Öffentlich kommunizierbar ist nur die Methodik und eine anonymisierte Reifegrad-Aussage, zum Beispiel:</p>
+<p>&gt; Das Modell wurde gegen einen real-but-private Benchmarkfall geprüft. Abweichungen wurden nach Datenqualität, Timing, Modellgrenze und Anerkennungslogik klassifiziert. Vertrauliche Daten wurden nicht veröffentlicht.</p>
+<p>Nicht öffentlich kommunizierbar sind konkrete Zahlen, echte Maßnahmen, Bescheiddetails oder interne Entscheidungen.</p>
+    </article>
+    <footer>Szenarienrechner-EOG · Orientierung und Methodik · Apache-2.0</footer>
+  </main>
+</body>
+</html>

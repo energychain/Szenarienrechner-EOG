@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vorlage Validierungsprotokoll · Szenarienrechner-EOG</title>
+  <style>
+    :root { color-scheme: light; --ink: #102033; --muted: #5b6b7f; --line: #d8e1ec; --brand: #007ea7; --soft: #eef8fb; --paper: #ffffff; --bg: #f4f7fa; --warn: #fff7ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.65; }
+    header { background: rgba(255, 255, 255, 0.94); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1; display: flex; gap: 1rem; justify-content: space-between; align-items: center; }
+    header a, header button { color: var(--brand); font-weight: 700; text-decoration: none; }
+    header button { border: 1px solid #8ac6da; background: var(--soft); border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font: inherit; }
+    main { max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    article { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1.25rem, 2vw, 2.5rem); box-shadow: 0 18px 40px rgba(16, 32, 51, 0.08); }
+    h1 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -0.035em; }
+    h2 { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 2rem; font-size: clamp(1.45rem, 2.5vw, 2.1rem); break-after: avoid; }
+    h3 { margin-top: 1.8rem; break-after: avoid; }
+    h1 + p, h2 + p { color: var(--muted); }
+    a { color: var(--brand); }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.96rem; break-inside: avoid; }
+    th, td { border: 1px solid var(--line); padding: 0.75rem; vertical-align: top; }
+    th { background: #edf4f8; text-align: left; }
+    code { background: #edf2f7; border-radius: 0.3rem; padding: 0.1rem 0.3rem; }
+    blockquote { border-left: 4px solid var(--brand); margin: 1.25rem 0; padding: 0.2rem 1rem; background: var(--soft); }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+    footer { color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem; text-align: center; }
+    @page { size: A4; margin: 15mm 13mm 17mm; }
+    @media print {
+      :root { --ink: #111827; --muted: #374151; --line: #b8c2ce; --paper: #ffffff; --bg: #ffffff; --brand: #004f68; --soft: #ffffff; }
+      body { background: #ffffff; font-size: 10.8pt; line-height: 1.48; }
+      header { position: static; border: 0; padding: 0 0 8mm; }
+      header button { display: none; }
+      main { max-width: none; padding: 0; }
+      article { border: 0; border-radius: 0; box-shadow: none; padding: 0; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; margin-top: 12mm; padding-top: 7mm; break-after: avoid; }
+      h3, p, li, table { orphans: 3; widows: 3; }
+      table, tr, blockquote { break-inside: avoid; page-break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+      footer { border-top: 1px solid var(--line); padding-top: 4mm; }
+    }
+  </style>
+</head>
+<body>
+  <header><a href="../index.html">← Zur Übersicht</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
+  <main>
+    <article>
+<h1>Validierungsprotokoll für regulierte Sparten-Benchmark</h1>
+<p>Diese Vorlage dient der nicht-öffentlichen Validierung eines realen Benchmarkfalls. Sie darf mit echten Daten nur in geschützten Arbeitsräumen genutzt werden. Für das öffentliche Repository sind nur anonymisierte Erkenntnisse oder synthetische Nachbildungen geeignet.</p>
+<h2>1. Provenienz</h2>
+<table><thead><tr>
+<th>Feld</th>
+<th>Eintrag</th>
+</tr></thead><tbody>
+<tr>
+<td>App-Build-Commit</td>
+<td></td>
+</tr>
+<tr>
+<td>App-Build-Zeit</td>
+<td></td>
+</tr>
+<tr>
+<td>Modellversion</td>
+<td></td>
+</tr>
+<tr>
+<td>Bearbeitungsdatum</td>
+<td></td>
+</tr>
+<tr>
+<td>Verantwortliche Modellpflege</td>
+<td></td>
+</tr>
+<tr>
+<td>Prüfumfang</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2>2. Benchmark-Scope</h2>
+<table><thead><tr>
+<th>Feld</th>
+<th>Eintrag</th>
+</tr></thead><tbody>
+<tr>
+<td>Sparte</td>
+<td>Strom / Gas</td>
+</tr>
+<tr>
+<td>Regulierungsverfahren</td>
+<td>Standard / vereinfachtes Verfahren</td>
+</tr>
+<tr>
+<td>Bezugsjahr</td>
+<td></td>
+</tr>
+<tr>
+<td>Regulierungsperiode</td>
+<td></td>
+</tr>
+<tr>
+<td>Maßnahmenumfang</td>
+<td></td>
+</tr>
+<tr>
+<td>Vergleichsunterlagen</td>
+<td>Wirtschaftsplan / EOG-Bescheid / Kostenprüfung / interne Regulierungsunterlagen</td>
+</tr>
+</tbody></table>
+<h2>3. Datenquellen und Vertraulichkeit</h2>
+<table><thead><tr>
+<th>Quelle</th>
+<th>Eigentümer/Rolle</th>
+<th>Verwendungszweck</th>
+<th>Öffentlich verwendbar?</th>
+</tr></thead><tbody>
+<tr>
+<td>Wirtschaftsplan</td>
+<td></td>
+<td>Budget, CAPEX/OPEX, Fristen</td>
+<td>nein</td>
+</tr>
+<tr>
+<td>EOG-Bescheid</td>
+<td></td>
+<td>regulatorischer Abgleich</td>
+<td>nein</td>
+</tr>
+<tr>
+<td>Maßnahmenliste</td>
+<td></td>
+<td>Modellbefüllung</td>
+<td>nur synthetisch</td>
+</tr>
+<tr>
+<td>Anlagenbuchhaltung</td>
+<td></td>
+<td>Aktivierung, AfA</td>
+<td>nein</td>
+</tr>
+<tr>
+<td>Finanzierungsannahmen</td>
+<td></td>
+<td>FK-Zins, Diskontsatz</td>
+<td>aggregiert möglich</td>
+</tr>
+</tbody></table>
+<h2>4. Modellübertragung</h2>
+<table><thead><tr>
+<th>Bereich</th>
+<th>Status</th>
+<th>Klärpunkt</th>
+</tr></thead><tbody>
+<tr>
+<td>Maßnahmen vollständig übertragen</td>
+<td>offen / teilweise / ja</td>
+<td></td>
+</tr>
+<tr>
+<td>Aktivierbarkeit begründet</td>
+<td>offen / teilweise / ja</td>
+<td></td>
+</tr>
+<tr>
+<td>Nutzungsdauer / AfA plausibilisiert</td>
+<td>offen / teilweise / ja</td>
+<td></td>
+</tr>
+<tr>
+<td>Wirkannahmen mit Evidenz versehen</td>
+<td>offen / teilweise / ja</td>
+<td></td>
+</tr>
+<tr>
+<td>Wirkungsverzüge geprüft</td>
+<td>offen / teilweise / ja</td>
+<td></td>
+</tr>
+<tr>
+<td>Reinvestitionslogik geprüft</td>
+<td>offen / teilweise / ja</td>
+<td></td>
+</tr>
+<tr>
+<td>Doppelzählungswarnungen bearbeitet</td>
+<td>offen / teilweise / ja</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2>5. Numerischer Abgleich</h2>
+<table><thead><tr>
+<th>Vergleichsgröße</th>
+<th>App-Modell</th>
+<th>Referenz / Erwartung</th>
+<th>Abweichung</th>
+<th>Einordnung</th>
+</tr></thead><tbody>
+<tr>
+<td>Investition</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>aktivierbarer Anteil</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>laufende regulatorische EOG-Wirkung</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Einmaleffekte</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>indikative Cashflow-Basis</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Kapitalwert</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>IRR/MIRR</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>konservatives Urteil</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h2>6. Abweichungsanalyse</h2>
+<table><thead><tr>
+<th>Abweichung</th>
+<th>Typ</th>
+<th>Fachliche Bewertung</th>
+<th>Maßnahme</th>
+</tr></thead><tbody>
+<tr>
+<td></td>
+<td>Datenqualität / Modellgrenze / Timing / Anerkennungslogik / Governance</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h2>7. Freigaben</h2>
+<p>Pflichtfeld: Freigabe Regulierungsmanagement muss ausdrücklich als offen, freigegeben oder mit Auflage dokumentiert werden.</p>
+<table><thead><tr>
+<th>Rolle</th>
+<th>Name / Funktion</th>
+<th>Ergebnis</th>
+<th>Datum</th>
+</tr></thead><tbody>
+<tr>
+<td>Controlling</td>
+<td></td>
+<td>offen / freigegeben / mit Auflage</td>
+<td></td>
+</tr>
+<tr>
+<td>Regulierungsmanagement</td>
+<td></td>
+<td>offen / freigegeben / mit Auflage</td>
+<td></td>
+</tr>
+<tr>
+<td>Anlagenbuchhaltung</td>
+<td></td>
+<td>offen / freigegeben / mit Auflage</td>
+<td></td>
+</tr>
+<tr>
+<td>Asset Management / Technik</td>
+<td></td>
+<td>offen / freigegeben / mit Auflage</td>
+<td></td>
+</tr>
+<tr>
+<td>Management / Projektsteuerung</td>
+<td></td>
+<td>offen / freigegeben / mit Auflage</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2>8. Abschlussurteil</h2>
+<p>Bitte genau eine Option markieren:</p>
+<ul>
+<li>geeignet für strukturierte Entscheidungsunterstützung</li>
+<li>eingeschränkt geeignet mit dokumentierten Modellgrenzen</li>
+<li>nicht geeignet ohne weitere Modellanpassungen</li>
+<li>fachliche Freigabe offen</li>
+</ul>
+<h2>9. Öffentliche Ableitung</h2>
+<p>Welche Erkenntnisse dürfen als synthetische oder anonymisierte Lessons Learned in die öffentliche Dokumentation einfließen?</p>
+<p>-</p>
+<p>-</p>
+<p>-</p>
+<p>Bestätigung: Dieses Protokoll enthält im öffentlichen Zustand keine vertraulichen Daten, keine realen Netzbetreiberbezüge und keine internen Bescheid-/Kostenprüfungsinhalte.</p>
+    </article>
+    <footer>Szenarienrechner-EOG · Orientierung und Methodik · Apache-2.0</footer>
+  </main>
+</body>
+</html>
