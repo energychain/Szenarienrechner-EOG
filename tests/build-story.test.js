@@ -28,6 +28,12 @@ describe('story HTML rendering', () => {
     expect(body).not.toContain('loading="lazy"');
   });
 
+  it('turns bare public source URLs into clickable links in the rendered story', () => {
+    const body = renderMarkdown('| Quelle | Link |\n| --- | --- |\n| BNetzA | Bundesnetzagentur: https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Netzentgelte/Anreizregulierung/start.html |');
+
+    expect(body).toContain('<a href="https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Netzentgelte/Anreizregulierung/start.html">https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Netzentgelte/Anreizregulierung/start.html</a>');
+  });
+
   it('keeps the published story positioned as VNB financial planning rather than a pure EOG calculator', () => {
     const story = readFileSync('docs/story/planungsrunde-userstory.md', 'utf8');
 
