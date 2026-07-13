@@ -1,12 +1,169 @@
 # Szenarienrechner-EOG
 
-Portfolio-App fuer regulierte Sparten: Basisdaten der Sparte, geplante Massnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.
+Offline-first Open-Source-Werkzeug für regulierte Finanzplanung in Strom- und Gasverteilnetzen.
 
-Die App ist ein generisches Open-Source-Werkzeug. Demodaten, Namen, Annahmen und Gremientexte sind synthetisch und duerfen nicht als Referenz auf reale Netzbetreiber, Projekte oder interne Unterlagen gelesen werden.
+Der Szenarienrechner-EOG unterstützt kleine und mittlere Stadtwerke, EVUs und Verteilnetzbetreiber dabei, Maßnahmenportfolios strukturiert vorzubereiten: Budget, Aktivierung, HGB-/Controlling-Sicht, regulatorische EOG-Wirkung, Finanzierung, Annahmenqualität, Klärpunkte, Projektplan und Gremienvorlage werden in einem wiederaufnahmefähigen Arbeitsstand zusammengeführt.
 
-## Projektstatus
+Die App ist kein reiner EOG-Rechner. Sie ist ein geführter Arbeitsraum für regulierte Spartenplanung: technische Maßnahmen werden in finanzielle, regulatorische und entscheidungsfähige Sprache übersetzt, ohne dass sensible Planungsdaten an einen Server übertragen werden.
 
-Szenarienrechner-EOG ist ein offline-first Public-OSS-Projekt. Die naechsten Ausbauschritte stehen in `ROADMAP.md`. Beitraege folgen `CONTRIBUTING.md`; Sicherheits- und Vertrauensannahmen stehen in `SECURITY.md`.
+## Direkt ausprobieren
+
+- Live-App: https://energychain.github.io/Szenarienrechner-EOG/
+- User-Story als HTML/PDF-Handout: https://energychain.github.io/Szenarienrechner-EOG/story/planungsrunde-userstory.html
+- Methodik & Vorlagen: https://energychain.github.io/Szenarienrechner-EOG/docs/index.html
+- Methodikhandbuch: https://energychain.github.io/Szenarienrechner-EOG/docs/handbook/regulierte-finanzplanung-vnb.html
+- Projektplan-Dokumentation: https://energychain.github.io/Szenarienrechner-EOG/docs/project-plan.html
+- Starter-Kits: https://energychain.github.io/Szenarienrechner-EOG/docs/starter-kits/index.html
+- Aktualitäts- und Supportkonzept: https://energychain.github.io/Szenarienrechner-EOG/docs/release-awareness.html
+
+Die Live-App läuft clientseitig im Browser. Für sensible Arbeitsstände ist die empfohlene Nutzung weiterhin: Offline-HTML herunterladen oder über „HTML mit Daten speichern“ eine eigenständige Datei mit eingebettetem Arbeitsstand erzeugen.
+
+## Für wen ist das gedacht?
+
+Primäre Zielgruppen:
+
+- Stadtwerke und Verteilnetzbetreiber mit regulierten Strom- und Gas-Sparten
+- Controlling, Regulierungsmanagement, Asset Management, Anlagenbuchhaltung und Management/Gremienvorbereitung
+- Beraterinnen, Berater und Forschungseinrichtungen, die regulierte Finanzplanung strukturieren oder validieren wollen
+- Open-Source- und Energie-Communities, die transparente Werkzeuge für Netz- und Spartenplanung weiterentwickeln möchten
+
+Typische Fragen, die die App strukturiert:
+
+- Welche Maßnahmen gehören in den Wirtschaftsplan?
+- Was ist CAPEX, was OPEX, was ist aktivierungsfähig?
+- Welche Wirkung ist regulatorisch, welche wirtschaftlich, welche nur indikativ?
+- Welche Annahmen sind belegt, welche prüfpflichtig, welche offen?
+- Trägt ein Maßnahmenportfolio auch konservativ oder nur mit weichen Wirkannahmen?
+- Welche Unterlagen, Klärpunkte und Rollen braucht eine entscheidungsreife Vorlage?
+
+## Was die App kann
+
+- Strom- und Gasmaßnahmen mit synthetischen oder eigenen Daten modellieren
+- laufende EOG-Wirkung, Startjahr-Effekte und Einmaleffekte getrennt darstellen
+- regulatorische EOG-Wirkung und indikative Cashflow-/IRR-/MIRR-Sicht trennen
+- konservatives Urteil ohne prüfpflichtige Annahmen anzeigen
+- „Robust tragfähig“, „Tragfähig mit Auflage“, „Nicht tragfähig“ und „Nicht entscheidungsreif“ unterscheiden
+- MIRR statt uneindeutiger IRR nutzen, wenn Cashflows mehrere Vorzeichenwechsel haben
+- Q-/Effizienz-Doppelzählungen als Klärpunkt sichtbar machen
+- Wirkungsverzüge für CAPEX/OPEX/QE modellieren
+- Reinvestitionen wahlweise vereinfacht oder als neuen Anlagenzugang modellieren
+- optional ein erweitertes Kapitalkostenmodell mit EK/FK-Split und Abzugskapital nutzen
+- Herleitungshelfer für CAPEX/OPEX, Risiko, Q-Wirkung, Nutzungsdauer/AfA und Finanzierungsspread anbieten
+- Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten, eigenen Aufgaben und nächster fälliger Aufgabe führen
+- Reports, Gremienvorlagen, Validierungsprotokolle und Starter-Kits als HTML/PDF-fähige Artefakte bereitstellen
+- App- und Ruleset-Aktualität nach expliziter Zustimmung prüfen
+- Feedback oder Regulierungsupdates über GitHub-Issue-Formulare vorbereiten, ohne Modelldaten automatisch zu übertragen
+
+## Was die App bewusst nicht tut
+
+- keine Rechts-, Steuer-, Wirtschaftsprüfungs- oder Regulierungsberatung
+- keine Anerkennungszusage für konkrete regulatorische Ansätze
+- keine automatische Bescheidinterpretation
+- keine Telemetrie, kein Tracking, keine Cookies
+- keine automatische Datenübertragung beim Start oder Rechnen
+- kein Ersatz für fachliche Prüfung, Unternehmensfreigabe oder regulatorische Abnahme
+
+Die App ist ein Strukturierungs-, Plausibilisierungs- und Dokumentationswerkzeug. Produktive Entscheidungen müssen gegen aktuelle Rechtsstände, Festlegungen, Bescheide, Kostenprüfungen und interne Freigaben geprüft werden.
+
+## Pilotstatus und Reifegrad
+
+Der aktuelle Stand ist für eine kontrollierte breite Pilotnutzung geeignet: technisch lauffähig, offline verteilbar, deterministisch getestet und mit Governance-/Provenienzmechanismen ausgestattet.
+
+Ein produktiver TRL-6-Nachweis erfordert weiterhin eine reale, nicht öffentliche Validierung gegen Wirtschaftsplan, EOG-/Regulierungsunterlagen und fachliche Freigabe durch Regulierungsmanagement. Dafür gibt es Methodik und Vorlage:
+
+- Validierungsmethodik: https://energychain.github.io/Szenarienrechner-EOG/docs/validation-methodology.html
+- Validierungsprotokoll: https://energychain.github.io/Szenarienrechner-EOG/docs/templates/validation-protocol.html
+
+## Empfohlener 30-Minuten-Selbsttest
+
+1. Live-App öffnen oder Offline-HTML nutzen.
+2. „Demodaten ansehen“ laden.
+3. Projektplan öffnen und die Rollen-/Meilensteinstruktur prüfen.
+4. In der Entscheidungsansicht die Governance-Ampel lesen.
+5. EOG-/Cashflow-Überleitung und EOG-Zerlegung ansehen.
+6. „HTML mit Daten speichern“ testen und die erzeugte Datei erneut öffnen.
+7. Optional „Aktualität prüfen“ ausführen und bestätigen, dass keine Modelldaten übertragen werden.
+8. Feedback über GitHub Issue oder Support-Paket vorbereiten.
+
+## Pilot-Feedback erwünscht
+
+Gesucht wird fachliches Feedback von EVUs, VNBs, Stadtwerken, Forschung, Beratung und Open-Source-Energie-Communities.
+
+Besonders wertvoll sind Rückmeldungen zu:
+
+- Verständlichkeit der Finanz-/Regulatorik-Narrative
+- Modellgrenzen, Begrifflichkeiten und fachlichen Annahmen
+- Nutzbarkeit der Projektplan- und Gremienlogik
+- Eignung der Starter-Kits und Vorlagen für reale Planungsrunden
+- fehlenden Regulierungsparametern oder geänderten Rulesets
+- Validierung gegen reale, aber nicht öffentliche Fälle
+
+Bitte keine vertraulichen Netz-, Bescheid-, Projekt- oder Unternehmensdaten in öffentliche Issues posten. Für Support ohne Modelldaten gibt es die In-App-Aktion „Support-Paket exportieren“.
+
+## Offline-Verteilung
+
+Die Datei kommt zum Nutzer, nicht der Nutzer zur URL. Die Anwendung wird als einzelne HTML-Datei verteilt und per Doppelklick lokal im Browser geöffnet.
+
+```bash
+npm ci
+npm run build:release
+```
+
+Wichtigste Artefakte:
+
+- `dist/szenarienrechner-eog.html`: offline lauffähige Single-File-App
+- `dist/index.html`: technisches Vite-Buildartefakt
+- `dist/release-manifest.json`: Manifest mit App-/Ruleset-Stand und SHA-256
+- `dist/story/planungsrunde-userstory.html`: User-Story als HTML/PDF-Handout
+- `dist/docs/index.html`: Einstieg in Methodik, Vorlagen, Starter-Kits und Lernpfade
+
+In der App selbst:
+
+- „Daten herunterladen“ erzeugt ein separates JSON-Modell.
+- „HTML mit Daten speichern“ erzeugt eine weitergabefähige Single-File-App mit eingebettetem Modellstand.
+- Beim Öffnen einer HTML-mit-Daten-Datei wird der eingebettete Stand vor eventuell vorhandenen Browserdaten geladen.
+- „Browserdaten löschen“ entfernt lokal gespeicherte Modelle aus dem Browserprofil.
+
+## Datensouveränität und Aktualität
+
+- Kein automatischer Netzzugriff beim Start, Rechnen, Importieren oder Exportieren.
+- Keine externen Skripte, Fonts, Styles oder Bilder.
+- Speicherung erfolgt lokal im Browserprofil (`localStorage`) und über manuelle Exporte.
+- `connect-src` erlaubt nur den bewusst ausgelösten Abruf von `https://energychain.github.io` für `release-manifest.json`.
+- „Aktualität prüfen“ liest nach Bestätigung nur das öffentliche Manifest und überträgt keine Modelldaten.
+- „Feedback / Support melden“ öffnet ein vorbefülltes GitHub-Issue; der Nutzer sieht und sendet es selbst.
+- „Support-Paket exportieren“ enthält nur nicht-sensitive Metadaten, keine Maßnahmenwerte.
+
+IT-Prüfung:
+
+```bash
+npm ci
+npm run build:release
+npm run test:distribution
+sha256sum dist/szenarienrechner-eog.html
+```
+
+## Dokumentation und Ökosystem
+
+Zentrale Projektdokumente:
+
+- `docs/ecosystem/index.md`: Übersicht zum Beratungs-/Methodik-Ökosystem
+- `docs/story/planungsrunde-userstory.md`: fiktive mehrmonatige Planungsrunde als User-Story
+- `docs/project-plan.md`: Projektplan-Ansicht mit Meilensteinen, Rollen, Abhängigkeiten und eigenen Aufgaben
+- `docs/release-awareness.md`: Aktualitäts-Erkennung, Ruleset-Konfidenz und GitHub-Support
+- `docs/handbook/regulierte-finanzplanung-vnb.md`: Methodikhandbuch
+- `docs/regulatory-map.md`: öffentliche Quellen und Einordnung zu Strom/Gas-Regulatorik
+- `docs/templates/`: Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung, Workshopagenda, Validierungsprotokoll
+- `docs/starter-kits/`: Strom-Ortsnetz, Gas-Transformation, Spartenportfolio
+- `docs/guides/`: rollenbasierte Lernpfade
+- `docs/examples/`: synthetische Fallstudien
+- `MODEL.md`: Modellüberblick und Rechenkontext
+- `REGULATORY_ASSUMPTIONS.md`: regulatorische Annahmen und Grenzen
+- `DATA_FORMAT.md`: lokaler Speicher, JSON-Export, HTML-mit-Daten und Migration
+- `GOVERNANCE.md`: Maintainer-, Review- und Neutralitätsregeln
+- `RELEASE.md`: Build- und Release-Prozess
+- `CHANGELOG.md`: Änderungshistorie
+- `docs/adr/`: Architekturentscheidungen
 
 ## Entwicklung
 
@@ -15,9 +172,9 @@ npm ci
 npm run dev
 ```
 
-Der Rechenkern liegt DOM-frei in `src/engine.js`, die UI in `src/ui.js`, das Styling in `src/styles.css`.
+Der Rechenkern liegt DOM-frei in `src/engine.js`. Regulatorische Parametersätze liegen versioniert unter `src/rulesets/`. UI-Helfer, Demo-Daten, Projektplan, Story-Navigation, Export- und Release-Awareness-Logik sind schrittweise modularisiert.
 
-## Qualitaetssicherung
+Qualitätssicherung:
 
 ```bash
 npm run lint
@@ -28,69 +185,9 @@ npm run test:distribution
 npm run test:docs
 ```
 
-## Auslieferung
-
-```bash
-npm run build:release
-```
-
-`dist/szenarienrechner-eog.html` ist das offline lauffaehige Single-File-Deliverable. `dist/index.html` bleibt das technische Vite-Buildartefakt. Details stehen in `RELEASE.md`.
-
-Optional stellt GitHub Pages den aktuellen `main`-Stand als statische Browser-Version bereit:
-
-- https://energychain.github.io/Szenarienrechner-EOG/
-
-Auch diese Variante bleibt clientseitig: Die HTML-Datei wird von GitHub Pages geladen, danach erfolgen keine fachlichen Server-Uploads und keine Telemetrie. Nur die explizite Aktion `Aktualität prüfen` liest nach Bestätigung die öffentliche `release-manifest.json`; Support-Issues werden nur nach Nutzeraktion im Browser geöffnet. Sensible Planungsdaten sollten weiterhin bevorzugt ueber lokale Offline-Dateien und manuelle JSON- oder HTML-mit-Daten-Exporte bearbeitet werden.
-
 ## Lizenz
 
 Der Code steht unter Apache License 2.0, siehe `LICENSE`. App-Footer, Repository-Lizenz und Dokumentation verwenden dieselbe Lizenzangabe.
-
-## Fachliche Annahmen und Grenzen
-
-Der Rechner bildet ein generisches Planungsmodell fuer regulierte Sparten ab. Er ersetzt keine Rechts-, Steuer-, Wirtschaftspruefungs- oder Regulierungsberatung. Regulatorische Parameter, Periodenlogik und Modellgrenzen sind in `REGULATORY_ASSUMPTIONS.md` dokumentiert und muessen vor produktiven Entscheidungen gegen den jeweils aktuellen Stand von Gesetzgebung, Festlegungen und unternehmensspezifischen Bescheiden geprueft werden.
-
-Weitere Projektdokumente:
-
-- `docs/ecosystem/index.md`: Übersicht zum Beratungs-/Methodik-Ökosystem mit Navigation zu Handbuch, Projektplan, Vorlagen, Lernpfaden und Fallstudien.
-- `docs/project-plan.md`: Dokumentation der Projektplan-Ansicht mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten, eigenen Aufgaben und Reset-/Export-Verhalten.
-- `docs/release-awareness.md`: Aktualitäts-Erkennung, Ruleset-Konfidenz, Release-Manifest und GitHub-Support-Leitplanken.
-- `docs/handbook/regulierte-finanzplanung-vnb.md`: Methodikhandbuch für regulierte Finanzplanung kleiner VNBs.
-- `docs/regulatory-map.md`: öffentliche Quellen und Einordnung zu Strom/Gas-Regulatorik.
-- `docs/templates/`: Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung und Workshopagenda.
-- `docs/guides/`: rollenbasierte Lernpfade für Management, Controlling, Regulierung, Asset Management und Anlagenbuchhaltung.
-- `docs/examples/`: synthetische Fallstudien für Strom, Gas und Spartenportfolio.
-- `docs/story/planungsrunde-userstory.md`: Markdown-Quelle der fiktiven mehrmonatigen Planungsrunde.
-- `dist/story/planungsrunde-userstory.html`: aus der Markdown-Quelle gebauter HTML-Story-Export für GitHub Pages und Browser-Nutzung.
-- `dist/docs/index.html`: aus den Ökosystem-Dokumenten gebauter HTML/PDF-Einstieg für GitHub Pages und Browser-Nutzung.
-- `MODEL.md`: Modellueberblick und Rechenkontext.
-- `GOVERNANCE.md`: Maintainer-, Review- und Neutralitaetsregeln.
-- `DATA_FORMAT.md`: lokaler Speicher, JSON-Export und Importgrundsaetze.
-- `CHANGELOG.md`: Aenderungshistorie.
-- `docs/adr/`: Architekturentscheidungen.
-
-## Offline-Verteilung und Verifikation
-
-Die Datei kommt zum Nutzer, nicht der Nutzer zur URL. Die Anwendung wird als einzelne HTML-Datei verteilt und per Doppelklick lokal im Browser geoeffnet.
-
-- Kein automatischer Netzzugriff beim Start: CSP-erzwungen mit `default-src 'none'`; `connect-src` erlaubt nur den bewusst ausgelösten Abruf von `https://energychain.github.io` für `release-manifest.json`.
-- Keine Telemetrie, keine Cookies, keine externen Skripte, Styles, Fonts oder Bilder.
-- Speicherung erfolgt nur im lokalen Browserprofil (`localStorage`) und ueber manuelle Exporte.
-- `Daten herunterladen` erzeugt weiterhin ein separates JSON-Modell fuer Archivierung und Versionsvergleich.
-- `HTML mit Daten speichern` erzeugt eine weitergabefaehige Single-File-App, in der der aktuelle Modellstand als eingebetteter JSON-Block enthalten ist. Beim Oeffnen dieser Datei wird der eingebettete Stand vor eventuell vorhandenen Browserdaten geladen und wieder lokal gespeichert.
-- Funktion `Browserdaten löschen` entfernt die lokal gespeicherten Modelle aus dem Browserprofil.
-- Shared-/Terminal-PCs: Modelle koennen im Browserprofil und in manuell erzeugten Exportdateien verbleiben; nach Nutzung Browserdaten loeschen und Exportdateien nach den eigenen IT-Vorgaben schuetzen oder loeschen.
-
-IT-Pruefung:
-
-```bash
-npm ci
-npm run build:release
-npm run test:distribution
-sha256sum dist/szenarienrechner-eog.html
-```
-
-Beim lokalen Oeffnen zeigt der F12-Netzwerk-Tab keine Requests. Der CSP-Meta-Tag ist im Quelltext der HTML-Datei sichtbar.
 
 ## Impressum
 
