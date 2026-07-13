@@ -20,6 +20,7 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 | Aktualitäts-Erkennung | App- und Ruleset-Stand bewusst prüfen | Kein automatischer Netzzugriff, aber klare Release-/Parameter-Hinweise bei Bedarf |
 | Methodikhandbuch | Regulatorische Finanzplanung verständlich erklären | Gemeinsame Denkstruktur für Strom/Gas-Portfolios |
 | Vorlagenpaket | Typische Consulting-Artefakte bereitstellen | Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung, Workshopagenda |
+| Starter-Kits | Workshop-Pakete für konkrete Planungssituationen bereitstellen | Strom-Ortsnetz, Gas-Transformation und Spartenportfolio als druckbare Arbeitsmappen |
 | Lernpfade | Rollen spezifisch anleiten | Management, Controlling, Regulierung, Asset Management, Anlagenbuchhaltung |
 | Fallstudien | Synthetische Fälle durchspielen | Transfer auf Strom, Gas und Spartenportfolio |
 | Regulatorik-Landkarte | Öffentliche Quellen einordnen | Orientierung ohne juristische Vollkommentierung |
@@ -42,6 +43,10 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 - [Vorlage Datenanforderung](templates/datenanforderung.html)
 - [Vorlage Workshop-Agenda](templates/workshop-agenda.html)
 - [Vorlage Validierungsprotokoll](templates/validation-protocol.html)
+- [Starter-Kits Überblick](starter-kits/index.html)
+- [Starter-Kit Strom-Ortsnetz](starter-kits/starter-kit-strom-ortsnetz.html)
+- [Starter-Kit Gas-Transformation](starter-kits/starter-kit-gas-transformation.html)
+- [Starter-Kit Spartenportfolio](starter-kits/starter-kit-spartenportfolio.html)
 - [Lernpfad Management](guides/management.html)
 - [Lernpfad Controlling](guides/controlling.html)
 - [Lernpfad Regulierung](guides/regulierung.html)
