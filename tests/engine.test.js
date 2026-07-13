@@ -6,6 +6,7 @@ import {
   irr,
   npv,
   params,
+  portfolioDecisionMetrics,
   regulatoryParameterSet,
   regulatoryPeriodFor,
   scenarioParams
@@ -190,8 +191,44 @@ describe('scenario and portfolio parameters', () => {
     const result = calcPortfolio(model, params({ ...baseInputs, annualEnergyGwh: 50, householdConsumptionKwh: 3000 }));
 
     expect(result.tariffImpact.available).toBe(true);
-    expect(result.tariffImpact.ctPerKwh).toBeCloseTo(result.yearly[0].eog * 100000 / 50000000, 6);
+    expect(result.tariffImpact.ctPerKwh).toBeCloseTo(result.yearly[0].regulatoryEogEffect * 100000 / 50000000, 6);
     expect(result.tariffImpact.householdEurPerYear).toBeCloseTo(result.tariffImpact.ctPerKwh * 30, 6);
+  });
+
+  it('separates regulatory EOG effect from indicative cash-flow and one-off effects', () => {
+    const p = params({ ...baseInputs, horizon: 4 });
+    const model = { measures: [baseMeasure({ secure: 50, uncertain: 0, opexRecognition: 100, opexPa: 20, opexDeltaPa: 5 })] };
+    const result = calcPortfolio(model, p);
+    const metrics = portfolioDecisionMetrics(result);
+
+    expect(result.yearly[0].regulatoryEogEffect).toBeCloseTo(573.75, 4);
+    expect(result.yearly[0].indicativeCashflow).toBeCloseTo(result.yearly[0].eog, 4);
+    expect(result.yearly[0].economicOpex).toBeCloseTo(-15, 4);
+    expect(metrics.yearOneRegulatoryEog).toBeCloseTo(573.75, 4);
+    expect(metrics.recurringRegulatoryEog).toBeCloseTo(result.yearly[1].regulatoryEogEffect, 4);
+    expect(metrics.yearOneOneOff).toBeCloseTo(500, 4);
+    expect(metrics.cashflowBasis).toContain('indikativ');
+  });
+
+  it('exposes conservative decision metrics without review-marked assumptions', () => {
+    const measure = baseMeasure({
+      cost: 1000,
+      qDirect: 0,
+      eDirect: 0,
+      riskAvoided: 0,
+      impactAssumptions: [
+        { id: 'review-q', area: 'qElement', title: 'Prüfpflichtiger Q-Wert', amount: 180, confidence: 'review', governance: 'sensitivity', startYear: 2028, attribution: 100 }
+      ]
+    });
+    const base = params({ ...baseInputs, returnRate: 5, financingRate: 5, discountRate: 5, horizon: 10 });
+    const basis = calcPortfolio({ measures: [measure] }, scenarioParams(base, 'wert'));
+    const conservative = calcPortfolio({ measures: [measure] }, scenarioParams(base, 'konservativ'));
+    const metrics = portfolioDecisionMetrics(basis, conservative);
+
+    expect(metrics.basis.irr).toBeGreaterThan(base.financingRate);
+    expect(metrics.conservative.impactPa).toBe(0);
+    expect(metrics.conservative.irr).toBeLessThan(base.financingRate);
+    expect(metrics.conservativeGate).toBe('auflage');
   });
 
   it('keeps tariff impact unavailable without annual energy', () => {

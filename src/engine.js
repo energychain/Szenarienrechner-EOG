@@ -245,11 +245,13 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     const impactEffects = year >= start ? impactEffectsForMeasure(measure, p, year) : { qAndE: 0, risk: 0, included: [], sensitivity: [] };
     const yearlyQE = year >= start ? qAndE + impactEffects.qAndE : 0;
     const yearlyRisk = year >= start ? risk + impactEffects.risk : 0;
-    const lifecycleOpex = year >= start ? -opexPa + opexDeltaPa : 0;
+    const economicOpex = year >= start ? -opexPa + opexDeltaPa : 0;
     const reinvest = year === reinvestYear ? -reinvestCost : 0;
     const decommission = year === decommissionYear ? -decommissionCost : 0;
     const reinvestDecommission = reinvest + decommission;
-    const eog = depreciation + capitalReturn + firstYearOpex + yearlyQE + yearlyRisk + lifecycleOpex + reinvestDecommission;
+    const regulatoryEogEffect = depreciation + capitalReturn + firstYearOpex + yearlyQE + yearlyRisk;
+    const indicativeCashflow = regulatoryEogEffect + economicOpex + reinvestDecommission;
+    const eog = indicativeCashflow;
     const hgbDepreciation = year >= start && year < start + hgbLife
       ? Math.min(active.activated / hgbLife, active.activated)
       : 0;
@@ -262,7 +264,11 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
       depreciation,
       capitalReturn,
       qAndE: yearlyQE,
-      opex: lifecycleOpex,
+      opex: economicOpex,
+      economicOpex,
+      firstYearOpex,
+      regulatoryEogEffect,
+      indicativeCashflow,
       risk: yearlyRisk,
       opexRisk: firstYearOpex + yearlyRisk,
       reinvestDecommission,
@@ -273,7 +279,7 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     });
   }
 
-  const flows = [-finiteNumber(measure.cost), ...rows.map(row => row.eog)];
+  const flows = [-finiteNumber(measure.cost), ...rows.map(row => row.indicativeCashflow)];
   const measureIrr = irr(flows);
   const measureNpv = npv(p.discountRate, flows);
   const impactSummary = impactEffectsForMeasure(measure, p, start);
@@ -307,6 +313,10 @@ export function calcPortfolio(model, p) {
     regulatoryPeriod: null,
     depreciation: 0,
     capitalReturn: 0,
+    firstYearOpex: 0,
+    regulatoryEogEffect: 0,
+    indicativeCashflow: 0,
+    economicOpex: 0,
     qAndE: 0,
     opex: 0,
     risk: 0,
@@ -323,6 +333,10 @@ export function calcPortfolio(model, p) {
     result.rows.forEach((row, i) => {
       yearly[i].depreciation += row.depreciation;
       yearly[i].capitalReturn += row.capitalReturn;
+      yearly[i].firstYearOpex += row.firstYearOpex;
+      yearly[i].regulatoryEogEffect += row.regulatoryEogEffect;
+      yearly[i].indicativeCashflow += row.indicativeCashflow;
+      yearly[i].economicOpex += row.economicOpex;
       yearly[i].qAndE += row.qAndE;
       yearly[i].opex += row.opex;
       yearly[i].risk += row.risk;
@@ -337,7 +351,7 @@ export function calcPortfolio(model, p) {
 
   const invest = activeMeasures.reduce((sum, measure) => sum + finiteNumber(measure.cost), 0);
   const activated = results.reduce((sum, result) => sum + result.activated, 0);
-  const flows = [-invest, ...yearly.map(row => row.eog)];
+  const flows = [-invest, ...yearly.map(row => row.indicativeCashflow)];
   const resultIrr = invest > 0 ? irr(flows) : NaN;
   const resultNpv = invest > 0 ? npv(p.discountRate, flows) : 0;
   const qePa = activeMeasures.reduce((sum, measure) => sum + portfolioEffectFor(measure, p), 0);
@@ -367,7 +381,48 @@ export function calcPortfolio(model, p) {
     impactPa,
     riskPa,
     totex,
-    tariffImpact: tariffImpactFor(yearly[0]?.eog || 0, p)
+    tariffImpact: tariffImpactFor(yearly[0]?.regulatoryEogEffect || 0, p)
+  };
+}
+
+function recurringValue(yearly, key) {
+  const firstRecurringRow = yearly.slice(1).find(row => Math.abs(row.reinvestDecommission || 0) < 0.000001);
+  return firstRecurringRow?.[key] ?? yearly[1]?.[key] ?? yearly[0]?.[key] ?? 0;
+}
+
+function decisionSnapshot(result) {
+  const spread = Number.isFinite(result.irr) ? result.irr - result.p.financingRate : NaN;
+  return {
+    irr: result.irr,
+    npv: result.npv,
+    spread,
+    impactPa: result.impactPa,
+    investment: result.invest,
+    yearOneRegulatoryEog: result.yearly[0]?.regulatoryEogEffect || 0,
+    recurringRegulatoryEog: recurringValue(result.yearly, 'regulatoryEogEffect'),
+    yearOneIndicativeCashflow: result.yearly[0]?.indicativeCashflow || 0,
+    recurringIndicativeCashflow: recurringValue(result.yearly, 'indicativeCashflow'),
+    yearOneOneOff: result.yearly[0]?.firstYearOpex || 0,
+    verdictClass: Number.isFinite(spread) && spread >= 0.01 && result.npv > 0 ? 'good' : Number.isFinite(spread) && spread >= -0.01 ? 'warn' : 'bad'
+  };
+}
+
+export function portfolioDecisionMetrics(result, conservativeResult = null) {
+  const basis = decisionSnapshot(result);
+  const conservative = conservativeResult ? decisionSnapshot(conservativeResult) : null;
+  const conservativeGate = conservative
+    ? basis.verdictClass === 'good' && conservative.verdictClass !== 'good'
+      ? 'auflage'
+      : conservative.verdictClass === 'good'
+        ? 'tragfaehig'
+        : 'nicht_tragfaehig'
+    : 'nicht_geprueft';
+  return {
+    ...basis,
+    basis,
+    conservative,
+    conservativeGate,
+    cashflowBasis: 'IRR und Kapitalwert nutzen den indikativen Cashflow aus modellierter EOG-Wirkung abzüglich wirtschaftlicher OPEX-/Rückbau-/Reinvestitionsannahmen; keine garantierten Zahlungsströme.'
   };
 }
 

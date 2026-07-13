@@ -5,6 +5,7 @@ import {
   expectedActivated,
   impactAssumptionsFor,
   params as engineParams,
+  portfolioDecisionMetrics,
   portfolioEffectFor,
   regulatoryParameterSet,
   regulatoryPeriodFor,
@@ -1142,7 +1143,7 @@ function metricsForModel(model) {
     return {
       irr: result.irr,
       npv: result.npv,
-      eog: first.eog,
+      eog: first.regulatoryEogEffect,
       verdict: decisionFor(result).title,
       maturity,
       activeMeasures: result.activeMeasures.length
@@ -1153,7 +1154,7 @@ function metricsForModel(model) {
 }
 
 function metricSummary(metrics) {
-  return `IRR ${Number.isFinite(metrics.irr) ? fmtPct(metrics.irr * 100, 1) : '-'}, Kapitalwert ${Number.isFinite(metrics.npv) ? fmtTeur(metrics.npv, 1) : '-'}, Jahr-1-EOG ${Number.isFinite(metrics.eog) ? fmtTeur(metrics.eog, 1) : '-'}`;
+  return `IRR ${Number.isFinite(metrics.irr) ? fmtPct(metrics.irr * 100, 1) : '-'}, Kapitalwert ${Number.isFinite(metrics.npv) ? fmtTeur(metrics.npv, 1) : '-'}, EOG-Wirkung ${Number.isFinite(metrics.eog) ? fmtTeur(metrics.eog, 1) : '-'}`;
 }
 
 function metricDeltaCell(localMetrics, incomingMetrics, key, formatter) {
@@ -1270,7 +1271,7 @@ function showImportReview(review) {
           <tr><td>Verdict</td><td>${esc(localMetrics.verdict)}</td><td>${esc(incomingMetrics.verdict)}</td><td>${localMetrics.verdict === incomingMetrics.verdict ? '→ unverändert' : '→ geändert'}</td></tr>
           <tr><td>IRR</td>${metricDeltaCell(localMetrics, incomingMetrics, 'irr', value => Number.isFinite(value) ? fmtPct(value * 100, 1) : '-')}</tr>
           <tr><td>Kapitalwert</td>${metricDeltaCell(localMetrics, incomingMetrics, 'npv', value => Number.isFinite(value) ? fmtTeur(value, 1) : '-')}</tr>
-          <tr><td>Jahr-1-EOG</td>${metricDeltaCell(localMetrics, incomingMetrics, 'eog', value => Number.isFinite(value) ? fmtTeur(value, 1) : '-')}</tr>
+          <tr><td>EOG-Wirkung</td>${metricDeltaCell(localMetrics, incomingMetrics, 'eog', value => Number.isFinite(value) ? fmtTeur(value, 1) : '-')}</tr>
           <tr><td>Entscheidungsreife</td>${metricDeltaCell(localMetrics, incomingMetrics, 'maturity', value => Number.isFinite(value) ? `${Math.round(value)} %` : '-')}</tr>
         </tbody>
       </table>
@@ -2039,7 +2040,7 @@ function exportCatalogCsv() {
       tagsText(measure.tags),
       Number.isFinite(result.irr) ? (result.irr * 100).toFixed(2).replace('.', ',') : '',
       result.npv.toFixed(2).replace('.', ','),
-      (result.rows[0]?.eog || 0).toFixed(2).replace('.', ','),
+      (result.rows[0]?.regulatoryEogEffect || 0).toFixed(2).replace('.', ','),
       (result.rows[0]?.ebit || 0).toFixed(2).replace('.', ',')
     ];
   });
@@ -2489,13 +2490,21 @@ function renderScenarioDiff() {
     : `<strong>${scenarioLabel(scenario)}:</strong> keine zusätzlichen Szenarioanpassungen. Es gelten die eingegebenen Annahmen.`;
 }
 
-function decisionFor(result) {
-  const spread = Number.isFinite(result.irr) ? result.irr - result.p.financingRate : NaN;
+function decisionFor(result, conservativeResult = null) {
+  const metrics = portfolioDecisionMetrics(result, conservativeResult);
+  const spread = metrics.spread;
   if (!result.activeMeasures.length) {
     return { cls: 'warn', title: 'Keine aktive Maßnahme', text: 'Es ist kein investives Szenario ausgewählt.' };
   }
-  if (Number.isFinite(spread) && spread >= 0.01 && result.npv > 0) {
-    return { cls: 'good', title: 'Wirtschaftlich tragfähig', text: 'Portfolio-IRR und Kapitalwert liegen oberhalb der Finanzierungsschwelle. Attribution und Portfolioeffekte müssen trotzdem belegbar bleiben.' };
+  if (metrics.conservativeGate === 'auflage') {
+    return {
+      cls: 'warn',
+      title: 'Tragfähig mit Auflage',
+      text: 'Der Basiscase ist positiv, trägt aber ohne prüfpflichtige Wirkannahmen nicht vollständig. Vor Beschluss müssen Annahmen bestätigt oder als Auflage geführt werden.'
+    };
+  }
+  if (Number.isFinite(spread) && spread >= 0.01 && result.npv > 0 && metrics.conservativeGate !== 'nicht_tragfaehig') {
+    return { cls: 'good', title: 'Wirtschaftlich tragfähig', text: 'Portfolio-IRR, Kapitalwert und konservatives Urteil liegen oberhalb der Finanzierungsschwelle. Attribution und Portfolioeffekte müssen trotzdem belegbar bleiben.' };
   }
   if (Number.isFinite(spread) && spread >= -0.01) {
     return { cls: 'warn', title: 'Grenzfall', text: 'Die Wirtschaftlichkeit ist nahe an den Kapitalkosten. Entscheidung braucht belastbare Annahmen zu Aktivierung, Q/E, Risiko und Timing.' };
@@ -2528,10 +2537,10 @@ function setDelta(id, delta) {
   if (delta.cls) markStickyChange(node.closest('.sticky-kpi'));
 }
 
-function renderStickyKpis(result, first, decision) {
+function renderStickyKpis(result, first, decision, metrics) {
   const maturity = maturityScore();
   const snapshot = {
-    eog: first.eog,
+    eog: metrics.recurringRegulatoryEog,
     irr: result.irr,
     npv: result.npv,
     verdict: decision.title,
@@ -2570,7 +2579,7 @@ function trendWord(value) {
   return 'unter';
 }
 
-function renderManagementSummary(result, first, spread, decision) {
+function renderManagementSummary(result, first, spread, decision, metrics) {
   const verdict = document.getElementById('managementVerdict');
   verdict.className = 'verdict-card ' + decision.cls;
   document.getElementById('managementVerdictTitle').textContent = decision.title;
@@ -2585,14 +2594,16 @@ function renderManagementSummary(result, first, spread, decision) {
   const tariff = tariffImpactLine(result.tariffImpact);
 
   document.getElementById('managementStory').textContent = result.activeMeasures.length
-    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} entsteht im ersten Jahr ein EOG-Zusatz von ${fmtTeur(first.eog, 1)} in ${periodDetailText(result.p.regulatoryPeriod)}; der Portfolio-IRR beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht das rechnerisch etwa ${tariff.value}.` : ''}`
+    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die laufende modellierte EOG-Wirkung ab Jahr 2 bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)} p.a.; im Startjahr sind es ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. Der indikative Portfolio-IRR beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht die laufende rechnerische EOG-Wirkung etwa ${tariff.value}.` : ''}`
     : 'Es ist keine aktive Maßnahme ausgewählt. Für eine Entscheidung müssen zuerst Maßnahmen aktiviert oder angelegt werden.';
 
   const knowledgeEffect = result.qePa + result.impactPa;
   document.getElementById('managementCaveat').textContent = result.activeMeasures.length
-    ? knowledgeEffect > 0
-      ? `Dokumentierte Portfolio- und Wirkannahmen von ${fmtTeur(knowledgeEffect, 1)} p.a. sind entscheidungsrelevant und müssen kausal sowie regulatorisch begründet bleiben.`
-      : 'Die Wirtschaftlichkeit hängt vor allem an Aktivierbarkeit, Anerkennungsfähigkeit, Timing und Risikowert der Maßnahmen.'
+    ? metrics.conservativeGate === 'auflage'
+      ? `Konservatives Urteil ohne prüfpflichtige Wirkannahmen: IRR ${Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(metrics.conservative.npv, 1)}. Der positive Basiscase braucht daher Auflagen/Evidenz.`
+      : knowledgeEffect > 0
+        ? `Dokumentierte Portfolio- und Wirkannahmen von ${fmtTeur(knowledgeEffect, 1)} p.a. sind entscheidungsrelevant und müssen kausal sowie regulatorisch begründet bleiben.`
+        : 'Die Wirtschaftlichkeit hängt vor allem an Aktivierbarkeit, Anerkennungsfähigkeit, Timing und Risikowert der Maßnahmen.'
     : 'Ohne aktive Maßnahme gibt es keinen belastbaren Business Case.';
   if (result.activeMeasures.length && result.tariffImpact.available) {
     document.getElementById('managementCaveat').textContent += ' Entgeltwirkung indikativ: ' + result.tariffImpact.caveat;
@@ -2604,15 +2615,19 @@ function renderManagementSummary(result, first, spread, decision) {
 
 	      const pills = [
 	        ['Invest ' + fmtTeur(result.invest), ''],
-	        ['IRR ' + irrText, decision.cls],
-	        ['Spread ' + (Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'), decision.cls]
+	        ['laufende EOG ' + fmtTeur(metrics.recurringRegulatoryEog, 1), ''],
+	        ['Einmalig J1 ' + fmtTeur(metrics.yearOneOneOff, 1), metrics.yearOneOneOff ? 'warn' : ''],
+	        ['IRR indikativ ' + irrText, decision.cls],
+	        ['konservativ ' + (metrics.conservative ? (Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-') : '-'), metrics.conservativeGate === 'tragfaehig' ? 'good' : metrics.conservativeGate === 'auflage' ? 'warn' : 'bad']
 	      ];
 	      document.getElementById('managementPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
 	      document.getElementById('verdictWhyList').innerHTML = [
-	        `Grün: Spread ≥ 1,0 Prozentpunkt und Kapitalwert > 0.`,
-	        `Gelb: Spread ≥ -1,0 Prozentpunkt, aber Grün-Kriterien nicht vollständig erfüllt, oder keine aktive Maßnahme.`,
+	        `Grün: Basis- und konservatives Urteil tragen; Spread ≥ 1,0 Prozentpunkt und Kapitalwert > 0.`,
+	        `Gelb: Basiscase trägt nur mit Auflage, konservatives Urteil kippt, oder Grün-Kriterien nicht vollständig erfüllt.`,
 	        `Rot: Spread < -1,0 Prozentpunkt oder Spread nicht belastbar.`,
-	        `Aktuell: Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}.`
+	        `Aktuell Basis: Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}.`,
+	        `Ohne prüfpflichtige Annahmen: IRR ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${metrics.conservative ? fmtTeur(metrics.conservative.npv, 1) : '-'}.`,
+	        `IRR/NPV sind indikative Cashflow-Kennzahlen, keine garantierten Zahlungsströme aus der EOG.`
 	      ].map(item => `<li>${esc(item)}</li>`).join('');
 	    }
 
@@ -2640,23 +2655,23 @@ function activeMeasureNames(result) {
   return names + suffix + '.';
 }
 
-function renderMeetingFocus(result, first, spread) {
+function renderMeetingFocus(result, first, spread, metrics = portfolioDecisionMetrics(result)) {
   const activatedShare = result.invest > 0 ? result.activated / result.invest * 100 : 0;
   const irrText = Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-';
   const spreadText = Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-';
   const rows = {
     management: [
-      meetingCard('management', 'decisionQuestion', 'Beschlussfrage', Number.isFinite(result.irr) ? irrText + ' IRR' : '', `Ist der Business Case bei ${fmtTeur(result.invest)} Investition und ${fmtTeur(first.eog, 1)} EOG-Zusatz im Startjahr tragfähig?`),
-      meetingCard('management', 'whyItWorks', 'Warum es trägt', Number.isFinite(spread) ? spreadText + ' Spread' : '', `Rendite wird gegen FK-Zins ${fmtPct(result.p.financingRate * 100, 1)} und Kapitalwert ${fmtTeur(result.npv, 1)} gespiegelt.`),
+      meetingCard('management', 'decisionQuestion', 'Beschlussfrage', Number.isFinite(result.irr) ? irrText + ' IRR indikativ' : '', `Ist der Business Case bei ${fmtTeur(result.invest)} Investition und ${fmtTeur(metrics.recurringRegulatoryEog, 1)} laufender EOG-Wirkung mit den offenen Auflagen tragfähig?`),
+      meetingCard('management', 'whyItWorks', 'Warum es trägt', Number.isFinite(spread) ? spreadText + ' Spread' : '', `Rendite wird als indikativer Cashflow gegen FK-Zins ${fmtPct(result.p.financingRate * 100, 1)} und Kapitalwert ${fmtTeur(result.npv, 1)} gespiegelt; konservativ ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}.`),
       meetingCard('management', 'watchOut', 'Nicht übersehen', '', result.qePa + result.impactPa > 0 ? `Q/E- und Wirkannahmen von ${fmtTeur(result.qePa + result.impactPa, 1)} p.a. brauchen Nachweis, Attribution und Governance-Status.` : 'Ohne Portfolioeffekt zählt vor allem die direkte regulatorische Kapitalwirkung.')
     ],
     technik: [
       meetingCard('technik', 'technicalScope', 'Technische Betroffenheit', '', activeMeasureNames(result)),
-      meetingCard('technik', 'commissioningImpact', 'Inbetriebnahme & Wirkung', fmtTeur(first.eog, 1), `EOG-Wirkung startet im Jahr ${result.p.baseYear} in ${periodText(result.p.regulatoryPeriod)}. Timing und Bau-/Inbetriebnahmejahr entscheiden über das Zahlungsprofil.`),
+      meetingCard('technik', 'commissioningImpact', 'Inbetriebnahme & Wirkung', fmtTeur(first.regulatoryEogEffect, 1), `Modellierte EOG-Wirkung startet im Jahr ${result.p.baseYear}; laufend ab Jahr 2 ${fmtTeur(metrics.recurringRegulatoryEog, 1)}. Timing und Bau-/Inbetriebnahmejahr entscheiden über das Profil.`),
       meetingCard('technik', 'riskArgument', 'Risikoargument', fmtTeur(result.yearly[0]?.opexRisk || 0, 1), 'OPEX/Risiko im Startjahr. Technik sollte Risikowert, Störungsfolgen und Umsetzungsrisiken validieren.')
     ],
     vnb: [
-      meetingCard('vnb', 'eogStartYear', 'EOG-Wirkung Startjahr', fmtTeur(first.eog, 1), `${periodDetailText(result.p.regulatoryPeriod)} mit Kostenbasis ${result.p.regulatoryPeriod.costBaseYear}. Basis-EOG steigt modellhaft auf ${fmtTeur(result.p.baseEog + first.eog, 1)}.`),
+      meetingCard('vnb', 'eogStartYear', 'EOG-Wirkung Startjahr', fmtTeur(first.regulatoryEogEffect, 1), `${periodDetailText(result.p.regulatoryPeriod)} mit Kostenbasis ${result.p.regulatoryPeriod.costBaseYear}. Laufende Wirkung ${fmtTeur(metrics.recurringRegulatoryEog, 1)}; Startjahr enthält ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt.`),
       meetingCard('vnb', 'capitalBase', 'Regulatorische Kapitalbasis', fmtTeur(result.activated), `${fmtPct(activatedShare, 1)} der Investition wird erwartbar kapitalwirksam.`),
       meetingCard('vnb', 'recognitionQe', 'Anerkennung / Q/E', fmtTeur(result.qePa + result.impactPa, 1), 'Portfolioeffekte, Wirkannahmen und OPEX-Anerkennung getrennt belegen, damit keine Doppelzählung entsteht.')
     ],
@@ -2707,7 +2722,7 @@ function renderMeasures() {
         <td colspan="11">
           <button type="button" data-action="toggleGroup" data-group-key="${esc(group.key)}">${collapsed ? '+' : '-'}</button>
           <strong>${esc(group.label)}</strong>
-          <span>${group.measures.length} Maßnahmen · ${fmtTeur(group.cost, 1)} Kosten · ${fmtTeur(group.eog, 1)} Jahr-1-EOG · ${fmtPct(group.activeShare * 100, 0)} aktiv · ${group.review} prüfpflichtig</span>
+          <span>${group.measures.length} Maßnahmen · ${fmtTeur(group.cost, 1)} Kosten · ${fmtTeur(group.eog, 1)} EOG-Wirkung Startjahr · ${fmtPct(group.activeShare * 100, 0)} aktiv · ${group.review} prüfpflichtig</span>
         </td>
       </tr>
       ${rows}
@@ -2799,7 +2814,7 @@ function groupMeasures(list, p) {
       measures: groupList,
       collapsed: collapsedCatalogGroups[key] ?? measures.length > 30,
       cost: groupList.reduce((sum, measure) => sum + Number(measure.cost || 0), 0),
-      eog: results.reduce((sum, result) => sum + (result.rows[0]?.eog || 0), 0),
+      eog: results.reduce((sum, result) => sum + (result.rows[0]?.regulatoryEogEffect || 0), 0),
       activeShare: groupList.length ? groupList.filter(measure => measure.active).length / groupList.length : 0,
       review: groupList.reduce((sum, measure) => sum + impactCounts(measure).review, 0)
     };
@@ -3671,7 +3686,7 @@ function renderChart(yearly) {
       `Risiko: ${fmtTeur(row.risk, 1)}`,
       `OPEX: ${fmtTeur(row.opex, 1)}`,
       `Rückbau/Reinvest: ${fmtTeur(row.reinvestDecommission, 1)}`,
-      `EOG Zusatz: ${fmtTeur(row.eog, 1)}`
+      `Indik. Cashflow: ${fmtTeur(row.indicativeCashflow, 1)}`
     ].join('\n');
     return `<g tabindex="0" aria-label="${esc(tooltip)}"><title>${esc(tooltip)}</title>${parts}</g>${label}`;
   }).join('');
@@ -3711,7 +3726,7 @@ function renderYears(result) {
   if (caveat) caveat.classList.add('hidden');
   head.innerHTML = `
     <tr>
-      <th>Jahr</th><th>RP</th><th>Basis-EOG</th><th>AfA</th><th>Verzinsung</th><th>Q/E</th><th>Risiko</th><th>OPEX</th><th>Rückbau/Reinvest</th><th>EOG Zusatz</th><th>EOG gesamt</th>
+      <th>Jahr</th><th>RP</th><th>Basis-EOG</th><th>AfA</th><th>Verzinsung</th><th>Q/E</th><th>Risiko</th><th>Einmalig</th><th>modellierte EOG-Wirkung</th><th>wirtschaftl. OPEX/Rückbau</th><th>indik. Cashflow</th><th>EOG gesamt</th>
     </tr>
   `;
   document.getElementById('yearBody').innerHTML = result.yearly.map(row => `
@@ -3723,10 +3738,11 @@ function renderYears(result) {
       <td>${fmtTeur(row.capitalReturn, 1)}</td>
       <td>${fmtTeur(row.qAndE, 1)}</td>
       <td>${fmtTeur(row.risk, 1)}</td>
-      <td>${fmtTeur(row.opex, 1)}</td>
-      <td>${fmtTeur(row.reinvestDecommission, 1)}</td>
-      <td>${fmtTeur(row.eog, 1)}</td>
-      <td>${fmtTeur(result.p.baseEog + row.eog, 1)}</td>
+      <td>${fmtTeur(row.firstYearOpex, 1)}</td>
+      <td>${fmtTeur(row.regulatoryEogEffect, 1)}</td>
+      <td>${fmtTeur(row.economicOpex + row.reinvestDecommission, 1)}</td>
+      <td>${fmtTeur(row.indicativeCashflow, 1)}</td>
+      <td>${fmtTeur(result.p.baseEog + row.regulatoryEogEffect, 1)}</td>
     </tr>
   `).join('');
 }
@@ -3783,7 +3799,7 @@ function renderScenarios() {
         <td>${name === 'basis' ? 'Basis' : name === 'konservativ' ? 'Konservativ' : 'Wert'}</td>
         <td>${fmtPct(result.p.attribution * 100, 0)}</td>
         <td>${fmtTeur(result.qePa + result.impactPa, 1)}</td>
-        <td>${fmtTeur(first.eog, 1)}</td>
+        <td>${fmtTeur(first.regulatoryEogEffect, 1)}</td>
         <td>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</td>
         <td>${fmtTeur(result.npv, 1)}</td>
       </tr>
@@ -3807,7 +3823,7 @@ function strategyContributionRows(result) {
   const objectiveRows = strategy.objectives.map(objective => {
     const matching = result.results.filter(item => (item.measure.objectiveIds || []).includes(objective.id));
     const invest = matching.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0);
-    const firstEog = matching.reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0);
+    const firstEog = matching.reduce((sum, item) => sum + (item.rows[0]?.regulatoryEogEffect || 0), 0);
     const risk = matching.reduce((sum, item) => sum + item.riskReductionPa, 0);
     const names = matching.map(item => item.measure.name).join(', ');
     return `
@@ -3822,7 +3838,7 @@ function strategyContributionRows(result) {
   }).join('');
   const unassigned = result.results.filter(item => !(item.measure.objectiveIds || []).length);
   const unassignedRow = unassigned.length
-    ? `<tr class="warn-row"><td>Ohne Zielzuordnung</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + item.riskReductionPa, 0), 1)}</td><td>${esc(unassigned.map(item => item.measure.name).join(', '))}</td></tr>`
+    ? `<tr class="warn-row"><td>Ohne Zielzuordnung</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + (item.rows[0]?.regulatoryEogEffect || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + item.riskReductionPa, 0), 1)}</td><td>${esc(unassigned.map(item => item.measure.name).join(', '))}</td></tr>`
     : '';
   return objectiveRows + unassignedRow;
 }
@@ -3836,7 +3852,7 @@ function strategyContributionBars(result) {
   const maxEog = Math.max(1, ...strategy.objectives.map(objective => {
     return result.results
       .filter(item => (item.measure.objectiveIds || []).includes(objective.id))
-      .reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0);
+      .reduce((sum, item) => sum + (item.rows[0]?.regulatoryEogEffect || 0), 0);
   }));
   if (!strategy.objectives.length) {
     return '<div class="empty-state"><span aria-hidden="true">◎</span><strong>Noch keine strategischen Ziele hinterlegt.</strong><small>Mit Zielen wird sichtbar, worauf das Budget einzahlt.</small></div>';
@@ -3846,12 +3862,12 @@ function strategyContributionBars(result) {
       ${strategy.objectives.map(objective => {
         const matching = result.results.filter(item => (item.measure.objectiveIds || []).includes(objective.id));
         const invest = matching.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0);
-        const eog = matching.reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0);
+        const eog = matching.reduce((sum, item) => sum + (item.rows[0]?.regulatoryEogEffect || 0), 0);
         const investWidth = Math.round(invest / maxInvest * 100);
         const markerLeft = Math.min(100, Math.round(eog / maxEog * 100));
         return `
           <div class="goal-bar">
-            <div><strong>${esc(objective.label)}</strong><small>${fmtTeur(invest, 1)} Invest · ${fmtTeur(eog, 1)} EOG Jahr 1</small></div>
+            <div><strong>${esc(objective.label)}</strong><small>${fmtTeur(invest, 1)} Invest · ${fmtTeur(eog, 1)} EOG-Wirkung Startjahr</small></div>
             <div class="goal-track"><span style="width:${investWidth}%"></span><i style="left:${markerLeft}%"></i></div>
           </div>
         `;
@@ -3936,7 +3952,7 @@ function eventJournalRows() {
     : '<tr><td colspan="5">Noch keine Ereignisse im Journal.</td></tr>';
 }
 
-function plainCommitteeStory(result, first) {
+function plainCommitteeStory(result, first, metrics = portfolioDecisionMetrics(result)) {
   if (!result.activeMeasures.length) {
     return 'Es ist noch keine aktive Maßnahme ausgewählt. Die Vorlage dokumentiert daher einen Arbeitsstand ohne Beschlussreife.';
   }
@@ -3945,7 +3961,7 @@ function plainCommitteeStory(result, first) {
   const tariffText = result.tariffImpact.available
     ? ` Für einen Durchschnittshaushalt entspricht das rechnerisch etwa ${tariff.value}.`
     : '';
-  return `Das Modell bewertet ${activeText} mit ${fmtTeur(result.invest)} Investition. Im ersten Jahr steigen die zulässigen Erlöse modellhaft um ${fmtTeur(first.eog, 1)}.${tariffText}`;
+  return `Das Modell bewertet ${activeText} mit ${fmtTeur(result.invest)} Investition. Die laufende modellierte EOG-Wirkung liegt bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)} p.a.; das Startjahr enthält ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt.${tariffText}`;
 }
 
 function committeeProposal(result) {
@@ -3956,7 +3972,7 @@ function committeeProposal(result) {
     : 'Das Gremium nimmt den Arbeitsstand zur Kenntnis. Eine Beschlussfassung wird nach Ergänzung aktiver Maßnahmen vorbereitet.';
 }
 
-function committeeReportHtml(result, first, spread) {
+function committeeReportHtml(result, first, spread, metrics = portfolioDecisionMetrics(result)) {
   const isBoardAudience = committee.audience === 'vorstand';
   const tariff = tariffImpactLine(result.tariffImpact);
   const openItems = clarificationItems().filter(item => item.status !== 'closed');
@@ -3971,7 +3987,7 @@ function committeeReportHtml(result, first, spread) {
     return {
       orgUnit,
       invest: matching.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0),
-      eog: matching.reduce((sum, item) => sum + (item.rows[0]?.eog || 0), 0),
+      eog: matching.reduce((sum, item) => sum + (item.rows[0]?.regulatoryEogEffect || 0), 0),
       ebit: matching.reduce((sum, item) => sum + (item.rows[0]?.ebit || 0), 0)
     };
   }).sort((a, b) => b.invest - a.invest);
@@ -4010,8 +4026,8 @@ function committeeReportHtml(result, first, spread) {
       <section>
         <h2>Worum es geht</h2>
         <p>${esc(isBoardAudience
-          ? `${plainCommitteeStory(result, first)} Wirtschaftlich ergibt sich ein IRR von ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, ein Kapitalwert von ${fmtTeur(result.npv, 1)} und ein Spread von ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}.`
-          : plainCommitteeStory(result, first))}</p>
+          ? `${plainCommitteeStory(result, first, metrics)} Wirtschaftlich ergibt sich ein indikativer IRR von ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, ein Kapitalwert von ${fmtTeur(result.npv, 1)} und ein Spread von ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}.`
+          : plainCommitteeStory(result, first, metrics))}</p>
         <p class="committee-muted">Betrachtete Maßnahmen: ${esc(activeNames)}.</p>
       </section>
       <section class="committee-grid">
@@ -4059,11 +4075,11 @@ function committeeReportHtml(result, first, spread) {
   `;
 }
 
-function renderReport(result, first, spread, decision) {
+function renderReport(result, first, spread, decision, metrics) {
   const report = document.getElementById('reportPage');
   if (!report) return;
   if (reportMode === 'committee') {
-    report.innerHTML = committeeReportHtml(result, first, spread);
+    report.innerHTML = committeeReportHtml(result, first, spread, metrics);
     return;
   }
   const activeText = result.activeMeasures.length === 1 ? '1 aktive Maßnahme' : result.activeMeasures.length + ' aktive Maßnahmen';
@@ -4075,7 +4091,7 @@ function renderReport(result, first, spread, decision) {
         <td>${scenarioLabel(name)}</td>
         <td>${fmtPct(scenarioResult.p.attribution * 100, 0)}</td>
         <td>${fmtTeur(scenarioResult.qePa + scenarioResult.impactPa, 1)}</td>
-        <td>${fmtTeur(scenarioFirst.eog, 1)}</td>
+        <td>${fmtTeur(scenarioFirst.regulatoryEogEffect, 1)}</td>
         <td>${Number.isFinite(scenarioResult.irr) ? fmtPct(scenarioResult.irr * 100, 1) : '-'}</td>
         <td>${fmtTeur(scenarioResult.npv, 1)}</td>
       </tr>
@@ -4138,7 +4154,7 @@ function renderReport(result, first, spread, decision) {
     </tr>
   `).join('') || '<tr><td colspan="4">Noch keine Snapshots dokumentiert.</td></tr>';
   const story = result.activeMeasures.length
-    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} entsteht im Startjahr ein EOG-Zusatz von ${fmtTeur(first.eog, 1)} in ${periodDetailText(result.p.regulatoryPeriod)}. Der Portfolio-IRR beträgt ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
+    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die laufende modellierte EOG-Wirkung bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)} p.a.; das Startjahr zeigt ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. IRR und Kapitalwert sind indikative Cashflow-Kennzahlen: Portfolio-IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
     : 'Es ist keine aktive Maßnahme ausgewählt. Der Report dokumentiert daher noch keinen belastbaren Business Case.';
   const strategyRows = strategyContributionRows(result) || '<tr><td colspan="5">Noch keine strategischen Ziele hinterlegt.</td></tr>';
   const strategyBars = strategyContributionBars(result);
@@ -4191,6 +4207,7 @@ function renderReport(result, first, spread, decision) {
         <div class="report-box">
           <strong>Urteil</strong>
           <p>${decision.title}</p>
+          <p class="hint">Ohne prüfpflichtige Annahmen: IRR ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${metrics.conservative ? fmtTeur(metrics.conservative.npv, 1) : '-'}. ${metrics.conservativeGate === 'auflage' ? 'Basiscase nur mit Auflage/Evidenz beschlussreif.' : ''}</p>
         </div>
         <div class="report-box">
           <strong>Governance-Hinweis</strong>
@@ -4204,8 +4221,8 @@ function renderReport(result, first, spread, decision) {
       <div class="kpis">
         <div class="kpi"><div class="label">Investition</div><div class="value">${fmtTeur(result.invest)}</div><div class="sub">${activeText}</div></div>
         <div class="kpi"><div class="label">TOTEX Horizont</div><div class="value">${fmtTeur(result.totex.nominal, 1)}</div><div class="sub">diskontiert ${fmtTeur(result.totex.discounted, 1)}</div></div>
-        <div class="kpi"><div class="label">EOG-Zusatz Jahr 1</div><div class="value">${fmtTeur(first.eog, 1)}</div><div class="sub">${result.p.baseYear} / ${periodText(result.p.regulatoryPeriod)}</div></div>
-        <div class="kpi"><div class="label">Portfolio IRR</div><div class="value">${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</div><div class="sub">Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}</div></div>
+        <div class="kpi"><div class="label">laufende EOG-Wirkung</div><div class="value">${fmtTeur(metrics.recurringRegulatoryEog, 1)}</div><div class="sub">Startjahr ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} · Einmaleffekt ${fmtTeur(metrics.yearOneOneOff, 1)}</div></div>
+        <div class="kpi"><div class="label">IRR indikativ</div><div class="value">${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</div><div class="sub">kein garantierter EOG-Cashflow</div></div>
         <div class="kpi"><div class="label">Kapitalwert</div><div class="value">${fmtTeur(result.npv, 1)}</div><div class="sub">Diskontsatz ${fmtPct(result.p.discountRate * 100, 1)}</div></div>
       </div>
     </section>
@@ -4236,7 +4253,7 @@ function renderReport(result, first, spread, decision) {
       ${strategyBars}
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Ziel</th><th>Investition</th><th>EOG-Zusatz Jahr 1</th><th>Risikoreduktion p.a.</th><th>Maßnahmen</th></tr></thead>
+          <thead><tr><th>Ziel</th><th>Investition</th><th>EOG-Wirkung Startjahr</th><th>Risikoreduktion p.a.</th><th>Maßnahmen</th></tr></thead>
           <tbody>${strategyRows}</tbody>
         </table>
       </div>
@@ -4314,7 +4331,9 @@ function renderReport(result, first, spread, decision) {
 
 function renderPortfolio() {
   const result = currentPortfolio(currentScenarioParams(scenario));
-  const first = result.yearly[0] || { eog: 0 };
+  const conservativeResult = currentPortfolio(currentScenarioParams('konservativ'));
+  const metrics = portfolioDecisionMetrics(result, conservativeResult);
+  const first = result.yearly[0] || { eog: 0, regulatoryEogEffect: 0, indicativeCashflow: 0, firstYearOpex: 0 };
   const activatedShare = result.invest > 0 ? result.activated / result.invest * 100 : 0;
   const spread = Number.isFinite(result.irr) ? result.irr - result.p.financingRate : NaN;
 
@@ -4322,11 +4341,12 @@ function renderPortfolio() {
   document.getElementById('kpiInvestSub').textContent = result.activeMeasures.length + ' aktive Maßnahmen · TOTEX ' + fmtTeur(result.totex.nominal, 1);
   document.getElementById('kpiActivated').textContent = fmtTeur(result.activated);
   document.getElementById('kpiActivatedSub').textContent = fmtPct(activatedShare, 1) + ' der Investitionen';
-  document.getElementById('kpiEog').textContent = fmtTeur(first.eog, 1);
-  document.getElementById('kpiEogSub').textContent = result.p.baseYear + ' / ' + periodText(result.p.regulatoryPeriod);
+  document.getElementById('kpiEog').textContent = fmtTeur(metrics.recurringRegulatoryEog, 1);
+  document.getElementById('kpiEogSub').textContent = 'laufend ab Jahr 2; Startjahr ' + fmtTeur(metrics.yearOneRegulatoryEog, 1) + ', Einmaleffekt ' + fmtTeur(metrics.yearOneOneOff, 1);
   document.getElementById('kpiIrr').textContent = Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-';
-  document.getElementById('kpiIrrSub').textContent = 'FK-Zins ' + fmtPct(result.p.financingRate * 100, 1);
+  document.getElementById('kpiIrrSub').textContent = 'indikativ, kein garantierter EOG-Cashflow';
   document.getElementById('kpiNpv').textContent = fmtTeur(result.npv, 1);
+  document.getElementById('kpiNpvSub').textContent = 'konservativ ' + (metrics.conservative ? fmtTeur(metrics.conservative.npv, 1) : '-');
   const tariff = tariffImpactLine(result.tariffImpact);
   document.getElementById('kpiTariff').textContent = tariff.value;
   document.getElementById('kpiTariffSub').textContent = tariff.sub;
@@ -4334,18 +4354,18 @@ function renderPortfolio() {
   document.getElementById('kpiEbitSub').textContent = 'bis Jahr 5 kumuliert ' + fmtTeur(result.yearly.slice(0, 5).reduce((sum, row) => sum + (row.ebit || 0), 0), 1);
   document.getElementById('kpiPortfolioEffect').textContent = fmtTeur(result.qePa + result.impactPa, 1);
   document.getElementById('kpiPortfolioSub').textContent = 'davon Risiko ' + fmtTeur(result.riskPa, 1) + ' p.a.';
-  document.getElementById('kpiTotalEog').textContent = fmtTeur(result.p.baseEog + first.eog, 1);
+  document.getElementById('kpiTotalEog').textContent = fmtTeur(result.p.baseEog + first.regulatoryEogEffect, 1);
   document.getElementById('kpiSpread').textContent = Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-';
 
-	      const decision = decisionFor(result);
-	      renderStickyKpis(result, first, decision);
-	      renderManagementSummary(result, first, spread, decision);
-  renderMeetingFocus(result, first, spread);
+	      const decision = decisionFor(result, conservativeResult);
+	      renderStickyKpis(result, first, decision, metrics);
+	      renderManagementSummary(result, first, spread, decision, metrics);
+  renderMeetingFocus(result, first, spread, metrics);
 
   renderChart(result.yearly);
   renderYears(result);
   renderScenarios();
-  renderReport(result, first, spread, decision);
+  renderReport(result, first, spread, decision, metrics);
 }
 
 function syncSectorDefaults() {
