@@ -2361,7 +2361,25 @@ function clearBrowserData() {
   }
 }
 
-function applyDemoModel() {
+function hasStoredModelState() {
+  try {
+    return Boolean(localStorage.getItem(storageKey));
+  } catch (_error) {
+    return false;
+  }
+}
+
+function confirmDemoOverwriteIfNeeded() {
+  if (!hasStoredModelState()) return true;
+  return window.confirm('Demodaten laden? Der aktuell im Browser gespeicherte Arbeitsstand wird dadurch überschrieben. Wenn du ihn behalten möchtest, speichere vorher JSON oder „HTML mit Daten speichern“.');
+}
+
+function applyDemoModel(options = {}) {
+  const { confirmOverwrite = false, targetView = 'basis' } = options;
+  if (confirmOverwrite && !confirmDemoOverwriteIfNeeded()) {
+    setStorageStatus('Demodaten wurden nicht geladen; vorhandener Arbeitsstand bleibt erhalten.');
+    return false;
+  }
   hideStartScreen();
   el.sector.value = 'strom';
   el.regulationProcedure.value = 'standard';
@@ -2395,16 +2413,25 @@ function applyDemoModel() {
   });
   selectedId = measures[0]?.id;
   scenario = 'basis';
-  activeView = 'results';
+  activeView = targetView;
   meetingFocus = 'management';
-  processState = normalizeProcessState({ phase: 'massnahmenbewertung' });
+  processState = normalizeProcessState({
+    phase: 'initialisierung',
+    resume: {
+      statusNote: 'Demodaten geladen: Der Beispielstand ist als synthetische Planungsrunde verfügbar.',
+      nextStep: 'Auf der Grundlagenansicht Startwerte, Quellen und Rollen prüfen; danach Maßnahmen und Entscheidungssicht öffnen.',
+      owner: 'Modellverantwortung',
+      dueDate: '2027-01-20'
+    }
+  });
   clarificationStatus = {};
   meetingTextOverrides = {};
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === scenario));
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
   setView(activeView);
   renderAll();
-  setStorageStatus('Demodaten wurden geladen und im Browser gespeichert.');
+  setStorageStatus('Demodaten wurden geladen; vorhandene Browserdaten wurden überschrieben.');
+  return true;
 }
 
 const storyResumeText = {
@@ -5232,7 +5259,7 @@ document.getElementById('exportSelfContainedHtml').addEventListener('click', exp
 document.getElementById('expertModeToggle').addEventListener('change', event => {
   setExpertMode(event.target.checked);
 });
-document.getElementById('startDemo').addEventListener('click', applyDemoModel);
+document.getElementById('startDemo').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'basis' }));
 document.getElementById('startWizard').addEventListener('click', () => {
   hideStartScreen();
   setView(roleProfiles[currentRole]?.view || 'basis');
@@ -5252,7 +5279,7 @@ document.getElementById('printReportFromView').addEventListener('click', () => {
   window.print();
 });
 document.getElementById('importModel').addEventListener('click', openLoadModal);
-document.getElementById('loadDemoModel').addEventListener('click', applyDemoModel);
+document.getElementById('loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'basis' }));
 document.getElementById('clearBrowserData').addEventListener('click', () => {
   if (window.confirm('Alle im Browser gespeicherten Daten dieses Rechners löschen? Das aktuelle Modell bleibt bis zum Neuladen sichtbar.')) {
     clearBrowserData();
@@ -5268,7 +5295,7 @@ document.getElementById('loadBasisWizard').addEventListener('click', () => {
 });
 document.getElementById('loadDemoFromModal').addEventListener('click', () => {
   closeLoadModal();
-  applyDemoModel();
+  applyDemoModel({ confirmOverwrite: true, targetView: 'basis' });
 });
 document.getElementById('loadCancel').addEventListener('click', closeLoadModal);
 document.getElementById('loadModal').addEventListener('click', event => {
