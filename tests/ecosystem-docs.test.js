@@ -8,6 +8,7 @@ const docs = [
   'docs/regulatory-map.md',
   'docs/maturity-model.md',
   'docs/decision-artifacts.md',
+  'docs/project-plan.md',
   'docs/validation-methodology.md',
   'docs/templates/massnahmensteckbrief.md',
   'docs/templates/gremienvorlage.md',
@@ -42,6 +43,8 @@ describe('consulting ecosystem docs', () => {
     expect(content).toContain('regulierte Finanzplanung');
     expect(content).toContain('kleine und mittlere Stadtwerke');
     expect(content).toContain('Senior-Consulting');
+    expect(content).toContain('Projektplan');
+    expect(content).toContain('Rollen-Swimlanes');
     expect(content).toContain('TRL-6-Validierung');
     expect(content).toContain('Cernion');
   });
@@ -62,6 +65,11 @@ describe('consulting ecosystem docs', () => {
     expect(index).toContain('Drucken / PDF speichern');
     expect(index).toContain('@media print');
     expect(index).toContain('Methodikhandbuch');
+    expect(index).toContain('Projektplan');
     expect(index).toContain('Vorlagenpaket');
+    const projectPlan = readFileSync('dist/docs/project-plan.html', 'utf8');
+    expect(projectPlan).toContain('Drucken / PDF speichern');
+    expect(projectPlan).toContain('Rollen-Swimlanes');
+    expect(projectPlan).toContain('Eigene Aufgaben');
   });
 });
