@@ -23,6 +23,7 @@ function inlineMarkdown(value) {
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  text = text.replace(/(?<!href=")(?<!src=")https?:\/\/[^\s<"')]+/g, '<a href="$&">$&</a>');
   return text;
 }
 
