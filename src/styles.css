@@ -2431,6 +2431,62 @@
     .project-task.done { border-left-color: var(--good); background: #f5fbf8; }
     .project-task.blocked { border-left-color: var(--bad); background: #fff7f7; }
     .project-task.dependency-blocked { opacity: .78; }
+    .project-task.template-skipped {
+      opacity: .64;
+      background: #f8fafc;
+    }
+
+    .project-task.template-skipped .project-task-title strong,
+    .project-task.template-skipped .project-task-title-input {
+      text-decoration: line-through;
+    }
+
+    .project-task.user-task {
+      border-left-color: var(--accent-2);
+    }
+
+    .project-task-source {
+      display: inline-flex;
+      width: fit-content;
+      margin-left: 6px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--muted);
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 800;
+    }
+
+    .project-task-source.user {
+      background: #eef9fc;
+      color: var(--accent);
+    }
+
+    .project-user-task-fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 6px;
+    }
+
+    .project-user-task-fields label {
+      display: grid;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .project-task-title-input {
+      font-weight: 800;
+    }
+
+    button.danger {
+      border-color: rgba(178, 64, 64, .35);
+      color: var(--bad);
+      background: #fff7f7;
+    }
+
     .project-task.active { box-shadow: 0 0 0 3px rgba(0, 111, 143, .12); }
 
     .project-task-main {

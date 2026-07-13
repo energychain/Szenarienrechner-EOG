@@ -37,6 +37,8 @@ import {
   storyUrlForMilestone
 } from './story-navigation.js';
 import {
+  addUserProjectPlanTask,
+  deleteUserProjectPlanTask,
   findProjectPlanTask,
   normalizeProjectPlan,
   projectPlanDeepLinkForTask,
@@ -48,7 +50,13 @@ import {
   projectPlanStatusLabels,
   projectPlanStatuses,
   projectPlanStoryLabel,
-  projectPlanTaskCounts
+  projectPlanTaskCounts,
+  projectPlanTaskSourceLabels,
+  projectPlanViewIds,
+  projectPlanStoryKeys,
+  projectPlanEvidenceLevels,
+  resetProjectPlanTemplateState,
+  updateProjectPlanTask as updateProjectPlanTaskModel
 } from './project-plan.js';
 import { buildInfo } from './build-info.js';
 import { imprintSections } from './trust-content.js';
@@ -1177,21 +1185,36 @@ function renderProjectPlan() {
               <h3>${esc(milestone.title)}</h3>
               <p>${esc(milestone.entryCriteria)} → <strong>${esc(milestone.exitArtifact)}</strong></p>
             </div>
+            <button type="button" class="ghost" data-project-add="${esc(milestone.id)}">Aufgabe hinzufügen</button>
             <a href="${esc(projectPlanDeepLinkForTask({ deepLinkKey: milestone.storyKey }))}" class="secondary-link" data-project-jump="${esc(milestone.tasks[0]?.id || '')}">App öffnen</a>
           </header>
           <div class="project-task-list">
             ${milestone.tasks.map(item => {
               const state = taskStates[item.id] || { effectiveStatus: item.status, dependencyBlocked: false, missingDependencies: [] };
-              const statusDisabled = state.dependencyBlocked ? 'disabled aria-disabled="true"' : '';
-              const jumpDisabled = state.dependencyBlocked ? 'disabled aria-disabled="true" title="Vorgängeraufgaben zuerst erledigen"' : '';
+              const statusDisabled = state.dependencyBlocked || item.templateSkipped ? 'disabled aria-disabled="true"' : '';
+              const jumpDisabled = state.dependencyBlocked || item.templateSkipped ? 'disabled aria-disabled="true" title="Vorgängeraufgaben zuerst erledigen oder Aufgabe wieder aktivieren"' : '';
+              const sourceBadge = `<em class="project-task-source ${esc(item.source || 'template')}">${esc(projectPlanTaskSourceLabels[item.source || 'template'] || item.source || 'Vorlage')}</em>`;
+              const titleControl = item.source === 'user'
+                ? `<input class="project-task-title-input" data-project-field="${esc(item.id)}" data-project-field-name="title" type="text" value="${esc(item.title)}" aria-label="Titel der eigenen Aufgabe">`
+                : `<strong>${esc(item.title)}</strong>`;
+              const skippedText = item.templateSkipped ? ' · als nicht zutreffend übersprungen' : '';
               return `
-              <div class="project-task ${esc(state.effectiveStatus)} ${state.dependencyBlocked ? 'dependency-blocked' : ''} ${activeProjectTaskId === item.id ? 'active' : ''}" data-project-task="${esc(item.id)}">
+              <div class="project-task ${esc(state.effectiveStatus)} ${state.dependencyBlocked ? 'dependency-blocked' : ''} ${item.templateSkipped ? 'template-skipped' : ''} ${item.source === 'user' ? 'user-task' : 'template-task'} ${activeProjectTaskId === item.id ? 'active' : ''}" data-project-task="${esc(item.id)}">
                 <div class="project-task-main">
                   <div class="project-task-title">
-                    <strong>${esc(item.title)}</strong>
-                    <span>${esc(projectPlanRoles[item.ownerRole] || item.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths, item.dueOffsetDays))}${item.evidenceRequired ? ` · Evidenz: ${esc(item.evidenceRequired)}` : ''}${projectPlanDependencyHint(state)}</span>
+                    ${titleControl}${sourceBadge}
+                    <span>${esc(projectPlanRoles[item.ownerRole] || item.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths, item.dueOffsetDays))}${item.evidenceRequired ? ` · Evidenz: ${esc(item.evidenceRequired)}` : ''}${projectPlanDependencyHint(state)}${skippedText}</span>
                   </div>
-                  <p>${esc(item.resultArtifact)}${item.dependsOn.length ? ` · abhängig von ${esc(item.dependsOn.join(', '))}` : ''}</p>
+                  <p>${esc(item.resultArtifact)}${item.origin ? ` · Herkunft: ${esc(item.origin)}` : ''}${item.dependsOn.length ? ` · abhängig von ${esc(item.dependsOn.join(', '))}` : ''}</p>
+                  ${item.source === 'user' ? `
+                    <div class="project-user-task-fields">
+                      <label>Frist +Tage <input data-project-field="${esc(item.id)}" data-project-field-name="dueOffsetDays" type="number" step="1" value="${esc(item.dueOffsetDays)}"></label>
+                      <label>Zielsicht <select data-project-field="${esc(item.id)}" data-project-field-name="targetView"><option value="">Story-Standard</option>${projectPlanViewIds.map(view => `<option value="${esc(view)}" ${item.targetView === view ? 'selected' : ''}>${esc(view)}</option>`).join('')}</select></label>
+                      <label>Story-Key <select data-project-field="${esc(item.id)}" data-project-field-name="deepLinkKey">${projectPlanStoryKeys.map(key => `<option value="${esc(key)}" ${item.deepLinkKey === key ? 'selected' : ''}>${esc(key)}</option>`).join('')}</select></label>
+                      <label>Evidenz <select data-project-field="${esc(item.id)}" data-project-field-name="evidenceRequired"><option value="">keine</option>${projectPlanEvidenceLevels.map(level => `<option value="${esc(level)}" ${item.evidenceRequired === level ? 'selected' : ''}>${esc(level)}</option>`).join('')}</select></label>
+                      <label>Ergebnis <input data-project-field="${esc(item.id)}" data-project-field-name="resultArtifact" type="text" value="${esc(item.resultArtifact)}"></label>
+                      <label>Herkunft <input data-project-field="${esc(item.id)}" data-project-field-name="origin" type="text" value="${esc(item.origin || '')}"></label>
+                    </div>` : ''}
                   <label class="sr-only" for="project-note-${esc(item.id)}">Notiz zu ${esc(item.title)}</label>
                   <input id="project-note-${esc(item.id)}" data-project-note="${esc(item.id)}" type="text" value="${esc(item.note)}" placeholder="Notiz / Klärpunkt zur Aufgabe">
                 </div>
@@ -1203,6 +1226,7 @@ function renderProjectPlan() {
                   <select data-project-owner="${esc(item.id)}" aria-label="Rolle">
                     ${roleOptions.replace(`value="${esc(item.ownerRole)}"`, `value="${esc(item.ownerRole)}" selected`)}
                   </select>
+                  ${item.source === 'template' ? `<button type="button" data-project-skip="${esc(item.id)}">${item.templateSkipped ? 'wieder aktivieren' : 'nicht zutreffend'}</button>` : `<button type="button" class="danger" data-project-delete="${esc(item.id)}">löschen</button>`}
                   <button type="button" data-project-jump="${esc(item.id)}" ${jumpDisabled}>Zur App</button>
                 </div>
               </div>`;
@@ -1223,13 +1247,13 @@ function updateProjectTask(taskId, patch, rerender = true) {
       return;
     }
   }
-  projectPlan = {
-    ...projectPlan,
-    milestones: projectPlan.milestones.map(milestone => ({
-      ...milestone,
-      tasks: milestone.tasks.map(item => item.id === taskId ? { ...item, ...patch } : item)
-    }))
-  };
+  try {
+    projectPlan = updateProjectPlanTaskModel(projectPlan, taskId, patch);
+  } catch (error) {
+    setStorageStatus(error.message || 'Projektplan-Aufgabe konnte nicht geändert werden.');
+    renderProjectPlan();
+    return;
+  }
   if (rerender) renderAll();
   else saveToBrowser(true);
 }
@@ -1266,10 +1290,12 @@ function openProjectTask(taskId) {
 }
 
 function resetProjectPlan() {
-  projectPlan = normalizeProjectPlan({}, Number(el.baseYear?.value || 2027));
+  const hasUserTasks = projectPlan.milestones?.some(milestone => milestone.tasks?.some(task => task.source === 'user'));
+  const keepUserTasks = hasUserTasks ? window.confirm('Eigene Aufgaben behalten? OK = behalten, Abbrechen = entfernen.') : true;
+  projectPlan = resetProjectPlanTemplateState(projectPlan, { keepUserTasks, baseYear: Number(el.baseYear?.value || 2027) });
   activeProjectTaskId = '';
   renderAll();
-  setStorageStatus('Projektplan wurde auf die exemplarische Planungsrunde zurückgesetzt.');
+  setStorageStatus(keepUserTasks ? 'Projektplan wurde zurückgesetzt; eigene Aufgaben bleiben erhalten.' : 'Projektplan wurde zurückgesetzt; eigene Aufgaben wurden entfernt.');
 }
 
 function renderProcessUx() {
@@ -4868,12 +4894,46 @@ document.getElementById('projectPlanBody').addEventListener('change', event => {
   if (statusId) updateProjectTask(statusId, { status: event.target.value });
   const ownerId = event.target.dataset.projectOwner;
   if (ownerId) updateProjectTask(ownerId, { ownerRole: event.target.value });
+  const fieldId = event.target.dataset.projectField;
+  if (fieldId) {
+    const fieldName = event.target.dataset.projectFieldName;
+    const value = fieldName === 'dueOffsetDays' ? Number(event.target.value) : event.target.value || null;
+    updateProjectTask(fieldId, { [fieldName]: value });
+  }
 });
 document.getElementById('projectPlanBody').addEventListener('input', event => {
   const taskId = event.target.dataset.projectNote;
   if (taskId) updateProjectTask(taskId, { note: event.target.value }, false);
+  const fieldId = event.target.dataset.projectField;
+  const fieldName = event.target.dataset.projectFieldName;
+  if (fieldId && ['title', 'resultArtifact', 'origin'].includes(fieldName)) updateProjectTask(fieldId, { [fieldName]: event.target.value }, false);
 });
 document.getElementById('projectPlanBody').addEventListener('click', event => {
+  const addButton = event.target.closest('[data-project-add]');
+  if (addButton) {
+    const title = window.prompt('Titel der eigenen Aufgabe');
+    if (title?.trim()) {
+      projectPlan = addUserProjectPlanTask(projectPlan, addButton.dataset.projectAdd, { title: title.trim(), origin: 'manuell ergänzt' });
+      renderAll();
+      setStorageStatus('Eigene Aufgabe wurde ergänzt.');
+    }
+    return;
+  }
+  const skipButton = event.target.closest('[data-project-skip]');
+  if (skipButton) {
+    const found = findProjectPlanTask(projectPlan, skipButton.dataset.projectSkip);
+    updateProjectTask(skipButton.dataset.projectSkip, { templateSkipped: !found?.task.templateSkipped });
+    return;
+  }
+  const deleteButton = event.target.closest('[data-project-delete]');
+  if (deleteButton) {
+    if (window.confirm('Eigene Aufgabe wirklich löschen?')) {
+      projectPlan = deleteUserProjectPlanTask(projectPlan, deleteButton.dataset.projectDelete);
+      renderAll();
+      setStorageStatus('Eigene Aufgabe wurde gelöscht; Abhängigkeiten wurden bereinigt.');
+    }
+    return;
+  }
   const button = event.target.closest('[data-project-jump]');
   if (!button) return;
   event.preventDefault();

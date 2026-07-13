@@ -11,6 +11,15 @@ export const projectPlanRoles = {
 };
 
 export const projectPlanStatuses = ['open', 'in_progress', 'done', 'blocked'];
+export const projectPlanTaskSources = ['template', 'user'];
+export const projectPlanSchemaVersion = '1.1.0';
+export const projectPlanViewIds = ['basis', 'measures', 'results', 'report', 'projectPlan'];
+export const projectPlanStoryKeys = ['kickoff', 'initialisierung', 'datenerhebung', 'massnahmenbewertung', 'technik-rueckkopplung', 'konsolidierung', 'entscheidungsvorlage', 'gremium', 'archiv'];
+export const projectPlanEvidenceLevels = ['quelle', 'beleg', 'freigabe'];
+export const projectPlanTaskSourceLabels = {
+  template: 'Vorlage',
+  user: 'eigene Aufgabe'
+};
 export const projectPlanStatusLabels = {
   open: 'Offen',
   in_progress: 'In Arbeit',
@@ -19,7 +28,18 @@ export const projectPlanStatusLabels = {
 };
 
 const roleIds = new Set(Object.keys(projectPlanRoles));
-const evidenceIds = new Set(['quelle', 'beleg', 'freigabe']);
+const evidenceIds = new Set(projectPlanEvidenceLevels);
+const viewIds = new Set(projectPlanViewIds);
+const storyKeys = new Set(projectPlanStoryKeys);
+
+function isoNow() {
+  return new Date().toISOString();
+}
+
+function uid() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 function task(id, milestoneId, title, ownerRole, dueOffsetDays, resultArtifact, options = {}) {
   return {
@@ -34,7 +54,9 @@ function task(id, milestoneId, title, ownerRole, dueOffsetDays, resultArtifact, 
     status: 'open',
     evidenceRequired: options.evidenceRequired || null,
     resultArtifact,
-    note: options.note || ''
+    note: options.note || '',
+    source: 'template',
+    templateSkipped: false
   };
 }
 
@@ -163,7 +185,7 @@ export const projectPlanSeedMilestones = [
 
 export function createDefaultProjectPlan(baseYear = new Date().getFullYear()) {
   return {
-    schemaVersion: '1.0.0',
+    schemaVersion: projectPlanSchemaVersion,
     baseYear: Number.isFinite(Number(baseYear)) ? Math.round(Number(baseYear)) : new Date().getFullYear(),
     targetDecisionMilestone: 'm7',
     milestones: structuredClone(projectPlanSeedMilestones)
@@ -180,35 +202,85 @@ function incomingTaskMap(value = {}) {
   return map;
 }
 
+function normalizeDependsOn(dependsOn, selfId = '') {
+  return [...new Set((Array.isArray(dependsOn) ? dependsOn : []).map(String).filter(id => id && id !== selfId))];
+}
+
+function nextUserTaskOffset(milestone) {
+  const offsets = (milestone?.tasks || []).map(item => Number(item.dueOffsetDays) || 0);
+  return offsets.length ? Math.max(...offsets) + 1 : 0;
+}
+
 function normalizeTask(seed, incoming = {}) {
   const status = projectPlanStatuses.includes(incoming.status) ? incoming.status : seed.status;
   const ownerRole = roleIds.has(incoming.ownerRole) ? incoming.ownerRole : seed.ownerRole;
   const evidenceRequired = evidenceIds.has(incoming.evidenceRequired) ? incoming.evidenceRequired : seed.evidenceRequired;
   return {
     ...seed,
+    source: 'template',
+    templateSkipped: Boolean(incoming.templateSkipped ?? seed.templateSkipped ?? false),
     ownerRole,
     status,
     evidenceRequired,
     note: String(incoming.note ?? seed.note ?? ''),
     resultArtifact: String(incoming.resultArtifact || seed.resultArtifact || ''),
     dueOffsetDays: Number.isFinite(Number(incoming.dueOffsetDays)) ? Number(incoming.dueOffsetDays) : seed.dueOffsetDays,
-    dependsOn: Array.isArray(incoming.dependsOn) ? incoming.dependsOn.map(String) : seed.dependsOn
+    dependsOn: normalizeDependsOn(incoming.dependsOn ?? seed.dependsOn, seed.id)
+  };
+}
+
+function normalizeUserTask(incoming = {}, milestone) {
+  const title = String(incoming.title || '').trim();
+  if (!title) return null;
+  const id = String(incoming.id || '').startsWith('user-') ? String(incoming.id) : `user-${uid()}`;
+  const deepLinkKey = storyKeys.has(incoming.deepLinkKey) ? incoming.deepLinkKey : milestone.storyKey;
+  return {
+    id,
+    milestoneId: milestone.id,
+    title,
+    ownerRole: roleIds.has(incoming.ownerRole) ? incoming.ownerRole : milestone.leadRole,
+    dueOffsetDays: Number.isFinite(Number(incoming.dueOffsetDays)) ? Number(incoming.dueOffsetDays) : nextUserTaskOffset(milestone),
+    deepLinkKey,
+    targetView: viewIds.has(incoming.targetView) ? incoming.targetView : null,
+    dependsOn: normalizeDependsOn(incoming.dependsOn, id),
+    status: projectPlanStatuses.includes(incoming.status) ? incoming.status : 'open',
+    evidenceRequired: evidenceIds.has(incoming.evidenceRequired) ? incoming.evidenceRequired : null,
+    resultArtifact: String(incoming.resultArtifact || 'ergänzter Arbeitsschritt'),
+    note: String(incoming.note || ''),
+    source: 'user',
+    templateSkipped: false,
+    createdAt: incoming.createdAt ? String(incoming.createdAt) : isoNow(),
+    origin: String(incoming.origin || '')
   };
 }
 
 export function normalizeProjectPlan(value = {}, baseYear = new Date().getFullYear()) {
   const taskMap = incomingTaskMap(value);
   const base = createDefaultProjectPlan(value.baseYear || baseYear);
-  return {
+  const incomingUserTasksByMilestone = new Map();
+  for (const milestone of Array.isArray(value.milestones) ? value.milestones : []) {
+    for (const item of Array.isArray(milestone.tasks) ? milestone.tasks : []) {
+      if (item?.source === 'user' || String(item?.id || '').startsWith('user-')) {
+        const milestoneId = String(item.milestoneId || milestone.id || '');
+        if (!incomingUserTasksByMilestone.has(milestoneId)) incomingUserTasksByMilestone.set(milestoneId, []);
+        incomingUserTasksByMilestone.get(milestoneId).push(item);
+      }
+    }
+  }
+  const normalized = {
     ...base,
-    schemaVersion: String(value.schemaVersion || base.schemaVersion),
+    schemaVersion: projectPlanSchemaVersion,
     baseYear: Number.isFinite(Number(value.baseYear)) ? Math.round(Number(value.baseYear)) : base.baseYear,
     targetDecisionMilestone: String(value.targetDecisionMilestone || base.targetDecisionMilestone),
-    milestones: base.milestones.map(milestone => ({
-      ...milestone,
-      tasks: milestone.tasks.map(item => normalizeTask(item, taskMap.get(item.id)))
-    }))
+    milestones: base.milestones.map(milestone => {
+      const templateTasks = milestone.tasks.map(item => normalizeTask(item, taskMap.get(item.id)));
+      const userTasks = (incomingUserTasksByMilestone.get(milestone.id) || [])
+        .map(item => normalizeUserTask(item, milestone))
+        .filter(Boolean);
+      return sortProjectPlanMilestoneTasks({ ...milestone, tasks: [...templateTasks, ...userTasks] });
+    })
   };
+  return stripDanglingProjectPlanDependencies(normalized);
 }
 
 
@@ -221,7 +293,10 @@ export function projectPlanTaskDependencyState(plan, taskId) {
   const taskMap = new Map(taskEntries.map(entry => [entry.task.id, entry.task]));
   const task = taskMap.get(taskId);
   if (!task) return { taskId, dependencyBlocked: false, missingDependencies: [], effectiveStatus: 'open', ready: false };
-  const missingDependencies = (task.dependsOn || []).filter(dependencyId => taskMap.get(dependencyId)?.status !== 'done');
+  const missingDependencies = (task.dependsOn || []).filter(dependencyId => {
+    const dependency = taskMap.get(dependencyId);
+    return !(dependency?.status === 'done' || dependency?.templateSkipped);
+  });
   const dependencyBlocked = missingDependencies.length > 0;
   const effectiveStatus = dependencyBlocked || task.status === 'blocked' ? 'blocked' : task.status;
   return {
@@ -248,7 +323,7 @@ function sortProjectPlanTaskEntries(a, b) {
 export function projectPlanNextReadyTask(plan) {
   const states = projectPlanEffectiveTaskStates(plan);
   return flattenProjectPlanTasks(plan)
-    .filter(({ task }) => states[task.id]?.ready)
+    .filter(({ task }) => !task.templateSkipped && states[task.id]?.ready)
     .sort(sortProjectPlanTaskEntries)[0] || null;
 }
 
@@ -256,7 +331,7 @@ export function projectPlanNextReadyTasksByRole(plan) {
   const states = projectPlanEffectiveTaskStates(plan);
   const result = Object.fromEntries(Object.keys(projectPlanRoles).map(roleId => [roleId, null]));
   for (const entry of flattenProjectPlanTasks(plan)
-    .filter(({ task }) => states[task.id]?.ready)
+    .filter(({ task }) => !task.templateSkipped && states[task.id]?.ready)
     .sort(sortProjectPlanTaskEntries)) {
     if (!result[entry.task.ownerRole]) {
       result[entry.task.ownerRole] = {
@@ -269,7 +344,7 @@ export function projectPlanNextReadyTasksByRole(plan) {
 }
 
 export function projectPlanTaskCounts(plan) {
-  const entries = flattenProjectPlanTasks(plan);
+  const entries = flattenProjectPlanTasks(plan).filter(({ task }) => !task.templateSkipped);
   const states = projectPlanEffectiveTaskStates(plan);
   const byStatus = Object.fromEntries(projectPlanStatuses.map(status => [status, 0]));
   for (const { task } of entries) {
@@ -284,6 +359,147 @@ export function projectPlanMilestoneDate(baseYear, plannedOffsetMonths = 0, dueO
   const fractionalDays = Math.round(((Number(plannedOffsetMonths) || 0) - wholeMonths) * 30);
   const date = new Date(Date.UTC(Number(baseYear) || new Date().getFullYear(), 0 + wholeMonths, 1 + fractionalDays + (Number(dueOffsetDays) || 0)));
   return date.toISOString().slice(0, 10);
+}
+
+export function projectPlanWouldCreateCycle(plan, taskId, dependsOn = []) {
+  const taskEntries = flattenProjectPlanTasks(plan);
+  const dependencyMap = new Map(taskEntries.map(({ task }) => [task.id, normalizeDependsOn(task.dependsOn, task.id)]));
+  dependencyMap.set(taskId, normalizeDependsOn(dependsOn, taskId));
+  const visiting = new Set();
+  const visited = new Set();
+  function visit(id) {
+    if (visiting.has(id)) return true;
+    if (visited.has(id)) return false;
+    visiting.add(id);
+    for (const dependencyId of dependencyMap.get(id) || []) {
+      if (dependencyMap.has(dependencyId) && visit(dependencyId)) return true;
+    }
+    visiting.delete(id);
+    visited.add(id);
+    return false;
+  }
+  return [...dependencyMap.keys()].some(visit);
+}
+
+function sortProjectPlanMilestoneTasks(milestone) {
+  return {
+    ...milestone,
+    tasks: [...(milestone.tasks || [])].sort((a, b) =>
+      (Number(a.dueOffsetDays) || 0) - (Number(b.dueOffsetDays) || 0)
+      || (a.source === b.source ? 0 : a.source === 'template' ? -1 : 1)
+      || String(a.id).localeCompare(String(b.id))
+    )
+  };
+}
+
+export function stripDanglingProjectPlanDependencies(plan) {
+  const ids = new Set(flattenProjectPlanTasks(plan).map(({ task }) => task.id));
+  return {
+    ...plan,
+    milestones: (plan.milestones || []).map(milestone => ({
+      ...milestone,
+      tasks: (milestone.tasks || []).map(task => ({
+        ...task,
+        dependsOn: normalizeDependsOn(task.dependsOn, task.id).filter(id => ids.has(id))
+      }))
+    }))
+  };
+}
+
+export function createUserProjectPlanTask(plan, milestoneId, fields = {}) {
+  const milestone = (plan?.milestones || []).find(item => item.id === milestoneId);
+  if (!milestone) throw new Error(`Unknown milestone: ${milestoneId}`);
+  const task = normalizeUserTask({
+    ...fields,
+    id: fields.id || `user-${uid()}`,
+    title: fields.title || 'Eigene Aufgabe'
+  }, milestone);
+  if (projectPlanWouldCreateCycle(plan, task.id, task.dependsOn)) {
+    throw new Error('Abhängigkeit würde einen Zyklus erzeugen.');
+  }
+  return task;
+}
+
+export function addUserProjectPlanTask(plan, milestoneId, fields = {}) {
+  const task = createUserProjectPlanTask(plan, milestoneId, fields);
+  return {
+    ...plan,
+    schemaVersion: projectPlanSchemaVersion,
+    milestones: (plan.milestones || []).map(milestone =>
+      milestone.id === milestoneId ? sortProjectPlanMilestoneTasks({ ...milestone, tasks: [...(milestone.tasks || []), task] }) : milestone
+    )
+  };
+}
+
+export function updateProjectPlanTask(plan, taskId, patch = {}) {
+  const found = findProjectPlanTask(plan, taskId);
+  if (!found) return plan;
+  const { task } = found;
+  const allowedTemplateFields = new Set(['status', 'note', 'templateSkipped', 'ownerRole']);
+  const nextTask = { ...task };
+  for (const [key, value] of Object.entries(patch)) {
+    if (task.source !== 'user' && !allowedTemplateFields.has(key)) continue;
+    if (key === 'id' || key === 'source' || key === 'milestoneId') continue;
+    nextTask[key] = value;
+  }
+  nextTask.ownerRole = roleIds.has(nextTask.ownerRole) ? nextTask.ownerRole : task.ownerRole;
+  nextTask.status = projectPlanStatuses.includes(nextTask.status) ? nextTask.status : task.status;
+  nextTask.evidenceRequired = evidenceIds.has(nextTask.evidenceRequired) ? nextTask.evidenceRequired : null;
+  nextTask.targetView = viewIds.has(nextTask.targetView) ? nextTask.targetView : null;
+  nextTask.deepLinkKey = storyKeys.has(nextTask.deepLinkKey) ? nextTask.deepLinkKey : task.deepLinkKey;
+  nextTask.dependsOn = normalizeDependsOn(nextTask.dependsOn, task.id);
+  nextTask.templateSkipped = task.source === 'template' ? Boolean(nextTask.templateSkipped) : false;
+  nextTask.title = String(nextTask.title || task.title);
+  nextTask.resultArtifact = String(nextTask.resultArtifact || task.resultArtifact || '');
+  nextTask.note = String(nextTask.note || '');
+  nextTask.origin = nextTask.origin === undefined ? undefined : String(nextTask.origin || '');
+  if (projectPlanWouldCreateCycle(plan, taskId, nextTask.dependsOn)) {
+    throw new Error('Abhängigkeit würde einen Zyklus erzeugen.');
+  }
+  return {
+    ...plan,
+    milestones: (plan.milestones || []).map(milestone => sortProjectPlanMilestoneTasks({
+      ...milestone,
+      tasks: (milestone.tasks || []).map(item => item.id === taskId ? nextTask : item)
+    }))
+  };
+}
+
+export function deleteUserProjectPlanTask(plan, taskId) {
+  const found = findProjectPlanTask(plan, taskId);
+  if (!found || found.task.source !== 'user') return plan;
+  const next = {
+    ...plan,
+    milestones: (plan.milestones || []).map(milestone => ({
+      ...milestone,
+      tasks: (milestone.tasks || []).filter(task => task.id !== taskId)
+    }))
+  };
+  return stripDanglingProjectPlanDependencies(next);
+}
+
+export function resetProjectPlanTemplateState(plan, { keepUserTasks = true, baseYear = plan?.baseYear } = {}) {
+  const userTasksByMilestone = new Map();
+  if (keepUserTasks) {
+    for (const { milestone, task } of flattenProjectPlanTasks(plan)) {
+      if (task.source === 'user') {
+        if (!userTasksByMilestone.has(milestone.id)) userTasksByMilestone.set(milestone.id, []);
+        userTasksByMilestone.get(milestone.id).push(task);
+      }
+    }
+  }
+  const base = createDefaultProjectPlan(baseYear || plan?.baseYear);
+  return stripDanglingProjectPlanDependencies({
+    ...base,
+    schemaVersion: projectPlanSchemaVersion,
+    milestones: base.milestones.map(milestone => sortProjectPlanMilestoneTasks({
+      ...milestone,
+      tasks: [
+        ...milestone.tasks.map(task => ({ ...task, status: 'open', note: '', templateSkipped: false })),
+        ...(userTasksByMilestone.get(milestone.id) || [])
+      ]
+    }))
+  });
 }
 
 export function findProjectPlanTask(plan, taskId) {
