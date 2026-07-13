@@ -277,6 +277,91 @@ export function riskHelper({ probabilityBefore = 0, probabilityAfter = 0, impact
   };
 }
 
+export function qImpactHelper({
+  metric = 'SAIDI',
+  interruptionBefore = 0,
+  interruptionAfter = 0,
+  affectedCustomers = 0,
+  monetizationPerCustomerMinute = 0,
+  attribution = 100,
+  evidence = ''
+} = {}) {
+  const normalizedMetric = String(metric || 'SAIDI').toUpperCase();
+  const before = Math.max(0, finiteNumber(interruptionBefore));
+  const after = Math.max(0, finiteNumber(interruptionAfter));
+  const delta = Math.max(0, before - after);
+  const customers = Math.max(0, finiteNumber(affectedCustomers));
+  const monetization = Math.max(0, finiteNumber(monetizationPerCustomerMinute));
+  const attributionShare = clamp(finiteNumber(attribution, 100), 0, 100) / 100;
+  const annualImpactTeur = delta * customers * monetization * attributionShare / 1000;
+  const confidence = String(evidence || '').trim() ? 'assumption' : 'review';
+  return {
+    metric: normalizedMetric,
+    interruptionBefore: before,
+    interruptionAfter: after,
+    interruptionDelta: delta,
+    affectedCustomers: customers,
+    monetizationPerCustomerMinute: monetization,
+    attribution: attributionShare,
+    annualImpactTeur,
+    confidence,
+    chain: `${normalizedMetric}: max(0, ${before} - ${after}) Minuten × ${customers} Kunden × ${monetization} EUR/Kundenminute × ${Math.round(attributionShare * 100)} % Attribution = ${annualImpactTeur.toFixed(1)} TEUR p.a.`,
+    governance: 'Q-Element-Wirkung bleibt prüfpflichtig, bis Datenbasis, Monetarisierungssatz und Attribution fachlich belegt sind.'
+  };
+}
+
+const depreciationLifeDefaults = {
+  station: { label: 'Station / Umspann- oder Trafotechnik', life: 30, hgbLife: 25, depr: 'normal' },
+  cable: { label: 'Kabel / Leitung Strom', life: 40, hgbLife: 35, depr: 'normal' },
+  gasPipe: { label: 'Gasleitung / Gasnetz', life: 35, hgbLife: 30, depr: 'kanuLinear' },
+  digitalControl: { label: 'Digitalisierung / Fernwirk- und Steuertechnik', life: 10, hgbLife: 8, depr: 'normal' },
+  civilWorks: { label: 'Tiefbau / bauliche Anlage', life: 45, hgbLife: 40, depr: 'normal' }
+};
+
+export function depreciationLifeHelper({ assetClass = 'station', sector = 'strom', kanuContext = false } = {}) {
+  const defaults = depreciationLifeDefaults[assetClass] || depreciationLifeDefaults.station;
+  const gasKanu = sector === 'gas' && (kanuContext || defaults.depr.startsWith('kanu'));
+  const depr = gasKanu ? defaults.depr : 'normal';
+  return {
+    assetClass,
+    label: defaults.label,
+    life: defaults.life,
+    hgbLife: defaults.hgbLife,
+    depr,
+    confidence: 'review',
+    note: `${defaults.label}: regulatorische ND ${defaults.life} Jahre, HGB-ND ${defaults.hgbLife} Jahre als Startpunkt. Anlagenklasse, KANU-Kontext und lokale AfA-Vorgaben fachlich prüfen.`,
+    governance: 'Nutzungsdauer-/AfA-Vorschläge sind Orientierung, keine automatische Freigabe.'
+  };
+}
+
+export function financingSpreadHelper({
+  returnMetricRate = NaN,
+  financingRate = 0,
+  invest = 0,
+  activated = 0,
+  regulatoryReturnRate = 0,
+  qAndEEffectPa = 0,
+  riskEffectPa = 0
+} = {}) {
+  const metricRate = finiteNumber(returnMetricRate, NaN);
+  const financing = finiteNumber(financingRate);
+  const spreadPp = Number.isFinite(metricRate) ? (metricRate - financing) * 100 : NaN;
+  const activatedCapital = Math.max(0, finiteNumber(activated));
+  const baseReturnSpreadTeur = activatedCapital * (finiteNumber(regulatoryReturnRate) - financing);
+  const qeRiskContributionTeur = finiteNumber(qAndEEffectPa) + finiteNumber(riskEffectPa);
+  const investment = Math.max(0, finiteNumber(invest));
+  return {
+    spreadPp,
+    baseReturnSpreadTeur,
+    qeRiskContributionTeur,
+    qAndEEffectPa: finiteNumber(qAndEEffectPa),
+    riskEffectPa: finiteNumber(riskEffectPa),
+    invest: investment,
+    explanation: `Spread-Treiber: regulatorischer Zinsspread ${baseReturnSpreadTeur.toFixed(1)} TEUR p.a.; Q/E + Risiko ${qeRiskContributionTeur.toFixed(1)} TEUR p.a.`,
+    warning: 'IRR/MIRR-Spread ist keine Marktrendite; positive Differenzen können wesentlich aus prüfpflichtigen Q/E- und Risikoannahmen stammen.'
+  };
+}
+
 function hasDirectQeEffect(measure, p) {
   if (finiteNumber(measure.qDirect) !== 0 || finiteNumber(measure.eDirect) !== 0) return true;
   return impactAssumptionsFor(measure).some(impact => {
