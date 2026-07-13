@@ -15,6 +15,7 @@ Er ersetzt keine Rechts-, Steuer-, Wirtschaftspruefungs- oder Regulierungsberatu
 - Regulierungsperioden werden als fuenfjaehrige Perioden modelliert.
 - Gas und Strom haben getrennte bekannte Periodenstarts und Fortschreibungen.
 - Die EOG-Wirkung wird aus aktivierbarer Basis, Abschreibung, Kapitalverzinsung, OPEX-Anteil und dokumentierten Wirkannahmen abgeleitet.
+- Wirkungsverzüge sind als prüfpflichtige Planungsannahmen modellierbar. Die fachlich freigegebene Vorbelegung lautet CAPEX/OPEX/QE = 0/3/2 Jahre; sie soll typische zeitliche Effekte sichtbar machen, ersetzt aber keine Bescheid- oder Verfahrensprüfung.
 - Qualitaets-, Effizienz-, Risiko- und Portfolioeffekte werden als explizite Annahmen mit Evidenztyp, Vertrauensstufe und Governance-Status gefuehrt.
 - Im vereinfachten Verfahren werden Q- und Effizienzeffekte weiterhin dokumentiert, aber nicht als individueller Erloesbeitrag angesetzt.
 - KANU-Varianten werden als Gas-spezifische Abschreibungs- und Restwertszenarien betrachtet.

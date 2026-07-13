@@ -2,6 +2,7 @@ import {
   calcMeasure,
   calcPortfolio,
   clamp,
+  defaultEffectLags,
   expectedActivated,
   impactAssumptionsFor,
   params as engineParams,
@@ -222,7 +223,7 @@ const authorKey = 'regulierte-sparten-szenario-rechner-author';
 const lastSeenEventKey = 'regulierte-sparten-szenario-rechner-last-seen-event';
 const roleKey = 'regulierte-sparten-szenario-rechner-role';
 const legacyStorageKeys = [];
-const modelVersion = 7;
+const modelVersion = 8;
 const appVersion = '0.3.0-dev';
 const processPhases = [
   ['initialisierung', 'Initialisierung'],
@@ -2147,6 +2148,9 @@ function applyDemoModel() {
   el.degressiveRate.value = '10';
   el.taxFactor.value = '0';
   el.portfolioAttribution.value = '25';
+  el.capexLagYears.value = String(defaultEffectLags.capex);
+  el.opexLagYears.value = String(defaultEffectLags.opex);
+  el.qeLagYears.value = String(defaultEffectLags.qe);
   el.qDelta.value = '0.6';
   el.eDelta.value = '0.2';
   measures = structuredClone(demoMeasures);

@@ -24,11 +24,13 @@ Ein Projektstand kann enthalten:
 - Prozessstatus mit kurzer Arbeitsstandnotiz und nächstem Abstimmungsschritt,
 - Report- und Gremienvorlagenzustand.
 
-Aktueller Modellstand (`version: 7`) führt zusätzlich explizite Wirkungsverzugs- und Reinvestitionsfelder mit:
+Aktueller Modellstand (`version: 8`) führt zusätzlich fachlich freigegebene Default-Konventionen für Wirkungsverzüge und Reinvestitionsfelder mit:
 
-- `model.inputs.capexLagYears`, `model.inputs.opexLagYears`, `model.inputs.qeLagYears`: optionale Verzugsannahmen in Jahren. Fehlt ein Feld in alten Exporten, gilt `0`.
-- `measure.reinvestMode`: `oneOff` (Default, vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Brücke) oder `assetAddition` (neuer Anlagenzugang mit eigener AfA-/Verzinsungskette).
+- `model.inputs.capexLagYears`, `model.inputs.opexLagYears`, `model.inputs.qeLagYears`: optionale Verzugsannahmen in Jahren. Fehlt ein Feld in alten Exporten, greift die aktuelle fachliche Vorbelegung 0/3/2, sofern der Import nicht bewusst andere Werte setzt.
+- `measure.reinvestMode`: `oneOff` (Default, fachlich freigegebener vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Brücke) oder `assetAddition` (neuer Anlagenzugang mit eigener AfA-/Verzinsungskette).
 - `measure.reinvestLife`: Nutzungsdauer des optionalen Reinvestitions-Anlagenzugangs; fehlt der Wert, wird die normale Maßnahmennutzungsdauer genutzt.
+
+Die fachlich freigegebene Vorbelegung für neue Modelle lautet `capexLagYears = 0`, `opexLagYears = 3`, `qeLagYears = 2`. Diese Werte sind prüfpflichtige Startannahmen; importierte Altmodelle können sie überschreiben oder bei Migration die aktuellen Defaults übernehmen.
 
 ## Minimaler Projektumschlag
 

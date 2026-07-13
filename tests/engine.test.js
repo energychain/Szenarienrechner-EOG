@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calcMeasure,
   calcPortfolio,
+  defaultEffectLags,
   impactAssumptionsFor,
   irr,
   npv,
@@ -29,7 +30,10 @@ const baseInputs = {
   eDelta: 0,
   regulationProcedure: 'standard',
   annualEnergyGwh: '',
-  householdConsumptionKwh: ''
+  householdConsumptionKwh: '',
+  capexLagYears: 0,
+  opexLagYears: 0,
+  qeLagYears: 0
 };
 
 function baseMeasure(overrides = {}) {
@@ -289,9 +293,14 @@ describe('scenario and portfolio parameters', () => {
     expect(result.tariffImpact.available).toBe(false);
   });
 
-  it('keeps regulatory effect lags at zero by default for import compatibility', () => {
-    const p = params(baseInputs);
-    expect(p.effectLags).toMatchObject({ capex: 0, opex: 0, qe: 0 });
+  it('uses approved typical regulatory effect lag defaults when no values are provided', () => {
+    const inputsWithoutLagValues = { ...baseInputs };
+    delete inputsWithoutLagValues.capexLagYears;
+    delete inputsWithoutLagValues.opexLagYears;
+    delete inputsWithoutLagValues.qeLagYears;
+    const p = params(inputsWithoutLagValues);
+    expect(defaultEffectLags).toMatchObject({ capex: 0, opex: 3, qe: 2 });
+    expect(p.effectLags).toMatchObject(defaultEffectLags);
   });
 
   it('can shift CAPEX, OPEX recognition and Q/E effects separately without moving the capital commitment', () => {

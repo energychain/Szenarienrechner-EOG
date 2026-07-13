@@ -26,6 +26,12 @@ export const regulatoryParameterSet = {
   }
 };
 
+export const defaultEffectLags = {
+  capex: 0,
+  opex: 3,
+  qe: 2
+};
+
 export function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -240,9 +246,9 @@ export function params(inputs, overrides = {}) {
     householdConsumptionKwh: finiteNumber(inputs.householdConsumptionKwh, sector === 'gas' ? 15000 : 2900),
     assumptionMode: 'basis',
     effectLags: {
-      capex: Math.max(0, Math.round(finiteNumber(inputs.capexLagYears))),
-      opex: Math.max(0, Math.round(finiteNumber(inputs.opexLagYears))),
-      qe: Math.max(0, Math.round(finiteNumber(inputs.qeLagYears)))
+      capex: Math.max(0, Math.round(finiteNumber(inputs.capexLagYears, defaultEffectLags.capex))),
+      opex: Math.max(0, Math.round(finiteNumber(inputs.opexLagYears, defaultEffectLags.opex))),
+      qe: Math.max(0, Math.round(finiteNumber(inputs.qeLagYears, defaultEffectLags.qe)))
     },
     ...overrides
   };

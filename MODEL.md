@@ -24,7 +24,7 @@ Es ersetzt keine Rechts- oder Regulierungsberatung und keine unternehmensspezifi
 - Startjahr und Betrachtungshorizont.
 - bestehende Erlösobergrenze und regulierte Kapitalbasis.
 - Zinssaetze, Jahresarbeit und weitere Portfolioannahmen.
-- optionale Wirkungsverzugsannahmen für CAPEX-, OPEX- und Q/E-Wirkungen. Diese verschieben nur die modellierte regulatorische Wirksamkeit, nicht die zugrunde liegende Kapitalbindung oder den technischen Maßnahmestart.
+- optionale Wirkungsverzugsannahmen für CAPEX-, OPEX- und Q/E-Wirkungen. Diese verschieben nur die modellierte regulatorische Wirksamkeit, nicht die zugrunde liegende Kapitalbindung oder den technischen Maßnahmestart. Die fachlich freigegebene Vorbelegung lautet CAPEX/OPEX/QE = 0/3/2 Jahre; sie ist eine prüfpflichtige Startannahme und keine Anerkennungszusage.
 
 ### Massnahmen
 
@@ -33,7 +33,7 @@ Es ersetzt keine Rechts- oder Regulierungsberatung und keine unternehmensspezifi
 - Wahrscheinlichkeit des unsicheren Anteils.
 - Nutzungsdauer und Abschreibungspfad.
 - OPEX-Anerkennung, Lifecycle-OPEX, Rueckbau und Reinvestition.
-- Reinvestitionslogik entweder als vereinfachter Einmalabzug oder optional als neuer Anlagenzugang mit eigener Nutzungsdauer, AfA und Verzinsungskette.
+- Reinvestitionslogik entweder als vereinfachter Einmalabzug oder optional als neuer Anlagenzugang mit eigener Nutzungsdauer, AfA und Verzinsungskette. Der vereinfachte Einmalabzug bleibt als freigegebener Default erhalten; bei voraussichtlich aktivierungsfähiger Reinvestition soll der neue Anlagenzugang fachlich geprüft werden.
 - qualitative oder quantitative Wirkannahmen.
 
 ### Szenarien
@@ -64,6 +64,10 @@ Beim vereinfachten Verfahren werden individuelle Q- und Effizienzeffekte vorsich
 ## Gas/KANU-Kontext
 
 Gasbezogene Szenarien koennen beschleunigte Abschreibungs-, Rueckbau- und Transformationspfade brauchen. Die App bildet solche Pfade als Planungsannahmen ab. Produktive Verwendung muss gegen den jeweils aktuellen regulatorischen Stand und konkrete Bescheide geprueft werden.
+
+## Renditekennzahl und MIRR-Konvention
+
+Wenn die Cashflow-Reihe genau einen Vorzeichenwechsel hat, zeigt die App weiterhin die IRR. Bei mehreren Vorzeichenwechseln ist die IRR mehrdeutig; dann zeigt die App stattdessen MIRR. Fachlich freigegeben ist dabei: negative Cashflows werden mit dem Finanzierungssatz (`financingRate`) aufgezinst, positive Cashflows mit dem Diskontsatz (`discountRate`) wiederangelegt. Die Kennzahl bleibt indikativ; Kapitalwert und Governance-Urteil bleiben die robustere Entscheidungsbasis.
 
 ## Ergebnisse
 
