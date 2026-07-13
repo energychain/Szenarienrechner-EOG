@@ -135,6 +135,10 @@
       <span class="step-main">Report</span>
       <span class="step-status" id="status-report">noch offen</span>
     </button>
+    <button type="button" class="view-tab" data-view="projectPlan">
+      <span class="step-main">Projektplan</span>
+      <span class="step-status" id="status-projectPlan">Plan offen</span>
+    </button>
     <label class="switch-row compact-switch" for="expertModeToggle">
       <input id="expertModeToggle" type="checkbox">
       Expertenmodus
@@ -686,6 +690,18 @@
         </div>
       </div>
       <div id="reportPage" class="report-page"></div>
+    </section>
+
+    <section class="panel app-view hidden" data-view-panel="projectPlan" aria-label="Projektplan Planungsrunde">
+      <div class="section-head-row">
+        <div>
+          <p class="eyebrow">Planungsrunde</p>
+          <h2>Projektplan aus der Userstory</h2>
+          <p class="hint">Exemplarische Meilenstein-Timeline mit Rollen-Swimlanes, abhakbaren Aufgaben und Deep-Links in die passende App-Sicht. Der Fortschritt wird im Modell-JSON unter <code>projectPlan</code> gespeichert.</p>
+        </div>
+        <button type="button" id="resetProjectPlan">Projektplan zurücksetzen</button>
+      </div>
+      <div id="projectPlanBody" class="project-plan-body"></div>
     </section>
   </main>
 

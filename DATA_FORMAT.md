@@ -22,6 +22,7 @@ Ein Projektstand kann enthalten:
 - Import-/Review-Informationen,
 - Historienereignisse,
 - Prozessstatus mit kurzer Arbeitsstandnotiz und nächstem Abstimmungsschritt,
+- Projektplan der Planungsrunde mit Meilensteinen, Aufgaben, Rollen, Fristen und Deep-Links,
 - Report- und Gremienvorlagenzustand.
 
 Aktueller Modellstand (`version: 8`) führt zusätzlich fachlich freigegebene Default-Konventionen für Wirkungsverzüge und Reinvestitionsfelder mit:
@@ -59,6 +60,37 @@ Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fac
         "dueDate": "2026-01-15",
         "updatedAt": "2026-01-01T00:00:00.000Z"
       }
+    },
+    "projectPlan": {
+      "baseYear": 2027,
+      "targetDecisionMilestone": "m7",
+      "milestones": [
+        {
+          "id": "m3",
+          "storyKey": "massnahmenbewertung",
+          "title": "Maßnahmenbewertung",
+          "plannedOffsetMonths": 3,
+          "leadRole": "assetmanagement",
+          "entryCriteria": "Stammdaten & Quellen erhoben",
+          "exitArtifact": "vergleichbarer Maßnahmenkatalog",
+          "tasks": [
+            {
+              "id": "m3-t3",
+              "milestoneId": "m3",
+              "title": "Aktivierbaren Anteil je Maßnahme bewerten",
+              "ownerRole": "bilanzierung",
+              "dueOffsetDays": 21,
+              "deepLinkKey": "massnahmenbewertung",
+              "targetView": "measures",
+              "dependsOn": ["m3-t1"],
+              "status": "open",
+              "evidenceRequired": "beleg",
+              "resultArtifact": "Aktivierbarkeitsprofil",
+              "note": ""
+            }
+          ]
+        }
+      ]
     }
   }
 }
@@ -72,6 +104,19 @@ Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fac
 - `createdAt` / `updatedAt`: technische Zeitstempel der Datei, keine fachliche Freigabe.
 - `source`: erzeugendes Werkzeug.
 - `data`: fachlicher Payload.
+
+#### `projectPlan`
+
+`projectPlan` ist ein additives Feld fuer eine exemplarische Planungsrunde. Es ersetzt nicht `process.resume`, sondern strukturiert die Userstory-Meilensteine als operative Checkliste.
+
+- `baseYear`: Basisjahr der Terminableitung; Meilensteintermine werden aus `plannedOffsetMonths` berechnet.
+- `targetDecisionMilestone`: Ziel-Gate fuer die rueckwaertsterminierte Entscheidung, standardmaessig `m7`.
+- `milestones[]`: neun Meilensteine von Kick-off bis Beschluss/Archiv.
+- `milestones[].storyKey`: identisch zum bestehenden `?story=<key>`-Deep-Link. Dadurch entsteht keine zweite Wahrheit fuer App-Navigation.
+- `milestones[].tasks[]`: abhakbare Aufgaben mit Rolle, Frist, Abhaengigkeiten, Evidenzanforderung, Ergebnisartefakt, Status und Notiz.
+- `status`: `open`, `in_progress`, `done` oder `blocked`.
+
+Beim Import alter Modelle ohne `projectPlan` erzeugt die App den exemplarischen Plan neu. Vorhandene Status- und Notizfelder werden beim Normalisieren erhalten; fachliche Werte werden durch den Plan nicht automatisch veraendert.
 
 ### Umgang mit unbekannten Feldern
 

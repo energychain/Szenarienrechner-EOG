@@ -36,6 +36,17 @@ import {
   storyMilestoneFromUrl,
   storyUrlForMilestone
 } from './story-navigation.js';
+import {
+  findProjectPlanTask,
+  normalizeProjectPlan,
+  projectPlanDeepLinkForTask,
+  projectPlanMilestoneDate,
+  projectPlanRoles,
+  projectPlanStatusLabels,
+  projectPlanStatuses,
+  projectPlanStoryLabel,
+  projectPlanTaskCounts
+} from './project-plan.js';
 import { buildInfo } from './build-info.js';
 import { imprintSections } from './trust-content.js';
 
@@ -253,6 +264,8 @@ let history = emptyHistory();
 let previousModelForHistory = null;
 let suppressHistoryEvents = false;
 let processState = defaultProcessState();
+let projectPlan = normalizeProjectPlan({}, Number(document.getElementById('baseYear')?.value) || 2027);
+let activeProjectTaskId = '';
 let strategy = defaultStrategy();
 let committee = defaultCommittee();
 let currentRole = 'owner';
@@ -1079,6 +1092,153 @@ function maturityRingHtml(score, blockers, size = 58) {
   `;
 }
 
+function projectPlanProgressText(counts = projectPlanTaskCounts(projectPlan)) {
+  return `${counts.completed}/${counts.total} erledigt · ${counts.byStatus.blocked || 0} blockiert`;
+}
+
+function renderProjectTimeline(plan) {
+  const milestones = plan.milestones || [];
+  const maxOffset = Math.max(...milestones.map(milestone => milestone.plannedOffsetMonths), 9) || 9;
+  return `
+    <div class="project-timeline" aria-label="Meilenstein-Timeline">
+      ${milestones.map(milestone => {
+        const counts = projectPlanTaskCounts({ milestones: [milestone] });
+        const left = Math.max(0, Math.min(100, milestone.plannedOffsetMonths / maxOffset * 100));
+        const doneRatio = counts.total ? counts.completed / counts.total : 0;
+        return `
+          <article class="project-milestone ${doneRatio === 1 ? 'done' : ''}" style="--offset:${left}%; --done:${Math.round(doneRatio * 100)}%;">
+            <div class="project-milestone-bar"><span></span></div>
+            <div class="project-milestone-copy">
+              <strong>${esc(milestone.id.toUpperCase())} · ${esc(milestone.title)}</strong>
+              <span>${esc(projectPlanMilestoneDate(plan.baseYear, milestone.plannedOffsetMonths))} · ${esc(projectPlanRoles[milestone.leadRole] || milestone.leadRole)} · ${counts.completed}/${counts.total}</span>
+            </div>
+          </article>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderProjectRoleSwimlanes(plan) {
+  const tasks = (plan.milestones || []).flatMap(milestone => (milestone.tasks || []).map(item => ({ ...item, milestoneTitle: milestone.title })));
+  return `
+    <div class="project-role-lanes" aria-label="Rollen-Swimlanes">
+      ${Object.entries(projectPlanRoles).map(([roleId, label]) => {
+        const roleTasks = tasks.filter(item => item.ownerRole === roleId);
+        const done = roleTasks.filter(item => item.status === 'done').length;
+        return `
+          <section class="project-role-lane">
+            <strong>${esc(label)}</strong>
+            <span>${done}/${roleTasks.length} erledigt</span>
+            <small>${esc(roleTasks.slice(0, 3).map(item => `${item.milestoneId.toUpperCase()} ${item.title}`).join(' · ') || 'keine Aufgabe')}</small>
+          </section>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderProjectPlan() {
+  const node = document.getElementById('projectPlanBody');
+  if (!node) return;
+  projectPlan = normalizeProjectPlan(projectPlan, Number(el.baseYear?.value || 2027));
+  const counts = projectPlanTaskCounts(projectPlan);
+  const roleOptions = Object.entries(projectPlanRoles).map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join('');
+  node.innerHTML = `
+    <div class="project-plan-summary">
+      <div><strong>${counts.completed}/${counts.total}</strong><span>Aufgaben erledigt</span></div>
+      <div><strong>${counts.byStatus.in_progress || 0}</strong><span>in Arbeit</span></div>
+      <div><strong>${counts.byStatus.blocked || 0}</strong><span>blockiert</span></div>
+      <div><strong>${esc(projectPlanMilestoneDate(projectPlan.baseYear, 6.5))}</strong><span>exemplarischer Gremienpunkt</span></div>
+    </div>
+    ${renderProjectTimeline(projectPlan)}
+    ${renderProjectRoleSwimlanes(projectPlan)}
+    <div class="project-plan-swimlanes">
+      ${projectPlan.milestones.map(milestone => `
+        <article class="project-plan-milestone" data-project-milestone="${esc(milestone.id)}">
+          <header>
+            <div>
+              <p class="eyebrow">${esc(milestone.id.toUpperCase())} · ${esc(projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths))}</p>
+              <h3>${esc(milestone.title)}</h3>
+              <p>${esc(milestone.entryCriteria)} → <strong>${esc(milestone.exitArtifact)}</strong></p>
+            </div>
+            <a href="${esc(projectPlanDeepLinkForTask({ deepLinkKey: milestone.storyKey }))}" class="secondary-link" data-project-jump="${esc(milestone.tasks[0]?.id || '')}">App öffnen</a>
+          </header>
+          <div class="project-task-list">
+            ${milestone.tasks.map(item => `
+              <div class="project-task ${esc(item.status)} ${activeProjectTaskId === item.id ? 'active' : ''}" data-project-task="${esc(item.id)}">
+                <div class="project-task-main">
+                  <div class="project-task-title">
+                    <strong>${esc(item.title)}</strong>
+                    <span>${esc(projectPlanRoles[item.ownerRole] || item.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths, item.dueOffsetDays))}${item.evidenceRequired ? ` · Evidenz: ${esc(item.evidenceRequired)}` : ''}</span>
+                  </div>
+                  <p>${esc(item.resultArtifact)}${item.dependsOn.length ? ` · abhängig von ${esc(item.dependsOn.join(', '))}` : ''}</p>
+                  <label class="sr-only" for="project-note-${esc(item.id)}">Notiz zu ${esc(item.title)}</label>
+                  <input id="project-note-${esc(item.id)}" data-project-note="${esc(item.id)}" type="text" value="${esc(item.note)}" placeholder="Notiz / Klärpunkt zur Aufgabe">
+                </div>
+                <div class="project-task-actions">
+                  <label class="sr-only" for="project-status-${esc(item.id)}">Status</label>
+                  <select id="project-status-${esc(item.id)}" data-project-status="${esc(item.id)}">
+                    ${projectPlanStatuses.map(status => `<option value="${esc(status)}" ${item.status === status ? 'selected' : ''}>${esc(projectPlanStatusLabels[status])}</option>`).join('')}
+                  </select>
+                  <select data-project-owner="${esc(item.id)}" aria-label="Rolle">
+                    ${roleOptions.replace(`value="${esc(item.ownerRole)}"`, `value="${esc(item.ownerRole)}" selected`)}
+                  </select>
+                  <button type="button" data-project-jump="${esc(item.id)}">Zur App</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
+function updateProjectTask(taskId, patch, rerender = true) {
+  projectPlan = {
+    ...projectPlan,
+    milestones: projectPlan.milestones.map(milestone => ({
+      ...milestone,
+      tasks: milestone.tasks.map(item => item.id === taskId ? { ...item, ...patch } : item)
+    }))
+  };
+  if (rerender) renderAll();
+  else saveToBrowser(true);
+}
+
+function openProjectTask(taskId) {
+  const found = findProjectPlanTask(projectPlan, taskId);
+  if (!found) return;
+  const { milestone, task } = found;
+  const state = appStateForStoryMilestone(task.deepLinkKey || milestone.storyKey);
+  activeProjectTaskId = task.id;
+  processState = normalizeProcessState({
+    ...processState,
+    phase: state.phase,
+    resume: {
+      statusNote: `Projektplan: ${milestone.title} · ${task.title}`,
+      nextStep: task.resultArtifact || 'Aufgabe fachlich bearbeiten und Evidenz/Status pflegen.',
+      owner: projectPlanRoles[task.ownerRole] || task.ownerRole,
+      dueDate: projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths, task.dueOffsetDays)
+    }
+  });
+  activeView = task.targetView || state.view;
+  meetingFocus = state.focus;
+  reportMode = state.reportMode;
+  setView(activeView);
+  renderAll();
+  setStorageStatus(`Projektplan-Aufgabe geöffnet: ${task.title}.`);
+  if (task.status === 'open') updateProjectTask(task.id, { status: 'in_progress' });
+}
+
+function resetProjectPlan() {
+  projectPlan = normalizeProjectPlan({}, Number(el.baseYear?.value || 2027));
+  activeProjectTaskId = '';
+  renderAll();
+  setStorageStatus('Projektplan wurde auf die exemplarische Planungsrunde zurückgesetzt.');
+}
+
 function renderProcessUx() {
   const phase = phaseLabel();
   const currentIndex = processPhases.findIndex(([id]) => id === processState.phase);
@@ -1129,11 +1289,14 @@ function renderProcessUx() {
   if (counter) counter.textContent = openCount ? `${openCount} Klärpunkte offen` : 'Keine offenen Klärpunkte';
   const storyMilestone = storyMilestoneForPhase(processState.phase, activeView);
   const storyLink = document.getElementById('storyContextLink');
+  const activeTask = activeProjectTaskId ? findProjectPlanTask(projectPlan, activeProjectTaskId) : null;
   if (storyLink) {
     storyLink.href = storyUrlForMilestone(storyMilestone.id);
-    storyLink.textContent = `Story: ${storyMilestone.label}`;
-    storyLink.title = storyMilestone.note;
+    storyLink.textContent = activeTask ? `Aufgabe: ${activeTask.task.title}` : `Story: ${storyMilestone.label}`;
+    storyLink.title = activeTask ? `${projectPlanStoryLabel(activeTask.task)} · ${activeTask.task.resultArtifact}` : storyMilestone.note;
   }
+  const projectStatus = document.getElementById('status-projectPlan');
+  if (projectStatus) projectStatus.textContent = projectPlanProgressText();
 }
 
 function isoWeek(date) {
@@ -1452,6 +1615,8 @@ function currentModelData() {
     selectedId,
     role: currentRole,
     process: structuredClone(processState),
+    projectPlan: structuredClone(projectPlan),
+    activeProjectTaskId,
     strategy: structuredClone(strategy),
     committee: structuredClone(committee),
     importMapping: structuredClone(importMapping),
@@ -1489,6 +1654,8 @@ function legacyModelFromState(state) {
     selectedId: state.selectedId,
     role: state.role || 'owner',
     process: state.process || defaultProcessState(),
+    projectPlan: state.projectPlan,
+    activeProjectTaskId: state.activeProjectTaskId || '',
     strategy: state.strategy || defaultStrategy(),
     committee: state.committee || defaultCommittee(),
     importMapping: state.importMapping || {},
@@ -1540,13 +1707,15 @@ function applyModelState(state) {
     ? model.selectedId
     : measures[0]?.id;
   scenario = ['basis', 'konservativ', 'wert'].includes(model.scenario) ? model.scenario : 'basis';
-  activeView = ['basis', 'measures', 'results', 'report', 'expertWork'].includes(model.activeView) ? model.activeView : activeView;
+  activeView = ['basis', 'measures', 'results', 'report', 'projectPlan', 'expertWork'].includes(model.activeView) ? model.activeView : activeView;
   reportMode = ['management', 'committee'].includes(model.reportMode) ? model.reportMode : 'management';
   meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(model.meetingFocus) ? model.meetingFocus : 'management';
   meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
     ? structuredClone(model.meetingTextOverrides)
     : {};
   processState = normalizeProcessState(model.process);
+  projectPlan = normalizeProjectPlan(model.projectPlan, Number(model.inputs?.baseYear || el.baseYear.value || 2027));
+  activeProjectTaskId = findProjectPlanTask(projectPlan, model.activeProjectTaskId)?.task.id || '';
   strategy = normalizeStrategy(model.strategy);
   committee = normalizeCommittee(model.committee);
   importMapping = model.importMapping && typeof model.importMapping === 'object' ? structuredClone(model.importMapping) : {};
@@ -4550,6 +4719,7 @@ function renderAll(persist = true) {
   renderDetail();
   renderPortfolio();
   renderProcessUx();
+  renderProjectPlan();
   renderChangeSinceSeen();
   renderMaturityAndClarifications();
   renderReportMode();
@@ -4659,6 +4829,23 @@ document.getElementById('strategyObjectives').addEventListener('click', event =>
 });
 document.getElementById('addObjective').addEventListener('click', addObjective);
 document.getElementById('measureObjectives').addEventListener('change', toggleMeasureObjective);
+document.getElementById('resetProjectPlan').addEventListener('click', resetProjectPlan);
+document.getElementById('projectPlanBody').addEventListener('change', event => {
+  const statusId = event.target.dataset.projectStatus;
+  if (statusId) updateProjectTask(statusId, { status: event.target.value });
+  const ownerId = event.target.dataset.projectOwner;
+  if (ownerId) updateProjectTask(ownerId, { ownerRole: event.target.value });
+});
+document.getElementById('projectPlanBody').addEventListener('input', event => {
+  const taskId = event.target.dataset.projectNote;
+  if (taskId) updateProjectTask(taskId, { note: event.target.value }, false);
+});
+document.getElementById('projectPlanBody').addEventListener('click', event => {
+  const button = event.target.closest('[data-project-jump]');
+  if (!button) return;
+  event.preventDefault();
+  openProjectTask(button.dataset.projectJump);
+});
 enhanceHelpLabels();
 loadRole();
 applyRole(currentRole, false);
