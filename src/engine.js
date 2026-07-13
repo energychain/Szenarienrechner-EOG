@@ -138,6 +138,16 @@ export function npv(rate, flows) {
   return flows.reduce((sum, flow, i) => sum + flow / Math.pow(1 + rate, i), 0);
 }
 
+export function cashflowSignChanges(flows) {
+  return flows
+    .map(value => finiteNumber(value))
+    .filter(value => Math.abs(value) > 0.000001)
+    .reduce((changes, value, index, materialFlows) => {
+      if (index === 0) return 0;
+      return Math.sign(value) !== Math.sign(materialFlows[index - 1]) ? changes + 1 : changes;
+    }, 0);
+}
+
 export function irr(flows) {
   let low = -0.95;
   let high = 1.5;
@@ -156,6 +166,50 @@ export function irr(flows) {
     }
   }
   return (low + high) / 2;
+}
+
+export function mirr(flows, financeRate = 0, reinvestRate = 0) {
+  const n = flows.length - 1;
+  if (n <= 0) return NaN;
+  const positiveFutureValue = flows.reduce((sum, flow, index) => {
+    const value = finiteNumber(flow);
+    return value > 0 ? sum + value * Math.pow(1 + reinvestRate, n - index) : sum;
+  }, 0);
+  const negativePresentValue = flows.reduce((sum, flow, index) => {
+    const value = finiteNumber(flow);
+    return value < 0 ? sum + value / Math.pow(1 + financeRate, index) : sum;
+  }, 0);
+  if (positiveFutureValue <= 0 || negativePresentValue >= 0) return NaN;
+  return Math.pow(positiveFutureValue / Math.abs(negativePresentValue), 1 / n) - 1;
+}
+
+export function returnMetricFor(flows, financeRate = 0, reinvestRate = 0) {
+  const signChanges = cashflowSignChanges(flows);
+  if (signChanges === 1) {
+    return {
+      kind: 'irr',
+      label: 'IRR',
+      value: irr(flows),
+      signChanges,
+      note: 'Eindeutige IRR bei genau einem Vorzeichenwechsel.'
+    };
+  }
+  if (signChanges > 1) {
+    return {
+      kind: 'mirr',
+      label: 'MIRR',
+      value: mirr(flows, financeRate, reinvestRate),
+      signChanges,
+      note: 'Mehrere Vorzeichenwechsel: IRR ist mehrdeutig, daher wird MIRR mit Finanzierungs- und Reinvestitionssatz gezeigt.'
+    };
+  }
+  return {
+    kind: 'none',
+    label: 'IRR',
+    value: NaN,
+    signChanges,
+    note: 'Keine Renditekennzahl berechenbar, weil keine belastbare Zahlungsstromumkehr vorliegt.'
+  };
 }
 
 export function params(inputs, overrides = {}) {
@@ -200,6 +254,30 @@ export function expectedActivated(measure) {
     activated: finiteNumber(measure.cost) * share,
     nonActivated: Math.max(0, finiteNumber(measure.cost) * (1 - share))
   };
+}
+
+function hasDirectQeEffect(measure, p) {
+  if (finiteNumber(measure.qDirect) !== 0 || finiteNumber(measure.eDirect) !== 0) return true;
+  return impactAssumptionsFor(measure).some(impact => {
+    if (impact.area !== 'qElement' && impact.area !== 'efficiency') return false;
+    return impactIncludedInScenario(impact, p) && finiteNumber(impact.amount) !== 0;
+  });
+}
+
+export function doubleCountingWarningsFor(measure, p, portfolioEffectPa = portfolioEffectFor(measure, p)) {
+  const portfolioShare = clamp(finiteNumber(measure.portfolioShare), 0, 100);
+  const hasPortfolioQe = portfolioShare > 0 && Math.abs(portfolioEffectPa) > 0.000001 && (p.qDelta !== 0 || p.eDelta !== 0);
+  if (!hasPortfolioQe || !hasDirectQeEffect(measure, p)) return [];
+  return [{
+    type: 'possible_double_counting',
+    key: `double-counting:${measure.id}:qe`,
+    area: 'Q/Effizienz',
+    targetPhase: 'massnahmenbewertung',
+    measureId: measure.id,
+    measure: measure.name || 'Maßnahme',
+    title: 'Mögliche Doppelzählung Q/Effizienz',
+    detail: 'Für diese Maßnahme sind pauschaler Portfolio-Q/Effekt und direkte Q-/Effizienzwirkungen gleichzeitig angesetzt. Attribution und Wirkungskette prüfen; keine automatische Kürzung.'
+  }];
 }
 
 export function calcMeasure(measure, p, portfolioEffectPa = 0) {
@@ -280,7 +358,8 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   }
 
   const flows = [-finiteNumber(measure.cost), ...rows.map(row => row.indicativeCashflow)];
-  const measureIrr = irr(flows);
+  const returnMetric = returnMetricFor(flows, p.financingRate, p.discountRate);
+  const measureIrr = returnMetric.value;
   const measureNpv = npv(p.discountRate, flows);
   const impactSummary = impactEffectsForMeasure(measure, p, start);
   const futureGrossCosts = rows.map(row => Math.max(0, -row.opex) + Math.max(0, -row.reinvestDecommission));
@@ -291,6 +370,8 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     activated: active.activated,
     activeShare: active.share,
     rows,
+    returnMetric,
+    rateMetricLabel: returnMetric.label,
     irr: measureIrr,
     npv: measureNpv,
     impactSummary,
@@ -307,7 +388,14 @@ export function portfolioEffectFor(measure, p) {
 export function calcPortfolio(model, p) {
   const measures = Array.isArray(model?.measures) ? model.measures : [];
   const activeMeasures = measures.filter(measure => measure.active);
-  const results = activeMeasures.map(measure => calcMeasure(measure, p, portfolioEffectFor(measure, p)));
+  const results = activeMeasures.map(measure => {
+    const portfolioEffect = portfolioEffectFor(measure, p);
+    const result = calcMeasure(measure, p, portfolioEffect);
+    return {
+      ...result,
+      warnings: doubleCountingWarningsFor(measure, p, portfolioEffect)
+    };
+  });
   const yearly = Array.from({ length: p.horizon }, (_, i) => ({
     year: p.baseYear + i,
     regulatoryPeriod: null,
@@ -352,7 +440,10 @@ export function calcPortfolio(model, p) {
   const invest = activeMeasures.reduce((sum, measure) => sum + finiteNumber(measure.cost), 0);
   const activated = results.reduce((sum, result) => sum + result.activated, 0);
   const flows = [-invest, ...yearly.map(row => row.indicativeCashflow)];
-  const resultIrr = invest > 0 ? irr(flows) : NaN;
+  const returnMetric = invest > 0
+    ? returnMetricFor(flows, p.financingRate, p.discountRate)
+    : returnMetricFor([]);
+  const resultIrr = returnMetric.value;
   const resultNpv = invest > 0 ? npv(p.discountRate, flows) : 0;
   const qePa = activeMeasures.reduce((sum, measure) => sum + portfolioEffectFor(measure, p), 0);
   const impactPa = results.reduce((sum, result) => sum + result.impactSummary.qAndE + result.impactSummary.risk, 0);
@@ -375,12 +466,15 @@ export function calcPortfolio(model, p) {
     yearly,
     invest,
     activated,
+    returnMetric,
+    rateMetricLabel: returnMetric.label,
     irr: resultIrr,
     npv: resultNpv,
     qePa,
     impactPa,
     riskPa,
     totex,
+    warnings: results.flatMap(result => result.warnings || []),
     tariffImpact: tariffImpactFor(yearly[0]?.regulatoryEogEffect || 0, p)
   };
 }
@@ -395,6 +489,10 @@ function decisionSnapshot(result) {
   const carries = Number.isFinite(spread) && spread >= 0.01 && result.npv > 0;
   return {
     irr: result.irr,
+    rateMetricKind: result.returnMetric?.kind || 'irr',
+    rateMetricLabel: result.rateMetricLabel || 'IRR',
+    rateMetricNote: result.returnMetric?.note || '',
+    rateMetricSignChanges: result.returnMetric?.signChanges ?? 0,
     npv: result.npv,
     spread,
     impactPa: result.impactPa,
