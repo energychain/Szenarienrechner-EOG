@@ -32,9 +32,25 @@ describe('project plan UI integration', () => {
     expect(ui).toContain('Nächste fällige Aufgabe je Rolle');
   });
 
+  it('supports user-owned tasks and skipped template tasks in the UI', () => {
+    expect(ui).toContain('data-project-add');
+    expect(ui).toContain('data-project-delete');
+    expect(ui).toContain('data-project-skip');
+    expect(ui).toContain('Eigene Aufgabe wurde ergänzt');
+    expect(ui).toContain('Eigene Aufgaben behalten?');
+    expect(ui).toContain('template-skipped');
+    expect(ui).toContain('project-task-source');
+    expect(ui).toContain('updateProjectPlanTaskModel');
+    expect(ui).toContain('deleteUserProjectPlanTask');
+  });
+
   it('documents the projectPlan field in the public data format', () => {
     expect(dataFormat).toContain('projectPlan');
     expect(dataFormat).toContain('Meilenstein');
     expect(dataFormat).toContain('Deep-Link');
+    expect(dataFormat).toContain('1.1.0');
+    expect(dataFormat).toContain('source');
+    expect(dataFormat).toContain('templateSkipped');
+    expect(dataFormat).toContain('user-');
   });
 });

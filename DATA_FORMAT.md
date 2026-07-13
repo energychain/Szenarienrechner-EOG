@@ -107,7 +107,7 @@ Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fac
 
 #### `projectPlan`
 
-`projectPlan` ist ein additives Feld fuer eine exemplarische Planungsrunde. Es ersetzt nicht `process.resume`, sondern strukturiert die Userstory-Meilensteine als operative Checkliste.
+`projectPlan` ist ein additives Feld fuer eine exemplarische Planungsrunde. Es ersetzt nicht `process.resume`, sondern strukturiert die Userstory-Meilensteine als operative Checkliste. Aktuelle Projektplan-Schema-Version: `1.1.0`.
 
 - `baseYear`: Basisjahr der Terminableitung; Meilensteintermine werden aus `plannedOffsetMonths` berechnet.
 - `targetDecisionMilestone`: Ziel-Gate fuer die rueckwaertsterminierte Entscheidung, standardmaessig `m7`.
@@ -115,8 +115,12 @@ Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fac
 - `milestones[].storyKey`: identisch zum bestehenden `?story=<key>`-Deep-Link. Dadurch entsteht keine zweite Wahrheit fuer App-Navigation.
 - `milestones[].tasks[]`: abhakbare Aufgaben mit Rolle, Frist, Abhaengigkeiten, Evidenzanforderung, Ergebnisartefakt, Status und Notiz.
 - `status`: `open`, `in_progress`, `done` oder `blocked`.
+- `source`: `template` oder `user`. Fehlende Werte aus alten `1.0.0`-Exporten gelten als `template`.
+- `templateSkipped`: Vorlagenaufgaben koennen als bewusst nicht zutreffend markiert werden. Sie bleiben sichtbar, zaehlen aber nicht in Fortschritt oder abgeleitete Blockaden.
+- `createdAt` / `origin`: optionale Herkunftsfelder fuer eigene Aufgaben.
+- Eigene Aufgaben verwenden stabile IDs mit Praefix `user-...`; Template-IDs wie `m3-t4` bleiben dem Seed vorbehalten.
 
-Beim Import alter Modelle ohne `projectPlan` erzeugt die App den exemplarischen Plan neu. Vorhandene Status- und Notizfelder werden beim Normalisieren erhalten; fachliche Werte werden durch den Plan nicht automatisch veraendert.
+Beim Import alter Modelle ohne `projectPlan` erzeugt die App den exemplarischen Plan neu. Vorhandene Status-, Notiz-, `source`-, `templateSkipped`- und Herkunftsfelder werden beim Normalisieren erhalten; fachliche Werte werden durch den Plan nicht automatisch veraendert. Eigene Aufgaben reisen in JSON- und HTML-mit-Daten-Exporten mit. Beim Reset werden Template-Tasks auf den Seed-Zustand gesetzt; eigene Aufgaben werden standardmaessig behalten, koennen aber auf Nachfrage entfernt werden.
 
 ### Umgang mit unbekannten Feldern
 
