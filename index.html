@@ -519,6 +519,34 @@
         <p id="cashflowBridgeCaveat" class="hint bridge-caveat">-</p>
       </section>
 
+      <section id="eogDecompositionPanel" class="panel" aria-label="EOG-Zerlegung">
+        <div class="section-head-row">
+          <div>
+            <h2>EOG-Zerlegung</h2>
+            <p class="hint">Jahr 1 und laufendes Jahr werden komponentenweise erklärt. So bleibt sichtbar, welche Teile regulatorische EOG-Wirkung sind und welche nur die indikative Cashflow-Brücke betreffen.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Sicht</th>
+                <th>AfA</th>
+                <th>Verzinsung</th>
+                <th>Reinvest-Asset</th>
+                <th>Q/E</th>
+                <th>Risiko</th>
+                <th>Einmal-OPEX</th>
+                <th>regulatorische EOG</th>
+                <th>wirtschaftliche Brücke</th>
+                <th>indikativer Cashflow</th>
+              </tr>
+            </thead>
+            <tbody id="eogDecompositionBody"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="panel" aria-label="Meeting-Fokus">
         <h2>Meeting-Fokus</h2>
         <div class="focus-tabs" aria-label="Gesprächsansicht">
@@ -935,6 +963,14 @@
             </div>
           </div>
           <p class="hint">Portfolioanteil verteilt den globalen Q-/E-Effekt auf einzelne Maßnahmen. Direkte Werte gehören nur hinein, wenn sie separat begründet sind.</p>
+        </div>
+        <div id="helperCalculatorPanel" class="group helper-calculators">
+          <h3>Herleitungshelfer</h3>
+          <p class="hint">Diese Unterrechner machen Quelle statt Wert sichtbar. Sie ändern noch keine Eingaben automatisch, sondern erklären die aktuelle Herleitung und markieren prüfpflichtige Punkte.</p>
+          <div class="helper-grid">
+            <article id="helperActivationSplit" class="helper-card"></article>
+            <article id="helperRiskExpectedValue" class="helper-card"></article>
+          </div>
         </div>
         <div class="group">
           <div class="section-head-row">

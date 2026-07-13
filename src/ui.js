@@ -1,4 +1,5 @@
 import {
+  activationSplitHelper,
   calcMeasure,
   calcPortfolio,
   clamp,
@@ -11,6 +12,7 @@ import {
   regulatoryParameterSet,
   regulatoryPeriodFor,
   riskExpectedValue,
+  riskHelper,
   scenarioParams as engineScenarioParams
 } from './engine.js';
 import {
@@ -2454,10 +2456,34 @@ function renderMeasureValidation(measure) {
   validation.invalidIds.forEach(id => {
     if (el[id]) el[id].setAttribute('aria-invalid', 'true');
   });
-  node.classList.toggle('active', validation.messages.length > 0);
-  node.innerHTML = validation.messages.length
-    ? `<strong>Annahmen begrenzt</strong><ul>${validation.messages.map(message => `<li>${esc(message)}</li>`).join('')}</ul>`
-    : '';
+  node.classList.toggle('active', Boolean(validation.messages.length));
+  node.innerHTML = validation.messages.map(message => `<p>${esc(message)}</p>`).join('');
+}
+
+function renderHelperCalculators(measure) {
+  const activationNode = document.getElementById('helperActivationSplit');
+  const riskNode = document.getElementById('helperRiskExpectedValue');
+  if (!activationNode || !riskNode) return;
+
+  const activation = activationSplitHelper(measure);
+  activationNode.innerHTML = `
+    <strong>CAPEX/OPEX-Split</strong>
+    <p><span class="big">${fmtTeur(activation.activated, 1)}</span><br>erwartbar aktivierbar; ${fmtTeur(activation.nonActivated, 1)} nicht aktivierter Anteil.</p>
+    <p class="hint">Einmalige OPEX-Anerkennung aus aktuellem Split: ${fmtTeur(activation.firstYearOpexRecognition, 1)}. ${esc(activation.clarification)}</p>
+  `;
+
+  const riskImpact = impactAssumptionsFor(measure).find(impact => impact.area === 'risk' && !impact.legacyFlat)
+    || { riskProbabilityBefore: 0, riskProbabilityAfter: 0, riskImpact: measure.riskAvoided || 0 };
+  const risk = riskHelper({
+    probabilityBefore: riskImpact.riskProbabilityBefore,
+    probabilityAfter: riskImpact.riskProbabilityAfter,
+    impact: riskImpact.riskImpact || measure.riskAvoided || 0
+  });
+  riskNode.innerHTML = `
+    <strong>Risiko-Erwartungswert</strong>
+    <p><span class="big">${fmtTeur(risk.expectedAvoidedPa, 1)}</span><br>vermiedener Erwartungsschaden p.a.</p>
+    <p class="hint">${esc(risk.chain)} ${esc(risk.governance)}</p>
+  `;
 }
 
 function renderGlobalValidation() {
@@ -2684,6 +2710,47 @@ function renderEogCashflowBridge(result, metrics) {
   document.getElementById('cashflowBridgeResult').textContent = fmtTeur(metrics.recurringIndicativeCashflow, 1);
   document.getElementById('cashflowBridgeResultText').textContent = `indikative Cashflow-Basis für IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'} und Kapitalwert ${fmtTeur(result.npv, 1)}.`;
   document.getElementById('cashflowBridgeCaveat').textContent = 'Diese Überleitung erklärt, warum IRR/NPV nicht die EOG selbst bewerten: Die regulatorische Erlösobergrenze wird als Annahme in eine wirtschaftliche Cashflow-Sicht übersetzt; Mengen-, Zeitverzugs- und Wälzungsrisiken bleiben zu prüfen.';
+}
+
+function recurringDecompositionRow(result) {
+  return result.yearly.slice(1).find(row => Math.abs(row.reinvestDecommission || 0) < 0.000001)
+    || result.yearly[1]
+    || result.yearly[0]
+    || {};
+}
+
+function eogDecompositionRowHtml(label, row = {}) {
+  const reinvestAsset = row.reinvestAssetEffect || 0;
+  const economicBridge = (row.economicOpex || 0) + (row.reinvestDecommission || 0);
+  return `
+    <tr>
+      <td>${esc(label)}</td>
+      <td>${fmtTeur(row.depreciation || 0, 1)}</td>
+      <td>${fmtTeur(row.capitalReturn || 0, 1)}</td>
+      <td>${fmtTeur(reinvestAsset, 1)}</td>
+      <td>${fmtTeur(row.qAndE || 0, 1)}</td>
+      <td>${fmtTeur(row.risk || 0, 1)}</td>
+      <td>${fmtTeur(row.firstYearOpex || 0, 1)}</td>
+      <td>${fmtTeur(row.regulatoryEogEffect || 0, 1)}</td>
+      <td>${fmtTeur(economicBridge, 1)}</td>
+      <td>${fmtTeur(row.indicativeCashflow || 0, 1)}</td>
+    </tr>
+  `;
+}
+
+function eogDecompositionTableHtml(result) {
+  const first = result.yearly[0] || {};
+  const recurring = recurringDecompositionRow(result);
+  return [
+    eogDecompositionRowHtml(`Jahr 1 (${first.year || result.p.baseYear})`, first),
+    eogDecompositionRowHtml(`laufendes Jahr (${recurring.year || result.p.baseYear + 1})`, recurring)
+  ].join('');
+}
+
+function renderEogDecomposition(result) {
+  const body = document.getElementById('eogDecompositionBody');
+  if (!body) return;
+  body.innerHTML = eogDecompositionTableHtml(result);
 }
 
 function renderMeetingFocus(result, first, spread, metrics = portfolioDecisionMetrics(result)) {
@@ -3636,6 +3703,7 @@ function renderDetail() {
 	          validationNode.innerHTML = '';
 	        }
         renderImpactAssumptions({ impactAssumptions: [] });
+        renderHelperCalculators({ cost: 0, secure: 0, uncertain: 0, probability: 0, opexRecognition: 0, impactAssumptions: [] });
         const timeline = document.getElementById('lifecycleTimeline');
         if (timeline) timeline.innerHTML = '';
 	        return;
@@ -3678,6 +3746,7 @@ function renderDetail() {
 	      ];
 	      document.getElementById('selectedPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
 	      renderMeasureValidation(measure);
+      renderHelperCalculators(measure);
       renderImpactAssumptions(measure);
       const timeline = document.getElementById('lifecycleTimeline');
       if (timeline) timeline.innerHTML = lifecycleTimelineHtml(measure, p);
@@ -4302,6 +4371,17 @@ function renderReport(result, first, spread, decision, metrics) {
     </section>
 
     <section class="report-section">
+      <h2>EOG-Zerlegung im Report</h2>
+      <p class="hint">Die Komponenten zeigen, welche Treiber den Jahr-1-Wert und das laufende Jahr prägen. Die wirtschaftliche Brücke bleibt getrennt von der regulatorischen EOG-Wirkung.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sicht</th><th>AfA</th><th>Verzinsung</th><th>Reinvest-Asset</th><th>Q/E</th><th>Risiko</th><th>Einmal-OPEX</th><th>regulatorische EOG</th><th>wirtschaftliche Brücke</th><th>indikativer Cashflow</th></tr></thead>
+          <tbody>${eogDecompositionTableHtml(result)}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-section">
       <h2>Szenariovergleich</h2>
       <div class="table-wrap">
         <table>
@@ -4435,6 +4515,7 @@ function renderPortfolio() {
 	      renderStickyKpis(result, first, decision, metrics);
 	      renderManagementSummary(result, first, spread, decision, metrics);
 	      renderEogCashflowBridge(result, metrics);
+      renderEogDecomposition(result);
 	      renderMeetingFocus(result, first, spread, metrics);
 
   renderChart(result.yearly);

@@ -8,11 +8,13 @@ const docs = [
   'docs/regulatory-map.md',
   'docs/maturity-model.md',
   'docs/decision-artifacts.md',
+  'docs/validation-methodology.md',
   'docs/templates/massnahmensteckbrief.md',
   'docs/templates/gremienvorlage.md',
   'docs/templates/klaerpunktliste.md',
   'docs/templates/datenanforderung.md',
   'docs/templates/workshop-agenda.md',
+  'docs/templates/validation-protocol.md',
   'docs/guides/management.md',
   'docs/guides/controlling.md',
   'docs/guides/regulierung.md',
@@ -40,6 +42,7 @@ describe('consulting ecosystem docs', () => {
     expect(content).toContain('regulierte Finanzplanung');
     expect(content).toContain('kleine und mittlere Stadtwerke');
     expect(content).toContain('Senior-Consulting');
+    expect(content).toContain('TRL-6-Validierung');
     expect(content).toContain('Cernion');
   });
 
