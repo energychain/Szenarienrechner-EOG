@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { availableRegulatoryParameterSets } from '../src/rulesets/index.js';
 import {
   activationSplitHelper,
+  capitalCostRateFor,
+  capitalCostSettingsFor,
   calcMeasure,
   calcPortfolio,
   defaultEffectLags,
@@ -87,6 +90,35 @@ describe('financial helpers', () => {
   });
 });
 
+describe('advanced capital cost model', () => {
+  it('keeps the simple mixed return rate as the default mode', () => {
+    const p = params(baseInputs);
+    expect(p.capitalCost.mode).toBe('simple');
+    expect(capitalCostRateFor(p.capitalCost, p.returnRate, p.taxFactor)).toBeCloseTo(0.05, 6);
+    const result = calcMeasure(baseMeasure(), p);
+    expect(result.rows[0].capitalReturn).toBeCloseTo(47.5, 4);
+  });
+
+  it('can split EK/FK return and apply deduction capital in advanced mode', () => {
+    const p = params({
+      ...baseInputs,
+      capitalCostMode: 'advanced',
+      equityShare: 40,
+      equityReturnRate: 6,
+      debtShare: 60,
+      debtReturnRate: 4,
+      deductionCapital: 10000
+    });
+    const settings = capitalCostSettingsFor({ capitalCostMode: 'advanced', equityShare: 40, equityReturnRate: 6, debtShare: 60, debtReturnRate: 4, deductionCapital: 10000 });
+    expect(settings.mode).toBe('advanced');
+    expect(capitalCostRateFor(p.capitalCost, p.returnRate, p.taxFactor)).toBeCloseTo(0.048, 6);
+    const result = calcMeasure(baseMeasure(), p);
+    expect(result.rows[0].eligibleCapital).toBeCloseTo(760, 4);
+    expect(result.rows[0].capitalReturn).toBeCloseTo(36.48, 4);
+    expect(result.rows[0].regulatoryEogEffect).toBeLessThan(calcMeasure(baseMeasure(), params(baseInputs)).rows[0].regulatoryEogEffect);
+  });
+});
+
 describe('regulatoryPeriodFor', () => {
   it('documents the public regulatory parameter set and source boundary', () => {
     expect(regulatoryParameterSet.id).toBe('regulatory-parameters-2026-07');
@@ -96,6 +128,9 @@ describe('regulatoryPeriodFor', () => {
       expect.stringContaining('KANU'),
       expect.stringContaining('NEST/RAMEN')
     ]));
+    expect(regulatoryParameterSet.defaultEffectLags).toEqual(defaultEffectLags);
+    expect(regulatoryParameterSet.capitalCostDefaults).toMatchObject({ mode: 'simple', equityShare: 40, debtShare: 60 });
+    expect(availableRegulatoryParameterSets).toContain(regulatoryParameterSet.id);
   });
 
   it('handles gas period boundaries and 5-year future periods', () => {

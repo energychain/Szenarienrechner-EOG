@@ -1,39 +1,12 @@
 // Rechenkern fuer den Szenario-Rechner regulierte Sparten.
 // Dieses Modul ist bewusst DOM-frei: Modellzustand und Parameter rein, Ergebnisobjekt raus.
 
-export const regulatoryParameterSet = {
-  id: 'regulatory-parameters-2026-07',
-  effectiveMonth: '2026-07',
-  confidence: 'consultation',
-  sourceRef: 'BNetzA Anreizregulierung/ARegV/KANU sowie NEST/RAMEN-Kontext, Arbeitsstand 2026-07; pruefpflichtiger Planungsstand.',
-  changelogUrl: 'REGULATORY_ASSUMPTIONS.md',
-  scope: 'Generisches Planungsmodell fuer regulierte Sparten; keine Rechts- oder Regulierungsberatung.',
-  source: 'ARegV, EnWG, BNetzA-Anreizregulierung, KANU-Kontext und NEST/RAMEN-Arbeitsstand; Details siehe REGULATORY_ASSUMPTIONS.md.',
-  sources: [
-    'ARegV: Regulierungsperioden, Erloesobergrenzen, Qualitaetselement und vereinfachtes Verfahren',
-    'EnWG: regulatorischer Rahmen fuer Netzbetrieb und Netzentgelte',
-    'BNetzA: Anreizregulierung, Kapitalkostenabgleich, Qualitaetselement und Regulierungskonto',
-    'BNetzA KANU-Kontext: beschleunigte Abschreibungs- und Restwertfragen fuer Gasnetze',
-    'BNetzA NEST/RAMEN-Kontext: kuenftige Weiterentwicklung des Regulierungsrahmens'
-  ],
-  futurePeriodLengthYears: 5,
-  regulatoryPeriodsBySector: {
-    gas: [
-      { number: 4, id: 'RP4', label: '4. Regulierungsperiode', start: 2023, end: 2027, costBaseYear: 2020, known: true },
-      { number: 5, id: 'RP5', label: '5. Regulierungsperiode', start: 2028, end: 2032, costBaseYear: 2025, known: true }
-    ],
-    strom: [
-      { number: 4, id: 'RP4', label: '4. Regulierungsperiode', start: 2024, end: 2028, costBaseYear: 2021, known: true },
-      { number: 5, id: 'RP5', label: '5. Regulierungsperiode', start: 2029, end: 2033, costBaseYear: 2026, known: true }
-    ]
-  }
-};
+import { regulatoryParameterSet } from './rulesets/index.js';
 
-export const defaultEffectLags = {
-  capex: 0,
-  opex: 3,
-  qe: 2
-};
+export { regulatoryParameterSet };
+
+export const defaultEffectLags = regulatoryParameterSet.defaultEffectLags;
+export const defaultCapitalCostSettings = regulatoryParameterSet.capitalCostDefaults;
 
 export function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -242,6 +215,7 @@ export function params(inputs, overrides = {}) {
     kanuEndYear: Math.round(finiteNumber(inputs.kanuEndYear)),
     degressiveRate: clamp(finiteNumber(inputs.degressiveRate), 0, 12) / 100,
     taxFactor: finiteNumber(inputs.taxFactor) / 100,
+    capitalCost: capitalCostSettingsFor(inputs),
     attribution: clamp(finiteNumber(inputs.portfolioAttribution), 0, 100) / 100,
     qDelta,
     eDelta,
@@ -327,6 +301,37 @@ export function doubleCountingWarningsFor(measure, p, portfolioEffectPa = portfo
   }];
 }
 
+export function capitalCostSettingsFor(inputs = {}, parameterSet = regulatoryParameterSet) {
+  const defaults = parameterSet.capitalCostDefaults || {};
+  const mode = inputs.capitalCostMode === 'advanced' ? 'advanced' : 'simple';
+  const defaultEquityShare = defaults['equityShare'] ?? 40;
+  const defaultDebtShare = defaults['debtShare'] ?? (100 - defaultEquityShare);
+  const equityShare = clamp(finiteNumber(inputs.equityShare, defaultEquityShare), 0, 100) / 100;
+  const debtShare = clamp(finiteNumber(inputs.debtShare, defaultDebtShare), 0, 100) / 100;
+  return {
+    mode,
+    equityShare,
+    debtShare,
+    equityReturnRate: finiteNumber(inputs.equityReturnRate, defaults['equityReturnRate'] ?? finiteNumber(inputs.returnRate)) / 100,
+    debtReturnRate: finiteNumber(inputs.debtReturnRate, defaults['debtReturnRate'] ?? finiteNumber(inputs.financingRate)) / 100,
+    deductionCapital: Math.max(0, finiteNumber(inputs.deductionCapital, defaults['deductionCapital'] ?? 0))
+  };
+}
+
+export function capitalCostRateFor(settings, simpleReturnRate, taxFactor = 0) {
+  if (!settings || settings.mode !== 'advanced') return simpleReturnRate * (1 + taxFactor);
+  const totalShare = settings.equityShare + settings.debtShare;
+  const equityWeight = totalShare > 0 ? settings.equityShare / totalShare : 0;
+  const debtWeight = totalShare > 0 ? settings.debtShare / totalShare : 0;
+  return equityWeight * settings.equityReturnRate * (1 + taxFactor) + debtWeight * settings.debtReturnRate;
+}
+
+export function eligibleCapitalFor(avgCapital, p) {
+  if (p.capitalCost?.mode !== 'advanced') return avgCapital;
+  const deductionShare = p.rab > 0 ? clamp(p.capitalCost.deductionCapital / p.rab, 0, 1) : 0;
+  return Math.max(0, avgCapital * (1 - deductionShare));
+}
+
 export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   const active = expectedActivated(measure);
   const opex = active.nonActivated * clamp(finiteNumber(measure.opexRecognition), 0, 100) / 100;
@@ -369,7 +374,8 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     }
 
     const avgCapital = Math.max(0, opening - depreciation / 2);
-    const capitalReturn = avgCapital * p.returnRate * (1 + p.taxFactor);
+    const eligibleCapital = eligibleCapitalFor(avgCapital, p);
+    const capitalReturn = eligibleCapital * capitalCostRateFor(p.capitalCost, p.returnRate, p.taxFactor);
     const capexEffective = year >= start + effectLags.capex;
     const qeEffective = year >= start + effectLags.qe;
     const firstYearOpex = year === start + effectLags.opex ? opex : 0;
@@ -385,7 +391,7 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
       : 0;
     const reinvestDepreciationRaw = reinvestAssetOpening > 0.000001 ? Math.min(reinvestAssetOpening, reinvestAnnualDepreciation) : 0;
     const reinvestCapitalReturnRaw = reinvestAssetOpening > 0.000001
-      ? Math.max(0, reinvestAssetOpening - reinvestDepreciationRaw / 2) * p.returnRate * (1 + p.taxFactor)
+      ? eligibleCapitalFor(Math.max(0, reinvestAssetOpening - reinvestDepreciationRaw / 2), p) * capitalCostRateFor(p.capitalCost, p.returnRate, p.taxFactor)
       : 0;
     const reinvestAssetEffective = reinvestMode === 'assetAddition' && year >= reinvestYear + effectLags.capex;
     const reinvestDepreciation = reinvestAssetEffective ? reinvestDepreciationRaw : 0;
@@ -407,6 +413,7 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
       year,
       depreciation,
       capitalReturn,
+      eligibleCapital,
       regulatoryCapexEffect,
       reinvestDepreciation,
       reinvestCapitalReturn,
@@ -472,6 +479,7 @@ export function calcPortfolio(model, p) {
     regulatoryPeriod: null,
     depreciation: 0,
     capitalReturn: 0,
+    eligibleCapital: 0,
     regulatoryCapexEffect: 0,
     reinvestDepreciation: 0,
     reinvestCapitalReturn: 0,
@@ -496,6 +504,7 @@ export function calcPortfolio(model, p) {
     result.rows.forEach((row, i) => {
       yearly[i].depreciation += row.depreciation;
       yearly[i].capitalReturn += row.capitalReturn;
+      yearly[i].eligibleCapital += row.eligibleCapital || 0;
       yearly[i].regulatoryCapexEffect += row.regulatoryCapexEffect;
       yearly[i].reinvestDepreciation += row.reinvestDepreciation;
       yearly[i].reinvestCapitalReturn += row.reinvestCapitalReturn;

@@ -24,6 +24,7 @@ Es ersetzt keine Rechts- oder Regulierungsberatung und keine unternehmensspezifi
 - Startjahr und Betrachtungshorizont.
 - bestehende Erlösobergrenze und regulierte Kapitalbasis.
 - Zinssaetze, Jahresarbeit und weitere Portfolioannahmen.
+- Kapitalkostenmodell: einfacher Mischsatz oder optionaler Advanced-Modus mit EK-/FK-Anteilen, getrennten Zinssaetzen und Abzugskapital.
 - optionale Wirkungsverzugsannahmen für CAPEX-, OPEX- und Q/E-Wirkungen. Diese verschieben nur die modellierte regulatorische Wirksamkeit, nicht die zugrunde liegende Kapitalbindung oder den technischen Maßnahmestart. Die fachlich freigegebene Vorbelegung lautet CAPEX/OPEX/QE = 0/3/2 Jahre; sie ist eine prüfpflichtige Startannahme und keine Anerkennungszusage.
 
 ### Massnahmen
@@ -68,6 +69,10 @@ Gasbezogene Szenarien koennen beschleunigte Abschreibungs-, Rueckbau- und Transf
 ## Renditekennzahl und MIRR-Konvention
 
 Wenn die Cashflow-Reihe genau einen Vorzeichenwechsel hat, zeigt die App weiterhin die IRR. Bei mehreren Vorzeichenwechseln ist die IRR mehrdeutig; dann zeigt die App stattdessen MIRR. Fachlich freigegeben ist dabei: negative Cashflows werden mit dem Finanzierungssatz (`financingRate`) aufgezinst, positive Cashflows mit dem Diskontsatz (`discountRate`) wiederangelegt. Die Kennzahl bleibt indikativ; Kapitalwert und Governance-Urteil bleiben die robustere Entscheidungsbasis.
+
+## Kapitalkostenmodell
+
+Der einfache Default bleibt ein einzelner Mischsatz (`returnRate`) auf die kalkulatorische Kapitalbasis. Für fachlich feinere Fälle gibt es einen optionalen Advanced-Modus: EK- und FK-Anteile werden mit getrennten Zinssaetzen gewichtet; der Zuschlag/Steuern-Faktor wirkt nur auf den EK-Anteil; Abzugskapital reduziert die verzinsungsfähige Kapitalbasis anteilig zur regulierten Kapitalbasis (`rab`). Dieser Modus ist prüfpflichtig und soll verwendet werden, wenn die einfache Mischsatzlogik für eine reale Planungsrunde nicht ausreicht.
 
 ## Ergebnisse
 
