@@ -1,0 +1,23 @@
+name: Fehler melden
+description: Fehler in App, Report, Export oder Dokumentation melden
+title: "[Fehler] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bitte keine vertraulichen Modell-, Netzbetreiber- oder Projektdaten einfügen. Die App kann Metadaten vorbefüllen; Modelldaten werden nicht automatisch übertragen.
+  - type: textarea
+    id: description
+    attributes:
+      label: Beschreibung
+      description: Was ist passiert, was wurde erwartet?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: App-Kontext
+      description: Falls aus der App geöffnet, sind hier Version, Build-Commit und Ruleset vorbefüllt.
+    validations:
+      required: false

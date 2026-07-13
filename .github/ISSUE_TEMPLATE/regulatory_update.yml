@@ -1,0 +1,38 @@
+name: Regulierungsupdate oder Parameteränderung melden
+description: Öffentliche Festlegung, Konsultation oder Parameteränderung für das Ruleset melden
+title: "[Regulierungsupdate] "
+labels: [regulatory-update]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dieses Formular dient dazu, öffentliche regulatorische Änderungen strukturiert in den Ruleset-Workflow zu bringen. Bitte nur öffentlich zitierbare Quellen eintragen.
+  - type: input
+    id: source
+    attributes:
+      label: Öffentliche Quelle / Aktenzeichen
+      placeholder: BNetzA, Beschlusskammer, Konsultation, Link oder Aktenzeichen
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Welche Parameter oder Annahmen ändern sich?
+      description: Bitte betroffene Sparte, Zeitraum und fachliche Wirkung beschreiben.
+    validations:
+      required: true
+  - type: dropdown
+    id: confidence
+    attributes:
+      label: Verbindlichkeit der Quelle
+      options:
+        - enacted
+        - consultation
+        - draft
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: App-Kontext
+      description: Falls aus der App geöffnet, sind hier Version, Build-Commit und aktives Ruleset vorbefüllt.

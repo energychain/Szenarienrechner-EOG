@@ -40,7 +40,7 @@ Optional stellt GitHub Pages den aktuellen `main`-Stand als statische Browser-Ve
 
 - https://energychain.github.io/Szenarienrechner-EOG/
 
-Auch diese Variante bleibt clientseitig: Die HTML-Datei wird von GitHub Pages geladen, danach erfolgen keine fachlichen Server-Uploads, keine Telemetrie und keine Netzwerk-APIs aus der App heraus. Sensible Planungsdaten sollten weiterhin bevorzugt ueber lokale Offline-Dateien und manuelle JSON-Exporte bearbeitet werden.
+Auch diese Variante bleibt clientseitig: Die HTML-Datei wird von GitHub Pages geladen, danach erfolgen keine fachlichen Server-Uploads und keine Telemetrie. Nur die explizite Aktion `Aktualität prüfen` liest nach Bestätigung die öffentliche `release-manifest.json`; Support-Issues werden nur nach Nutzeraktion im Browser geöffnet. Sensible Planungsdaten sollten weiterhin bevorzugt ueber lokale Offline-Dateien und manuelle JSON- oder HTML-mit-Daten-Exporte bearbeitet werden.
 
 ## Lizenz
 
@@ -54,6 +54,7 @@ Weitere Projektdokumente:
 
 - `docs/ecosystem/index.md`: Übersicht zum Beratungs-/Methodik-Ökosystem mit Navigation zu Handbuch, Projektplan, Vorlagen, Lernpfaden und Fallstudien.
 - `docs/project-plan.md`: Dokumentation der Projektplan-Ansicht mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten, eigenen Aufgaben und Reset-/Export-Verhalten.
+- `docs/release-awareness.md`: Aktualitäts-Erkennung, Ruleset-Konfidenz, Release-Manifest und GitHub-Support-Leitplanken.
 - `docs/handbook/regulierte-finanzplanung-vnb.md`: Methodikhandbuch für regulierte Finanzplanung kleiner VNBs.
 - `docs/regulatory-map.md`: öffentliche Quellen und Einordnung zu Strom/Gas-Regulatorik.
 - `docs/templates/`: Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung und Workshopagenda.
@@ -72,7 +73,7 @@ Weitere Projektdokumente:
 
 Die Datei kommt zum Nutzer, nicht der Nutzer zur URL. Die Anwendung wird als einzelne HTML-Datei verteilt und per Doppelklick lokal im Browser geoeffnet.
 
-- Keine Netzwerkverbindung: CSP-erzwungen mit `connect-src 'none'` und `default-src 'none'`.
+- Kein automatischer Netzzugriff beim Start: CSP-erzwungen mit `default-src 'none'`; `connect-src` erlaubt nur den bewusst ausgelösten Abruf von `https://energychain.github.io` für `release-manifest.json`.
 - Keine Telemetrie, keine Cookies, keine externen Skripte, Styles, Fonts oder Bilder.
 - Speicherung erfolgt nur im lokalen Browserprofil (`localStorage`) und ueber manuelle Exporte.
 - `Daten herunterladen` erzeugt weiterhin ein separates JSON-Modell fuer Archivierung und Versionsvergleich.

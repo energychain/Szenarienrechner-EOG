@@ -121,6 +121,34 @@ Typische Nutzung in dieser Story:
 
 Damit wird die App zum wiederaufnahmefähigen Arbeitsstand: Kennzahlen, Annahmen, Report und Projektsteuerung bleiben in einer Datei verbunden.
 
+## Aktualitätsprüfung und GitHub-Support als Vertrauensschicht
+
+Eine Planungsrunde kann mehrere Monate dauern. In dieser Zeit können sich nicht nur Kosten, Projekte oder Gremienfristen verändern, sondern auch die regulatorische Einordnung: neue Festlegungen, Konsultationsstände, Parameterstände oder Hinweise aus der Praxis. Gerade deshalb reicht es nicht, eine offline gespeicherte HTML-Datei nur als Rechenstand zu betrachten. Sie muss auch zeigen, **auf welchem App-Stand und welchem Regulierungsstand** sie beruht.
+
+**Situation im EVU:** Die Modellverantwortung öffnet im Juni einen Arbeitsstand, der im Januar vorbereitet wurde. Die Datei funktioniert weiterhin offline und enthält alle Nutzdaten. Gleichzeitig stellt sich die Frage: Arbeiten wir noch mit der aktuellen App-Version? Ist der verwendete Regulierungsparameterstand noch derselbe? Gibt es einen neueren Konsultations- oder Festlegungsstand, der für die Vorlage zumindest erwähnt werden muss?
+
+**Fachliche Frage:** Wie kann ein EVU Aktualität prüfen, ohne die Datensouveränität der Offline-Datei aufzugeben oder vertrauliche Modellwerte an einen Server zu senden?
+
+**App-Beitrag:** Die App trennt zwei Versionsachsen. Die eine Achse ist die Anwendung selbst: App-Version, Build-Commit, Build-Zeit und erwarteter SHA-256 des Single-File-Artefakts. Die zweite Achse ist der Regulierungsparameterstand: Ruleset-ID, Wirksamkeitsmonat, Konfidenzgrad und Quellenreferenz. Im Footer erscheint ein Badge zum aktiven Regulierungsstand; Report und Exporte stempeln diesen Stand mit ein.
+
+Die Aktion **„Aktualität prüfen“** ist bewusst kein automatischer Hintergrunddienst. Sie wird nur durch den Nutzer ausgelöst und erst nach Bestätigung ausgeführt. Die App liest dann einmalig eine öffentliche `release-manifest.json` von GitHub Pages. Dabei werden keine Modell-, Maßnahmen-, localStorage- oder Browserdaten übertragen. Das Ergebnis lautet getrennt: App aktuell oder veraltet; Regulierungsstand aktuell oder veraltet; ggf. mit Changelog, Quellenreferenz und erwarteter Prüfsumme.
+
+**GitHub-Support in der Story:** Wenn die Runde einen Fehler, eine fachliche Unklarheit oder eine neue regulatorische Quelle erkennt, öffnet **„Feedback / Support melden“** ein vorbefülltes GitHub-Issue im Browser. Es wird nichts automatisch gesendet. Der Nutzer sieht die Meldung, kann sie ändern und sendet sie selbst ab. Standardmäßig enthält die Meldung nur nicht-sensitive Metadaten wie App-Version, Build-Commit, Ruleset-ID, Konfidenz und letzter Aktualitätscheck — keine Maßnahmenwerte und keine Modelldaten. Für Umgebungen ohne GitHub-Zugriff erzeugt **„Support-Paket exportieren“** eine kleine JSON-Datei mit demselben Kontext, die intern geprüft und auf anderem Weg weitergegeben werden kann.
+
+**Ergebnis:** Die Offline-Datei bleibt souverän und versandfähig, bekommt aber eine kontrollierte Brücke zur Außenwelt: Aktualität kann geprüft, Regulierungsänderung kann gemeldet und Support kann strukturiert angefragt werden, ohne dass aus der App eine Cloud-Anwendung wird.
+
+**Beraterhinweis:** Ein Senior Consultant würde hier nicht nur fragen: „Ist die Zahl richtig?“ Er würde fragen: „Auf welchem Regelstand wurde gerechnet, wie verbindlich ist dieser Stand, wann wurde zuletzt geprüft und welche Quelle belegt die Änderung?“ Genau diese Fragen macht die App sichtbar. Provisorische Planung auf Konsultationsständen wird dadurch möglich, aber nie als rechtskräftige Wahrheit getarnt.
+
+Typische Nutzung in dieser Story:
+
+- Vor der Entscheidungsvorlage prüft die Modellverantwortung die Aktualität des App- und Ruleset-Stands.
+- Bei einem neueren Regulierungsstand wird die Vorlage nicht automatisch geändert, sondern der Hinweis als Klärpunkt dokumentiert.
+- Bei einer fachlichen Abweichung oder vermuteten Parameteränderung wird ein GitHub-Issue mit öffentlicher Quelle vorbereitet.
+- Wenn GitHub im EVU-Netz nicht erreichbar ist, wird ein Support-Paket exportiert und intern weitergegeben.
+- Im archivierten Entscheidungsstand bleibt nachvollziehbar, wann zuletzt geprüft wurde und welcher Regulierungsstand im Report verwendet wurde.
+
+Damit ergänzt die Aktualitätsprüfung die Offline-Fähigkeit, statt sie zu schwächen: Die App bleibt lokal, aber sie macht sichtbar, wann sich die regulatorische Wirklichkeit außerhalb der Datei bewegt hat.
+
 ---
 
 <a id="kickoff"></a>

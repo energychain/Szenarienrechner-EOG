@@ -59,6 +59,6 @@ jobs:
             echo "Verifikation:"
             echo "sha256sum szenarienrechner-eog.html"
           } > RELEASE_NOTES.md
-      - run: gh release create "$GITHUB_REF_NAME" dist/szenarienrechner-eog.html SHA256SUMS.txt --notes-file RELEASE_NOTES.md
+      - run: gh release create "$GITHUB_REF_NAME" dist/szenarienrechner-eog.html dist/release-manifest.json SHA256SUMS.txt --notes-file RELEASE_NOTES.md
         env:
           GH_TOKEN: ${{ github.token }}

@@ -197,6 +197,39 @@
       overflow-wrap: anywhere;
     }
 
+    .ruleset-badge,
+    .release-check-badge {
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .ruleset-badge.good {
+      color: var(--good);
+      border-color: rgba(29, 127, 95, .28);
+      background: rgba(29, 127, 95, .08);
+    }
+
+    .ruleset-badge.warn {
+      color: #8a5a00;
+      border-color: rgba(186, 127, 24, .35);
+      background: rgba(255, 209, 102, .22);
+    }
+
+    .ruleset-badge.bad {
+      color: var(--bad);
+      border-color: rgba(162, 58, 58, .35);
+      background: rgba(162, 58, 58, .08);
+    }
+
+    .ruleset-warning {
+      border-left: 4px solid var(--warn);
+      background: rgba(255, 209, 102, .12);
+    }
+
     .footer-meta span + span::before,
     .footer-meta span + .footer-link::before {
       content: "";

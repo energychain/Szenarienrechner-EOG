@@ -4,6 +4,9 @@
 export const regulatoryParameterSet = {
   id: 'regulatory-parameters-2026-07',
   effectiveMonth: '2026-07',
+  confidence: 'consultation',
+  sourceRef: 'BNetzA Anreizregulierung/ARegV/KANU sowie NEST/RAMEN-Kontext, Arbeitsstand 2026-07; pruefpflichtiger Planungsstand.',
+  changelogUrl: 'REGULATORY_ASSUMPTIONS.md',
   scope: 'Generisches Planungsmodell fuer regulierte Sparten; keine Rechts- oder Regulierungsberatung.',
   source: 'ARegV, EnWG, BNetzA-Anreizregulierung, KANU-Kontext und NEST/RAMEN-Arbeitsstand; Details siehe REGULATORY_ASSUMPTIONS.md.',
   sources: [

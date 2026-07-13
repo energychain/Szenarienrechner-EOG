@@ -23,6 +23,7 @@ Ein Projektstand kann enthalten:
 - Historienereignisse,
 - Prozessstatus mit kurzer Arbeitsstandnotiz und nächstem Abstimmungsschritt,
 - Projektplan der Planungsrunde mit Meilensteinen, Aufgaben, Rollen, Fristen und Deep-Links,
+- Aktualitäts-/Release-Kontext (`lastReleaseCheck`) und Build-/Ruleset-Provenienz,
 - Report- und Gremienvorlagenzustand.
 
 Aktueller Modellstand (`version: 8`) führt zusätzlich fachlich freigegebene Default-Konventionen für Wirkungsverzüge und Reinvestitionsfelder mit:
@@ -42,6 +43,14 @@ Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fac
   "schemaVersion": "1.0.0",
   "modelVersion": "0.3.0",
   "regulatoryProfileId": "DE-ARegV-current",
+  "regulatoryParameterSetId": "regulatory-parameters-2026-07",
+  "regulatoryParameterConfidence": "consultation",
+  "buildCommit": "abc123def456",
+  "lastReleaseCheck": {
+    "checkedAt": "2026-01-01T12:00:00.000Z",
+    "app": { "status": "current" },
+    "ruleset": { "status": "current" }
+  },
   "createdAt": "2026-01-01T00:00:00.000Z",
   "updatedAt": "2026-01-01T00:00:00.000Z",
   "source": "szenarienrechner-eog",
@@ -121,6 +130,10 @@ Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fac
 - Eigene Aufgaben verwenden stabile IDs mit Praefix `user-...`; Template-IDs wie `m3-t4` bleiben dem Seed vorbehalten.
 
 Beim Import alter Modelle ohne `projectPlan` erzeugt die App den exemplarischen Plan neu. Vorhandene Status-, Notiz-, `source`-, `templateSkipped`- und Herkunftsfelder werden beim Normalisieren erhalten; fachliche Werte werden durch den Plan nicht automatisch veraendert. Eigene Aufgaben reisen in JSON- und HTML-mit-Daten-Exporten mit. Beim Reset werden Template-Tasks auf den Seed-Zustand gesetzt; eigene Aufgaben werden standardmaessig behalten, koennen aber auf Nachfrage entfernt werden.
+
+#### `lastReleaseCheck` und Ruleset-Provenienz
+
+Der Aktualitätscheck ist ein optionaler, explizit ausgeloester GET auf `release-manifest.json`. Das Ergebnis wird als `lastReleaseCheck` gespeichert und in JSON-/HTML-mit-Daten-Exporten serialisiert. Es enthält nur Vergleichs- und Manifest-Metadaten, keine Modellwerte. Jeder Export trägt zusätzlich `buildCommit`, `buildTime`, `regulatoryParameterSetId`, `regulatoryParameterEffectiveMonth`, `regulatoryParameterConfidence` und `regulatoryParameterSourceRef`. Dadurch bleibt nachvollziehbar, ob ein Entscheidungsstand auf einem rechtskräftigen, konsultierten oder Entwurfs-Ruleset gerechnet wurde.
 
 ### Umgang mit unbekannten Feldern
 

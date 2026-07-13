@@ -17,6 +17,7 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 | Offline-App | Maßnahmen, Szenarien und Annahmen strukturiert rechnen | Arbeitsfähiges Modell mit JSON- oder HTML-mit-Daten-Export |
 | User-Story | Beratungsprozess in einer fiktiven Planungsrunde zeigen | Wiedererkennung für EVU-Rollen und PDF-Handout |
 | Projektplan | User-Story-Meilensteine operativ steuern | Rollen-Swimlanes, fällige Aufgaben, Abhängigkeiten und Deep-Links in die App |
+| Aktualitäts-Erkennung | App- und Ruleset-Stand bewusst prüfen | Kein automatischer Netzzugriff, aber klare Release-/Parameter-Hinweise bei Bedarf |
 | Methodikhandbuch | Regulatorische Finanzplanung verständlich erklären | Gemeinsame Denkstruktur für Strom/Gas-Portfolios |
 | Vorlagenpaket | Typische Consulting-Artefakte bereitstellen | Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung, Workshopagenda |
 | Lernpfade | Rollen spezifisch anleiten | Management, Controlling, Regulierung, Asset Management, Anlagenbuchhaltung |
@@ -33,6 +34,7 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 - [Reifegradmodell](maturity-model.html)
 - [Entscheidungsartefakte](decision-artifacts.html)
 - [Projektplan](project-plan.html)
+- [Aktualitäts-Erkennung und Support](release-awareness.html)
 - [TRL-6-Validierung](validation-methodology.html)
 - [Vorlage Maßnahmensteckbrief](templates/massnahmensteckbrief.html)
 - [Vorlage Gremienvorlage](templates/gremienvorlage.html)

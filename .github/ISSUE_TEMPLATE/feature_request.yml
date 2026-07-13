@@ -1,0 +1,26 @@
+name: Feature-Wunsch
+description: Erweiterung oder Verbesserung vorschlagen
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bitte keine vertraulichen EVU- oder Modelldaten einfügen. Beschreibe den Bedarf so allgemein wie möglich.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem soll gelöst werden?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Vorschlag
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: App-Kontext
+      description: Falls aus der App geöffnet, sind hier Version, Build-Commit und Ruleset vorbefüllt.
