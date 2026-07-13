@@ -20,17 +20,22 @@ Er ersetzt keine Rechts-, Steuer-, Wirtschaftspruefungs- oder Regulierungsberatu
 - Im vereinfachten Verfahren werden Q- und Effizienzeffekte weiterhin dokumentiert, aber nicht als individueller Erloesbeitrag angesetzt.
 - KANU-Varianten werden als Gas-spezifische Abschreibungs- und Restwertszenarien betrachtet.
 
-## Parameterstand im Code
+## Parameterstand als versionierte Ruleset-Datei
 
-`src/engine.js` enthaelt `regulatoryParameterSet` mit:
+Der aktive Parametersatz liegt nicht mehr als fachlicher Block in der Engine, sondern als versionierte Datei unter `src/rulesets/regulatory-parameters-2026-07.js`. `src/engine.js` importiert diesen Stand und bleibt damit der testbare Rechenkern. Ruleset-Aenderungen sollen als kleine PRs mit `id`, `effectiveMonth`, `confidence`, `sourceRef`, Changelog-Hinweis, Periodenlogik, Wirkungsverzugs-Defaults und Kapitalkosten-Defaults nachvollziehbar bleiben.
+
+Der aktuelle Parametersatz enthaelt:
 
 - `id`: `regulatory-parameters-2026-07`
 - `effectiveMonth`: `2026-07`
-- bekannten Regulierungsperioden fuer Gas und Strom
-- generischer Fortschreibung zukuenftiger Perioden in Fuenfjahresschritten
+- `confidence`: `consultation`
+- bekannte Regulierungsperioden fuer Gas und Strom
+- generische Fortschreibung zukuenftiger Perioden in Fuenfjahresschritten
+- Wirkungsverzugs-Defaults CAPEX/OPEX/QE = 0/3/2 Jahre
+- Kapitalkosten-Defaults fuer einfachen Mischsatz und optionalen Advanced-Modus
 - Quellen- und Scope-Hinweis fuer Public-OSS-Nutzung
 
-Die Periodenlogik ist ein Planungsmodell. Sie darf nicht als verbindliche Aussage zu zukuenftigen Festlegungen verstanden werden.
+Die Perioden- und Parameterlogik ist ein Planungsmodell. Sie darf nicht als verbindliche Aussage zu zukuenftigen Festlegungen verstanden werden.
 
 ## Fachliche Quellenebenen
 

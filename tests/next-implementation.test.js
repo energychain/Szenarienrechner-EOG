@@ -60,4 +60,21 @@ describe('next consulting implementation docs and UI', () => {
     expect(ui).toContain('CAPEX/OPEX-Split');
     expect(ui).toContain('Risiko-Erwartungswert');
   });
+
+  it('surfaces ruleset-as-data and advanced capital-cost inputs', () => {
+    const html = read('index.html');
+    const engine = read('src/engine.js');
+    const ruleset = read('src/rulesets/regulatory-parameters-2026-07.js');
+    const modelDoc = read('MODEL.md');
+    const dataFormat = read('DATA_FORMAT.md');
+    expect(engine).toContain("./rulesets/index.js");
+    expect(ruleset).toContain('capitalCostDefaults');
+    expect(ruleset).toContain('defaultEffectLags');
+    expect(html).toContain('capitalCostMode');
+    expect(html).toContain('Advanced: EK/FK + Abzugskapital');
+    expect(html).toContain('deductionCapital');
+    expect(modelDoc).toContain('Kapitalkostenmodell');
+    expect(modelDoc).toContain('EK-/FK-Anteilen');
+    expect(dataFormat).toContain('inputs.capitalCostMode');
+  });
 });

@@ -109,7 +109,7 @@ Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fac
 
 - `schemaVersion`: Version der Import-/Export-Struktur.
 - `modelVersion`: Version der App oder Modelllogik, mit der die Datei erzeugt wurde.
-- `regulatoryProfileId`: Kennung des verwendeten Regulierungsprofils. Bis zur Umsetzung versionierter Profile ist dies ein Ziel-Feld.
+- `regulatoryProfileId`: Kennung des verwendeten Regulierungsprofils. Die aktuelle App nutzt versionierte Ruleset-Dateien unter `src/rulesets/` und stempelt den aktiven Parametersatz zusätzlich als `regulatoryParameterSetId`.
 - `createdAt` / `updatedAt`: technische Zeitstempel der Datei, keine fachliche Freigabe.
 - `source`: erzeugendes Werkzeug.
 - `data`: fachlicher Payload.
@@ -134,6 +134,10 @@ Beim Import alter Modelle ohne `projectPlan` erzeugt die App den exemplarischen 
 #### `lastReleaseCheck` und Ruleset-Provenienz
 
 Der Aktualitätscheck ist ein optionaler, explizit ausgeloester GET auf `release-manifest.json`. Das Ergebnis wird als `lastReleaseCheck` gespeichert und in JSON-/HTML-mit-Daten-Exporten serialisiert. Es enthält nur Vergleichs- und Manifest-Metadaten, keine Modellwerte. Jeder Export trägt zusätzlich `buildCommit`, `buildTime`, `regulatoryParameterSetId`, `regulatoryParameterEffectiveMonth`, `regulatoryParameterConfidence` und `regulatoryParameterSourceRef`. Dadurch bleibt nachvollziehbar, ob ein Entscheidungsstand auf einem rechtskräftigen, konsultierten oder Entwurfs-Ruleset gerechnet wurde.
+
+#### `inputs.capitalCostMode` und Advanced-Kapitalkosten
+
+Der Default `capitalCostMode="simple"` nutzt weiterhin `returnRate` als Mischsatz. Optional kann `capitalCostMode="advanced"` gesetzt werden; dann werden `equityShare`, `equityReturnRate`, `debtShare`, `debtReturnRate` und `deductionCapital` serialisiert. Alte Exporte ohne diese Felder bleiben gültig und laufen im einfachen Mischsatz-Modus. Der Advanced-Modus ist prüfpflichtig und verfeinert nur die kalkulatorische Verzinsung; er ersetzt keine Bescheid- oder Kapitalkostenprüfung.
 
 ### Umgang mit unbekannten Feldern
 

@@ -74,10 +74,19 @@ import { demoMeasures, initialMeasures } from './demo-data.js';
 
 const inputIds = [
   'sector', 'regulationProcedure', 'baseYear', 'baseEog', 'rab', 'returnRate', 'financingRate',
+  'capitalCostMode', 'equityShare', 'equityReturnRate', 'debtShare', 'debtReturnRate', 'deductionCapital',
   'annualEnergyGwh', 'householdConsumptionKwh',
   'horizon', 'discountRate', 'kanuEndYear', 'degressiveRate', 'taxFactor',
   'portfolioAttribution', 'capexLagYears', 'opexLagYears', 'qeLagYears', 'qDelta', 'eDelta'
 ];
+const inputDefaults = {
+  capitalCostMode: 'simple',
+  equityShare: '40',
+  equityReturnRate: '5.0',
+  debtShare: '60',
+  debtReturnRate: '5.0',
+  deductionCapital: '0'
+};
 
 const detailIds = [
   'mName', 'mExternalId', 'mOrgUnit', 'mTags', 'mType', 'mCost', 'mYear', 'mSecure', 'mUncertain',
@@ -536,7 +545,7 @@ function applyReadonlyMode() {
 }
 
 const expertFieldIds = [
-  'rab', 'returnRate', 'financingRate', 'discountRate', 'kanuEndYear',
+  'rab', 'returnRate', 'financingRate', 'capitalCostMode', 'equityShare', 'equityReturnRate', 'debtShare', 'debtReturnRate', 'deductionCapital', 'discountRate', 'kanuEndYear',
   'degressiveRate', 'taxFactor', 'portfolioAttribution', 'capexLagYears', 'opexLagYears', 'qeLagYears', 'qDelta', 'eDelta',
   'mType', 'mSecure', 'mUncertain', 'mProbability', 'mOpexRecognition',
   'mDepr', 'mQDirect', 'mEDirect', 'mRiskAvoided', 'mPortfolioShare',
@@ -1720,7 +1729,11 @@ function applyModelState(state) {
   const model = migrated.model;
   hideStartScreen();
   inputIds.forEach(id => {
-    if (Object.hasOwn(model.inputs, id)) el[id].value = model.inputs[id];
+    if (Object.hasOwn(model.inputs, id)) {
+      el[id].value = model.inputs[id];
+    } else if (Object.hasOwn(inputDefaults, id)) {
+      el[id].value = inputDefaults[id];
+    }
   });
   measures = model.measures.map((measure, index) => normalizeMeasureForUi(measure, index));
   selectedId = measures.some(measure => measure.id === model.selectedId)
@@ -2355,6 +2368,12 @@ function applyDemoModel(options = {}) {
   el.rab.value = '85000';
   el.returnRate.value = '5.0';
   el.financingRate.value = '5.0';
+  el.capitalCostMode.value = 'simple';
+  el.equityShare.value = '40';
+  el.equityReturnRate.value = '5.0';
+  el.debtShare.value = '60';
+  el.debtReturnRate.value = '5.0';
+  el.deductionCapital.value = '0';
   el.annualEnergyGwh.value = '520';
   el.householdConsumptionKwh.value = '2900';
   el.horizon.value = '20';
@@ -3225,6 +3244,12 @@ function basisDraft() {
     householdConsumptionKwh: el.householdConsumptionKwh.value,
     returnRate: num('returnRate'),
     financingRate: num('financingRate'),
+    capitalCostMode: el.capitalCostMode.value,
+    equityShare: num('equityShare'),
+    equityReturnRate: num('equityReturnRate'),
+    debtShare: num('debtShare'),
+    debtReturnRate: num('debtReturnRate'),
+    deductionCapital: num('deductionCapital'),
     horizon: Math.round(num('horizon')),
     discountRate: num('discountRate'),
     kanuEndYear: Math.round(num('kanuEndYear')),
@@ -3340,6 +3365,33 @@ function renderBasisWizardStep() {
           <input id="w_financingRate" type="number" value="${d.financingRate}" min="0" step="0.1">
         </div>
         <div>
+          <label for="w_capitalCostMode">Kapitalkostenmodell</label>
+          <select id="w_capitalCostMode">
+            <option value="simple" ${d.capitalCostMode !== 'advanced' ? 'selected' : ''}>Einfacher Mischsatz</option>
+            <option value="advanced" ${d.capitalCostMode === 'advanced' ? 'selected' : ''}>Advanced: EK/FK + Abzugskapital</option>
+          </select>
+        </div>
+        <div>
+          <label for="w_equityShare">EK-Anteil %</label>
+          <input id="w_equityShare" type="number" value="${d.equityShare}" min="0" max="100" step="1">
+        </div>
+        <div>
+          <label for="w_equityReturnRate">EK-Zinssatz %</label>
+          <input id="w_equityReturnRate" type="number" value="${d.equityReturnRate}" min="0" step="0.1">
+        </div>
+        <div>
+          <label for="w_debtShare">FK-Anteil %</label>
+          <input id="w_debtShare" type="number" value="${d.debtShare}" min="0" max="100" step="1">
+        </div>
+        <div>
+          <label for="w_debtReturnRate">FK-Zinssatz %</label>
+          <input id="w_debtReturnRate" type="number" value="${d.debtReturnRate}" min="0" step="0.1">
+        </div>
+        <div>
+          <label for="w_deductionCapital">Abzugskapital TEUR</label>
+          <input id="w_deductionCapital" type="number" value="${d.deductionCapital}" min="0" step="100">
+        </div>
+        <div>
           <label for="w_horizon">Horizont Jahre</label>
           <input id="w_horizon" type="number" value="${d.horizon}" min="1" max="60" step="1">
         </div>
@@ -3396,6 +3448,7 @@ function renderBasisWizardStep() {
       ['Durchschnittshaushalt', d.householdConsumptionKwh ? `${d.householdConsumptionKwh} kWh/a` : 'automatisch'],
       ['Kapitalverzinsung', fmtPct(d.returnRate)],
       ['Fremdkapitalzins', fmtPct(d.financingRate)],
+      ['Kapitalkostenmodell', d.capitalCostMode === 'advanced' ? `Advanced: EK ${fmtPct(d.equityShare)} @ ${fmtPct(d.equityReturnRate)}, FK ${fmtPct(d.debtShare)} @ ${fmtPct(d.debtReturnRate)}, Abzugskapital ${fmtTeur(d.deductionCapital)}` : 'Einfacher Mischsatz'],
       ['Horizont', d.horizon + ' Jahre'],
       ['Portfolio-Attribution', fmtPct(d.portfolioAttribution)],
       ['Q-/E-Delta', fmtPct(d.qDelta) + ' / ' + fmtPct(d.eDelta)]
@@ -3522,7 +3575,18 @@ function collectWizardStep() {
   if (wizard.type === 'basis') {
     if (wizard.step === 0) Object.assign(d, { sector: modalValue('w_sector'), regulationProcedure: modalValue('w_regulationProcedure'), baseYear: Math.round(modalNumber('w_baseYear')) });
     if (wizard.step === 1) Object.assign(d, { baseEog: modalNumber('w_baseEog'), rab: modalNumber('w_rab'), annualEnergyGwh: modalValue('w_annualEnergyGwh'), householdConsumptionKwh: modalValue('w_householdConsumptionKwh') });
-    if (wizard.step === 2) Object.assign(d, { returnRate: modalNumber('w_returnRate'), financingRate: modalNumber('w_financingRate'), horizon: Math.round(modalNumber('w_horizon')), discountRate: modalNumber('w_discountRate') });
+    if (wizard.step === 2) Object.assign(d, {
+      returnRate: modalNumber('w_returnRate'),
+      financingRate: modalNumber('w_financingRate'),
+      capitalCostMode: modalValue('w_capitalCostMode'),
+      equityShare: modalNumber('w_equityShare'),
+      equityReturnRate: modalNumber('w_equityReturnRate'),
+      debtShare: modalNumber('w_debtShare'),
+      debtReturnRate: modalNumber('w_debtReturnRate'),
+      deductionCapital: modalNumber('w_deductionCapital'),
+      horizon: Math.round(modalNumber('w_horizon')),
+      discountRate: modalNumber('w_discountRate')
+    });
     if (wizard.step === 3) Object.assign(d, { kanuEndYear: Math.round(modalNumber('w_kanuEndYear')), degressiveRate: modalNumber('w_degressiveRate'), taxFactor: modalNumber('w_taxFactor'), portfolioAttribution: modalNumber('w_portfolioAttribution'), qDelta: modalNumber('w_qDelta'), eDelta: modalNumber('w_eDelta') });
   } else {
     if (wizard.step === 0) Object.assign(d, { name: modalValue('w_mName') || d.name, type: modalValue('w_mType'), year: Math.round(modalNumber('w_mYear')) });
