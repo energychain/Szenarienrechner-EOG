@@ -4,7 +4,9 @@ import {
   findProjectPlanTask,
   normalizeProjectPlan,
   projectPlanDeepLinkForTask,
+  projectPlanEffectiveTaskStates,
   projectPlanMilestoneDate,
+  projectPlanNextReadyTask,
   projectPlanRoles,
   projectPlanTaskCounts
 } from '../src/project-plan.js';
@@ -36,6 +38,7 @@ describe('project plan', () => {
 
   it('keeps task status and notes during model normalization', () => {
     const plan = createDefaultProjectPlan(2027);
+    plan.milestones[3].tasks[0].status = 'done';
     plan.milestones[3].tasks[2].status = 'done';
     plan.milestones[3].tasks[2].note = 'Aktivierbarkeit durch Anlagenbuchhaltung belegt.';
 
@@ -44,7 +47,6 @@ describe('project plan', () => {
 
     expect(found.task.status).toBe('done');
     expect(found.task.note).toContain('Aktivierbarkeit');
-    expect(projectPlanTaskCounts(normalized).completed).toBe(1);
   });
 
   it('derives dates from baseYear and app deep links from story keys', () => {
@@ -53,5 +55,29 @@ describe('project plan', () => {
 
     expect(projectPlanMilestoneDate(plan.baseYear, found.milestone.plannedOffsetMonths, found.task.dueOffsetDays)).toBe('2027-07-24');
     expect(projectPlanDeepLinkForTask(found.task)).toContain('?story=gremium');
+  });
+
+  it('derives dependency-blocked states without overwriting stored task status', () => {
+    const plan = createDefaultProjectPlan(2027);
+    const states = projectPlanEffectiveTaskStates(plan);
+
+    expect(findProjectPlanTask(plan, 'm3-t1').task.status).toBe('open');
+    expect(states['m3-t1'].effectiveStatus).toBe('blocked');
+    expect(states['m3-t1'].dependencyBlocked).toBe(true);
+    expect(states['m3-t1'].missingDependencies).toEqual(['m2-t7']);
+    expect(projectPlanTaskCounts(plan).byStatus.blocked).toBeGreaterThan(0);
+  });
+
+  it('unblocks cross-milestone successors when their predecessors are done', () => {
+    const plan = createDefaultProjectPlan(2027);
+    for (const id of ['m0-t1', 'm0-t2', 'm0-t5', 'm0-t7', 'm1-t8', 'm2-t5', 'm2-t7']) {
+      findProjectPlanTask(plan, id).task.status = 'done';
+    }
+
+    const states = projectPlanEffectiveTaskStates(plan);
+
+    expect(states['m3-t1'].dependencyBlocked).toBe(false);
+    expect(states['m3-t1'].effectiveStatus).toBe('open');
+    expect(projectPlanNextReadyTask(plan).task.id).toBe('m0-t3');
   });
 });

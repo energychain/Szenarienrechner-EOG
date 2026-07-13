@@ -2373,9 +2373,31 @@
       background: #fff;
     }
 
+    .project-next-task {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid rgba(0, 111, 143, .25);
+      border-radius: 10px;
+      background: #eef9fc;
+    }
+
+    .project-next-task span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .project-next-task.done {
+      border-color: var(--line);
+      background: var(--soft);
+    }
+
     .project-task.in_progress { border-left-color: var(--accent); }
     .project-task.done { border-left-color: var(--good); background: #f5fbf8; }
     .project-task.blocked { border-left-color: var(--bad); background: #fff7f7; }
+    .project-task.dependency-blocked { opacity: .78; }
     .project-task.active { box-shadow: 0 0 0 3px rgba(0, 111, 143, .12); }
 
     .project-task-main {

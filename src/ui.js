@@ -41,6 +41,8 @@ import {
   normalizeProjectPlan,
   projectPlanDeepLinkForTask,
   projectPlanMilestoneDate,
+  projectPlanEffectiveTaskStates,
+  projectPlanNextReadyTask,
   projectPlanRoles,
   projectPlanStatusLabels,
   projectPlanStatuses,
@@ -1096,6 +1098,11 @@ function projectPlanProgressText(counts = projectPlanTaskCounts(projectPlan)) {
   return `${counts.completed}/${counts.total} erledigt · ${counts.byStatus.blocked || 0} blockiert`;
 }
 
+function projectPlanDependencyHint(state) {
+  if (!state?.dependencyBlocked) return '';
+  return ` · gesperrt bis ${esc(state.missingDependencies.join(', '))} erledigt`;
+}
+
 function renderProjectTimeline(plan) {
   const milestones = plan.milestones || [];
   const maxOffset = Math.max(...milestones.map(milestone => milestone.plannedOffsetMonths), 9) || 9;
@@ -1143,14 +1150,17 @@ function renderProjectPlan() {
   if (!node) return;
   projectPlan = normalizeProjectPlan(projectPlan, Number(el.baseYear?.value || 2027));
   const counts = projectPlanTaskCounts(projectPlan);
+  const taskStates = projectPlanEffectiveTaskStates(projectPlan);
+  const nextReady = projectPlanNextReadyTask(projectPlan);
   const roleOptions = Object.entries(projectPlanRoles).map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join('');
   node.innerHTML = `
     <div class="project-plan-summary">
       <div><strong>${counts.completed}/${counts.total}</strong><span>Aufgaben erledigt</span></div>
       <div><strong>${counts.byStatus.in_progress || 0}</strong><span>in Arbeit</span></div>
-      <div><strong>${counts.byStatus.blocked || 0}</strong><span>blockiert</span></div>
+      <div><strong>${counts.byStatus.blocked || 0}</strong><span>blockiert durch Abhängigkeiten/Auflagen</span></div>
       <div><strong>${esc(projectPlanMilestoneDate(projectPlan.baseYear, 6.5))}</strong><span>exemplarischer Gremienpunkt</span></div>
     </div>
+    ${nextReady ? `<div class="project-next-task"><strong>Nächste fällige Aufgabe:</strong> ${esc(nextReady.milestone.id.toUpperCase())} · ${esc(nextReady.task.title)} <span>${esc(projectPlanRoles[nextReady.task.ownerRole] || nextReady.task.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, nextReady.milestone.plannedOffsetMonths, nextReady.task.dueOffsetDays))}</span><button type="button" data-project-jump="${esc(nextReady.task.id)}">Zur Aufgabe</button></div>` : `<div class="project-next-task done"><strong>Alle aktuell freigegebenen Aufgaben sind erledigt oder blockiert.</strong></div>`}
     ${renderProjectTimeline(projectPlan)}
     ${renderProjectRoleSwimlanes(projectPlan)}
     <div class="project-plan-swimlanes">
@@ -1165,12 +1175,16 @@ function renderProjectPlan() {
             <a href="${esc(projectPlanDeepLinkForTask({ deepLinkKey: milestone.storyKey }))}" class="secondary-link" data-project-jump="${esc(milestone.tasks[0]?.id || '')}">App öffnen</a>
           </header>
           <div class="project-task-list">
-            ${milestone.tasks.map(item => `
-              <div class="project-task ${esc(item.status)} ${activeProjectTaskId === item.id ? 'active' : ''}" data-project-task="${esc(item.id)}">
+            ${milestone.tasks.map(item => {
+              const state = taskStates[item.id] || { effectiveStatus: item.status, dependencyBlocked: false, missingDependencies: [] };
+              const statusDisabled = state.dependencyBlocked ? 'disabled aria-disabled="true"' : '';
+              const jumpDisabled = state.dependencyBlocked ? 'disabled aria-disabled="true" title="Vorgängeraufgaben zuerst erledigen"' : '';
+              return `
+              <div class="project-task ${esc(state.effectiveStatus)} ${state.dependencyBlocked ? 'dependency-blocked' : ''} ${activeProjectTaskId === item.id ? 'active' : ''}" data-project-task="${esc(item.id)}">
                 <div class="project-task-main">
                   <div class="project-task-title">
                     <strong>${esc(item.title)}</strong>
-                    <span>${esc(projectPlanRoles[item.ownerRole] || item.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths, item.dueOffsetDays))}${item.evidenceRequired ? ` · Evidenz: ${esc(item.evidenceRequired)}` : ''}</span>
+                    <span>${esc(projectPlanRoles[item.ownerRole] || item.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths, item.dueOffsetDays))}${item.evidenceRequired ? ` · Evidenz: ${esc(item.evidenceRequired)}` : ''}${projectPlanDependencyHint(state)}</span>
                   </div>
                   <p>${esc(item.resultArtifact)}${item.dependsOn.length ? ` · abhängig von ${esc(item.dependsOn.join(', '))}` : ''}</p>
                   <label class="sr-only" for="project-note-${esc(item.id)}">Notiz zu ${esc(item.title)}</label>
@@ -1178,16 +1192,16 @@ function renderProjectPlan() {
                 </div>
                 <div class="project-task-actions">
                   <label class="sr-only" for="project-status-${esc(item.id)}">Status</label>
-                  <select id="project-status-${esc(item.id)}" data-project-status="${esc(item.id)}">
+                  <select id="project-status-${esc(item.id)}" data-project-status="${esc(item.id)}" ${statusDisabled}>
                     ${projectPlanStatuses.map(status => `<option value="${esc(status)}" ${item.status === status ? 'selected' : ''}>${esc(projectPlanStatusLabels[status])}</option>`).join('')}
                   </select>
                   <select data-project-owner="${esc(item.id)}" aria-label="Rolle">
                     ${roleOptions.replace(`value="${esc(item.ownerRole)}"`, `value="${esc(item.ownerRole)}" selected`)}
                   </select>
-                  <button type="button" data-project-jump="${esc(item.id)}">Zur App</button>
+                  <button type="button" data-project-jump="${esc(item.id)}" ${jumpDisabled}>Zur App</button>
                 </div>
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </div>
         </article>
       `).join('')}
@@ -1196,6 +1210,14 @@ function renderProjectPlan() {
 }
 
 function updateProjectTask(taskId, patch, rerender = true) {
+  if (Object.hasOwn(patch, 'status')) {
+    const state = projectPlanEffectiveTaskStates(projectPlan)[taskId];
+    if (state?.dependencyBlocked && ['in_progress', 'done'].includes(patch.status)) {
+      setStorageStatus('Aufgabe ist blockiert: Vorgängeraufgaben zuerst erledigen.');
+      renderProjectPlan();
+      return;
+    }
+  }
   projectPlan = {
     ...projectPlan,
     milestones: projectPlan.milestones.map(milestone => ({
@@ -1211,6 +1233,12 @@ function openProjectTask(taskId) {
   const found = findProjectPlanTask(projectPlan, taskId);
   if (!found) return;
   const { milestone, task } = found;
+  const dependencyState = projectPlanEffectiveTaskStates(projectPlan)[task.id];
+  if (dependencyState?.dependencyBlocked) {
+    setStorageStatus(`Projektplan-Aufgabe blockiert: zuerst ${dependencyState.missingDependencies.join(', ')} erledigen.`);
+    renderProjectPlan();
+    return;
+  }
   const state = appStateForStoryMilestone(task.deepLinkKey || milestone.storyKey);
   activeProjectTaskId = task.id;
   processState = normalizeProcessState({

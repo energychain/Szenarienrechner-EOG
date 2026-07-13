@@ -12,6 +12,8 @@ describe('project plan UI integration', () => {
     expect(html).toContain('projectPlanBody');
     expect(ui).toContain('renderProjectPlan');
     expect(ui).toContain('renderProjectRoleSwimlanes');
+    expect(ui).toContain('projectPlanEffectiveTaskStates');
+    expect(ui).toContain('projectPlanNextReadyTask');
     expect(ui).toContain('activeProjectTaskId');
   });
 
@@ -19,6 +21,13 @@ describe('project plan UI integration', () => {
     expect(ui).toContain('projectPlan: structuredClone(projectPlan)');
     expect(ui).toContain('projectPlan = normalizeProjectPlan(model.projectPlan');
     expect(ui).toContain('activeProjectTaskId = findProjectPlanTask(projectPlan');
+  });
+
+  it('blocks task progression in the UI while dependencies are incomplete', () => {
+    expect(ui).toContain('dependencyBlocked');
+    expect(ui).toContain('Vorgängeraufgaben zuerst erledigen');
+    expect(ui).toContain('Aufgabe ist blockiert: Vorgängeraufgaben zuerst erledigen.');
+    expect(ui).toContain('Nächste fällige Aufgabe');
   });
 
   it('documents the projectPlan field in the public data format', () => {
