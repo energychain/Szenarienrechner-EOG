@@ -14,6 +14,7 @@ describe('project plan UI integration', () => {
     expect(ui).toContain('renderProjectRoleSwimlanes');
     expect(ui).toContain('projectPlanEffectiveTaskStates');
     expect(ui).toContain('projectPlanNextReadyTask');
+    expect(ui).toContain('projectPlanNextReadyTasksByRole');
     expect(ui).toContain('activeProjectTaskId');
   });
 
@@ -28,6 +29,7 @@ describe('project plan UI integration', () => {
     expect(ui).toContain('Vorgängeraufgaben zuerst erledigen');
     expect(ui).toContain('Aufgabe ist blockiert: Vorgängeraufgaben zuerst erledigen.');
     expect(ui).toContain('Nächste fällige Aufgabe');
+    expect(ui).toContain('Nächste fällige Aufgabe je Rolle');
   });
 
   it('documents the projectPlan field in the public data format', () => {

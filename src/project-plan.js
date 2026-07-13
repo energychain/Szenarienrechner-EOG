@@ -237,15 +237,35 @@ export function projectPlanEffectiveTaskStates(plan) {
   return Object.fromEntries(flattenProjectPlanTasks(plan).map(({ task }) => [task.id, projectPlanTaskDependencyState(plan, task.id)]));
 }
 
+function projectPlanTaskSortKey(entry) {
+  return (Number(entry.milestone.plannedOffsetMonths) || 0) * 30 + (Number(entry.task.dueOffsetDays) || 0);
+}
+
+function sortProjectPlanTaskEntries(a, b) {
+  return projectPlanTaskSortKey(a) - projectPlanTaskSortKey(b) || a.task.id.localeCompare(b.task.id);
+}
+
 export function projectPlanNextReadyTask(plan) {
   const states = projectPlanEffectiveTaskStates(plan);
   return flattenProjectPlanTasks(plan)
     .filter(({ task }) => states[task.id]?.ready)
-    .sort((a, b) => {
-      const aOffset = (Number(a.milestone.plannedOffsetMonths) || 0) * 30 + (Number(a.task.dueOffsetDays) || 0);
-      const bOffset = (Number(b.milestone.plannedOffsetMonths) || 0) * 30 + (Number(b.task.dueOffsetDays) || 0);
-      return aOffset - bOffset || a.task.id.localeCompare(b.task.id);
-    })[0] || null;
+    .sort(sortProjectPlanTaskEntries)[0] || null;
+}
+
+export function projectPlanNextReadyTasksByRole(plan) {
+  const states = projectPlanEffectiveTaskStates(plan);
+  const result = Object.fromEntries(Object.keys(projectPlanRoles).map(roleId => [roleId, null]));
+  for (const entry of flattenProjectPlanTasks(plan)
+    .filter(({ task }) => states[task.id]?.ready)
+    .sort(sortProjectPlanTaskEntries)) {
+    if (!result[entry.task.ownerRole]) {
+      result[entry.task.ownerRole] = {
+        ...entry,
+        dueDate: projectPlanMilestoneDate(plan.baseYear, entry.milestone.plannedOffsetMonths, entry.task.dueOffsetDays)
+      };
+    }
+  }
+  return result;
 }
 
 export function projectPlanTaskCounts(plan) {
