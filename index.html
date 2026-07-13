@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="build-commit" content="%VITE_BUILD_COMMIT%">
   <meta name="build-time" content="%VITE_BUILD_TIME%">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src https://energychain.github.io; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Szenario-Rechner regulierte Sparten</title>
   <link rel="stylesheet" href="/src/styles.css">
 </head>
@@ -66,6 +66,9 @@
               <button type="button" id="openHelp">Hilfe</button>
               <a id="openStory" class="menu-link" href="story/planungsrunde-userstory.html" target="_blank" rel="noopener">Userstory</a>
               <a id="openEcosystem" class="menu-link" href="docs/index.html" target="_blank" rel="noopener">Methodik & Vorlagen</a>
+              <button type="button" id="checkReleaseAwareness">Aktualität prüfen</button>
+              <button type="button" id="openSupportIssue">Feedback / Support melden</button>
+              <button type="button" id="exportSupportPackage">Support-Paket exportieren</button>
               <button type="button" id="loadDemoModel">Demodaten laden</button>
               <button type="button" id="resetModel">Zurücksetzen</button>
               <button type="button" id="clearBrowserData" class="danger-action">Browserdaten löschen</button>
@@ -714,6 +717,8 @@
       <div class="footer-meta" aria-label="Version und Nachweise">
         <span>Prüfung per F12-Netzwerk-Tab und CSP</span>
         <span>Version 0.3.0-dev</span>
+        <span id="rulesetBadge" class="ruleset-badge">Regulierungsstand wird geladen</span>
+        <span id="releaseCheckBadge" class="release-check-badge">Aktualität nicht geprüft</span>
         <span>github.com/energychain/Szenarienrechner-EOG</span>
         <span>Apache-2.0</span>
         <button type="button" id="openImprint" class="footer-link">Impressum</button>

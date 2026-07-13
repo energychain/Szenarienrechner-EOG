@@ -59,6 +59,16 @@ import {
   updateProjectPlanTask as updateProjectPlanTaskModel
 } from './project-plan.js';
 import { buildInfo } from './build-info.js';
+import {
+  compareReleaseManifest,
+  releaseCheckSummary,
+  releaseManifestUrl,
+  rulesetConfidenceClasses,
+  rulesetInfo,
+  supportContext,
+  supportIssueUrl,
+  supportPackage
+} from './release-awareness.js';
 import { imprintSections } from './trust-content.js';
 
 const initialMeasures = [];
@@ -281,6 +291,8 @@ let strategy = defaultStrategy();
 let committee = defaultCommittee();
 let currentRole = 'owner';
 let clarificationStatus = {};
+let lastReleaseCheck = null;
+let releaseCheckInProgress = false;
 let pendingImportReview = null;
 let basisEditing = false;
 let expertFilter = 'all';
@@ -1639,6 +1651,101 @@ function setStorageStatus(text) {
   }, 4500);
 }
 
+function activeRulesetInfo() {
+  return rulesetInfo(regulatoryParameterSet);
+}
+
+function renderReleaseAwareness() {
+  const ruleset = activeRulesetInfo();
+  const rulesetBadge = document.getElementById('rulesetBadge');
+  if (rulesetBadge) {
+    rulesetBadge.textContent = `Regulierungsstand ${ruleset.id} · ${ruleset.confidenceLabel}`;
+    rulesetBadge.className = `ruleset-badge ${rulesetConfidenceClasses[ruleset.confidence] || 'warn'}`;
+    rulesetBadge.title = ruleset.sourceRef;
+  }
+  const releaseBadge = document.getElementById('releaseCheckBadge');
+  if (releaseBadge) {
+    releaseBadge.textContent = lastReleaseCheck?.checkedAt
+      ? `Aktualität geprüft ${new Date(lastReleaseCheck.checkedAt).toLocaleDateString('de-DE')}`
+      : 'Aktualität nicht geprüft';
+    releaseBadge.title = releaseCheckSummary(lastReleaseCheck);
+  }
+}
+
+function localReleaseContext() {
+  const ruleset = activeRulesetInfo();
+  return {
+    appVersion,
+    buildCommit: buildInfo.buildCommit,
+    buildTime: buildInfo.buildTime,
+    rulesetId: ruleset.id,
+    rulesetEffectiveMonth: ruleset.effectiveMonth,
+    rulesetConfidence: ruleset.confidence,
+    rulesetSourceRef: ruleset.sourceRef
+  };
+}
+
+function releaseResultMessage(result) {
+  const lines = [releaseCheckSummary(result)];
+  if (result.app.status === 'outdated') {
+    lines.push(`App: neu ${result.app.latestVersion || result.app.latestCommit}; erwarteter SHA-256: ${result.app.sha256 || 'nicht angegeben'}.`);
+  }
+  if (result.ruleset.status === 'outdated') {
+    lines.push(`Ruleset: ${result.ruleset.latestId}; Quelle: ${result.ruleset.sourceRef || 'nicht angegeben'}.`);
+  }
+  if (result.advisories.length) lines.push(`${result.advisories.length} Hinweis(e) im Manifest.`);
+  return lines.join('\n');
+}
+
+async function checkReleaseAwareness() {
+  if (releaseCheckInProgress) return;
+  const ok = window.confirm('Aktualität prüfen? Die App liest einmalig eine öffentliche release-manifest.json von GitHub Pages. Es werden keine Modell-, Maßnahmen- oder Browserdaten übertragen.');
+  if (!ok) return;
+  releaseCheckInProgress = true;
+  setStorageStatus('Aktualitätscheck läuft…');
+  try {
+    const response = await fetch(releaseManifestUrl, { cache: 'no-store' });
+    if (!response.ok) throw new Error('manifest unavailable');
+    const manifest = await response.json();
+    lastReleaseCheck = compareReleaseManifest(localReleaseContext(), manifest);
+    renderReleaseAwareness();
+    saveToBrowser(true);
+    window.alert(releaseResultMessage(lastReleaseCheck));
+    setStorageStatus('Aktualitätscheck abgeschlossen.');
+  } catch (_error) {
+    lastReleaseCheck = { checkedAt: new Date().toISOString(), status: 'failed', error: 'Manifest konnte nicht geladen werden.' };
+    renderReleaseAwareness();
+    saveToBrowser(true);
+    setStorageStatus('Aktualitätscheck nicht möglich. Die App bleibt offline voll nutzbar.');
+  } finally {
+    releaseCheckInProgress = false;
+  }
+}
+
+function currentSupportContext() {
+  return supportContext({
+    ...localReleaseContext(),
+    ruleset: activeRulesetInfo(),
+    lastReleaseCheck,
+    userAgent: navigator.userAgent
+  });
+}
+
+function openSupportIssue() {
+  const ok = window.confirm('GitHub-Supportformular öffnen? Übergeben werden nur App-Version, Build-Commit, Ruleset und Browser-Kontext. Modelldaten werden nicht angehängt.');
+  if (!ok) return;
+  const url = supportIssueUrl('bug', currentSupportContext());
+  const opened = window.open(url, '_blank', 'noopener');
+  if (!opened) setStorageStatus('Support-URL konnte nicht geöffnet werden; Popup-Blocker prüfen.');
+}
+
+function exportSupportPackage() {
+  const payload = supportPackage(currentSupportContext());
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  downloadBlob(blob, 'szenarienrechner-eog-support-kontext-' + payload.createdAt.slice(0, 19).replaceAll(':', '').replace('T', '-') + '.json');
+  setStorageStatus('Support-Paket ohne Modelldaten wurde vorbereitet.');
+}
+
 function localAuthor() {
   try {
     return localStorage.getItem(authorKey) || '';
@@ -1684,7 +1791,8 @@ function currentModelData() {
     inputs: Object.fromEntries(inputIds.map(id => [id, el[id].value])),
     measures: structuredClone(measures),
     meetingTextOverrides: structuredClone(meetingTextOverrides),
-    clarificationStatus: structuredClone(clarificationStatus)
+    clarificationStatus: structuredClone(clarificationStatus),
+    lastReleaseCheck: lastReleaseCheck ? structuredClone(lastReleaseCheck) : null
   };
 }
 
@@ -1698,6 +1806,9 @@ function collectModelState() {
     build: structuredClone(buildInfo),
     regulatoryParameterSetId: regulatoryParameterSet.id,
     regulatoryParameterEffectiveMonth: regulatoryParameterSet.effectiveMonth,
+    regulatoryParameterConfidence: activeRulesetInfo().confidence,
+    regulatoryParameterSourceRef: activeRulesetInfo().sourceRef,
+    lastReleaseCheck: lastReleaseCheck ? structuredClone(lastReleaseCheck) : null,
     savedAt: new Date().toISOString(),
     model: currentModelData(),
     history: structuredClone(history)
@@ -1723,7 +1834,8 @@ function legacyModelFromState(state) {
     inputs: state.inputs,
     measures: state.measures,
     meetingTextOverrides: state.meetingTextOverrides || {},
-    clarificationStatus: state.clarificationStatus || {}
+    clarificationStatus: state.clarificationStatus || {},
+    lastReleaseCheck: state.lastReleaseCheck || null
   };
 }
 
@@ -1783,6 +1895,12 @@ function applyModelState(state) {
   clarificationStatus = model.clarificationStatus && typeof model.clarificationStatus === 'object'
     ? structuredClone(model.clarificationStatus)
     : {};
+  lastReleaseCheck = model.lastReleaseCheck && typeof model.lastReleaseCheck === 'object'
+    ? structuredClone(model.lastReleaseCheck)
+    : state?.lastReleaseCheck && typeof state.lastReleaseCheck === 'object'
+      ? structuredClone(state.lastReleaseCheck)
+      : null;
+  renderReleaseAwareness();
   applyRole(roleProfiles[model.role] ? model.role : currentRole, false);
   history = migrated.history;
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === scenario));
@@ -4371,6 +4489,8 @@ function committeeReportHtml(result, first, spread, metrics = portfolioDecisionM
     ? `Die erfassten Risikodaten zeigen eine erwartete Risikoreduktion von ${fmtTeur(result.riskPa, 1)} pro Jahr. Dieser Wert entsteht aus Eintrittswahrscheinlichkeit vorher/nachher und Schadenshöhe.`
     : 'Für den Arbeitsstand ist noch keine belastbare Risikoreduktion hinterlegt.';
   const financeLine = `Für Rückfragen: IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}, Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}, EBIT Jahr 1 ${fmtTeur(ebitYearOne, 1)}.`;
+  const ruleset = activeRulesetInfo();
+  const rulesetLine = `Regulierungsstand: ${ruleset.id} (${ruleset.confidenceLabel}). Quelle: ${ruleset.sourceRef || '-'}; keine Anerkennungszusage.`;
   const planningSummary = buildPlanningResume({
     phaseLabel: phaseLabel(),
     resume: processState.resume,
@@ -4446,6 +4566,7 @@ function committeeReportHtml(result, first, spread, metrics = portfolioDecisionM
         <span>Unterschrift: __________________________</span>
       </footer>
       <p class="committee-footnote">${esc(financeLine)}</p>
+      <p class="committee-footnote">${esc(rulesetLine)}</p>
       ${regulationProcedureNote(result) ? `<p class="committee-footnote">${esc(regulationProcedureNote(result))}</p>` : ''}
     </article>
   `;
@@ -4547,6 +4668,10 @@ function renderReport(result, first, spread, decision, metrics) {
   });
   const economicBridge = metrics.recurringIndicativeCashflow - metrics.recurringRegulatoryEog;
   const yearOneEconomicBridge = metrics.yearOneIndicativeCashflow - metrics.yearOneRegulatoryEog;
+  const ruleset = activeRulesetInfo();
+  const rulesetWarning = ruleset.confidence === 'enacted'
+    ? ''
+    : `<section class="report-section ruleset-warning"><h2>Regulierungsstand unter Vorbehalt</h2><p>Gerechnet unter ${esc(ruleset.id)} (${esc(ruleset.confidenceLabel)}). Der Parameterstand ist nicht als rechtskräftige Festlegung zu lesen; Entscheidungen sollten die Quelle und spätere Änderungen prüfen.</p><p class="hint">Quelle: ${esc(ruleset.sourceRef || '-')}</p></section>`;
 
   report.innerHTML = `
     <div class="report-head">
@@ -4562,9 +4687,12 @@ function renderReport(result, first, spread, decision, metrics) {
         <div><strong>Kostenbasis:</strong> ${result.p.regulatoryPeriod.costBaseYear}</div>
         <div><strong>Szenario:</strong> ${scenarioLabel(scenario)}</div>
         <div><strong>Phase:</strong> ${phaseLabel()}</div>
+        <div><strong>Regulierungsstand:</strong> ${esc(ruleset.id)} · ${esc(ruleset.confidenceLabel)}</div>
         <div><strong>Entscheidungsreife:</strong> ${maturity.score} % / ${maturity.blockers} Blocker</div>
       </div>
     </div>
+
+    ${rulesetWarning}
 
     <section class="report-section">
       <h2>Arbeitsstand und nächster Schritt</h2>
@@ -4809,6 +4937,7 @@ function renderAll(persist = true) {
   renderChangeSinceSeen();
   renderMaturityAndClarifications();
   renderReportMode();
+  renderReleaseAwareness();
   updateActionLabels();
   updateFlowStatus();
   applyReadonlyMode();
@@ -5280,6 +5409,9 @@ document.getElementById('printReportFromView').addEventListener('click', () => {
 });
 document.getElementById('importModel').addEventListener('click', openLoadModal);
 document.getElementById('loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'basis' }));
+document.getElementById('checkReleaseAwareness').addEventListener('click', checkReleaseAwareness);
+document.getElementById('openSupportIssue').addEventListener('click', openSupportIssue);
+document.getElementById('exportSupportPackage').addEventListener('click', exportSupportPackage);
 document.getElementById('clearBrowserData').addEventListener('click', () => {
   if (window.confirm('Alle im Browser gespeicherten Daten dieses Rechners löschen? Das aktuelle Modell bleibt bis zum Neuladen sichtbar.')) {
     clearBrowserData();

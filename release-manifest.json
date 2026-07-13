@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "app": {
+    "version": "0.3.0",
+    "commit": "source-manifest",
+    "buildTime": "2026-07-13T00:00:00.000Z",
+    "sha256": "published-by-build-release-manifest",
+    "downloadUrl": "https://github.com/energychain/Szenarienrechner-EOG/releases/latest",
+    "changelogUrl": "https://github.com/energychain/Szenarienrechner-EOG/blob/main/CHANGELOG.md",
+    "minSupportedVersion": "0.3.0"
+  },
+  "ruleset": {
+    "id": "regulatory-parameters-2026-07",
+    "effectiveMonth": "2026-07",
+    "confidence": "consultation",
+    "sourceRef": "BNetzA Anreizregulierung/ARegV/KANU sowie NEST/RAMEN-Kontext, Arbeitsstand 2026-07; pruefpflichtiger Planungsstand.",
+    "changelogUrl": "https://github.com/energychain/Szenarienrechner-EOG/blob/main/REGULATORY_ASSUMPTIONS.md"
+  },
+  "history": [],
+  "advisories": []
+}

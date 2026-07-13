@@ -18,6 +18,7 @@ const requiredDocs = [
   'docs/maturity-model.md',
   'docs/decision-artifacts.md',
   'docs/project-plan.md',
+  'docs/release-awareness.md',
   'docs/validation-methodology.md',
   'docs/templates/massnahmensteckbrief.md',
   'docs/templates/gremienvorlage.md',
@@ -72,11 +73,17 @@ assert(adrDemo.includes('synthetische Demodaten'), 'ADR 0003 must document synth
 
 const dataFormat = readFileSync('DATA_FORMAT.md', 'utf8');
 assert(dataFormat.includes('localStorage'), 'DATA_FORMAT must document localStorage scope.');
+assert(dataFormat.includes('lastReleaseCheck'), 'DATA_FORMAT must document release-awareness persistence.');
 assert(dataFormat.includes('schemaVersion'), 'DATA_FORMAT must document schemaVersion.');
 assert(dataFormat.includes('regulatoryProfileId'), 'DATA_FORMAT must document regulatoryProfileId.');
 assert(dataFormat.includes('## Minimaler Projektumschlag'), 'DATA_FORMAT must document the minimal project envelope.');
 assert(dataFormat.includes('## Migrationsregeln'), 'DATA_FORMAT must document migration handling.');
 assert(dataFormat.includes('synthetisch'), 'DATA_FORMAT must document synthetic demo data.');
+
+const releaseAwareness = readFileSync('docs/release-awareness.md', 'utf8');
+assert(releaseAwareness.includes('kein Netzzugriff'), 'Release awareness doc must preserve offline-first wording.');
+assert(releaseAwareness.includes('release-manifest.json'), 'Release awareness doc must document the manifest.');
+assert(releaseAwareness.includes('Modelldaten werden nicht angehängt'), 'Release awareness doc must document support privacy.');
 
 const story = readFileSync('docs/story/planungsrunde-userstory.md', 'utf8');
 assert(story.includes('Szenarienrechner-EOG') || story.includes('EOG-Planungsrunde'), 'Story doc must name the planning context.');
