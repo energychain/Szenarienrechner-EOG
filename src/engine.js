@@ -90,15 +90,16 @@ function impactIncludedInScenario(impact, p) {
   return impact.governance === 'basis' && impact.confidence !== 'review';
 }
 
-function impactActiveInYear(impact, year) {
-  return year >= impact.startYear && (impact.endYear === null || year <= impact.endYear);
+function impactActiveInYear(impact, year, lagYears = 0) {
+  const lag = Math.max(0, Math.round(finiteNumber(lagYears)));
+  return year >= impact.startYear + lag && (impact.endYear === null || year <= impact.endYear + lag);
 }
 
-export function impactEffectsForMeasure(measure, p, year) {
+export function impactEffectsForMeasure(measure, p, year, lagYears = 0) {
   const assumptions = impactAssumptionsFor(measure);
   return assumptions.reduce((effects, impact) => {
     const included = impactIncludedInScenario(impact, p);
-    const annual = included && impactActiveInYear(impact, year) ? impact.amount * impact.attribution : 0;
+    const annual = included && impactActiveInYear(impact, year, lagYears) ? impact.amount * impact.attribution : 0;
     if (impact.area === 'risk') {
       effects.risk += annual;
     } else {
@@ -238,6 +239,11 @@ export function params(inputs, overrides = {}) {
     annualEnergyGwh: finiteNumber(inputs.annualEnergyGwh, NaN),
     householdConsumptionKwh: finiteNumber(inputs.householdConsumptionKwh, sector === 'gas' ? 15000 : 2900),
     assumptionMode: 'basis',
+    effectLags: {
+      capex: Math.max(0, Math.round(finiteNumber(inputs.capexLagYears))),
+      opex: Math.max(0, Math.round(finiteNumber(inputs.opexLagYears))),
+      qe: Math.max(0, Math.round(finiteNumber(inputs.qeLagYears)))
+    },
     ...overrides
   };
 }
@@ -289,6 +295,8 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   const opexPa = finiteNumber(measure.opexPa);
   const opexDeltaPa = finiteNumber(measure.opexDeltaPa);
   const reinvestCost = finiteNumber(measure.reinvestCost);
+  const reinvestMode = measure.reinvestMode === 'assetAddition' ? 'assetAddition' : 'oneOff';
+  const reinvestLife = Math.max(1, Math.round(finiteNumber(measure.reinvestLife, measure.life)));
   const decommissionCost = finiteNumber(measure.decommissionCost);
   const hgbLife = Math.max(1, Math.round(finiteNumber(measure.hgbLife, measure.life)));
   const defaultDecommissionYear = p.sector === 'gas'
@@ -297,6 +305,8 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   const decommissionYear = Math.round(finiteNumber(measure.decommissionYear, defaultDecommissionYear));
   const reinvestYear = start + Math.max(1, Math.round(finiteNumber(measure.life)));
   let rest = active.activated;
+  const reinvestAnnualDepreciation = reinvestLife > 0 ? reinvestCost / reinvestLife : 0;
+  const effectLags = { capex: 0, opex: 0, qe: 0, ...(p.effectLags || {}) };
   const rows = [];
 
   for (let i = 0; i < p.horizon; i++) {
@@ -319,15 +329,30 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
 
     const avgCapital = Math.max(0, opening - depreciation / 2);
     const capitalReturn = avgCapital * p.returnRate * (1 + p.taxFactor);
-    const firstYearOpex = year === start ? opex : 0;
-    const impactEffects = year >= start ? impactEffectsForMeasure(measure, p, year) : { qAndE: 0, risk: 0, included: [], sensitivity: [] };
-    const yearlyQE = year >= start ? qAndE + impactEffects.qAndE : 0;
+    const capexEffective = year >= start + effectLags.capex;
+    const qeEffective = year >= start + effectLags.qe;
+    const firstYearOpex = year === start + effectLags.opex ? opex : 0;
+    const impactEffects = year >= start ? impactEffectsForMeasure(measure, p, year, effectLags.qe) : { qAndE: 0, risk: 0, included: [], sensitivity: [] };
+    const yearlyQE = qeEffective ? qAndE + impactEffects.qAndE : 0;
     const yearlyRisk = year >= start ? risk + impactEffects.risk : 0;
     const economicOpex = year >= start ? -opexPa + opexDeltaPa : 0;
     const reinvest = year === reinvestYear ? -reinvestCost : 0;
     const decommission = year === decommissionYear ? -decommissionCost : 0;
+    const reinvestAssetAge = year - reinvestYear;
+    const reinvestAssetOpening = reinvestMode === 'assetAddition' && reinvestCost > 0 && reinvestAssetAge >= 0
+      ? Math.max(0, reinvestCost - Math.min(reinvestAssetAge, reinvestLife) * reinvestAnnualDepreciation)
+      : 0;
+    const reinvestDepreciationRaw = reinvestAssetOpening > 0.000001 ? Math.min(reinvestAssetOpening, reinvestAnnualDepreciation) : 0;
+    const reinvestCapitalReturnRaw = reinvestAssetOpening > 0.000001
+      ? Math.max(0, reinvestAssetOpening - reinvestDepreciationRaw / 2) * p.returnRate * (1 + p.taxFactor)
+      : 0;
+    const reinvestAssetEffective = reinvestMode === 'assetAddition' && year >= reinvestYear + effectLags.capex;
+    const reinvestDepreciation = reinvestAssetEffective ? reinvestDepreciationRaw : 0;
+    const reinvestCapitalReturn = reinvestAssetEffective ? reinvestCapitalReturnRaw : 0;
+    const reinvestAssetEffect = reinvestDepreciation + reinvestCapitalReturn;
     const reinvestDecommission = reinvest + decommission;
-    const regulatoryEogEffect = depreciation + capitalReturn + firstYearOpex + yearlyQE + yearlyRisk;
+    const regulatoryCapexEffect = capexEffective ? depreciation + capitalReturn : 0;
+    const regulatoryEogEffect = regulatoryCapexEffect + reinvestAssetEffect + firstYearOpex + yearlyQE + yearlyRisk;
     const indicativeCashflow = regulatoryEogEffect + economicOpex + reinvestDecommission;
     const eog = indicativeCashflow;
     const hgbDepreciation = year >= start && year < start + hgbLife
@@ -341,6 +366,11 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
       year,
       depreciation,
       capitalReturn,
+      regulatoryCapexEffect,
+      reinvestDepreciation,
+      reinvestCapitalReturn,
+      reinvestAssetEffect,
+      reinvestmentTreatment: reinvestMode,
       qAndE: yearlyQE,
       opex: economicOpex,
       economicOpex,
@@ -401,6 +431,10 @@ export function calcPortfolio(model, p) {
     regulatoryPeriod: null,
     depreciation: 0,
     capitalReturn: 0,
+    regulatoryCapexEffect: 0,
+    reinvestDepreciation: 0,
+    reinvestCapitalReturn: 0,
+    reinvestAssetEffect: 0,
     firstYearOpex: 0,
     regulatoryEogEffect: 0,
     indicativeCashflow: 0,
@@ -421,6 +455,10 @@ export function calcPortfolio(model, p) {
     result.rows.forEach((row, i) => {
       yearly[i].depreciation += row.depreciation;
       yearly[i].capitalReturn += row.capitalReturn;
+      yearly[i].regulatoryCapexEffect += row.regulatoryCapexEffect;
+      yearly[i].reinvestDepreciation += row.reinvestDepreciation;
+      yearly[i].reinvestCapitalReturn += row.reinvestCapitalReturn;
+      yearly[i].reinvestAssetEffect += row.reinvestAssetEffect;
       yearly[i].firstYearOpex += row.firstYearOpex;
       yearly[i].regulatoryEogEffect += row.regulatoryEogEffect;
       yearly[i].indicativeCashflow += row.indicativeCashflow;

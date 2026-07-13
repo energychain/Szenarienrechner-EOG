@@ -288,6 +288,61 @@ describe('scenario and portfolio parameters', () => {
 
     expect(result.tariffImpact.available).toBe(false);
   });
+
+  it('keeps regulatory effect lags at zero by default for import compatibility', () => {
+    const p = params(baseInputs);
+    expect(p.effectLags).toMatchObject({ capex: 0, opex: 0, qe: 0 });
+  });
+
+  it('can shift CAPEX, OPEX recognition and Q/E effects separately without moving the capital commitment', () => {
+    const lagged = params({ ...baseInputs, horizon: 4, capexLagYears: 1, opexLagYears: 2, qeLagYears: 1 });
+    const result = calcMeasure(baseMeasure({
+      secure: 50,
+      uncertain: 0,
+      opexRecognition: 100,
+      qDirect: 10,
+      impactAssumptions: [
+        { id: 'q', area: 'qElement', amount: 20, confidence: 'assumption', governance: 'basis', startYear: 2028, attribution: 100 }
+      ]
+    }), lagged);
+
+    expect(result.rows[0].depreciation).toBeGreaterThan(0);
+    expect(result.rows[0].capitalReturn).toBeGreaterThan(0);
+    expect(result.rows[0].regulatoryCapexEffect).toBeCloseTo(0, 4);
+    expect(result.rows[0].firstYearOpex).toBeCloseTo(0, 4);
+    expect(result.rows[0].qAndE).toBeCloseTo(0, 4);
+    expect(result.rows[1].regulatoryCapexEffect).toBeGreaterThan(0);
+    expect(result.rows[1].qAndE).toBeCloseTo(30, 4);
+    expect(result.rows[2].firstYearOpex).toBeCloseTo(500, 4);
+  });
+
+  it('keeps simplified one-off reinvestment treatment as the default', () => {
+    const p = params({ ...baseInputs, horizon: 4 });
+    const result = calcMeasure(baseMeasure({ life: 1, reinvestCost: 100 }), p);
+
+    expect(result.measure.reinvestMode).toBeUndefined();
+    expect(result.rows[1].reinvestmentTreatment).toBe('oneOff');
+    expect(result.rows[1].reinvestDecommission).toBeCloseTo(-100, 4);
+    expect(result.rows[1].reinvestAssetEffect).toBeCloseTo(0, 4);
+  });
+
+  it('optionally models reinvestment as a new activated asset with its own AfA and return chain', () => {
+    const p = params({ ...baseInputs, horizon: 4, returnRate: 5, capexLagYears: 0 });
+    const oneOff = calcMeasure(baseMeasure({ life: 1, reinvestCost: 100 }), p);
+    const assetAddition = calcMeasure(baseMeasure({
+      life: 1,
+      reinvestCost: 100,
+      reinvestMode: 'assetAddition',
+      reinvestLife: 2
+    }), p);
+
+    expect(assetAddition.rows[1].reinvestmentTreatment).toBe('assetAddition');
+    expect(assetAddition.rows[1].reinvestDecommission).toBeCloseTo(-100, 4);
+    expect(assetAddition.rows[1].reinvestDepreciation).toBeCloseTo(50, 4);
+    expect(assetAddition.rows[1].reinvestCapitalReturn).toBeCloseTo(3.75, 4);
+    expect(assetAddition.rows[1].reinvestAssetEffect).toBeCloseTo(53.75, 4);
+    expect(assetAddition.rows[1].regulatoryEogEffect - oneOff.rows[1].regulatoryEogEffect).toBeCloseTo(53.75, 4);
+  });
 });
 
 describe('documented impact assumptions', () => {
