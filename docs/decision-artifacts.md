@@ -21,3 +21,7 @@ Die Vorlage muss Entscheidung, Alternativen, Risiken und offene Annahmen verstä
 ## Artefakt 5: HTML mit Daten speichern
 
 Die App kann als einzelne HTML-Datei mit eingebettetem Modellstand gespeichert werden. Damit können Anwendung und Nutzdaten gemeinsam an Kolleginnen und Kollegen weitergegeben werden, ohne separate JSON-Versionen abzugleichen.
+
+## Artefakt 6: Projektplan der Planungsrunde
+
+Die Projektplan-Ansicht macht den Beratungsprozess operativ: neun Meilensteine, Rollen-Swimlanes, nächste fällige Aufgaben, Abhängigkeiten, eigene Aufgaben und übersprungene Template-Schritte werden als Teil des Modellstands geführt. Dadurch ist nicht nur nachvollziehbar, welche Kennzahlen berechnet wurden, sondern auch, welche Arbeitsschritte, Klärpunkte und Freigaben bis zur Entscheidung noch offen sind.

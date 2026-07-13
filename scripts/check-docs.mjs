@@ -17,6 +17,7 @@ const requiredDocs = [
   'docs/regulatory-map.md',
   'docs/maturity-model.md',
   'docs/decision-artifacts.md',
+  'docs/project-plan.md',
   'docs/validation-methodology.md',
   'docs/templates/massnahmensteckbrief.md',
   'docs/templates/gremienvorlage.md',
@@ -80,6 +81,8 @@ assert(dataFormat.includes('synthetisch'), 'DATA_FORMAT must document synthetic 
 const story = readFileSync('docs/story/planungsrunde-userstory.md', 'utf8');
 assert(story.includes('Szenarienrechner-EOG') || story.includes('EOG-Planungsrunde'), 'Story doc must name the planning context.');
 assert(story.includes('Bidirektionale Navigation'), 'Story doc must explain bidirectional navigation.');
+assert(story.includes('Projektplan als Struktur-Element'), 'Story doc must explain the project plan as operational structure.');
+assert(story.includes('nächste fällige Aufgabe'), 'Story doc must explain project plan next-task guidance.');
 for (const id of ['kickoff', 'initialisierung', 'datenerhebung', 'massnahmenbewertung', 'technik-rueckkopplung', 'konsolidierung', 'entscheidungsvorlage', 'gremium', 'archiv']) {
   assert(story.includes(`id="${id}"`), `Story doc is missing anchor ${id}.`);
   assert(story.includes(`?story=${id}`), `Story doc is missing app deep link for ${id}.`);

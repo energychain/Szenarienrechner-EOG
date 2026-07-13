@@ -105,6 +105,22 @@ Diese Story ist mit der Live-Anwendung verknüpft:
 - Die Anwendung zeigt im Prozesshinweis den Link **„Story: …“** zurück zum passenden Kapitel.
 - Die App-Links nutzen synthetische Demodaten und setzen Phase, Sicht und Arbeitsstand passend zum Story-Meilenstein.
 
+## Projektplan als Struktur-Element
+
+Die gleiche Meilensteinlogik gibt es in der App zusätzlich als **Projektplan**. Dort wird die erzählende User-Story zu einer operativen Planungsrunde: neun Meilensteine, Rollen-Swimlanes, abhakbare Aufgaben, Fälligkeiten, Abhängigkeiten und Deep-Links in die passende App-Sicht.
+
+Für ein EVU ist dieser Projektplan der Unterschied zwischen „wir haben gerechnet“ und „wir wissen, wer bis wann welchen Klärpunkt erledigt“. Er zeigt die nächste fällige Aufgabe insgesamt und je Rolle, sperrt abhängige Aufgaben, solange Vorgänger nicht erledigt sind, und erlaubt eigene EVU-spezifische Aufgaben. Template-Schritte, die in einer konkreten Runde nicht passen, werden nicht gelöscht, sondern bewusst als „nicht zutreffend“ übersprungen.
+
+Typische Nutzung in dieser Story:
+
+- Im Kick-off öffnet die Modellverantwortung den Projektplan und prüft Rollen, Gremientermin und erste Aufgaben.
+- In Initialisierung und Datenerhebung werden Datenanforderungen, Quellen und offene Punkte als Aufgaben geführt.
+- In Maßnahmenbewertung und technischer Rückkopplung landen Aktivierbarkeit, Doppelzählungsprüfung und Wirkannahmen als verantwortete Arbeitspakete.
+- Vor Entscheidungsvorlage und Gremium zeigt der Plan, welche Freigaben, Lesehinweise und Auflagen noch fehlen.
+- Nach Beschluss reist der Projektplan im JSON-Export oder in **HTML mit Daten speichern** mit und bildet den Einstieg in die Folgerunde.
+
+Damit wird die App zum wiederaufnahmefähigen Arbeitsstand: Kennzahlen, Annahmen, Report und Projektsteuerung bleiben in einer Datei verbunden.
+
 ---
 
 <a id="kickoff"></a>

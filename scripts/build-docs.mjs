@@ -9,6 +9,7 @@ const pages = [
   { source: 'docs/regulatory-map.md', output: 'dist/docs/regulatory-map.html', title: 'Regulatorik-Landkarte · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/maturity-model.md', output: 'dist/docs/maturity-model.html', title: 'Reifegradmodell · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/decision-artifacts.md', output: 'dist/docs/decision-artifacts.html', title: 'Entscheidungsartefakte · Szenarienrechner-EOG', back: 'index.html' },
+  { source: 'docs/project-plan.md', output: 'dist/docs/project-plan.html', title: 'Projektplan · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/validation-methodology.md', output: 'dist/docs/validation-methodology.html', title: 'Validierungsmethodik · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/templates/massnahmensteckbrief.md', output: 'dist/docs/templates/massnahmensteckbrief.html', title: 'Vorlage Maßnahmensteckbrief · Szenarienrechner-EOG', back: '../index.html' },
   { source: 'docs/templates/gremienvorlage.md', output: 'dist/docs/templates/gremienvorlage.html', title: 'Vorlage Gremienvorlage · Szenarienrechner-EOG', back: '../index.html' },

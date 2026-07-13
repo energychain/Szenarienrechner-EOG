@@ -52,7 +52,8 @@ Der Rechner bildet ein generisches Planungsmodell fuer regulierte Sparten ab. Er
 
 Weitere Projektdokumente:
 
-- `docs/ecosystem/index.md`: Übersicht zum Beratungs-/Methodik-Ökosystem mit Navigation zu Handbuch, Vorlagen, Lernpfaden und Fallstudien.
+- `docs/ecosystem/index.md`: Übersicht zum Beratungs-/Methodik-Ökosystem mit Navigation zu Handbuch, Projektplan, Vorlagen, Lernpfaden und Fallstudien.
+- `docs/project-plan.md`: Dokumentation der Projektplan-Ansicht mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten, eigenen Aufgaben und Reset-/Export-Verhalten.
 - `docs/handbook/regulierte-finanzplanung-vnb.md`: Methodikhandbuch für regulierte Finanzplanung kleiner VNBs.
 - `docs/regulatory-map.md`: öffentliche Quellen und Einordnung zu Strom/Gas-Regulatorik.
 - `docs/templates/`: Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung und Workshopagenda.
