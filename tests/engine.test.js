@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  activationSplitHelper,
   calcMeasure,
   calcPortfolio,
   defaultEffectLags,
@@ -10,6 +11,7 @@ import {
   portfolioDecisionMetrics,
   regulatoryParameterSet,
   regulatoryPeriodFor,
+  riskHelper,
   scenarioParams
 } from '../src/engine.js';
 
@@ -66,6 +68,22 @@ describe('financial helpers', () => {
 
   it('calculates irr against a known cash-flow series', () => {
     expect(irr([-100, 60, 60])).toBeCloseTo(0.13066, 4);
+  });
+
+  it('derives CAPEX/OPEX activation split helper values with governance notes', () => {
+    const helper = activationSplitHelper({ cost: 1000, secure: 70, uncertain: 30, probability: 50, opexRecognition: 60 });
+    expect(helper.activated).toBeCloseTo(850, 4);
+    expect(helper.nonActivated).toBeCloseTo(150, 4);
+    expect(helper.firstYearOpexRecognition).toBeCloseTo(90, 4);
+    expect(helper.note).toContain('Aktivierbarkeit');
+    expect(helper.clarification).toContain('HGB');
+  });
+
+  it('derives risk expected value helper values instead of a flat gut-feel number', () => {
+    const helper = riskHelper({ probabilityBefore: 8, probabilityAfter: 3, impact: 400 });
+    expect(helper.expectedAvoidedPa).toBeCloseTo(20, 4);
+    expect(helper.chain).toContain('8');
+    expect(helper.governance).toContain('prüfpflichtig');
   });
 });
 

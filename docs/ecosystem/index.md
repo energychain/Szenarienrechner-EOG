@@ -23,6 +23,7 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 | Regulatorik-Landkarte | Öffentliche Quellen einordnen | Orientierung ohne juristische Vollkommentierung |
 | Reifegradmodell | Eigenen Planungsprozess bewerten | Von Excel-Sammlung zu governance-fähiger Portfolioentscheidung |
 | Entscheidungsartefakte | Beschlussfähigkeit herstellen | Klare Empfehlung, offene Punkte, Evidenz und Verantwortlichkeiten |
+| TRL-6-Validierung | Real-but-private Benchmarkprozess steuern | Nachweisbarer Abgleich gegen Wirtschaftsplan/EOG-Unterlagen ohne öffentliche Vertraulichkeitsrisiken |
 
 ## Navigation
 
@@ -30,11 +31,13 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 - [Regulatorik-Landkarte](regulatory-map.html)
 - [Reifegradmodell](maturity-model.html)
 - [Entscheidungsartefakte](decision-artifacts.html)
+- [TRL-6-Validierung](validation-methodology.html)
 - [Vorlage Maßnahmensteckbrief](templates/massnahmensteckbrief.html)
 - [Vorlage Gremienvorlage](templates/gremienvorlage.html)
 - [Vorlage Klärpunktliste](templates/klaerpunktliste.html)
 - [Vorlage Datenanforderung](templates/datenanforderung.html)
 - [Vorlage Workshop-Agenda](templates/workshop-agenda.html)
+- [Vorlage Validierungsprotokoll](templates/validation-protocol.html)
 - [Lernpfad Management](guides/management.html)
 - [Lernpfad Controlling](guides/controlling.html)
 - [Lernpfad Regulierung](guides/regulierung.html)

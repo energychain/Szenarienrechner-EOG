@@ -268,6 +268,38 @@ export function expectedActivated(measure) {
   };
 }
 
+export function activationSplitHelper(measure = {}) {
+  const active = expectedActivated(measure);
+  const opexRecognitionShare = clamp(finiteNumber(measure.opexRecognition), 0, 100) / 100;
+  const firstYearOpexRecognition = active.nonActivated * opexRecognitionShare;
+  return {
+    activated: active.activated,
+    nonActivated: active.nonActivated,
+    activatedShare: active.share,
+    rawActivatedShare: active.rawShare,
+    firstYearOpexRecognition,
+    note: `Aktivierbarkeit: ${Math.round(active.share * 100)} % erwartbar kapitalwirksam; ${Math.round((1 - active.share) * 100)} % bleiben als nicht aktivierter Anteil zu prüfen.`,
+    clarification: 'HGB-, Anlagenbuchhaltungs- und regulatorische Sicht können auseinanderlaufen; Quelle und Freigabe dokumentieren.'
+  };
+}
+
+export function riskHelper({ probabilityBefore = 0, probabilityAfter = 0, impact = 0 } = {}) {
+  const before = clamp(finiteNumber(probabilityBefore), 0, 100);
+  const after = clamp(finiteNumber(probabilityAfter), 0, 100);
+  const riskImpact = finiteNumber(impact);
+  const delta = Math.max(0, before - after);
+  const expectedAvoidedPa = delta / 100 * riskImpact;
+  return {
+    probabilityBefore: before,
+    probabilityAfter: after,
+    probabilityDelta: delta,
+    impact: riskImpact,
+    expectedAvoidedPa,
+    chain: `Risikowert = max(0, ${before} % - ${after} %) × ${riskImpact} TEUR = ${expectedAvoidedPa.toFixed(1)} TEUR p.a.`,
+    governance: 'Risikowert bleibt prüfpflichtig, bis Eintrittswahrscheinlichkeit, Schadenshöhe und Attribution fachlich belegt sind.'
+  };
+}
+
 function hasDirectQeEffect(measure, p) {
   if (finiteNumber(measure.qDirect) !== 0 || finiteNumber(measure.eDirect) !== 0) return true;
   return impactAssumptionsFor(measure).some(impact => {
