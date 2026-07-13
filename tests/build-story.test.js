@@ -46,6 +46,11 @@ describe('story HTML rendering', () => {
     expect(story).toContain('Projektplan als Struktur-Element');
     expect(story).toContain('Rollen-Swimlanes');
     expect(story).toContain('HTML mit Daten speichern');
+    expect(story).toContain('Aktualitätsprüfung und GitHub-Support als Vertrauensschicht');
+    expect(story).toContain('Aktualität prüfen');
+    expect(story).toContain('release-manifest.json');
+    expect(story).toContain('Feedback / Support melden');
+    expect(story).toContain('Support-Paket exportieren');
     expect(story).toContain('STROMDAO GmbH und Cernion');
     expect(story).toContain('https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Netzentgelte/Anreizregulierung/start.html');
     expect(story).toContain('https://cernion.de/');
