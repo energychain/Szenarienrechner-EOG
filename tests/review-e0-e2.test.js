@@ -147,3 +147,26 @@ describe('review E-2 double counting guard', () => {
     expect(uiSource).toContain('mögliche Doppelzählung');
   });
 });
+
+describe('review E-3/E-4 UI affordances', () => {
+  it('exposes regulatory effect lag assumptions in the basis UI and model exports', () => {
+    expect(indexHtml).toContain('id="capexLagYears"');
+    expect(indexHtml).toContain('id="opexLagYears"');
+    expect(indexHtml).toContain('id="qeLagYears"');
+    expect(uiSource).toContain("'capexLagYears'");
+    expect(uiSource).toContain("'opexLagYears'");
+    expect(uiSource).toContain("'qeLagYears'");
+    expect(uiSource).toContain('Wirkungsverzug');
+  });
+
+  it('exposes optional reinvestment asset-addition treatment in the measure UI', () => {
+    expect(indexHtml).toContain('id="mReinvestMode"');
+    expect(indexHtml).toContain('value="assetAddition"');
+    expect(indexHtml).toContain('id="mReinvestLife"');
+    expect(uiSource).toContain("'mReinvestMode'");
+    expect(uiSource).toContain("'mReinvestLife'");
+    expect(uiSource).toContain('assetAddition');
+    expect(uiSource).toContain('Reinvest-Logik');
+    expect(uiSource).toContain('neuer Anlagenzugang');
+  });
+});

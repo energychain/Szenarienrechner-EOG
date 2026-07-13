@@ -282,8 +282,20 @@
             <label for="portfolioAttribution">Portfolio-Attribution %</label>
             <input id="portfolioAttribution" type="number" value="25" min="0" max="100" step="1">
           </div>
-	        </div>
-	        <p class="hint expert-defaults">Erweiterte Annahmen aktiv mit Standardwerten: Portfolio-Attribution 25 %, KANU degressiv 10 %, Zuschlag/Steuern 0 %. Im Expertenmodus lassen sie sich ändern.</p>
+          <div>
+            <label for="capexLagYears">Wirkungsverzug CAPEX Jahre</label>
+            <input id="capexLagYears" type="number" value="0" min="0" max="10" step="1">
+          </div>
+          <div>
+            <label for="opexLagYears">Wirkungsverzug OPEX Jahre</label>
+            <input id="opexLagYears" type="number" value="0" min="0" max="10" step="1">
+          </div>
+          <div>
+            <label for="qeLagYears">Wirkungsverzug Q/E Jahre</label>
+            <input id="qeLagYears" type="number" value="0" min="0" max="10" step="1">
+          </div>
+        </div>
+        <p class="hint expert-defaults">Erweiterte Annahmen aktiv mit Standardwerten: Portfolio-Attribution 25 %, KANU degressiv 10 %, Zuschlag/Steuern 0 %, Wirkungsverzug 0 Jahre. Im Expertenmodus lassen sie sich ändern.</p>
 	        <p class="hint">Szenarien setzen nur Annahmen. Die Maßnahmen bleiben einzeln sichtbar und können separat ein- oder ausgeschaltet werden.</p>
 	        <div id="globalValidation" class="validation-messages" role="status" aria-live="polite"></div>
 	      </div>
@@ -879,6 +891,17 @@
             <div>
               <label for="mReinvestCost">Reinvestition TEUR</label>
               <input id="mReinvestCost" type="number" min="0" step="1">
+            </div>
+            <div>
+              <label for="mReinvestMode">Reinvestitionslogik</label>
+              <select id="mReinvestMode">
+                <option value="oneOff">vereinfachter Einmalabzug</option>
+                <option value="assetAddition">neuer Anlagenzugang</option>
+              </select>
+            </div>
+            <div>
+              <label for="mReinvestLife">ND Reinvestition Jahre</label>
+              <input id="mReinvestLife" type="number" min="1" step="1">
             </div>
             <div>
               <label for="mDecommissionCost">Rückbau/Entsorgung TEUR</label>

@@ -192,14 +192,14 @@ const inputIds = [
   'sector', 'regulationProcedure', 'baseYear', 'baseEog', 'rab', 'returnRate', 'financingRate',
   'annualEnergyGwh', 'householdConsumptionKwh',
   'horizon', 'discountRate', 'kanuEndYear', 'degressiveRate', 'taxFactor',
-  'portfolioAttribution', 'qDelta', 'eDelta'
+  'portfolioAttribution', 'capexLagYears', 'opexLagYears', 'qeLagYears', 'qDelta', 'eDelta'
 ];
 
 const detailIds = [
   'mName', 'mExternalId', 'mOrgUnit', 'mTags', 'mType', 'mCost', 'mYear', 'mSecure', 'mUncertain',
   'mProbability', 'mOpexRecognition', 'mLife', 'mDepr', 'mQDirect',
   'mEDirect', 'mRiskAvoided', 'mPortfolioShare', 'mOpexPa',
-  'mOpexDeltaPa', 'mReinvestCost', 'mDecommissionCost', 'mHgbLife',
+  'mOpexDeltaPa', 'mReinvestCost', 'mReinvestMode', 'mReinvestLife', 'mDecommissionCost', 'mHgbLife',
   'mDecommissionYear', 'mNote'
 ];
 
@@ -649,10 +649,10 @@ function applyReadonlyMode() {
 
 const expertFieldIds = [
   'rab', 'returnRate', 'financingRate', 'discountRate', 'kanuEndYear',
-  'degressiveRate', 'taxFactor', 'portfolioAttribution', 'qDelta', 'eDelta',
+  'degressiveRate', 'taxFactor', 'portfolioAttribution', 'capexLagYears', 'opexLagYears', 'qeLagYears', 'qDelta', 'eDelta',
   'mType', 'mSecure', 'mUncertain', 'mProbability', 'mOpexRecognition',
   'mDepr', 'mQDirect', 'mEDirect', 'mRiskAvoided', 'mPortfolioShare',
-  'mOpexPa', 'mOpexDeltaPa', 'mReinvestCost', 'mDecommissionCost',
+  'mOpexPa', 'mOpexDeltaPa', 'mReinvestCost', 'mReinvestMode', 'mReinvestLife', 'mDecommissionCost',
   'mDecommissionYear'
 ];
 
@@ -766,6 +766,8 @@ function normalizeMeasureForUi(measure, index = 0) {
     opexPa: Number(measure.opexPa) || 0,
     opexDeltaPa: Number(measure.opexDeltaPa) || 0,
     reinvestCost: Number(measure.reinvestCost) || 0,
+    reinvestMode: measure.reinvestMode === 'assetAddition' ? 'assetAddition' : 'oneOff',
+    reinvestLife: Math.max(1, Math.round(Number(measure.reinvestLife) || Number(measure.life) || 1)),
     decommissionCost: Number(measure.decommissionCost) || 0,
     decommissionYear: measure.decommissionYear ?? '',
     impactAssumptions: impacts.map(impact => ({
@@ -898,7 +900,7 @@ function renderBasisSummaryCards() {
     {
       title: 'Szenario',
       value: `${scenarioLabel(scenario)} · Horizont ${p.horizon} Jahre · Diskontsatz ${fmtPct(p.discountRate * 100, 1)}`,
-      meta: `KANU-Ziel ${p.kanuEndYear} · Zuschlag/Steuern ${fmtPct(p.taxFactor * 100, 1)}`
+      meta: `KANU-Ziel ${p.kanuEndYear} · Wirkungsverzug CAPEX/OPEX/QE ${p.effectLags.capex}/${p.effectLags.opex}/${p.effectLags.qe} Jahre`
     },
     {
       title: 'Portfolio-Wirkung',
@@ -2910,6 +2912,8 @@ function newMeasureTemplate() {
     opexPa: 0,
     opexDeltaPa: 0,
     reinvestCost: 0,
+    reinvestMode: 'oneOff',
+    reinvestLife: 40,
     decommissionCost: 0,
     decommissionYear: '',
     impactAssumptions: [],
@@ -2934,6 +2938,9 @@ function basisDraft() {
     degressiveRate: num('degressiveRate'),
     taxFactor: num('taxFactor'),
     portfolioAttribution: num('portfolioAttribution'),
+    capexLagYears: num('capexLagYears'),
+    opexLagYears: num('opexLagYears'),
+    qeLagYears: num('qeLagYears'),
     qDelta: num('qDelta'),
     eDelta: num('eDelta')
   };
@@ -3649,6 +3656,8 @@ function renderDetail() {
   el.mOpexPa.value = measure.opexPa || 0;
   el.mOpexDeltaPa.value = measure.opexDeltaPa || 0;
   el.mReinvestCost.value = measure.reinvestCost || 0;
+  el.mReinvestMode.value = measure.reinvestMode === 'assetAddition' ? 'assetAddition' : 'oneOff';
+  el.mReinvestLife.value = measure.reinvestLife || measure.life || 1;
   el.mDecommissionCost.value = measure.decommissionCost || 0;
   el.mHgbLife.value = measure.hgbLife || measure.life || 1;
   el.mDecommissionYear.value = measure.decommissionYear ?? '';
@@ -3926,6 +3935,20 @@ function regulationProcedureNote(result) {
     : '';
 }
 
+function reinvestTreatmentLabel(measure) {
+  if (measure.reinvestMode === 'assetAddition') return 'neuer Anlagenzugang';
+  return Number(measure.reinvestCost || 0) > 0 ? 'vereinfachter Einmalabzug' : 'keine Reinvestition';
+}
+
+function reinvestTreatmentNote(measure) {
+  if (measure.reinvestMode === 'assetAddition') {
+    return `Reinvest-Logik: neuer Anlagenzugang mit eigener AfA-/Verzinsungskette über ${Math.max(1, Number(measure.reinvestLife || measure.life || 1))} Jahre.`;
+  }
+  return Number(measure.reinvestCost || 0) > 0
+    ? 'Reinvest-Logik: vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Brücke; keine neue Kapitalbasis.'
+    : 'Reinvest-Logik: keine zusätzliche Reinvestition hinterlegt.';
+}
+
 function complianceOverviewRows(result) {
   const activeImpacts = allImpactAssumptions(true);
   const lccMeasures = result.activeMeasures.filter(measure =>
@@ -4131,10 +4154,11 @@ function renderReport(result, first, spread, decision, metrics) {
       <td><div class="pill-row compact">${objectivePills(item.measure)}</div></td>
       <td>${fmtPct(item.activeShare * 100, 0)}</td>
       <td>${impactCounts(item.measure).total || '-'}</td>
+      <td>${reinvestTreatmentLabel(item.measure)}</td>
       <td>${Number.isFinite(item.irr) ? fmtPct(item.irr * 100, 1) : '-'}</td>
-      <td>${String(item.measure.note || '').trim() ? 'Ja' : '-'}</td>
+      <td>${String(item.measure.note || '').trim() ? `${esc(item.measure.note)} · ${esc(reinvestTreatmentNote(item.measure))}` : esc(reinvestTreatmentNote(item.measure))}</td>
     </tr>
-  `).join('') || '<tr><td colspan="9">Keine aktive Maßnahme im Report.</td></tr>';
+  `).join('') || '<tr><td colspan="10">Keine aktive Maßnahme im Report.</td></tr>';
   const impactRows = allImpactAssumptions(true).map(item => `
     <tr>
       <td>${esc(item.measure.name)}</td>
@@ -4287,7 +4311,7 @@ function renderReport(result, first, spread, decision, metrics) {
       <h2>Aktive Maßnahmen</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Maßnahme</th><th>Jahr</th><th>CAPEX</th><th>TOTEX</th><th>Ziele</th><th>aktiv.</th><th>Wirkannahmen</th><th>IRR</th><th>Notiz</th></tr></thead>
+          <thead><tr><th>Maßnahme</th><th>Jahr</th><th>CAPEX</th><th>TOTEX</th><th>Ziele</th><th>aktiv.</th><th>Wirkannahmen</th><th>Reinvest-Logik</th><th>IRR</th><th>Notiz</th></tr></thead>
           <tbody>${measureRows}</tbody>
         </table>
       </div>
@@ -4474,6 +4498,8 @@ function updateSelectedFromDetail() {
 	        opexPa: num('mOpexPa'),
 	        opexDeltaPa: num('mOpexDeltaPa'),
 	        reinvestCost: num('mReinvestCost'),
+        reinvestMode: el.mReinvestMode.value === 'assetAddition' ? 'assetAddition' : 'oneOff',
+        reinvestLife: Math.max(1, Math.round(num('mReinvestLife') || num('mLife'))),
 	        decommissionCost: num('mDecommissionCost'),
 	        hgbLife: Math.max(1, Math.round(num('mHgbLife') || num('mLife'))),
 	        decommissionYear: el.mDecommissionYear.value === '' ? '' : Math.round(num('mDecommissionYear')),
@@ -4539,6 +4565,7 @@ el.sector.addEventListener('change', renderAll);
 detailIds.forEach(id => el[id].addEventListener('input', updateSelectedFromDetail));
 el.mType.addEventListener('change', updateSelectedFromDetail);
 el.mDepr.addEventListener('change', updateSelectedFromDetail);
+el.mReinvestMode.addEventListener('change', updateSelectedFromDetail);
 document.getElementById('strategySampReference').addEventListener('input', updateStrategyReference);
 document.getElementById('strategyObjectives').addEventListener('input', updateObjective);
 document.getElementById('strategyObjectives').addEventListener('click', event => {

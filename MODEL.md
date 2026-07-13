@@ -24,6 +24,7 @@ Es ersetzt keine Rechts- oder Regulierungsberatung und keine unternehmensspezifi
 - Startjahr und Betrachtungshorizont.
 - bestehende Erlösobergrenze und regulierte Kapitalbasis.
 - Zinssaetze, Jahresarbeit und weitere Portfolioannahmen.
+- optionale Wirkungsverzugsannahmen für CAPEX-, OPEX- und Q/E-Wirkungen. Diese verschieben nur die modellierte regulatorische Wirksamkeit, nicht die zugrunde liegende Kapitalbindung oder den technischen Maßnahmestart.
 
 ### Massnahmen
 
@@ -32,6 +33,7 @@ Es ersetzt keine Rechts- oder Regulierungsberatung und keine unternehmensspezifi
 - Wahrscheinlichkeit des unsicheren Anteils.
 - Nutzungsdauer und Abschreibungspfad.
 - OPEX-Anerkennung, Lifecycle-OPEX, Rueckbau und Reinvestition.
+- Reinvestitionslogik entweder als vereinfachter Einmalabzug oder optional als neuer Anlagenzugang mit eigener Nutzungsdauer, AfA und Verzinsungskette.
 - qualitative oder quantitative Wirkannahmen.
 
 ### Szenarien

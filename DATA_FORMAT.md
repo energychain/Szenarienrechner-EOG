@@ -24,6 +24,12 @@ Ein Projektstand kann enthalten:
 - Prozessstatus mit kurzer Arbeitsstandnotiz und nächstem Abstimmungsschritt,
 - Report- und Gremienvorlagenzustand.
 
+Aktueller Modellstand (`version: 7`) führt zusätzlich explizite Wirkungsverzugs- und Reinvestitionsfelder mit:
+
+- `model.inputs.capexLagYears`, `model.inputs.opexLagYears`, `model.inputs.qeLagYears`: optionale Verzugsannahmen in Jahren. Fehlt ein Feld in alten Exporten, gilt `0`.
+- `measure.reinvestMode`: `oneOff` (Default, vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Brücke) oder `assetAddition` (neuer Anlagenzugang mit eigener AfA-/Verzinsungskette).
+- `measure.reinvestLife`: Nutzungsdauer des optionalen Reinvestitions-Anlagenzugangs; fehlt der Wert, wird die normale Maßnahmennutzungsdauer genutzt.
+
 ## Minimaler Projektumschlag
 
 Ein formaler Export sollte langfristig aus einem stabilen Umschlag und einem fachlichen Payload bestehen. Der Umschlag macht Dateien pruefbar, ohne sofort jede fachliche Detailstruktur zu kennen.
