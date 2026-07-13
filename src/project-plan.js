@@ -211,11 +211,52 @@ export function normalizeProjectPlan(value = {}, baseYear = new Date().getFullYe
   };
 }
 
+
+export function flattenProjectPlanTasks(plan) {
+  return (plan?.milestones || []).flatMap(milestone => (milestone.tasks || []).map(task => ({ milestone, task })));
+}
+
+export function projectPlanTaskDependencyState(plan, taskId) {
+  const taskEntries = flattenProjectPlanTasks(plan);
+  const taskMap = new Map(taskEntries.map(entry => [entry.task.id, entry.task]));
+  const task = taskMap.get(taskId);
+  if (!task) return { taskId, dependencyBlocked: false, missingDependencies: [], effectiveStatus: 'open', ready: false };
+  const missingDependencies = (task.dependsOn || []).filter(dependencyId => taskMap.get(dependencyId)?.status !== 'done');
+  const dependencyBlocked = missingDependencies.length > 0;
+  const effectiveStatus = dependencyBlocked || task.status === 'blocked' ? 'blocked' : task.status;
+  return {
+    taskId,
+    dependencyBlocked,
+    missingDependencies,
+    effectiveStatus,
+    ready: !dependencyBlocked && task.status !== 'done' && task.status !== 'blocked'
+  };
+}
+
+export function projectPlanEffectiveTaskStates(plan) {
+  return Object.fromEntries(flattenProjectPlanTasks(plan).map(({ task }) => [task.id, projectPlanTaskDependencyState(plan, task.id)]));
+}
+
+export function projectPlanNextReadyTask(plan) {
+  const states = projectPlanEffectiveTaskStates(plan);
+  return flattenProjectPlanTasks(plan)
+    .filter(({ task }) => states[task.id]?.ready)
+    .sort((a, b) => {
+      const aOffset = (Number(a.milestone.plannedOffsetMonths) || 0) * 30 + (Number(a.task.dueOffsetDays) || 0);
+      const bOffset = (Number(b.milestone.plannedOffsetMonths) || 0) * 30 + (Number(b.task.dueOffsetDays) || 0);
+      return aOffset - bOffset || a.task.id.localeCompare(b.task.id);
+    })[0] || null;
+}
+
 export function projectPlanTaskCounts(plan) {
-  const tasks = (plan?.milestones || []).flatMap(milestone => milestone.tasks || []);
+  const entries = flattenProjectPlanTasks(plan);
+  const states = projectPlanEffectiveTaskStates(plan);
   const byStatus = Object.fromEntries(projectPlanStatuses.map(status => [status, 0]));
-  for (const item of tasks) byStatus[item.status] = (byStatus[item.status] || 0) + 1;
-  return { total: tasks.length, byStatus, completed: byStatus.done || 0, open: (byStatus.open || 0) + (byStatus.in_progress || 0) + (byStatus.blocked || 0) };
+  for (const { task } of entries) {
+    const effectiveStatus = states[task.id]?.effectiveStatus || task.status;
+    byStatus[effectiveStatus] = (byStatus[effectiveStatus] || 0) + 1;
+  }
+  return { total: entries.length, byStatus, completed: byStatus.done || 0, open: (byStatus.open || 0) + (byStatus.in_progress || 0) + (byStatus.blocked || 0) };
 }
 
 export function projectPlanMilestoneDate(baseYear, plannedOffsetMonths = 0, dueOffsetDays = 0) {
