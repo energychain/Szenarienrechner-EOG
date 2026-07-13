@@ -33,4 +33,17 @@ describe('review findings 3.1-3.4 UI integration', () => {
     expect(ui).toContain('indicativeCashflow');
     expect(html).toContain('IRR indikativ');
   });
+
+  it('renders an explicit EOG-to-cashflow bridge in the decision UI and report', () => {
+    expect(html).toContain('eogCashflowBridge');
+    expect(html).toContain('Regulatorische EOG-Wirkung ≠ Cashflow');
+    expect(html).toContain('cashflowBridgeEog');
+    expect(html).toContain('cashflowBridgeEconomic');
+    expect(html).toContain('cashflowBridgeResult');
+    expect(ui).toContain('renderEogCashflowBridge');
+    expect(ui).toContain('Modellierte EOG-Wirkung');
+    expect(ui).toContain('wirtschaftliche Überleitung');
+    expect(ui).toContain('indikative Cashflow-Basis');
+    expect(ui).toContain('Diese Überleitung erklärt, warum IRR/NPV nicht die EOG selbst bewerten');
+  });
 });

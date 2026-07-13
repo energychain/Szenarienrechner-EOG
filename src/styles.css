@@ -1078,6 +1078,58 @@
       font-size: 12px;
     }
 
+    .bridge-grid {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr) auto minmax(180px, 1fr);
+      gap: 10px;
+      align-items: stretch;
+      margin-top: 12px;
+    }
+
+    .bridge-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .bridge-card.regulatory { border-left: 5px solid var(--accent); }
+    .bridge-card.economic { border-left: 5px solid #8a6a32; }
+    .bridge-card.cashflow { border-left: 5px solid var(--good); }
+
+    .bridge-card .label {
+      min-height: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .bridge-card .value {
+      margin-top: 6px;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .bridge-card p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .bridge-operator {
+      align-self: center;
+      color: var(--muted);
+      font-size: 24px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .bridge-caveat {
+      margin-top: 10px;
+    }
+
     .summary-hero {
       display: grid;
       grid-template-columns: minmax(280px, 1.1fr) minmax(320px, 1.6fr);
@@ -2174,6 +2226,8 @@
       .footer-inner { align-items: flex-start; flex-direction: column; }
       .footer-meta { justify-content: flex-start; }
       .grid2, .kpis, .summary-hero, .meeting-grid, .report-head, .report-summary, .period-summary { grid-template-columns: 1fr; }
+      .bridge-grid { grid-template-columns: 1fr; }
+      .bridge-operator { transform: rotate(90deg); }
       .review-list div { grid-template-columns: 1fr; gap: 2px; }
     }
 

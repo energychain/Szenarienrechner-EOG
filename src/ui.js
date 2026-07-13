@@ -2643,6 +2643,18 @@ function activeMeasureNames(result) {
   return names + suffix + '.';
 }
 
+function renderEogCashflowBridge(result, metrics) {
+  const economicBridge = metrics.recurringIndicativeCashflow - metrics.recurringRegulatoryEog;
+  const yearOneEconomicBridge = metrics.yearOneIndicativeCashflow - metrics.yearOneRegulatoryEog;
+  document.getElementById('cashflowBridgeEog').textContent = fmtTeur(metrics.recurringRegulatoryEog, 1);
+  document.getElementById('cashflowBridgeEogText').textContent = `Laufende modellierte EOG-Wirkung ab Jahr 2. Startjahr: ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt.`;
+  document.getElementById('cashflowBridgeEconomic').textContent = fmtTeur(economicBridge, 1);
+  document.getElementById('cashflowBridgeEconomicText').textContent = `wirtschaftliche Überleitung aus laufenden OPEX-, Rückbau- und Reinvestitionsannahmen. Startjahr-Überleitung: ${fmtTeur(yearOneEconomicBridge, 1)}.`;
+  document.getElementById('cashflowBridgeResult').textContent = fmtTeur(metrics.recurringIndicativeCashflow, 1);
+  document.getElementById('cashflowBridgeResultText').textContent = `indikative Cashflow-Basis für IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'} und Kapitalwert ${fmtTeur(result.npv, 1)}.`;
+  document.getElementById('cashflowBridgeCaveat').textContent = 'Diese Überleitung erklärt, warum IRR/NPV nicht die EOG selbst bewerten: Die regulatorische Erlösobergrenze wird als Annahme in eine wirtschaftliche Cashflow-Sicht übersetzt; Mengen-, Zeitverzugs- und Wälzungsrisiken bleiben zu prüfen.';
+}
+
 function renderMeetingFocus(result, first, spread, metrics = portfolioDecisionMetrics(result)) {
   const activatedShare = result.invest > 0 ? result.activated / result.invest * 100 : 0;
   const irrText = Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-';
@@ -4156,6 +4168,8 @@ function renderReport(result, first, spread, decision, metrics) {
     openClarifications: clarifications.filter(item => item.status !== 'closed').length,
     reviewCount: reviewItems.length
   });
+  const economicBridge = metrics.recurringIndicativeCashflow - metrics.recurringRegulatoryEog;
+  const yearOneEconomicBridge = metrics.yearOneIndicativeCashflow - metrics.yearOneRegulatoryEog;
 
   report.innerHTML = `
     <div class="report-head">
@@ -4212,6 +4226,25 @@ function renderReport(result, first, spread, decision, metrics) {
         <div class="kpi"><div class="label">laufende EOG-Wirkung</div><div class="value">${fmtTeur(metrics.recurringRegulatoryEog, 1)}</div><div class="sub">Startjahr ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} · Einmaleffekt ${fmtTeur(metrics.yearOneOneOff, 1)}</div></div>
         <div class="kpi"><div class="label">IRR indikativ</div><div class="value">${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</div><div class="sub">kein garantierter EOG-Cashflow</div></div>
         <div class="kpi"><div class="label">Kapitalwert</div><div class="value">${fmtTeur(result.npv, 1)}</div><div class="sub">Diskontsatz ${fmtPct(result.p.discountRate * 100, 1)}</div></div>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h2>EOG-/Cashflow-Überleitung</h2>
+      <p class="hint">Regulatorische EOG-Wirkung ≠ Cashflow. Die EOG ist eine Erlösobergrenze; IRR und Kapitalwert nutzen eine daraus abgeleitete indikative Cashflow-Basis.</p>
+      <div class="report-summary">
+        <div class="report-box">
+          <strong>Modellierte EOG-Wirkung</strong>
+          <p>${fmtTeur(metrics.recurringRegulatoryEog, 1)} laufend ab Jahr 2; Startjahr ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt.</p>
+        </div>
+        <div class="report-box">
+          <strong>wirtschaftliche Überleitung</strong>
+          <p>${fmtTeur(economicBridge, 1)} laufend; Startjahr ${fmtTeur(yearOneEconomicBridge, 1)}. Enthält modellierte OPEX-, Rückbau- und Reinvestitionsannahmen.</p>
+        </div>
+        <div class="report-box">
+          <strong>indikative Cashflow-Basis</strong>
+          <p>${fmtTeur(metrics.recurringIndicativeCashflow, 1)} laufend. Diese Basis erklärt IRR/NPV, ist aber kein garantierter Zahlungsstrom.</p>
+        </div>
       </div>
     </section>
 
@@ -4348,7 +4381,8 @@ function renderPortfolio() {
 	      const decision = decisionFor(result, conservativeResult);
 	      renderStickyKpis(result, first, decision, metrics);
 	      renderManagementSummary(result, first, spread, decision, metrics);
-  renderMeetingFocus(result, first, spread, metrics);
+	      renderEogCashflowBridge(result, metrics);
+	      renderMeetingFocus(result, first, spread, metrics);
 
   renderChart(result.yearly);
   renderYears(result);
