@@ -33,6 +33,7 @@ import {
   storyMilestoneFromUrl,
   storyUrlForMilestone
 } from './story-navigation.js';
+import { buildInfo } from './build-info.js';
 import { imprintSections } from './trust-content.js';
 
 const initialMeasures = [];
@@ -1012,7 +1013,19 @@ function clarificationItems() {
       measure: measure.name,
       detail: measure.note
     }));
-  return [...impactItems, ...noteItems].map(item => ({
+  const result = currentPortfolio();
+  const warningItems = result.warnings
+    .filter(warning => warning.type === 'possible_double_counting')
+    .map(warning => ({
+      key: warning.key,
+      type: warning.type,
+      area: warning.area,
+      targetPhase: warning.targetPhase,
+      title: warning.title,
+      measure: warning.measure,
+      detail: warning.detail || 'mögliche Doppelzählung prüfen.'
+    }));
+  return [...impactItems, ...warningItems, ...noteItems].map(item => ({
     ...item,
     status: clarificationStatus[clarificationKey(item)]?.status || 'open'
   }));
@@ -1451,6 +1464,9 @@ function collectModelState() {
     app: 'regulierte-sparten-szenario-rechner',
     version: modelVersion,
     appVersion,
+    buildCommit: buildInfo.buildCommit,
+    buildTime: buildInfo.buildTime,
+    build: structuredClone(buildInfo),
     regulatoryParameterSetId: regulatoryParameterSet.id,
     regulatoryParameterEffectiveMonth: regulatoryParameterSet.effectiveMonth,
     savedAt: new Date().toISOString(),
@@ -1665,6 +1681,13 @@ function jsonForHtmlScript(value) {
     .replaceAll('&', '\\u0026');
 }
 
+function refreshBuildMeta() {
+  const commitNode = document.querySelector('meta[name="build-commit"]');
+  const timeNode = document.querySelector('meta[name="build-time"]');
+  if (commitNode) commitNode.setAttribute('content', buildInfo.buildCommit);
+  if (timeNode) timeNode.setAttribute('content', buildInfo.buildTime);
+}
+
 function htmlWithEmbeddedModelState(html, state) {
   const cleaned = String(html).replace(/\n?\s*<script id="embedded-model-state" type="application\/json">[\s\S]*?<\/script>/g, '');
   const embeddedStateScript = `\n  <script id="embedded-model-state" type="application/json">${jsonForHtmlScript(state)}</script>\n`;
@@ -1674,6 +1697,7 @@ function htmlWithEmbeddedModelState(html, state) {
 
 function exportSelfContainedHtml() {
   createExportSnapshot();
+  refreshBuildMeta();
   const state = collectModelState();
   const html = '<!DOCTYPE html>\n' + htmlWithEmbeddedModelState(document.documentElement.outerHTML, state);
   const blob = new Blob([html], { type: 'text/html' });
@@ -2573,22 +2597,23 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
   document.getElementById('managementVerdictTitle').textContent = decision.title;
   document.getElementById('managementVerdictText').textContent = decision.text;
 
+  const metricLabel = result.rateMetricLabel || metrics.rateMetricLabel || 'IRR';
   const irrText = Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar';
   const spreadAbs = Number.isFinite(spread) ? Math.abs(spread) : NaN;
   const spreadSentence = Number.isFinite(spread)
-    ? `Der IRR liegt ${pp(spreadAbs)} ${trendWord(spread)} dem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
+    ? `Die ${metricLabel} liegt ${pp(spreadAbs)} ${trendWord(spread)} dem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
     : 'Der Spread zum FK-Zins ist nicht berechenbar.';
   const activeText = result.activeMeasures.length === 1 ? '1 aktive Maßnahme' : result.activeMeasures.length + ' aktive Maßnahmen';
   const tariff = tariffImpactLine(result.tariffImpact);
 
   document.getElementById('managementStory').textContent = result.activeMeasures.length
-    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die laufende modellierte EOG-Wirkung ab Jahr 2 bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)} p.a.; im Startjahr sind es ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. Der indikative Portfolio-IRR beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht die laufende rechnerische EOG-Wirkung etwa ${tariff.value}.` : ''}`
+    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die laufende modellierte EOG-Wirkung ab Jahr 2 bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)} p.a.; im Startjahr sind es ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. Die indikative Portfolio-${metricLabel} beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht die laufende rechnerische EOG-Wirkung etwa ${tariff.value}.` : ''}`
     : 'Es ist keine aktive Maßnahme ausgewählt. Für eine Entscheidung müssen zuerst Maßnahmen aktiviert oder angelegt werden.';
 
   const knowledgeEffect = result.qePa + result.impactPa;
   document.getElementById('managementCaveat').textContent = result.activeMeasures.length
     ? metrics.conservativeGate === 'auflage'
-      ? `Konservatives Urteil ohne prüfpflichtige Wirkannahmen: IRR ${Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(metrics.conservative.npv, 1)}. Der positive Basiscase braucht daher Auflagen/Evidenz.`
+      ? `Konservatives Urteil ohne prüfpflichtige Wirkannahmen: ${metrics.conservative.rateMetricLabel || 'IRR'} ${Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(metrics.conservative.npv, 1)}. Der positive Basiscase braucht daher Auflagen/Evidenz.`
       : knowledgeEffect > 0
         ? `Dokumentierte Portfolio- und Wirkannahmen von ${fmtTeur(knowledgeEffect, 1)} p.a. sind entscheidungsrelevant und müssen kausal sowie regulatorisch begründet bleiben.`
         : 'Die Wirtschaftlichkeit hängt vor allem an Aktivierbarkeit, Anerkennungsfähigkeit, Timing und Risikowert der Maßnahmen.'
@@ -2605,7 +2630,7 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
 	        ['Invest ' + fmtTeur(result.invest), ''],
 	        ['laufende EOG ' + fmtTeur(metrics.recurringRegulatoryEog, 1), ''],
 	        ['Einmalig J1 ' + fmtTeur(metrics.yearOneOneOff, 1), metrics.yearOneOneOff ? 'warn' : ''],
-	        ['IRR indikativ ' + irrText, decision.cls],
+	        [`${metricLabel} indikativ ` + irrText, decision.cls],
 	        ['konservativ ' + (metrics.conservative ? (Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-') : '-'), metrics.conservativeGate === 'tragfaehig' ? 'good' : metrics.conservativeGate === 'auflage' ? 'warn' : 'bad']
 	      ];
 	      document.getElementById('managementPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
@@ -2614,8 +2639,8 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
 	        `Gelb: Basiscase trägt nur mit Auflage, konservatives Urteil kippt, oder Grün-Kriterien nicht vollständig erfüllt.`,
 	        `Rot: Spread < -1,0 Prozentpunkt oder Spread nicht belastbar.`,
 	        `Aktuell Basis: Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}.`,
-	        `Ohne prüfpflichtige Annahmen: IRR ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${metrics.conservative ? fmtTeur(metrics.conservative.npv, 1) : '-'}.`,
-	        `IRR/NPV sind indikative Cashflow-Kennzahlen, keine garantierten Zahlungsströme aus der EOG.`
+	        `Ohne prüfpflichtige Annahmen: ${metrics.conservative?.rateMetricLabel || 'IRR'} ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${metrics.conservative ? fmtTeur(metrics.conservative.npv, 1) : '-'}.`,
+	        `${metricLabel}/NPV sind indikative Cashflow-Kennzahlen, keine garantierten Zahlungsströme aus der EOG.`
 	      ].map(item => `<li>${esc(item)}</li>`).join('');
 	    }
 
