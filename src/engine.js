@@ -392,28 +392,69 @@ function recurringValue(yearly, key) {
 
 function decisionSnapshot(result) {
   const spread = Number.isFinite(result.irr) ? result.irr - result.p.financingRate : NaN;
+  const carries = Number.isFinite(spread) && spread >= 0.01 && result.npv > 0;
   return {
     irr: result.irr,
     npv: result.npv,
     spread,
     impactPa: result.impactPa,
     investment: result.invest,
+    activeMeasureCount: result.activeMeasures.length,
     yearOneRegulatoryEog: result.yearly[0]?.regulatoryEogEffect || 0,
     recurringRegulatoryEog: recurringValue(result.yearly, 'regulatoryEogEffect'),
     yearOneIndicativeCashflow: result.yearly[0]?.indicativeCashflow || 0,
     recurringIndicativeCashflow: recurringValue(result.yearly, 'indicativeCashflow'),
     yearOneOneOff: result.yearly[0]?.firstYearOpex || 0,
-    verdictClass: Number.isFinite(spread) && spread >= 0.01 && result.npv > 0 ? 'good' : Number.isFinite(spread) && spread >= -0.01 ? 'warn' : 'bad'
+    carries,
+    verdictClass: carries ? 'good' : 'bad'
+  };
+}
+
+function governanceDecisionFor(basis, conservative) {
+  if (basis.activeMeasureCount === 0 || basis.investment <= 0 || !Number.isFinite(basis.irr)) {
+    return {
+      status: 'nicht_entscheidungsreif',
+      cls: 'neutral',
+      title: 'Nicht entscheidungsreif',
+      text: 'Die Datenlage reicht noch nicht für eine Ampelentscheidung. Es fehlen aktive Maßnahmen oder belastbare Cashflow-Kennzahlen.',
+      recommendation: 'Maßnahmen, Kosten, Inbetriebnahme, Nutzungsdauer und Aktivierungsannahmen ergänzen, bevor eine Entscheidungstendenz genutzt wird.'
+    };
+  }
+  if (!basis.carries) {
+    return {
+      status: 'nicht_tragfaehig',
+      cls: 'bad',
+      title: 'Nicht tragfähig im Basiscase',
+      text: 'Die Maßnahme erreicht bereits unter Basisannahmen keine ausreichende wirtschaftliche Tragfähigkeit gegen die Finanzierungsschwelle.',
+      recommendation: 'Zurückstellen, umplanen oder mit Pflicht-, Risiko- oder Strategiegründen außerhalb der Wirtschaftlichkeitslogik entscheiden.'
+    };
+  }
+  if (conservative && !conservative.carries) {
+    return {
+      status: 'auflage',
+      cls: 'warn',
+      title: 'Tragfähig mit Auflage',
+      text: 'Der Basiscase ist positiv, kippt jedoch ohne prüfpflichtige Wirkannahmen bzw. unter konservativer Bewertung.',
+      recommendation: 'Nicht als unbedingte Freigabe lesen. Vor Beschluss sind die werttragenden Annahmen zu bestätigen, zu reduzieren oder als bewusstes Entscheidungsrisiko zu dokumentieren.'
+    };
+  }
+  return {
+    status: 'robust',
+    cls: 'good',
+    title: 'Robust tragfähig',
+    text: 'Die Maßnahme trägt sowohl im Basiscase als auch ohne prüfpflichtige Wirkannahmen bzw. unter konservativer Bewertung.',
+    recommendation: 'Zur Entscheidung geeignet; Attribution, Datenstand und regulatorische Grenzen trotzdem dokumentieren.'
   };
 }
 
 export function portfolioDecisionMetrics(result, conservativeResult = null) {
   const basis = decisionSnapshot(result);
   const conservative = conservativeResult ? decisionSnapshot(conservativeResult) : null;
+  const governanceDecision = governanceDecisionFor(basis, conservative);
   const conservativeGate = conservative
-    ? basis.verdictClass === 'good' && conservative.verdictClass !== 'good'
+    ? governanceDecision.status === 'auflage'
       ? 'auflage'
-      : conservative.verdictClass === 'good'
+      : governanceDecision.status === 'robust'
         ? 'tragfaehig'
         : 'nicht_tragfaehig'
     : 'nicht_geprueft';
@@ -422,6 +463,7 @@ export function portfolioDecisionMetrics(result, conservativeResult = null) {
     basis,
     conservative,
     conservativeGate,
+    governanceDecision,
     cashflowBasis: 'IRR und Kapitalwert nutzen den indikativen Cashflow aus modellierter EOG-Wirkung abzüglich wirtschaftlicher OPEX-/Rückbau-/Reinvestitionsannahmen; keine garantierten Zahlungsströme.'
   };
 }

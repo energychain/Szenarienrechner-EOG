@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
 const ui = fs.readFileSync(path.join(root, 'src/ui.js'), 'utf8');
+const engine = fs.readFileSync(path.join(root, 'src/engine.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 describe('review findings 3.1-3.4 UI integration', () => {
@@ -17,7 +18,11 @@ describe('review findings 3.1-3.4 UI integration', () => {
   it('shows conservative judgement without review-marked assumptions in the verdict', () => {
     expect(ui).toContain("currentScenarioParams('konservativ')");
     expect(ui).toContain('Ohne prüfpflichtige Annahmen');
-    expect(ui).toContain('Tragfähig mit Auflage');
+    expect(ui).toContain('metrics.governanceDecision');
+    expect(engine).toContain('Tragfähig mit Auflage');
+    expect(engine).toContain('Robust tragfähig');
+    expect(engine).toContain('Nicht tragfähig im Basiscase');
+    expect(engine).toContain('Nicht entscheidungsreif');
     expect(ui).toContain('konservatives Urteil');
   });
 
