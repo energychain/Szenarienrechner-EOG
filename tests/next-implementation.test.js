@@ -55,10 +55,19 @@ describe('next consulting implementation docs and UI', () => {
     expect(html).toContain('Herleitungshelfer');
     expect(html).toContain('helperActivationSplit');
     expect(html).toContain('helperRiskExpectedValue');
+    expect(html).toContain('helperQImpact');
+    expect(html).toContain('helperDepreciationLife');
+    expect(html).toContain('helperFinancingSpread');
     expect(ui).toContain('activationSplitHelper');
+    expect(ui).toContain('qImpactHelper');
+    expect(ui).toContain('depreciationLifeHelper');
+    expect(ui).toContain('financingSpreadHelper');
     expect(ui).toContain('renderHelperCalculators');
     expect(ui).toContain('CAPEX/OPEX-Split');
     expect(ui).toContain('Risiko-Erwartungswert');
+    expect(ui).toContain('Q-Wirkungs-Rechner');
+    expect(ui).toContain('Nutzungsdauer-/AfA-Helfer');
+    expect(ui).toContain('Finanzierungsspread-Erklärer');
   });
 
   it('surfaces ruleset-as-data and advanced capital-cost inputs', () => {

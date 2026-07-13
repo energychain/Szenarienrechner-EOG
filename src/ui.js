@@ -4,11 +4,14 @@ import {
   calcPortfolio,
   clamp,
   defaultEffectLags,
+  depreciationLifeHelper,
   expectedActivated,
+  financingSpreadHelper,
   impactAssumptionsFor,
   params as engineParams,
   portfolioDecisionMetrics,
   portfolioEffectFor,
+  qImpactHelper,
   regulatoryParameterSet,
   regulatoryPeriodFor,
   riskExpectedValue,
@@ -2701,11 +2704,24 @@ function renderMeasureValidation(measure) {
   node.innerHTML = validation.messages.map(message => `<p>${esc(message)}</p>`).join('');
 }
 
+function inferAssetClass(measure, p) {
+  const text = `${measure.name || ''} ${measure.tags || ''} ${measure.orgUnit || ''}`.toLowerCase();
+  if (p.sector === 'gas') return 'gasPipe';
+  if (text.includes('digital') || text.includes('fernwirk') || text.includes('automatis')) return 'digitalControl';
+  if (text.includes('kabel') || text.includes('leitung')) return 'cable';
+  if (text.includes('tiefbau')) return 'civilWorks';
+  return 'station';
+}
+
 function renderHelperCalculators(measure) {
   const activationNode = document.getElementById('helperActivationSplit');
   const riskNode = document.getElementById('helperRiskExpectedValue');
-  if (!activationNode || !riskNode) return;
+  const qNode = document.getElementById('helperQImpact');
+  const depreciationNode = document.getElementById('helperDepreciationLife');
+  const spreadNode = document.getElementById('helperFinancingSpread');
+  if (!activationNode || !riskNode || !qNode || !depreciationNode || !spreadNode) return;
 
+  const p = currentParams();
   const activation = activationSplitHelper(measure);
   activationNode.innerHTML = `
     <strong>CAPEX/OPEX-Split</strong>
@@ -2724,6 +2740,49 @@ function renderHelperCalculators(measure) {
     <strong>Risiko-Erwartungswert</strong>
     <p><span class="big">${fmtTeur(risk.expectedAvoidedPa, 1)}</span><br>vermiedener Erwartungsschaden p.a.</p>
     <p class="hint">${esc(risk.chain)} ${esc(risk.governance)}</p>
+  `;
+
+  const qImpact = qImpactHelper({
+    metric: p.sector === 'strom' ? 'SAIDI' : 'ASIDI',
+    interruptionBefore: 12,
+    interruptionAfter: 10,
+    affectedCustomers: 10000,
+    monetizationPerCustomerMinute: 1,
+    attribution: measure.portfolioShare || 100,
+    evidence: ''
+  });
+  const directQe = Number(measure.qDirect || 0) + Number(measure.eDirect || 0);
+  qNode.innerHTML = `
+    <strong>Q-Wirkungs-Rechner</strong>
+    <p><span class="big">${fmtTeur(directQe, 1)}</span><br>aktuell direkt angesetzte Q-/Effizienzwirkung p.a.</p>
+    <p class="hint">Treiberbeispiel: ${esc(qImpact.chain)} ${esc(qImpact.governance)}</p>
+  `;
+
+  const depreciation = depreciationLifeHelper({
+    assetClass: inferAssetClass(measure, p),
+    sector: p.sector,
+    kanuContext: measure.depr === 'kanuLinear' || measure.depr === 'kanuDegressive'
+  });
+  depreciationNode.innerHTML = `
+    <strong>Nutzungsdauer-/AfA-Helfer</strong>
+    <p><span class="big">${fmtPlain(depreciation.life, 0)} / ${fmtPlain(depreciation.hgbLife, 0)} Jahre</span><br>regulatorische ND / HGB-ND als Startpunkt.</p>
+    <p class="hint">${esc(depreciation.note)}</p>
+  `;
+
+  const measureResult = calcMeasure(measure, p);
+  const spread = financingSpreadHelper({
+    returnMetricRate: measureResult.returnMetric.value,
+    financingRate: p.financingRate,
+    invest: measure.cost,
+    activated: measureResult.activated,
+    regulatoryReturnRate: p.returnRate,
+    qAndEEffectPa: measureResult.impactSummary.qAndE + portfolioEffectFor(measure, p),
+    riskEffectPa: measureResult.impactSummary.risk
+  });
+  spreadNode.innerHTML = `
+    <strong>Finanzierungsspread-Erklärer</strong>
+    <p><span class="big">${fmtPct(spread.spreadPp, 1)}</span><br>${esc(measureResult.returnMetric.label)} minus FK-Zins.</p>
+    <p class="hint">${esc(spread.explanation)} ${esc(spread.warning)}</p>
   `;
 }
 

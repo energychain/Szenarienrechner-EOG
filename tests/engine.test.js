@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { availableRegulatoryParameterSets } from '../src/rulesets/index.js';
 import {
   activationSplitHelper,
+  depreciationLifeHelper,
+  financingSpreadHelper,
   capitalCostRateFor,
   capitalCostSettingsFor,
   calcMeasure,
@@ -13,6 +15,7 @@ import {
   params,
   portfolioDecisionMetrics,
   regulatoryParameterSet,
+  qImpactHelper,
   regulatoryPeriodFor,
   riskHelper,
   scenarioParams
@@ -87,6 +90,48 @@ describe('financial helpers', () => {
     expect(helper.expectedAvoidedPa).toBeCloseTo(20, 4);
     expect(helper.chain).toContain('8');
     expect(helper.governance).toContain('prüfpflichtig');
+  });
+
+  it('derives Q impact from interruption drivers with evidence warnings', () => {
+    const helper = qImpactHelper({
+      metric: 'SAIDI',
+      interruptionBefore: 14,
+      interruptionAfter: 10,
+      affectedCustomers: 12000,
+      monetizationPerCustomerMinute: 1.5,
+      attribution: 50,
+      evidence: ''
+    });
+    expect(helper.annualImpactTeur).toBeCloseTo(36, 4);
+    expect(helper.chain).toContain('SAIDI');
+    expect(helper.chain).toContain('14');
+    expect(helper.confidence).toBe('review');
+    expect(helper.governance).toContain('Q-Element');
+  });
+
+  it('suggests regulatory and HGB life without hiding review status', () => {
+    const helper = depreciationLifeHelper({ assetClass: 'digitalControl', sector: 'strom', kanuContext: false });
+    expect(helper.life).toBe(10);
+    expect(helper.hgbLife).toBe(8);
+    expect(helper.depr).toBe('normal');
+    expect(helper.note).toContain('prüfen');
+  });
+
+  it('explains financing spread by separating base return from Q/E and risk drivers', () => {
+    const helper = financingSpreadHelper({
+      returnMetricRate: 0.107,
+      financingRate: 0.05,
+      invest: 1360,
+      activated: 1150,
+      regulatoryReturnRate: 0.05,
+      qAndEEffectPa: 57,
+      riskEffectPa: 18
+    });
+    expect(helper.spreadPp).toBeCloseTo(5.7, 4);
+    expect(helper.baseReturnSpreadTeur).toBeCloseTo(0, 4);
+    expect(helper.qeRiskContributionTeur).toBeCloseTo(75, 4);
+    expect(helper.explanation).toContain('Q/E');
+    expect(helper.warning).toContain('keine Marktrendite');
   });
 });
 
