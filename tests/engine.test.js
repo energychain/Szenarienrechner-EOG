@@ -229,6 +229,57 @@ describe('scenario and portfolio parameters', () => {
     expect(metrics.conservative.impactPa).toBe(0);
     expect(metrics.conservative.irr).toBeLessThan(base.financingRate);
     expect(metrics.conservativeGate).toBe('auflage');
+    expect(metrics.governanceDecision).toMatchObject({
+      status: 'auflage',
+      cls: 'warn',
+      title: 'Tragfähig mit Auflage'
+    });
+    expect(metrics.governanceDecision.text).toContain('prüfpflichtige Wirkannahmen');
+    expect(metrics.governanceDecision.recommendation).toContain('Nicht als unbedingte Freigabe lesen');
+  });
+
+  it('marks the case robust only when basis and conservative scenarios both carry', () => {
+    const measure = baseMeasure({ cost: 1000, qDirect: 0, eDirect: 0, riskAvoided: 0 });
+    const base = params({ ...baseInputs, returnRate: 8, financingRate: 5, discountRate: 5, horizon: 10 });
+    const basis = calcPortfolio({ measures: [measure] }, base);
+    const conservative = calcPortfolio({ measures: [measure] }, scenarioParams(base, 'konservativ'));
+    const metrics = portfolioDecisionMetrics(basis, conservative);
+
+    expect(metrics.basis.verdictClass).toBe('good');
+    expect(metrics.conservative.verdictClass).toBe('good');
+    expect(metrics.governanceDecision).toMatchObject({
+      status: 'robust',
+      cls: 'good',
+      title: 'Robust tragfähig'
+    });
+  });
+
+  it('marks a negative basis case as not carrying regardless of conservative scenario', () => {
+    const measure = baseMeasure({ cost: 1000, qDirect: 0, eDirect: 0, riskAvoided: 0 });
+    const base = params({ ...baseInputs, returnRate: 2, financingRate: 5, discountRate: 5, horizon: 10 });
+    const basis = calcPortfolio({ measures: [measure] }, base);
+    const conservative = calcPortfolio({ measures: [measure] }, scenarioParams(base, 'konservativ'));
+    const metrics = portfolioDecisionMetrics(basis, conservative);
+
+    expect(metrics.basis.verdictClass).toBe('bad');
+    expect(metrics.governanceDecision).toMatchObject({
+      status: 'nicht_tragfaehig',
+      cls: 'bad',
+      title: 'Nicht tragfähig im Basiscase'
+    });
+  });
+
+  it('marks missing active measures as not decision-ready', () => {
+    const base = params({ ...baseInputs, horizon: 10 });
+    const basis = calcPortfolio({ measures: [] }, base);
+    const conservative = calcPortfolio({ measures: [] }, scenarioParams(base, 'konservativ'));
+    const metrics = portfolioDecisionMetrics(basis, conservative);
+
+    expect(metrics.governanceDecision).toMatchObject({
+      status: 'nicht_entscheidungsreif',
+      cls: 'neutral',
+      title: 'Nicht entscheidungsreif'
+    });
   });
 
   it('keeps tariff impact unavailable without annual energy', () => {

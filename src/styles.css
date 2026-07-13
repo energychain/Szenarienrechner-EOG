@@ -570,6 +570,7 @@
     .sticky-kpi.good { border-left: 5px solid var(--good); }
     .sticky-kpi.warn { border-left: 5px solid var(--warn); }
     .sticky-kpi.bad { border-left: 5px solid var(--bad); }
+    .sticky-kpi.neutral { border-left: 5px solid var(--line); }
 
     .sticky-kpi.changed {
       background: #fff9ed;
@@ -594,6 +595,7 @@
     .sticky-kpi.good .value { color: var(--good); }
     .sticky-kpi.warn .value { color: var(--warn); }
     .sticky-kpi.bad .value { color: var(--bad); }
+    .sticky-kpi.neutral .value { color: var(--muted); }
 
     .sticky-kpi .delta {
       min-height: 15px;
@@ -1094,6 +1096,7 @@
     .verdict-card.good { border-left: 6px solid var(--good); }
     .verdict-card.warn { border-left: 6px solid var(--warn); }
     .verdict-card.bad { border-left: 6px solid var(--bad); }
+    .verdict-card.neutral { border-left: 6px solid var(--line); }
 
     .verdict-label {
       color: var(--muted);
@@ -1112,6 +1115,7 @@
     .verdict-card.good .verdict-title { color: var(--good); }
     .verdict-card.warn .verdict-title { color: var(--warn); }
     .verdict-card.bad .verdict-title { color: var(--bad); }
+    .verdict-card.neutral .verdict-title { color: var(--muted); }
 
     .verdict-text {
       margin-top: 8px;

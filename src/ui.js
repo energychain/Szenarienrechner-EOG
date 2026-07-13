@@ -2492,24 +2492,12 @@ function renderScenarioDiff() {
 
 function decisionFor(result, conservativeResult = null) {
   const metrics = portfolioDecisionMetrics(result, conservativeResult);
-  const spread = metrics.spread;
-  if (!result.activeMeasures.length) {
-    return { cls: 'warn', title: 'Keine aktive Maßnahme', text: 'Es ist kein investives Szenario ausgewählt.' };
-  }
-  if (metrics.conservativeGate === 'auflage') {
-    return {
-      cls: 'warn',
-      title: 'Tragfähig mit Auflage',
-      text: 'Der Basiscase ist positiv, trägt aber ohne prüfpflichtige Wirkannahmen nicht vollständig. Vor Beschluss müssen Annahmen bestätigt oder als Auflage geführt werden.'
-    };
-  }
-  if (Number.isFinite(spread) && spread >= 0.01 && result.npv > 0 && metrics.conservativeGate !== 'nicht_tragfaehig') {
-    return { cls: 'good', title: 'Wirtschaftlich tragfähig', text: 'Portfolio-IRR, Kapitalwert und konservatives Urteil liegen oberhalb der Finanzierungsschwelle. Attribution und Portfolioeffekte müssen trotzdem belegbar bleiben.' };
-  }
-  if (Number.isFinite(spread) && spread >= -0.01) {
-    return { cls: 'warn', title: 'Grenzfall', text: 'Die Wirtschaftlichkeit ist nahe an den Kapitalkosten. Entscheidung braucht belastbare Annahmen zu Aktivierung, Q/E, Risiko und Timing.' };
-  }
-  return { cls: 'bad', title: 'Nicht als Renditemaßnahme tragfähig', text: 'Unter den aktuellen Annahmen liegt die Rendite unter dem Fremdkapitalzins. Umsetzung wäre nur über Risiko, Pflicht, Strategie oder bessere Annahmen begründbar.' };
+  const decision = metrics.governanceDecision;
+  return {
+    cls: decision.cls,
+    title: decision.title,
+    text: `${decision.text} ${decision.recommendation}`
+  };
 }
 
 function deltaText(current, previous, formatter) {
