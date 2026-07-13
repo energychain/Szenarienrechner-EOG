@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Starter-Kit Spartenportfolio · Szenarienrechner-EOG</title>
+  <style>
+    :root { color-scheme: light; --ink: #102033; --muted: #5b6b7f; --line: #d8e1ec; --brand: #007ea7; --soft: #eef8fb; --paper: #ffffff; --bg: #f4f7fa; --warn: #fff7ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.65; }
+    header { background: rgba(255, 255, 255, 0.94); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1; display: flex; gap: 1rem; justify-content: space-between; align-items: center; }
+    header a, header button { color: var(--brand); font-weight: 700; text-decoration: none; }
+    header button { border: 1px solid #8ac6da; background: var(--soft); border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font: inherit; }
+    main { max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    article { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1.25rem, 2vw, 2.5rem); box-shadow: 0 18px 40px rgba(16, 32, 51, 0.08); }
+    h1 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -0.035em; }
+    h2 { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 2rem; font-size: clamp(1.45rem, 2.5vw, 2.1rem); break-after: avoid; }
+    h3 { margin-top: 1.8rem; break-after: avoid; }
+    h1 + p, h2 + p { color: var(--muted); }
+    a { color: var(--brand); }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.96rem; break-inside: avoid; }
+    th, td { border: 1px solid var(--line); padding: 0.75rem; vertical-align: top; }
+    th { background: #edf4f8; text-align: left; }
+    code { background: #edf2f7; border-radius: 0.3rem; padding: 0.1rem 0.3rem; }
+    blockquote { border-left: 4px solid var(--brand); margin: 1.25rem 0; padding: 0.2rem 1rem; background: var(--soft); }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+    footer { color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem; text-align: center; }
+    @page { size: A4; margin: 15mm 13mm 17mm; }
+    @media print {
+      :root { --ink: #111827; --muted: #374151; --line: #b8c2ce; --paper: #ffffff; --bg: #ffffff; --brand: #004f68; --soft: #ffffff; }
+      body { background: #ffffff; font-size: 10.8pt; line-height: 1.48; }
+      header { position: static; border: 0; padding: 0 0 8mm; }
+      header button { display: none; }
+      main { max-width: none; padding: 0; }
+      article { border: 0; border-radius: 0; box-shadow: none; padding: 0; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; margin-top: 12mm; padding-top: 7mm; break-after: avoid; }
+      h3, p, li, table { orphans: 3; widows: 3; }
+      table, tr, blockquote { break-inside: avoid; page-break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+      footer { border-top: 1px solid var(--line); padding-top: 4mm; }
+    }
+  </style>
+</head>
+<body>
+  <header><a href="../index.html">← Zur Übersicht</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
+  <main>
+    <article>
+<h1>Starter-Kit: Spartenportfolio Strom/Gas</h1>
+<p>Dieses Starter-Kit beschreibt eine synthetische Planungsrunde für ein gemeinsames Maßnahmenportfolio in Strom und Gas. Es eignet sich für Budgetrunden, in denen begrenztes Kapital, unterschiedliche Spartenlogiken und Managemententscheidungen zusammengeführt werden müssen.</p>
+<h2>Typische Ausgangslage</h2>
+<p>Das Stadtwerk hat mehrere technisch sinnvolle Maßnahmen, aber nicht jede Maßnahme ist im gleichen Jahr finanzierbar oder entscheidungsreif. Strommaßnahmen können durch Elektrifizierung und Versorgungssicherheit getrieben sein; Gasmaßnahmen durch Transformation, Rückbau, Restnutzung und Reinvestitionsvermeidung. Das Portfolio braucht deshalb eine gemeinsame Sprache, ohne Strom und Gas fachlich gleichzumachen.</p>
+<h2>Workshop-Ziel</h2>
+<p>Am Ende des Workshops liegt vor:</p>
+<ul>
+<li>priorisierte Maßnahmenliste nach Sparte, Zielbeitrag, Budgetbindung und Entscheidungsreife</li>
+<li>sichtbare Trennung zwischen regulatorischer EOG-Wirkung und indikativer Cashflow-Sicht</li>
+<li>konservatives Urteil je Portfolio und Maßnahme</li>
+<li>Managementoption: freigeben, mit Auflage freigeben, zurückstellen, fachlich prüfen</li>
+<li>Projektplan mit nächster fälliger Aufgabe je Rolle</li>
+</ul>
+<h2>Portfolio-Agenda</h2>
+<table><thead><tr>
+<th>Schritt</th>
+<th>Leitfrage</th>
+<th>Ergebnis</th>
+</tr></thead><tbody>
+<tr>
+<td>1 Rollenklärung</td>
+<td>Wer verantwortet Technik, Regulierung, Controlling, Bilanzierung und Gremium?</td>
+<td>Rollenmatrix im Projektplan</td>
+</tr>
+<tr>
+<td>2 Datenlage</td>
+<td>Welche Werte sind belegt, geschätzt oder offen?</td>
+<td>Datenanforderung und Klärpunkte</td>
+</tr>
+<tr>
+<td>3 Maßnahmencluster</td>
+<td>Welche Maßnahmen sind Pflicht, Zustand, Resilienz, Transformation?</td>
+<td>vergleichbare Maßnahmenobjekte</td>
+</tr>
+<tr>
+<td>4 Szenarien</td>
+<td>Trägt der Case auch konservativ?</td>
+<td>robuste / auflagenpflichtige Entscheidungen</td>
+</tr>
+<tr>
+<td>5 Priorisierung</td>
+<td>Welche Maßnahme bindet Kapital ohne belastbaren Werttreiber?</td>
+<td>Portfolio-Entscheidungsliste</td>
+</tr>
+<tr>
+<td>6 Gremium</td>
+<td>Was soll beschlossen werden und welche Auflage bleibt?</td>
+<td>neutrale Beschlussvorlage</td>
+</tr>
+</tbody></table>
+<h2>Empfohlene App-Schritte</h2>
+<p>1. Projektplan öffnen und nicht zutreffende Template-Schritte überspringen.</p>
+<p>2. Eigene Aufgaben für EVU-spezifische Freigabeschleifen ergänzen.</p>
+<p>3. Maßnahmen nach Strom/Gas und Zielbeitrag taggen.</p>
+<p>4. EOG-Zerlegung und Cashflow-Brücke je Entscheidung prüfen.</p>
+<p>5. „Nächste fällige Aufgabe je Rolle“ nutzen, um Fachbereiche nicht parallel mit unklaren Anforderungen zu belasten.</p>
+<p>6. Arbeitsstand als selbsttragende HTML mit Daten speichern und an die Runde verteilen.</p>
+<h2>Entscheidungsoptionen</h2>
+<table><thead><tr>
+<th>Option</th>
+<th>Wann passend?</th>
+<th>Dokumentationspflicht</th>
+</tr></thead><tbody>
+<tr>
+<td>Freigeben</td>
+<td>Basis und konservativ tragen, keine kritischen Klärpunkte</td>
+<td>Quelle und Beschlussstand archivieren</td>
+</tr>
+<tr>
+<td>Freigeben mit Auflage</td>
+<td>Basis trägt, konservativ kippt oder Wirkannahmen sind prüfpflichtig</td>
+<td>werttragende Annahmen und Fristen benennen</td>
+</tr>
+<tr>
+<td>Zurückstellen</td>
+<td>Basiscase trägt nicht oder Datenlage unvollständig</td>
+<td>Grund und nächster Prüfpunkt festhalten</td>
+</tr>
+<tr>
+<td>Strategisch entscheiden</td>
+<td>Maßnahme ist technisch/politisch notwendig, aber wirtschaftlich schwach</td>
+<td>Entscheidung außerhalb reiner Wirtschaftlichkeit klar begründen</td>
+</tr>
+</tbody></table>
+<h2>Beraterhinweis</h2>
+<p>Das Portfolio-Kit ersetzt nicht die fachliche Entscheidung. Es ersetzt die unstrukturierte Excel-Diskussion durch einen wiederaufnahmefähigen Entscheidungsraum: Jede Maßnahme bekommt dieselben Fragen, aber nicht dieselbe Antwortlogik.</p>
+    </article>
+    <footer>Szenarienrechner-EOG · Orientierung und Methodik · Apache-2.0</footer>
+  </main>
+</body>
+</html>
