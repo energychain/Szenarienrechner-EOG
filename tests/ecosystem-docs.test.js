@@ -16,6 +16,10 @@ const docs = [
   'docs/templates/datenanforderung.md',
   'docs/templates/workshop-agenda.md',
   'docs/templates/validation-protocol.md',
+  'docs/starter-kits/index.md',
+  'docs/starter-kits/starter-kit-strom-ortsnetz.md',
+  'docs/starter-kits/starter-kit-gas-transformation.md',
+  'docs/starter-kits/starter-kit-spartenportfolio.md',
   'docs/guides/management.md',
   'docs/guides/controlling.md',
   'docs/guides/regulierung.md',
@@ -46,6 +50,8 @@ describe('consulting ecosystem docs', () => {
     expect(content).toContain('Projektplan');
     expect(content).toContain('Rollen-Swimlanes');
     expect(content).toContain('TRL-6-Validierung');
+    expect(content).toContain('Starter-Kits');
+    expect(content).toContain('Strom-Ortsnetz');
     expect(content).toContain('Cernion');
   });
 
@@ -67,6 +73,12 @@ describe('consulting ecosystem docs', () => {
     expect(index).toContain('Methodikhandbuch');
     expect(index).toContain('Projektplan');
     expect(index).toContain('Vorlagenpaket');
+    expect(index).toContain('Starter-Kits');
+    const starterKit = readFileSync('dist/docs/starter-kits/index.html', 'utf8');
+    expect(starterKit).toContain('Drucken / PDF speichern');
+    expect(starterKit).toContain('Strom-Ortsnetz');
+    expect(starterKit).toContain('Gas-Transformation');
+    expect(starterKit).toContain('Spartenportfolio');
     const projectPlan = readFileSync('dist/docs/project-plan.html', 'utf8');
     expect(projectPlan).toContain('Drucken / PDF speichern');
     expect(projectPlan).toContain('Rollen-Swimlanes');

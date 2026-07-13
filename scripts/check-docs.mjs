@@ -26,6 +26,10 @@ const requiredDocs = [
   'docs/templates/datenanforderung.md',
   'docs/templates/workshop-agenda.md',
   'docs/templates/validation-protocol.md',
+  'docs/starter-kits/index.md',
+  'docs/starter-kits/starter-kit-strom-ortsnetz.md',
+  'docs/starter-kits/starter-kit-gas-transformation.md',
+  'docs/starter-kits/starter-kit-spartenportfolio.md',
   'docs/guides/management.md',
   'docs/guides/controlling.md',
   'docs/guides/regulierung.md',
@@ -45,7 +49,7 @@ function assert(condition, message) {
 for (const path of requiredDocs) {
   assert(existsSync(path), `${path} is missing.`);
   const content = readFileSync(path, 'utf8');
-  assert(content.includes('Szenarienrechner-EOG') || path.startsWith('docs/templates/') || path.startsWith('docs/guides/') || path.startsWith('docs/examples/'), `${path} must name the project or be a role/template/example page.`);
+  assert(content.includes('Szenarienrechner-EOG') || path.startsWith('docs/templates/') || path.startsWith('docs/guides/') || path.startsWith('docs/examples/') || path.startsWith('docs/starter-kits/'), `${path} must name the project or be a role/template/example/starter-kit page.`);
 }
 
 const contributing = readFileSync('CONTRIBUTING.md', 'utf8');
