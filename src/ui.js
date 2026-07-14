@@ -77,6 +77,7 @@ import { demoMeasures, initialMeasures } from './demo-data.js';
 import { downloadBlob, exportStamp, htmlWithEmbeddedModelState } from './export-utils.js';
 import { esc, formatDateShort, fmtEur, fmtPct, fmtPlain, fmtTeur } from './render-utils.js';
 import { buildAiPrompt, defaultAiPromptOptions, promptRoles } from './ai-prompt-generator.js';
+import { spreadsheetTables, tablesToCsvZip, tablesToXlsx } from './spreadsheet-export.js';
 
 const inputIds = [
   'sector', 'regulationProcedure', 'baseYear', 'baseEog', 'rab', 'returnRate', 'financingRate',
@@ -1911,6 +1912,33 @@ function exportSelfContainedHtml() {
   const blob = new Blob([html], { type: 'text/html' });
   downloadBlob(blob, 'szenarienrechner-eog-mit-daten-' + exportStamp(state) + '.html');
   setStorageStatus('HTML-Datei mit eingebettetem Datenstand wurde zum Download vorbereitet.');
+}
+
+function currentSpreadsheetTables() {
+  return spreadsheetTables(currentModelData(), {
+    buildInfo,
+    ruleset: activeRulesetInfo()
+  });
+}
+
+function exportSpreadsheetXlsx() {
+  const state = collectModelState();
+  const workbook = tablesToXlsx(currentSpreadsheetTables());
+  downloadBlob(
+    new Blob([workbook], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    'szenarienrechner-eog-tabellen-' + exportStamp(state) + '.xlsx'
+  );
+  setStorageStatus('XLSX-Arbeitsmappe mit Maßnahmen, KPIs, Projektplan und Provenienz wurde vorbereitet.');
+}
+
+function exportSpreadsheetCsvZip() {
+  const state = collectModelState();
+  const archive = tablesToCsvZip(currentSpreadsheetTables());
+  downloadBlob(
+    new Blob([archive], { type: 'application/zip' }),
+    'szenarienrechner-eog-tabellen-csv-' + exportStamp(state) + '.zip'
+  );
+  setStorageStatus('CSV-ZIP mit Tabellenblättern wurde vorbereitet.');
 }
 
 function importModelFile(file) {
@@ -5349,6 +5377,8 @@ document.getElementById('templateGallery').addEventListener('click', event => {
 });
 document.getElementById('exportModel').addEventListener('click', exportModel);
 document.getElementById('exportSelfContainedHtml').addEventListener('click', exportSelfContainedHtml);
+document.getElementById('exportSpreadsheetXlsx').addEventListener('click', exportSpreadsheetXlsx);
+document.getElementById('exportSpreadsheetCsvZip').addEventListener('click', exportSpreadsheetCsvZip);
 document.getElementById('expertModeToggle').addEventListener('change', event => {
   setExpertMode(event.target.checked);
 });

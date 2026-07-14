@@ -7,6 +7,7 @@ Szenarienrechner-EOG speichert Arbeitsstaende lokal im Browserprofil und kann Mo
 - `localStorage`: lokaler Arbeitsstand im Browserprofil.
 - JSON-Export: manuell erzeugte Datei fuer Ablage, Austausch oder Archivierung.
 - HTML-mit-Daten-Export: manuell erzeugte Single-File-App, die den aktuellen Projektstand als eingebetteten JSON-Block mitfuehrt.
+- Tabellenexporte: XLSX-Arbeitsmappe oder CSV-ZIP fuer Excel, Controlling, PMO-Listen und nachgelagerte Importe. Diese Formate sind bewusst keine Roundtrip-Formate; kanonisch fuer Wiederaufnahme bleiben JSON und HTML-mit-Daten.
 - Keine Server-Speicherung, keine Telemetrie, keine automatischen Uploads.
 
 Nutzerinnen und Nutzer muessen lokale Browserprofile und Exportdateien nach ihren eigenen IT- und Datenschutzvorgaben schuetzen.

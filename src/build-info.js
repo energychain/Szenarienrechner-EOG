@@ -1,3 +1,4 @@
+// @ts-ignore Vite injects import.meta.env during the browser build.
 const env = import.meta.env || {};
 
 export const buildInfo = {
