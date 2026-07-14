@@ -62,15 +62,33 @@
     .card h3 { margin: 0 0 0.45rem; font-size: 1.1rem; }
     .card p, .card li { color: var(--muted); }
     .card ul { padding-left: 1.1rem; margin: 0.55rem 0 0; }
-    .demo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; }
-    .demo-card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; box-shadow: 0 12px 32px rgba(16, 32, 51, 0.08); }
-    .demo-card figure { margin: 0; background: #dbe8f0; border-bottom: 1px solid var(--line); }
+    .demo-carousel-shell { position: relative; }
+    .demo-carousel-controls { display: flex; justify-content: flex-end; gap: 0.55rem; margin: -0.3rem 0 0.9rem; }
+    .demo-carousel-controls .button { min-height: 38px; padding: 0.48rem 0.85rem; }
+    .demo-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(320px, 45%); gap: 1.15rem; overflow-x: auto; padding: 0.25rem 0.1rem 1rem; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+    .demo-card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; box-shadow: 0 12px 32px rgba(16, 32, 51, 0.08); scroll-snap-align: start; }
+    .demo-shot { position: relative; display: block; width: 100%; padding: 0; border: 0; background: #dbe8f0; border-bottom: 1px solid var(--line); cursor: zoom-in; }
+    .demo-shot:focus-visible { outline: 4px solid #fbbf24; outline-offset: -4px; }
     .demo-card img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; }
+    .demo-zoom-hint { position: absolute; right: 0.7rem; bottom: 0.7rem; color: white; background: rgba(15, 34, 54, 0.86); border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; padding: 0.32rem 0.62rem; font-size: 0.82rem; font-weight: 850; box-shadow: 0 8px 18px rgba(16, 32, 51, 0.18); }
     .demo-copy { padding: 1rem 1.1rem 1.15rem; }
     .demo-copy span { display: inline-flex; color: var(--brand-dark); background: var(--soft); border: 1px solid #b8dfeb; border-radius: 999px; padding: 0.22rem 0.55rem; font-size: 0.82rem; font-weight: 850; margin-bottom: 0.7rem; }
     .demo-copy h3 { margin: 0 0 0.35rem; }
     .demo-copy p { color: var(--muted); margin: 0; }
     .proof-note { margin-top: 1rem; color: var(--muted); font-size: 0.96rem; }
+    body.demo-modal-open { overflow: hidden; }
+    .demo-modal[hidden] { display: none; }
+    .demo-modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: clamp(0.6rem, 2vw, 1.4rem); }
+    .demo-modal-backdrop { position: absolute; inset: 0; background: rgba(6, 18, 31, 0.74); backdrop-filter: blur(7px); }
+    .demo-modal-dialog { position: relative; z-index: 1; width: min(1200px, 96vw); max-height: 94vh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 0.75rem; background: var(--paper); border: 1px solid rgba(255,255,255,0.4); border-radius: 24px; padding: 1rem; box-shadow: 0 26px 80px rgba(0, 0, 0, 0.28); }
+    .demo-modal-toolbar { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+    .demo-modal-label { display: inline-flex; color: var(--brand-dark); background: var(--soft); border: 1px solid #b8dfeb; border-radius: 999px; padding: 0.18rem 0.55rem; font-size: 0.8rem; font-weight: 850; margin-bottom: 0.35rem; }
+    .demo-modal-toolbar h3 { margin: 0; font-size: clamp(1.2rem, 2.6vw, 1.8rem); line-height: 1.1; }
+    .demo-modal-close { width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--line); background: white; color: var(--ink); font-size: 1.35rem; cursor: pointer; }
+    .demo-modal-dialog p { margin: 0; color: var(--muted); }
+    .demo-modal-frame { overflow: auto; background: #eef4f8; border: 1px solid var(--line); border-radius: 16px; }
+    .demo-modal-frame img { display: block; width: min(1280px, 100%); height: auto; max-width: none; margin: 0 auto; }
+    .demo-modal-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.65rem; }
     .split { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 1rem; align-items: start; }
     .feature-list { display: grid; gap: 0.7rem; }
     .feature { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem; align-items: start; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 0.85rem; }
@@ -83,7 +101,7 @@
     .cta p { color: #dff7ff; }
     .contact-box { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); border-radius: 18px; padding: 1rem; }
     footer { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 3rem; color: var(--muted); font-size: 0.92rem; }
-    @media (max-width: 880px) { .hero, .split, .cta { grid-template-columns: 1fr; } .grid, .grid.two, .demo-grid { grid-template-columns: 1fr; } .nav { align-items: flex-start; flex-direction: column; } .status-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 880px) { .hero, .split, .cta { grid-template-columns: 1fr; } .grid, .grid.two { grid-template-columns: 1fr; } .demo-grid { grid-auto-columns: minmax(280px, 88%); } .demo-carousel-controls { justify-content: flex-start; } .demo-modal-actions { justify-content: stretch; } .demo-modal-actions .button { flex: 1 1 100%; } .nav { align-items: flex-start; flex-direction: column; } .status-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -169,79 +187,113 @@
       <h2>So arbeitet die App in der Praxis.</h2>
       <p>Die folgenden Workflow-Beweise sind echte Screenshots aus dem gebauten Browser-Artefakt. Sie zeigen nicht nur Feature-Namen, sondern konkrete Arbeitsschritte: starten, bewerten, entscheiden, planen, exportieren und weitergeben.</p>
     </div>
-    <div class="demo-grid">
-      
-    <article class="demo-card">
-      <figure>
-        <img src="assets/homepage/01-planungsstart.jpg" alt="Start einer Planungsrunde mit Demodaten, Rollen, Stammdaten und Prozesshinweis" loading="lazy" width="1280" height="853">
-      </figure>
+    <div class="demo-carousel-shell">
+      <div class="demo-carousel-controls" aria-label="Praxis-Beispiele durchblättern">
+        <button class="button" type="button" data-demo-scroll="prev">← Zurück</button>
+        <button class="button" type="button" data-demo-scroll="next">Weiter →</button>
+      </div>
+      <div class="demo-grid" data-demo-carousel aria-label="Praxis-Beispiele als Karussell">
+        
+    <article class="demo-card" id="demo-1">
+      <button class="demo-shot" type="button" data-demo-index="0" aria-label="Screenshot in Originalgröße öffnen: Planungsrunde starten">
+        <img src="assets/homepage/01-planungsstart.jpg" alt="Start einer Planungsrunde mit Demodaten, Rollen, Stammdaten und Prozesshinweis" loading="eager" width="1280" height="853">
+        <span class="demo-zoom-hint">Screenshot groß ansehen</span>
+      </button>
       <div class="demo-copy">
         <span>So beginnt man strukturiert</span>
         <h3>Planungsrunde starten</h3>
         <p>Demodaten oder eigener Arbeitsstand öffnen, Rolle wählen und den Prozessstand sichtbar machen.</p>
       </div>
     </article>
-    <article class="demo-card">
-      <figure>
-        <img src="assets/homepage/02-massnahmen-herleitung.jpg" alt="Maßnahmenbewertung mit Herleitungshelfern für Aktivierung, Risiko, Qualität, AfA und Finanzierungsspread" loading="lazy" width="1280" height="853">
-      </figure>
+    <article class="demo-card" id="demo-2">
+      <button class="demo-shot" type="button" data-demo-index="1" aria-label="Screenshot in Originalgröße öffnen: Maßnahmen und Annahmen herleiten">
+        <img src="assets/homepage/02-massnahmen-herleitung.jpg" alt="Maßnahmenbewertung mit Herleitungshelfern für Aktivierung, Risiko, Qualität, AfA und Finanzierungsspread" loading="eager" width="1280" height="853">
+        <span class="demo-zoom-hint">Screenshot groß ansehen</span>
+      </button>
       <div class="demo-copy">
         <span>So wird aus Bauchzahl eine Quelle</span>
         <h3>Maßnahmen und Annahmen herleiten</h3>
         <p>Herleitungshelfer erklären Aktivierbarkeit, Risiko, Qualität, Nutzungsdauer und Finanzierungsspread.</p>
       </div>
     </article>
-    <article class="demo-card">
-      <figure>
-        <img src="assets/homepage/03-eog-cashflow.jpg" alt="Entscheidungsansicht mit Trennung zwischen regulatorischer EOG-Wirkung und indikativer Cashflow-Basis" loading="lazy" width="1280" height="853">
-      </figure>
+    <article class="demo-card" id="demo-3">
+      <button class="demo-shot" type="button" data-demo-index="2" aria-label="Screenshot in Originalgröße öffnen: EOG und Cashflow trennen">
+        <img src="assets/homepage/03-eog-cashflow.jpg" alt="Entscheidungsansicht mit Trennung zwischen regulatorischer EOG-Wirkung und indikativer Cashflow-Basis" loading="eager" width="1280" height="853">
+        <span class="demo-zoom-hint">Screenshot groß ansehen</span>
+      </button>
       <div class="demo-copy">
         <span>So liest man die Kennzahlen</span>
         <h3>EOG und Cashflow trennen</h3>
         <p>Regulatorische EOG-Wirkung, wirtschaftliche Überleitung und indikative Cashflow-Basis bleiben getrennt.</p>
       </div>
     </article>
-    <article class="demo-card">
-      <figure>
-        <img src="assets/homepage/04-projektplan.jpg" alt="Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten und nächster fälliger Aufgabe" loading="lazy" width="1280" height="853">
-      </figure>
+    <article class="demo-card" id="demo-4">
+      <button class="demo-shot" type="button" data-demo-index="3" aria-label="Screenshot in Originalgröße öffnen: Projektplan steuern">
+        <img src="assets/homepage/04-projektplan.jpg" alt="Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten und nächster fälliger Aufgabe" loading="eager" width="1280" height="853">
+        <span class="demo-zoom-hint">Screenshot groß ansehen</span>
+      </button>
       <div class="demo-copy">
         <span>So wird die Story operativ</span>
         <h3>Projektplan steuern</h3>
         <p>Meilensteine, Rollen-Swimlanes, Abhängigkeiten und nächste Aufgaben je Rolle führen durch die Planungsrunde.</p>
       </div>
     </article>
-    <article class="demo-card">
-      <figure>
-        <img src="assets/homepage/05-tabellenexport.jpg" alt="Menü Mehr mit XLSX- und CSV-ZIP-Exporten für Excel und nachgelagerte Systeme" loading="lazy" width="1280" height="853">
-      </figure>
+    <article class="demo-card" id="demo-5">
+      <button class="demo-shot" type="button" data-demo-index="4" aria-label="Screenshot in Originalgröße öffnen: Daten für Excel exportieren">
+        <img src="assets/homepage/05-tabellenexport.jpg" alt="Menü Mehr mit XLSX- und CSV-ZIP-Exporten für Excel und nachgelagerte Systeme" loading="eager" width="1280" height="853">
+        <span class="demo-zoom-hint">Screenshot groß ansehen</span>
+      </button>
       <div class="demo-copy">
         <span>So vermeidet man Datensilos</span>
         <h3>Daten für Excel exportieren</h3>
         <p>XLSX und CSV-ZIP stellen Maßnahmen, KPIs, Jahreswerte, Projektplan, Klärpunkte und Provenienz bereit.</p>
       </div>
     </article>
-    <article class="demo-card">
-      <figure>
-        <img src="assets/homepage/06-ki-prompt.jpg" alt="KI-Prompt-Generator mit Rollenwahl, Datenumfang, Redaktionsoptionen und Prompt-Vorschau" loading="lazy" width="1280" height="853">
-      </figure>
+    <article class="demo-card" id="demo-6">
+      <button class="demo-shot" type="button" data-demo-index="5" aria-label="Screenshot in Originalgröße öffnen: KI-Prompt lokal erzeugen">
+        <img src="assets/homepage/06-ki-prompt.jpg" alt="KI-Prompt-Generator mit Rollenwahl, Datenumfang, Redaktionsoptionen und Prompt-Vorschau" loading="eager" width="1280" height="853">
+        <span class="demo-zoom-hint">Screenshot groß ansehen</span>
+      </button>
       <div class="demo-copy">
         <span>So nutzt man Unternehmens-KI</span>
         <h3>KI-Prompt lokal erzeugen</h3>
         <p>Rollenbezogene Prompts übersetzen den Arbeitsstand für Gremium, Management, Controlling oder Regulierung.</p>
       </div>
     </article>
-    <article class="demo-card">
-      <figure>
-        <img src="assets/homepage/07-html-mit-daten.jpg" alt="Menü Mehr mit HTML mit Daten speichern als selbsttragende Offline-Datei für Kolleginnen und Kollegen" loading="lazy" width="1280" height="853">
-      </figure>
+    <article class="demo-card" id="demo-7">
+      <button class="demo-shot" type="button" data-demo-index="6" aria-label="Screenshot in Originalgröße öffnen: HTML mit Daten weitergeben">
+        <img src="assets/homepage/07-html-mit-daten.jpg" alt="Menü Mehr mit HTML mit Daten speichern als selbsttragende Offline-Datei für Kolleginnen und Kollegen" loading="eager" width="1280" height="853">
+        <span class="demo-zoom-hint">Screenshot groß ansehen</span>
+      </button>
       <div class="demo-copy">
         <span>So reist der Arbeitsstand mit</span>
         <h3>HTML mit Daten weitergeben</h3>
         <p>Die App kann den aktuellen Modellstand als selbsttragende HTML-Datei für Kolleginnen und Kollegen speichern.</p>
       </div>
     </article>
+      </div>
     </div>
+    <div class="demo-modal" id="demoModal" hidden aria-hidden="true">
+    <div class="demo-modal-backdrop" data-demo-close></div>
+    <section class="demo-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="demoModalTitle" aria-describedby="demoModalText">
+      <div class="demo-modal-toolbar">
+        <div>
+          <span id="demoModalLabel" class="demo-modal-label"></span>
+          <h3 id="demoModalTitle"></h3>
+        </div>
+        <button class="demo-modal-close" type="button" data-demo-close aria-label="Screenshot schließen">×</button>
+      </div>
+      <p id="demoModalText"></p>
+      <div class="demo-modal-frame">
+        <img id="demoModalImage" alt="" width="1280" height="853">
+      </div>
+      <div class="demo-modal-actions">
+        <button class="button" type="button" data-demo-prev>← Vorheriges Beispiel</button>
+        <a class="button" id="demoModalOpenOriginal" href="#" target="_blank" rel="noopener">Bild in neuem Tab öffnen</a>
+        <button class="button" type="button" data-demo-next>Nächstes Beispiel →</button>
+      </div>
+    </section>
+  </div>
     <p class="proof-note">Die gezeigten Daten sind synthetische Demodaten. Für reale Planungen bleiben JSON und „HTML mit Daten speichern“ die kanonischen Arbeitsstände; XLSX/CSV, PDF und KI-Prompts sind Übergabe- und Kommunikationsartefakte.</p>
   </section>
 
@@ -305,5 +357,65 @@
   <footer>
     Szenarienrechner-EOG · Version 0.3.1 · Build local-build · Apache-2.0 · Keine Rechts-, Steuer- oder Regulierungsberatung. Produktive Entscheidungen müssen fachlich geprüft werden.
   </footer>
+  <script>
+    (() => {
+      const demos = [{"image":"assets/homepage/01-planungsstart.jpg","title":"Planungsrunde starten","label":"So beginnt man strukturiert","text":"Demodaten oder eigener Arbeitsstand öffnen, Rolle wählen und den Prozessstand sichtbar machen.","alt":"Start einer Planungsrunde mit Demodaten, Rollen, Stammdaten und Prozesshinweis"},{"image":"assets/homepage/02-massnahmen-herleitung.jpg","title":"Maßnahmen und Annahmen herleiten","label":"So wird aus Bauchzahl eine Quelle","text":"Herleitungshelfer erklären Aktivierbarkeit, Risiko, Qualität, Nutzungsdauer und Finanzierungsspread.","alt":"Maßnahmenbewertung mit Herleitungshelfern für Aktivierung, Risiko, Qualität, AfA und Finanzierungsspread"},{"image":"assets/homepage/03-eog-cashflow.jpg","title":"EOG und Cashflow trennen","label":"So liest man die Kennzahlen","text":"Regulatorische EOG-Wirkung, wirtschaftliche Überleitung und indikative Cashflow-Basis bleiben getrennt.","alt":"Entscheidungsansicht mit Trennung zwischen regulatorischer EOG-Wirkung und indikativer Cashflow-Basis"},{"image":"assets/homepage/04-projektplan.jpg","title":"Projektplan steuern","label":"So wird die Story operativ","text":"Meilensteine, Rollen-Swimlanes, Abhängigkeiten und nächste Aufgaben je Rolle führen durch die Planungsrunde.","alt":"Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten und nächster fälliger Aufgabe"},{"image":"assets/homepage/05-tabellenexport.jpg","title":"Daten für Excel exportieren","label":"So vermeidet man Datensilos","text":"XLSX und CSV-ZIP stellen Maßnahmen, KPIs, Jahreswerte, Projektplan, Klärpunkte und Provenienz bereit.","alt":"Menü Mehr mit XLSX- und CSV-ZIP-Exporten für Excel und nachgelagerte Systeme"},{"image":"assets/homepage/06-ki-prompt.jpg","title":"KI-Prompt lokal erzeugen","label":"So nutzt man Unternehmens-KI","text":"Rollenbezogene Prompts übersetzen den Arbeitsstand für Gremium, Management, Controlling oder Regulierung.","alt":"KI-Prompt-Generator mit Rollenwahl, Datenumfang, Redaktionsoptionen und Prompt-Vorschau"},{"image":"assets/homepage/07-html-mit-daten.jpg","title":"HTML mit Daten weitergeben","label":"So reist der Arbeitsstand mit","text":"Die App kann den aktuellen Modellstand als selbsttragende HTML-Datei für Kolleginnen und Kollegen speichern.","alt":"Menü Mehr mit HTML mit Daten speichern als selbsttragende Offline-Datei für Kolleginnen und Kollegen"}];
+      const modal = document.getElementById('demoModal');
+      if (!modal) return;
+      const image = document.getElementById('demoModalImage');
+      const title = document.getElementById('demoModalTitle');
+      const label = document.getElementById('demoModalLabel');
+      const text = document.getElementById('demoModalText');
+      const openOriginal = document.getElementById('demoModalOpenOriginal');
+      const cards = Array.from(document.querySelectorAll('[data-demo-index]'));
+      const carousel = document.querySelector('[data-demo-carousel]');
+      let activeIndex = 0;
+      let lastFocus = null;
+
+      function setActive(index) {
+        activeIndex = (index + demos.length) % demos.length;
+        const demo = demos[activeIndex];
+        image.src = demo.image;
+        image.alt = demo.alt;
+        title.textContent = demo.title;
+        label.textContent = demo.label;
+        text.textContent = demo.text;
+        openOriginal.href = demo.image;
+      }
+
+      function openDemo(index) {
+        lastFocus = document.activeElement;
+        setActive(index);
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('demo-modal-open');
+        modal.querySelector('[data-demo-close]').focus();
+      }
+
+      function closeDemo() {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('demo-modal-open');
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+      }
+
+      cards.forEach((button) => button.addEventListener('click', () => openDemo(Number(button.dataset.demoIndex))));
+      modal.querySelectorAll('[data-demo-close]').forEach((button) => button.addEventListener('click', closeDemo));
+      modal.querySelector('[data-demo-prev]').addEventListener('click', () => setActive(activeIndex - 1));
+      modal.querySelector('[data-demo-next]').addEventListener('click', () => setActive(activeIndex + 1));
+      document.addEventListener('keydown', (event) => {
+        if (modal.hidden) return;
+        if (event.key === 'Escape') closeDemo();
+        if (event.key === 'ArrowLeft') setActive(activeIndex - 1);
+        if (event.key === 'ArrowRight') setActive(activeIndex + 1);
+      });
+      document.querySelectorAll('[data-demo-scroll]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const direction = button.dataset.demoScroll === 'next' ? 1 : -1;
+          carousel?.scrollBy({ left: direction * Math.max(320, carousel.clientWidth * 0.82), behavior: 'smooth' });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
