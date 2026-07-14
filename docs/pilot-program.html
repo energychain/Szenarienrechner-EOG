@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pilotprogramm · Szenarienrechner-EOG</title>
+  <style>
+    :root { color-scheme: light; --ink: #102033; --muted: #5b6b7f; --line: #d8e1ec; --brand: #007ea7; --soft: #eef8fb; --paper: #ffffff; --bg: #f4f7fa; --warn: #fff7ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.65; }
+    header { background: rgba(255, 255, 255, 0.94); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1; display: flex; gap: 1rem; justify-content: space-between; align-items: center; }
+    header a, header button { color: var(--brand); font-weight: 700; text-decoration: none; }
+    header button { border: 1px solid #8ac6da; background: var(--soft); border-radius: 999px; padding: 0.45rem 0.85rem; cursor: pointer; font: inherit; }
+    main { max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    article { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1.25rem, 2vw, 2.5rem); box-shadow: 0 18px 40px rgba(16, 32, 51, 0.08); }
+    h1 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -0.035em; }
+    h2 { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 2rem; font-size: clamp(1.45rem, 2.5vw, 2.1rem); break-after: avoid; }
+    h3 { margin-top: 1.8rem; break-after: avoid; }
+    h1 + p, h2 + p { color: var(--muted); }
+    a { color: var(--brand); }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.96rem; break-inside: avoid; }
+    th, td { border: 1px solid var(--line); padding: 0.75rem; vertical-align: top; }
+    th { background: #edf4f8; text-align: left; }
+    code { background: #edf2f7; border-radius: 0.3rem; padding: 0.1rem 0.3rem; }
+    blockquote { border-left: 4px solid var(--brand); margin: 1.25rem 0; padding: 0.2rem 1rem; background: var(--soft); }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+    footer { color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem; text-align: center; }
+    @page { size: A4; margin: 15mm 13mm 17mm; }
+    @media print {
+      :root { --ink: #111827; --muted: #374151; --line: #b8c2ce; --paper: #ffffff; --bg: #ffffff; --brand: #004f68; --soft: #ffffff; }
+      body { background: #ffffff; font-size: 10.8pt; line-height: 1.48; }
+      header { position: static; border: 0; padding: 0 0 8mm; }
+      header button { display: none; }
+      main { max-width: none; padding: 0; }
+      article { border: 0; border-radius: 0; box-shadow: none; padding: 0; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; margin-top: 12mm; padding-top: 7mm; break-after: avoid; }
+      h3, p, li, table { orphans: 3; widows: 3; }
+      table, tr, blockquote { break-inside: avoid; page-break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+      footer { border-top: 1px solid var(--line); padding-top: 4mm; }
+    }
+  </style>
+</head>
+<body>
+  <header><a href="index.html">← Zur Übersicht</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
+  <main>
+    <article>
+<h1>Pilotprogramm: Szenarienrechner-EOG gemeinsam validieren</h1>
+<p>Der Szenarienrechner-EOG ist ein neues Open-Source-Werkzeug für regulierte Finanzplanung in Strom- und Gasverteilnetzen. Damit aus einem guten Werkzeug ein belastbarer Branchenstandard werden kann, braucht das Projekt fachliche Pilotanwenderinnen und Pilotanwender, die methodisch prüfen, Rückmeldungen öffentlich nachvollziehbar machen und eigene Verbesserungen beitragen.</p>
+<p>Das Pilotprogramm wird von der STROMDAO GmbH als öffentlicher Open-Source-Beitrag begleitet. Die App selbst bleibt neutral, offline-first und unter Apache-2.0 verfügbar.</p>
+<h2>Wen wir suchen</h2>
+<p>Gesucht werden Organisationen und Personen, die den Open-Source-Gedanken aktiv mittragen:</p>
+<ul>
+<li>Stadtwerke und Verteilnetzbetreiber mit regulierten Strom- oder Gas-Sparten,</li>
+<li>Regulierungsmanagement, Controlling, Asset Management, Anlagenbuchhaltung und Geschäftsführungsvorbereitung,</li>
+<li>Hochschulen, Forschungsgruppen und Energieökonomie-Lehrstühle,</li>
+<li>Beratungen und Expertinnen, die transparente Methoden statt Blackbox-Artefakte fördern,</li>
+<li>Open-Source-Energy-Communities und Civic-Tech-Gruppen mit Energiewirtschaftsbezug.</li>
+</ul>
+<p>Ein guter Pilotbeitrag beginnt nicht mit vertraulichen Echtdaten, sondern mit einem öffentlichen Signal:</p>
+<p>1. GitHub-Repository ansehen und bei Interesse einen Star vergeben.</p>
+<p>2. Repository forken, um eigene Tests, Kommentare oder Verbesserungen nachvollziehbar vorzubereiten.</p>
+<p>3. Demodaten oder synthetische interne Kopien verwenden, niemals vertrauliche Netz-, Bescheid- oder Projektdaten veröffentlichen.</p>
+<p>4. Rückmeldung als GitHub Issue oder Pull Request einbringen.</p>
+<p>5. Bei fachlichen Modellfragen Quellenstand, Annahmen und Grenzen offen dokumentieren.</p>
+<h2>Pilotpfade</h2>
+<table><thead><tr>
+<th>Pfad</th>
+<th>Zeitbedarf</th>
+<th>Geeignet für</th>
+<th>Ergebnis</th>
+</tr></thead><tbody>
+<tr>
+<td>30-Minuten-Selbsttest</td>
+<td>30 Minuten</td>
+<td>Erstprüfung durch Controlling, Regulierung oder Management</td>
+<td>Erste Rückmeldung zu Verständlichkeit, UI und Nutzen</td>
+</tr>
+<tr>
+<td>Methodik-Review</td>
+<td>1-2 Stunden</td>
+<td>Fachliche Reviewer, Beratung, Hochschulen</td>
+<td>Issue mit Modellgrenzen, Begrifflichkeiten oder Quellenhinweisen</td>
+</tr>
+<tr>
+<td>Real-but-private Benchmark</td>
+<td>0,5-2 Tage intern</td>
+<td>Stadtwerke/VNB mit echten Unterlagen</td>
+<td>Öffentlich nur anonymisierte Abweichungen und methodische Erkenntnisse</td>
+</tr>
+<tr>
+<td>Pull-Request-Pilot</td>
+<td>variabel</td>
+<td>Entwickler, Open-Source-Gruppen, Hochschulen</td>
+<td>Kleine PRs für Doku, Tests, Beispiele oder UI-Verbesserungen</td>
+</tr>
+<tr>
+<td>Lehr-/Workshop-Pilot</td>
+<td>2-4 Stunden</td>
+<td>Forschung, Lehre, interne Weiterbildung</td>
+<td>Rückmeldung zu Starter-Kits, Rollenpfaden und Fallstudien</td>
+</tr>
+</tbody></table>
+<h2>30-Minuten-Selbsttest</h2>
+<p>1. Live-App öffnen: <a href="https://energychain.github.io/Szenarienrechner-EOG/">https://energychain.github.io/Szenarienrechner-EOG/</a></p>
+<p>2. „Demodaten ansehen“ laden.</p>
+<p>3. User-Story öffnen und einen Meilenstein per Deep Link in der App nachvollziehen.</p>
+<p>4. Projektplan öffnen: Rollen, fällige Aufgaben und Klärpunkte prüfen.</p>
+<p>5. Entscheidungsansicht und Management-Report lesen.</p>
+<p>6. „HTML mit Daten speichern“ testen und die Datei wieder öffnen.</p>
+<p>7. Optional „Aktualität prüfen“ auslösen und kontrollieren, dass keine Modelldaten übertragen werden.</p>
+<p>8. GitHub Issue oder Pull Request mit Rückmeldung vorbereiten.</p>
+<h2>Methodik-Review</h2>
+<p>Bitte prüfen Sie insbesondere:</p>
+<ul>
+<li>Sind Begriffe, Rollen und Planungslogik für Stadtwerke/VNB verständlich?</li>
+<li>Sind EOG-Wirkung, indikative Cashflow-Sicht und Governance-Urteil sauber getrennt?</li>
+<li>Sind konservative Urteile ohne prüfpflichtige Annahmen hilfreich?</li>
+<li>Sind MIRR, Wirkungsverzüge und Reinvestitionsoptionen nachvollziehbar dokumentiert?</li>
+<li>Fehlen typische Klärpunkte aus Regulierungsmanagement, Anlagenbuchhaltung, Treasury oder Asset Management?</li>
+<li>Welche öffentlichen Quellen oder regulatorischen Parameter sollten ergänzt werden?</li>
+</ul>
+<h2>Real-but-private Benchmark</h2>
+<p>Echte Wirtschaftsplan-, EOG-, Kostenprüfungs- oder Bescheiddaten dürfen nicht öffentlich geteilt werden. Für einen belastbaren Pilot kann ein Unternehmen intern mit Echtdaten rechnen und öffentlich nur folgende Informationen zurückmelden:</p>
+<ul>
+<li>welche Modellannahme gepasst oder nicht gepasst hat,</li>
+<li>welche Abweichungsklasse auftrat, ohne Zahlen oder vertrauliche Details,</li>
+<li>welche Begriffe, Eingabefelder oder Reports unklar waren,</li>
+<li>welche fachliche Prüfung zusätzlich notwendig blieb,</li>
+<li>ob die Vorlage für eine reale Planungsrunde grundsätzlich brauchbar ist.</li>
+</ul>
+<p>Dafür gibt es die Validierungsmethodik und ein Protokoll:</p>
+<ul>
+<li><a href="https://energychain.github.io/Szenarienrechner-EOG/docs/validation-methodology.html">https://energychain.github.io/Szenarienrechner-EOG/docs/validation-methodology.html</a></li>
+<li><a href="https://energychain.github.io/Szenarienrechner-EOG/docs/templates/validation-protocol.html">https://energychain.github.io/Szenarienrechner-EOG/docs/templates/validation-protocol.html</a></li>
+</ul>
+<h2>Open-Source-Beiträge</h2>
+<p>Willkommen sind kleine, überprüfbare Beiträge:</p>
+<ul>
+<li>Dokumentationsverbesserungen,</li>
+<li>synthetische Beispiele und Starter-Kits,</li>
+<li>Tests für Import, Export, Offline-Verteilung oder Berechnungsgrenzen,</li>
+<li>UI-Verbesserungen für Verständlichkeit und Re-Entry,</li>
+<li>öffentliche Quellenhinweise zu Regulierungsparametern,</li>
+<li>Übersetzungen oder Lehrmaterialien.</li>
+</ul>
+<p>Fachliche Modelländerungen brauchen Quellenstand, Begründung, Testnachweis und klare Abgrenzung zu Rechts- oder Regulierungsberatung.</p>
+<h2>Was nicht in öffentliche Issues gehört</h2>
+<p>Bitte nicht veröffentlichen:</p>
+<ul>
+<li>reale Netzbetreiber-, Kunden-, Projekt- oder Ortsnetzdaten,</li>
+<li>Bescheide, Kostenprüfungsunterlagen oder interne Wirtschaftsplanwerte,</li>
+<li>personenbezogene Daten,</li>
+<li>vertrauliche Beratungsunterlagen,</li>
+<li>Screenshots mit produktiven Daten,</li>
+<li>Annahmen, die als regulatorische Anerkennungszusage verstanden werden könnten.</li>
+</ul>
+<h2>Call to action</h2>
+<p>Wenn Sie das Projekt unterstützen möchten:</p>
+<p>1. Repository öffnen: <a href="https://github.com/energychain/Szenarienrechner-EOG">https://github.com/energychain/Szenarienrechner-EOG</a></p>
+<p>2. Star vergeben, wenn der Ansatz für Sie relevant ist.</p>
+<p>3. Fork erstellen, wenn Sie selbst testen oder beitragen möchten.</p>
+<p>4. Pilot-Feedback einreichen: <a href="https://github.com/energychain/Szenarienrechner-EOG/issues/new/choose">https://github.com/energychain/Szenarienrechner-EOG/issues/new/choose</a></p>
+<p>5. Pull Request mit kleinem, überprüfbarem Scope vorbereiten.</p>
+<p>Die STROMDAO GmbH begleitet das Pilotprogramm als fachlicher und technischer Steward. Das Ziel ist ein transparentes, methodisch prüfbares Open-Source-Werkzeug, das kleine und mittlere Stadtwerke/VNB befähigt, regulierte Finanzplanung strukturierter und nachvollziehbarer vorzubereiten.</p>
+    </article>
+    <footer>Szenarienrechner-EOG · Orientierung und Methodik · Apache-2.0</footer>
+  </main>
+</body>
+</html>
