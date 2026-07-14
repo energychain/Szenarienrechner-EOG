@@ -61,17 +61,105 @@ const workflowDemos = [
 ];
 
 function renderWorkflowDemoCards() {
-  return workflowDemos.map(demo => `
-    <article class="demo-card">
-      <figure>
-        <img src="${demo.image}" alt="${demo.alt}" loading="lazy" width="1280" height="853">
-      </figure>
+  return workflowDemos.map((demo, index) => `
+    <article class="demo-card" id="demo-${index + 1}">
+      <button class="demo-shot" type="button" data-demo-index="${index}" aria-label="Screenshot in Originalgröße öffnen: ${demo.title}">
+        <img src="${demo.image}" alt="${demo.alt}" loading="eager" width="1280" height="853">
+        <span class="demo-zoom-hint">Screenshot groß ansehen</span>
+      </button>
       <div class="demo-copy">
         <span>${demo.label}</span>
         <h3>${demo.title}</h3>
         <p>${demo.text}</p>
       </div>
     </article>`).join('');
+}
+
+function renderWorkflowDemoModal() {
+  return `<div class="demo-modal" id="demoModal" hidden aria-hidden="true">
+    <div class="demo-modal-backdrop" data-demo-close></div>
+    <section class="demo-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="demoModalTitle" aria-describedby="demoModalText">
+      <div class="demo-modal-toolbar">
+        <div>
+          <span id="demoModalLabel" class="demo-modal-label"></span>
+          <h3 id="demoModalTitle"></h3>
+        </div>
+        <button class="demo-modal-close" type="button" data-demo-close aria-label="Screenshot schließen">×</button>
+      </div>
+      <p id="demoModalText"></p>
+      <div class="demo-modal-frame">
+        <img id="demoModalImage" alt="" width="1280" height="853">
+      </div>
+      <div class="demo-modal-actions">
+        <button class="button" type="button" data-demo-prev>← Vorheriges Beispiel</button>
+        <a class="button" id="demoModalOpenOriginal" href="#" target="_blank" rel="noopener">Bild in neuem Tab öffnen</a>
+        <button class="button" type="button" data-demo-next>Nächstes Beispiel →</button>
+      </div>
+    </section>
+  </div>`;
+}
+
+function renderWorkflowDemoScript() {
+  return `<script>
+    (() => {
+      const demos = ${JSON.stringify(workflowDemos)};
+      const modal = document.getElementById('demoModal');
+      if (!modal) return;
+      const image = document.getElementById('demoModalImage');
+      const title = document.getElementById('demoModalTitle');
+      const label = document.getElementById('demoModalLabel');
+      const text = document.getElementById('demoModalText');
+      const openOriginal = document.getElementById('demoModalOpenOriginal');
+      const cards = Array.from(document.querySelectorAll('[data-demo-index]'));
+      const carousel = document.querySelector('[data-demo-carousel]');
+      let activeIndex = 0;
+      let lastFocus = null;
+
+      function setActive(index) {
+        activeIndex = (index + demos.length) % demos.length;
+        const demo = demos[activeIndex];
+        image.src = demo.image;
+        image.alt = demo.alt;
+        title.textContent = demo.title;
+        label.textContent = demo.label;
+        text.textContent = demo.text;
+        openOriginal.href = demo.image;
+      }
+
+      function openDemo(index) {
+        lastFocus = document.activeElement;
+        setActive(index);
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('demo-modal-open');
+        modal.querySelector('[data-demo-close]').focus();
+      }
+
+      function closeDemo() {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('demo-modal-open');
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+      }
+
+      cards.forEach((button) => button.addEventListener('click', () => openDemo(Number(button.dataset.demoIndex))));
+      modal.querySelectorAll('[data-demo-close]').forEach((button) => button.addEventListener('click', closeDemo));
+      modal.querySelector('[data-demo-prev]').addEventListener('click', () => setActive(activeIndex - 1));
+      modal.querySelector('[data-demo-next]').addEventListener('click', () => setActive(activeIndex + 1));
+      document.addEventListener('keydown', (event) => {
+        if (modal.hidden) return;
+        if (event.key === 'Escape') closeDemo();
+        if (event.key === 'ArrowLeft') setActive(activeIndex - 1);
+        if (event.key === 'ArrowRight') setActive(activeIndex + 1);
+      });
+      document.querySelectorAll('[data-demo-scroll]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const direction = button.dataset.demoScroll === 'next' ? 1 : -1;
+          carousel?.scrollBy({ left: direction * Math.max(320, carousel.clientWidth * 0.82), behavior: 'smooth' });
+        });
+      });
+    })();
+  </script>`;
 }
 
 function copyHomepageAssets() {
@@ -160,15 +248,33 @@ export function renderHomepage() {
     .card h3 { margin: 0 0 0.45rem; font-size: 1.1rem; }
     .card p, .card li { color: var(--muted); }
     .card ul { padding-left: 1.1rem; margin: 0.55rem 0 0; }
-    .demo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; }
-    .demo-card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; box-shadow: 0 12px 32px rgba(16, 32, 51, 0.08); }
-    .demo-card figure { margin: 0; background: #dbe8f0; border-bottom: 1px solid var(--line); }
+    .demo-carousel-shell { position: relative; }
+    .demo-carousel-controls { display: flex; justify-content: flex-end; gap: 0.55rem; margin: -0.3rem 0 0.9rem; }
+    .demo-carousel-controls .button { min-height: 38px; padding: 0.48rem 0.85rem; }
+    .demo-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(320px, 45%); gap: 1.15rem; overflow-x: auto; padding: 0.25rem 0.1rem 1rem; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+    .demo-card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; box-shadow: 0 12px 32px rgba(16, 32, 51, 0.08); scroll-snap-align: start; }
+    .demo-shot { position: relative; display: block; width: 100%; padding: 0; border: 0; background: #dbe8f0; border-bottom: 1px solid var(--line); cursor: zoom-in; }
+    .demo-shot:focus-visible { outline: 4px solid #fbbf24; outline-offset: -4px; }
     .demo-card img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; }
+    .demo-zoom-hint { position: absolute; right: 0.7rem; bottom: 0.7rem; color: white; background: rgba(15, 34, 54, 0.86); border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; padding: 0.32rem 0.62rem; font-size: 0.82rem; font-weight: 850; box-shadow: 0 8px 18px rgba(16, 32, 51, 0.18); }
     .demo-copy { padding: 1rem 1.1rem 1.15rem; }
     .demo-copy span { display: inline-flex; color: var(--brand-dark); background: var(--soft); border: 1px solid #b8dfeb; border-radius: 999px; padding: 0.22rem 0.55rem; font-size: 0.82rem; font-weight: 850; margin-bottom: 0.7rem; }
     .demo-copy h3 { margin: 0 0 0.35rem; }
     .demo-copy p { color: var(--muted); margin: 0; }
     .proof-note { margin-top: 1rem; color: var(--muted); font-size: 0.96rem; }
+    body.demo-modal-open { overflow: hidden; }
+    .demo-modal[hidden] { display: none; }
+    .demo-modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: clamp(0.6rem, 2vw, 1.4rem); }
+    .demo-modal-backdrop { position: absolute; inset: 0; background: rgba(6, 18, 31, 0.74); backdrop-filter: blur(7px); }
+    .demo-modal-dialog { position: relative; z-index: 1; width: min(1200px, 96vw); max-height: 94vh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 0.75rem; background: var(--paper); border: 1px solid rgba(255,255,255,0.4); border-radius: 24px; padding: 1rem; box-shadow: 0 26px 80px rgba(0, 0, 0, 0.28); }
+    .demo-modal-toolbar { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+    .demo-modal-label { display: inline-flex; color: var(--brand-dark); background: var(--soft); border: 1px solid #b8dfeb; border-radius: 999px; padding: 0.18rem 0.55rem; font-size: 0.8rem; font-weight: 850; margin-bottom: 0.35rem; }
+    .demo-modal-toolbar h3 { margin: 0; font-size: clamp(1.2rem, 2.6vw, 1.8rem); line-height: 1.1; }
+    .demo-modal-close { width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--line); background: white; color: var(--ink); font-size: 1.35rem; cursor: pointer; }
+    .demo-modal-dialog p { margin: 0; color: var(--muted); }
+    .demo-modal-frame { overflow: auto; background: #eef4f8; border: 1px solid var(--line); border-radius: 16px; }
+    .demo-modal-frame img { display: block; width: min(1280px, 100%); height: auto; max-width: none; margin: 0 auto; }
+    .demo-modal-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.65rem; }
     .split { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 1rem; align-items: start; }
     .feature-list { display: grid; gap: 0.7rem; }
     .feature { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem; align-items: start; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 0.85rem; }
@@ -181,7 +287,7 @@ export function renderHomepage() {
     .cta p { color: #dff7ff; }
     .contact-box { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); border-radius: 18px; padding: 1rem; }
     footer { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 3rem; color: var(--muted); font-size: 0.92rem; }
-    @media (max-width: 880px) { .hero, .split, .cta { grid-template-columns: 1fr; } .grid, .grid.two, .demo-grid { grid-template-columns: 1fr; } .nav { align-items: flex-start; flex-direction: column; } .status-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 880px) { .hero, .split, .cta { grid-template-columns: 1fr; } .grid, .grid.two { grid-template-columns: 1fr; } .demo-grid { grid-auto-columns: minmax(280px, 88%); } .demo-carousel-controls { justify-content: flex-start; } .demo-modal-actions { justify-content: stretch; } .demo-modal-actions .button { flex: 1 1 100%; } .nav { align-items: flex-start; flex-direction: column; } .status-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -267,9 +373,16 @@ export function renderHomepage() {
       <h2>So arbeitet die App in der Praxis.</h2>
       <p>Die folgenden Workflow-Beweise sind echte Screenshots aus dem gebauten Browser-Artefakt. Sie zeigen nicht nur Feature-Namen, sondern konkrete Arbeitsschritte: starten, bewerten, entscheiden, planen, exportieren und weitergeben.</p>
     </div>
-    <div class="demo-grid">
-      ${renderWorkflowDemoCards()}
+    <div class="demo-carousel-shell">
+      <div class="demo-carousel-controls" aria-label="Praxis-Beispiele durchblättern">
+        <button class="button" type="button" data-demo-scroll="prev">← Zurück</button>
+        <button class="button" type="button" data-demo-scroll="next">Weiter →</button>
+      </div>
+      <div class="demo-grid" data-demo-carousel aria-label="Praxis-Beispiele als Karussell">
+        ${renderWorkflowDemoCards()}
+      </div>
     </div>
+    ${renderWorkflowDemoModal()}
     <p class="proof-note">Die gezeigten Daten sind synthetische Demodaten. Für reale Planungen bleiben JSON und „HTML mit Daten speichern“ die kanonischen Arbeitsstände; XLSX/CSV, PDF und KI-Prompts sind Übergabe- und Kommunikationsartefakte.</p>
   </section>
 
@@ -333,6 +446,7 @@ export function renderHomepage() {
   <footer>
     Szenarienrechner-EOG · Version ${appVersion} · Build ${commit} · Apache-2.0 · Keine Rechts-, Steuer- oder Regulierungsberatung. Produktive Entscheidungen müssen fachlich geprüft werden.
   </footer>
+  ${renderWorkflowDemoScript()}
 </body>
 </html>`;
 }

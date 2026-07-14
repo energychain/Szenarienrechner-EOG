@@ -32,6 +32,12 @@ describe('static homepage', () => {
     expect(homepage).toContain('05-tabellenexport.jpg');
     expect(homepage).toContain('06-ki-prompt.jpg');
     expect(homepage).toContain('07-html-mit-daten.jpg');
+    expect(homepage).toContain('Praxis-Beispiele als Karussell');
+    expect(homepage).toContain('data-demo-scroll="next"');
+    expect(homepage).toContain('Screenshot groß ansehen');
+    expect(homepage).toContain('id="demoModal"');
+    expect(homepage).toContain('role="dialog"');
+    expect(homepage).toContain('Bild in neuem Tab öffnen');
     expect(homepage).toContain('So vermeidet man Datensilos');
     expect(homepage).toContain('So nutzt man Unternehmens-KI');
   });
