@@ -1626,6 +1626,18 @@
       overflow: auto;
     }
 
+    .ai-prompt-output {
+      min-height: 420px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre;
+    }
+
+    .ai-prompt-options {
+      margin: 12px 0;
+    }
+
     .stepper {
       display: flex;
       gap: 6px;

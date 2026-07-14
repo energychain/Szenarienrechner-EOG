@@ -51,6 +51,9 @@ describe('story HTML rendering', () => {
     expect(story).toContain('release-manifest.json');
     expect(story).toContain('Feedback / Support melden');
     expect(story).toContain('Support-Paket exportieren');
+    expect(story).toContain('KI-Prompt-Export als Übersetzungsschicht');
+    expect(story).toContain('KI-Prompt erstellen');
+    expect(story).toContain('llm.txt');
     expect(story).toContain('STROMDAO GmbH und Cernion');
     expect(story).toContain('https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Netzentgelte/Anreizregulierung/start.html');
     expect(story).toContain('https://cernion.de/');

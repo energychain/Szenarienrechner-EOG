@@ -18,6 +18,7 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 | User-Story | Beratungsprozess in einer fiktiven Planungsrunde zeigen | Wiedererkennung für EVU-Rollen und PDF-Handout |
 | Projektplan | User-Story-Meilensteine operativ steuern | Rollen-Swimlanes, fällige Aufgaben, Abhängigkeiten und Deep-Links in die App |
 | Aktualitäts-Erkennung | App- und Ruleset-Stand bewusst prüfen | Kein automatischer Netzzugriff, aber klare Release-/Parameter-Hinweise bei Bedarf |
+| KI-Prompt-Export | Rollenbezogene KI-Arbeitsaufträge lokal erzeugen | Unternehmens-KI kann Planung übersetzen, ohne dass die App selbst Daten sendet |
 | Methodikhandbuch | Regulatorische Finanzplanung verständlich erklären | Gemeinsame Denkstruktur für Strom/Gas-Portfolios |
 | Vorlagenpaket | Typische Consulting-Artefakte bereitstellen | Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung, Workshopagenda |
 | Starter-Kits | Workshop-Pakete für konkrete Planungssituationen bereitstellen | Strom-Ortsnetz, Gas-Transformation und Spartenportfolio als druckbare Arbeitsmappen |
@@ -37,6 +38,7 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 - [Entscheidungsartefakte](decision-artifacts.html)
 - [Projektplan](project-plan.html)
 - [Aktualitäts-Erkennung und Support](release-awareness.html)
+- [KI-Prompt-Export](ai-prompts.html)
 - [Pilotprogramm](pilot-program.html)
 - [TRL-6-Validierung](validation-methodology.html)
 - [Vorlage Maßnahmensteckbrief](templates/massnahmensteckbrief.html)

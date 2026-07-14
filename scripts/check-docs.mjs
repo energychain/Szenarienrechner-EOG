@@ -19,6 +19,7 @@ const requiredDocs = [
   'docs/decision-artifacts.md',
   'docs/project-plan.md',
   'docs/release-awareness.md',
+  'docs/ai-prompts.md',
   'docs/pilot-program.md',
   'docs/validation-methodology.md',
   'docs/templates/massnahmensteckbrief.md',
@@ -90,6 +91,12 @@ assert(releaseAwareness.includes('kein Netzzugriff'), 'Release awareness doc mus
 assert(releaseAwareness.includes('release-manifest.json'), 'Release awareness doc must document the manifest.');
 assert(releaseAwareness.includes('Modelldaten werden nicht angehängt'), 'Release awareness doc must document support privacy.');
 
+const aiPrompts = readFileSync('docs/ai-prompts.md', 'utf8');
+assert(aiPrompts.includes('KI-Prompt erstellen'), 'AI prompt doc must document the menu action.');
+assert(aiPrompts.includes('keine automatische Übertragung'), 'AI prompt doc must document no automatic transfer.');
+assert(aiPrompts.includes('llm.txt'), 'AI prompt doc must link the LLM context file.');
+assert(existsSync('llm.txt') && existsSync('llms.txt'), 'LLM context files must exist at repository root.');
+
 const pilotProgram = readFileSync('docs/pilot-program.md', 'utf8');
 assert(pilotProgram.includes('STROMDAO GmbH'), 'Pilot program must identify the public steward.');
 assert(pilotProgram.includes('Star vergeben'), 'Pilot program must ask for visible OSS signals.');
@@ -102,6 +109,7 @@ const story = readFileSync('docs/story/planungsrunde-userstory.md', 'utf8');
 assert(story.includes('Szenarienrechner-EOG') || story.includes('EOG-Planungsrunde'), 'Story doc must name the planning context.');
 assert(story.includes('Bidirektionale Navigation'), 'Story doc must explain bidirectional navigation.');
 assert(story.includes('Projektplan als Struktur-Element'), 'Story doc must explain the project plan as operational structure.');
+assert(story.includes('KI-Prompt-Export als Übersetzungsschicht'), 'Story doc must explain the AI prompt export as translation layer.');
 assert(story.includes('nächste fällige Aufgabe'), 'Story doc must explain project plan next-task guidance.');
 for (const id of ['kickoff', 'initialisierung', 'datenerhebung', 'massnahmenbewertung', 'technik-rueckkopplung', 'konsolidierung', 'entscheidungsvorlage', 'gremium', 'archiv']) {
   assert(story.includes(`id="${id}"`), `Story doc is missing anchor ${id}.`);

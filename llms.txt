@@ -1,0 +1,7 @@
+# llms.txt
+
+Primärer LLM-Kontext für den Szenarienrechner-EOG:
+
+https://energychain.github.io/Szenarienrechner-EOG/llm.txt
+
+Diese Datei dient als kurzer Verweis für KI-/Agentensysteme. Die App selbst sendet keine Daten an KI-Dienste; Nutzer kopieren lokal erzeugte Prompts bewusst in ein freigegebenes Unternehmenssystem.

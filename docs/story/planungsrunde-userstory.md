@@ -149,6 +149,29 @@ Typische Nutzung in dieser Story:
 
 Damit ergänzt die Aktualitätsprüfung die Offline-Fähigkeit, statt sie zu schwächen: Die App bleibt lokal, aber sie macht sichtbar, wann sich die regulatorische Wirklichkeit außerhalb der Datei bewegt hat.
 
+## KI-Prompt-Export als Übersetzungsschicht
+
+Viele Planungsstände scheitern nicht an fehlenden Zahlen, sondern daran, dass dieselben Zahlen für verschiedene Rollen unterschiedlich erklärt werden müssen. Ein Aufsichtsrat braucht keine Engine-Details, Controlling keine kommunalpolitische Erzählung, Regulierungsmanagement keine vereinfachte Bürgerfassung. Gleichzeitig dürfen sensible Planungsdaten nicht automatisch an einen KI-Dienst übertragen werden.
+
+**Situation im EVU:** Nach der Konsolidierung liegt ein Arbeitsstand mit KPIs, Szenarien, Projektplan, offenen Klärpunkten und Gremienlogik vor. Die Modellverantwortung möchte daraus eine verständliche Management- oder Gremienerklärung vorbereiten. Im Unternehmen ist ein eigenes KI-System freigegeben, aber die Offline-App soll selbst keine Verbindung dorthin aufbauen.
+
+**Fachliche Frage:** Wie kann die App die Übersetzungsleistung einer KI nutzbar machen, ohne selbst zur Cloud-Anwendung zu werden?
+
+**App-Beitrag:** Über **„KI-Prompt erstellen“** erzeugt die App lokal einen rollenspezifischen Arbeitsauftrag. Der Nutzer wählt Rolle und Zielgruppe, zum Beispiel Aufsichtsrat/Stadtrat, Management, Controlling, Regulierungsmanagement, Asset Management, Bilanzierung oder Projektsteuerung. Dazu kommen Redaktionsoptionen: nur Zusammenfassung oder ausführlicher Stand, Beträge gerundet, Maßnahmennamen anonymisiert, Notizen ausgelassen oder Projektplan einbezogen.
+
+Der Prompt enthält die relevanten Planungsdaten, die Provenienz des Builds, den Regulierungsstand, die Governance-Lesart und einen Verweis auf die öffentliche Kontextdatei `https://energychain.github.io/Szenarienrechner-EOG/llm.txt`. Diese Datei erklärt dem Unternehmens-LLM die Fachbegriffe und Grenzen: EOG ist nicht Cashflow, Basis vs. konservativ bleibt entscheidend, prüfpflichtige Annahmen sind keine bestätigten Fakten und es gibt keine Anerkennungszusage.
+
+**Ergebnis:** Die App sendet nichts. Der Nutzer sieht den Prompt vollständig, kann ihn redigieren, kopieren oder als `.txt` speichern und erst danach bewusst in ein intern freigegebenes KI-System einfügen. Die KI übernimmt dann die Übersetzungsrolle in der Sprache der Zielgruppe, während die Datensouveränität der Offline-App erhalten bleibt.
+
+**Beraterhinweis:** Ein guter Senior Consultant übersetzt denselben Planungsstand je nach Adressat. Der Prompt-Export standardisiert genau diese Übersetzungsvorbereitung: Für das Gremium wird aus KPI-Logik eine Beschluss- und Auflagenlogik; für Controlling wird daraus Budget-, CAPEX/OPEX- und Cashflow-Sicht; für Regulierungsmanagement werden Ruleset, Attribution, Doppelzählung und prüfpflichtige Annahmen sichtbar.
+
+Typische Nutzung in dieser Story:
+
+- Vor der Entscheidungsvorlage erzeugt die Modellverantwortung einen Management-Prompt und prüft, ob die KI die Auflagenlogik korrekt erklärt.
+- Für die Gremienvorlage wird ein Aufsichtsrat-/Stadtrat-Prompt mit gerundeten Beträgen und ohne interne Notizen erstellt.
+- Regulierungsmanagement nutzt einen eigenen Prompt, um Q/E-Wirkungen, Wirkungsverzüge, Doppelzählungswarnungen und Ruleset-Konfidenz zu prüfen.
+- Projektsteuerung nutzt den PMO-Prompt, um blockierte Aufgaben, nächste fällige Aufgaben und offene Klärpunkte in eine Arbeitsliste zu übersetzen.
+
 ---
 
 <a id="kickoff"></a>
