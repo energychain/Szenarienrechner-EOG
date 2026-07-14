@@ -9,7 +9,7 @@
     "build:story": "node scripts/build-story.mjs",
     "build:docs": "node scripts/build-docs.mjs",
     "build:manifest": "node scripts/build-release-manifest.mjs",
-    "build:release": "npm run build && npm run build:story && npm run build:docs && cp dist/index.html dist/szenarienrechner-eog.html && npm run build:manifest",
+    "build:release": "npm run build && npm run build:story && npm run build:docs && cp llm.txt llms.txt dist/ && cp dist/index.html dist/szenarienrechner-eog.html && npm run build:manifest",
     "lint": "eslint src tests scripts",
     "test": "vitest run",
     "test:distribution": "node scripts/check-distribution.mjs",

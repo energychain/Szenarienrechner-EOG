@@ -76,6 +76,7 @@ import { imprintSections } from './trust-content.js';
 import { demoMeasures, initialMeasures } from './demo-data.js';
 import { downloadBlob, exportStamp, htmlWithEmbeddedModelState } from './export-utils.js';
 import { esc, formatDateShort, fmtEur, fmtPct, fmtPlain, fmtTeur } from './render-utils.js';
+import { buildAiPrompt, defaultAiPromptOptions, promptRoles } from './ai-prompt-generator.js';
 
 const inputIds = [
   'sector', 'regulationProcedure', 'baseYear', 'baseEog', 'rab', 'returnRate', 'financingRate',
@@ -1563,6 +1564,68 @@ function exportSupportPackage() {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   downloadBlob(blob, 'szenarienrechner-eog-support-kontext-' + payload.createdAt.slice(0, 19).replaceAll(':', '').replace('T', '-') + '.json');
   setStorageStatus('Support-Paket ohne Modelldaten wurde vorbereitet.');
+}
+
+function aiPromptOptionsFromUi() {
+  return {
+    ...defaultAiPromptOptions,
+    roleId: document.getElementById('aiPromptRole')?.value || defaultAiPromptOptions.roleId,
+    dataScope: document.getElementById('aiPromptDataScope')?.value || defaultAiPromptOptions.dataScope,
+    detailLevel: document.getElementById('aiPromptDetailLevel')?.value || defaultAiPromptOptions.detailLevel,
+    language: document.getElementById('aiPromptLanguage')?.value || defaultAiPromptOptions.language,
+    roundAmounts: Boolean(document.getElementById('aiPromptRoundAmounts')?.checked),
+    anonymizeMeasures: Boolean(document.getElementById('aiPromptAnonymizeMeasures')?.checked),
+    omitNotes: Boolean(document.getElementById('aiPromptOmitNotes')?.checked),
+    includeProjectPlan: Boolean(document.getElementById('aiPromptIncludeProjectPlan')?.checked)
+  };
+}
+
+function currentAiPrompt() {
+  return buildAiPrompt(currentModelData(), aiPromptOptionsFromUi(), {
+    buildInfo,
+    ruleset: activeRulesetInfo()
+  });
+}
+
+function renderAiPrompt() {
+  const output = document.getElementById('aiPromptOutput');
+  if (output) output.value = currentAiPrompt();
+}
+
+function openAiPromptGenerator() {
+  const select = document.getElementById('aiPromptRole');
+  if (select && !select.options.length) {
+    select.innerHTML = promptRoles.map(role => `<option value="${esc(role.id)}">${esc(role.title)}</option>`).join('');
+    select.value = defaultAiPromptOptions.roleId;
+  }
+  renderAiPrompt();
+  document.getElementById('aiPromptModal').classList.remove('hidden');
+}
+
+function closeAiPromptGenerator() {
+  document.getElementById('aiPromptModal').classList.add('hidden');
+}
+
+async function copyAiPrompt() {
+  const output = document.getElementById('aiPromptOutput');
+  const text = output?.value || currentAiPrompt();
+  try {
+    await navigator.clipboard.writeText(text);
+    setStorageStatus('KI-Prompt wurde in die Zwischenablage kopiert. Bitte vor Nutzung im Unternehmenssystem prüfen.');
+  } catch (_error) {
+    if (output) {
+      output.focus();
+      output.select();
+    }
+    setStorageStatus('Zwischenablage nicht verfügbar. Prompt ist markiert und kann manuell kopiert werden.');
+  }
+}
+
+function downloadAiPrompt() {
+  const text = document.getElementById('aiPromptOutput')?.value || currentAiPrompt();
+  const role = document.getElementById('aiPromptRole')?.value || 'prompt';
+  downloadBlob(new Blob([text], { type: 'text/plain' }), `szenarienrechner-eog-ki-prompt-${role}-${exportStamp()}.txt`);
+  setStorageStatus('KI-Prompt wurde als Textdatei vorbereitet.');
 }
 
 function localAuthor() {
@@ -5311,8 +5374,18 @@ document.getElementById('printReportFromView').addEventListener('click', () => {
 document.getElementById('importModel').addEventListener('click', openLoadModal);
 document.getElementById('loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'basis' }));
 document.getElementById('checkReleaseAwareness').addEventListener('click', checkReleaseAwareness);
+document.getElementById('openAiPromptGenerator').addEventListener('click', openAiPromptGenerator);
 document.getElementById('openSupportIssue').addEventListener('click', openSupportIssue);
 document.getElementById('exportSupportPackage').addEventListener('click', exportSupportPackage);
+document.getElementById('aiPromptClose').addEventListener('click', closeAiPromptGenerator);
+document.getElementById('copyAiPrompt').addEventListener('click', copyAiPrompt);
+document.getElementById('downloadAiPrompt').addEventListener('click', downloadAiPrompt);
+['aiPromptRole', 'aiPromptDataScope', 'aiPromptDetailLevel', 'aiPromptLanguage', 'aiPromptRoundAmounts', 'aiPromptAnonymizeMeasures', 'aiPromptOmitNotes', 'aiPromptIncludeProjectPlan'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', renderAiPrompt);
+});
+document.getElementById('aiPromptModal').addEventListener('click', event => {
+  if (event.target.id === 'aiPromptModal') closeAiPromptGenerator();
+});
 document.getElementById('clearBrowserData').addEventListener('click', () => {
   if (window.confirm('Alle im Browser gespeicherten Daten dieses Rechners löschen? Das aktuelle Modell bleibt bis zum Neuladen sichtbar.')) {
     clearBrowserData();

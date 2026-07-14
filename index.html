@@ -67,6 +67,7 @@
               <a id="openStory" class="menu-link" href="story/planungsrunde-userstory.html" target="_blank" rel="noopener">Userstory</a>
               <a id="openEcosystem" class="menu-link" href="docs/index.html" target="_blank" rel="noopener">Methodik & Vorlagen</a>
               <button type="button" id="checkReleaseAwareness">Aktualität prüfen</button>
+              <button type="button" id="openAiPromptGenerator">KI-Prompt erstellen</button>
               <button type="button" id="openSupportIssue">Feedback / Support melden</button>
               <button type="button" id="exportSupportPackage">Support-Paket exportieren</button>
               <button type="button" id="loadDemoModel">Demodaten laden</button>
@@ -1043,6 +1044,63 @@
       <div class="dialog-foot">
         <button type="button" id="measureEditClose">Schließen</button>
         <div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="aiPromptModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="aiPromptTitle">
+    <div class="dialog wide-dialog">
+      <div class="dialog-head">
+        <h2 id="aiPromptTitle">KI-Prompt erstellen</h2>
+      </div>
+      <div class="dialog-body ai-prompt-dialog">
+        <p class="hint warning">Die App sendet nichts an eine KI. Prüfen und redigieren Sie den Prompt, bevor Sie ihn in ein freigegebenes Unternehmenssystem kopieren.</p>
+        <div class="grid2">
+          <div>
+            <label for="aiPromptRole">Rolle / Zielgruppe</label>
+            <select id="aiPromptRole"></select>
+          </div>
+          <div>
+            <label for="aiPromptDataScope">Datenumfang</label>
+            <select id="aiPromptDataScope">
+              <option value="summary">Nur Zusammenfassung</option>
+              <option value="standard" selected>Standard: KPIs + Maßnahmen + Projektplan</option>
+              <option value="detailed">Ausführlich inkl. Wirkannahmen</option>
+            </select>
+          </div>
+          <div>
+            <label for="aiPromptDetailLevel">Detailtiefe</label>
+            <select id="aiPromptDetailLevel">
+              <option value="kurz">Kurz</option>
+              <option value="standard" selected>Standard</option>
+              <option value="ausführlich">Ausführlich</option>
+            </select>
+          </div>
+          <div>
+            <label for="aiPromptLanguage">Sprache / Stil</label>
+            <select id="aiPromptLanguage">
+              <option value="Deutsch" selected>Deutsch</option>
+              <option value="Einfache Sprache">Einfache Sprache</option>
+              <option value="Fachlich präzises Deutsch">Fachlich präzises Deutsch</option>
+              <option value="English">English</option>
+            </select>
+          </div>
+        </div>
+        <div class="checkbox-grid ai-prompt-options">
+          <label><input id="aiPromptRoundAmounts" type="checkbox" checked> Beträge runden</label>
+          <label><input id="aiPromptAnonymizeMeasures" type="checkbox"> Maßnahmennamen anonymisieren</label>
+          <label><input id="aiPromptOmitNotes" type="checkbox" checked> Notizen weglassen</label>
+          <label><input id="aiPromptIncludeProjectPlan" type="checkbox" checked> Projektplan einbeziehen</label>
+        </div>
+        <label for="aiPromptOutput">Prompt-Vorschau</label>
+        <textarea id="aiPromptOutput" class="ai-prompt-output" rows="18" spellcheck="false"></textarea>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="aiPromptClose">Schließen</button>
+        <div class="dialog-actions">
+          <button type="button" id="copyAiPrompt">In Zwischenablage kopieren</button>
+          <button type="button" id="downloadAiPrompt" class="primary">Als .txt speichern</button>
+        </div>
       </div>
     </div>
   </div>

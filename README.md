@@ -16,6 +16,7 @@ Die App ist kein reiner EOG-Rechner. Sie ist ein geführter Arbeitsraum für reg
 - Projektplan-Dokumentation: https://energychain.github.io/Szenarienrechner-EOG/docs/project-plan.html
 - Starter-Kits: https://energychain.github.io/Szenarienrechner-EOG/docs/starter-kits/index.html
 - Aktualitäts- und Supportkonzept: https://energychain.github.io/Szenarienrechner-EOG/docs/release-awareness.html
+- KI-Prompt-Export: https://energychain.github.io/Szenarienrechner-EOG/docs/ai-prompts.html
 
 Die Live-App läuft clientseitig im Browser. Für sensible Arbeitsstände ist die empfohlene Nutzung weiterhin: Offline-HTML herunterladen oder über „HTML mit Daten speichern“ eine eigenständige Datei mit eingebettetem Arbeitsstand erzeugen.
 
@@ -64,6 +65,7 @@ Typische Fragen, die die App strukturiert:
 - Herleitungshelfer für CAPEX/OPEX, Risiko, Q-Wirkung, Nutzungsdauer/AfA und Finanzierungsspread anbieten
 - Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten, eigenen Aufgaben und nächster fälliger Aufgabe führen
 - Reports, Gremienvorlagen, Validierungsprotokolle und Starter-Kits als HTML/PDF-fähige Artefakte bereitstellen
+- rollenspezifische KI-Prompts lokal erzeugen, ohne KI-API oder automatische Übertragung
 - App- und Ruleset-Aktualität nach expliziter Zustimmung prüfen
 - Feedback oder Regulierungsupdates über GitHub-Issue-Formulare vorbereiten, ohne Modelldaten automatisch zu übertragen
 

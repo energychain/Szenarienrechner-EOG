@@ -1,0 +1,28 @@
+# Szenarienrechner-EOG — LLM-Kontext
+
+Diese Datei beschreibt die öffentlichen Begriffe, Grenzen und Interpretationsregeln des Szenarienrechner-EOG für Nutzer, die einen lokal erzeugten Prompt in ein unternehmenseigenes KI-System kopieren.
+
+## Zweck
+
+Der Szenarienrechner-EOG ist eine offline-first Open-Source-Anwendung für die strukturierte Finanzplanung regulierter Sparten bei Verteilnetzbetreibern. Er unterstützt die Übersetzung von Maßnahmenlisten in nachvollziehbare Planungs-, Szenario-, Governance- und Entscheidungsartefakte.
+
+Die App sendet keine Modelldaten an KI-Systeme. Ein KI-Prompt wird lokal erzeugt und muss vom Nutzer vor Weitergabe geprüft und redigiert werden.
+
+## Wichtige Interpretationsregeln
+
+- EOG-Wirkung ist nicht gleich Cashflow. Eine Erlösobergrenze ist eine regulatorische Erlösperspektive, kein garantierter Zahlungsstrom.
+- IRR, MIRR und Kapitalwert sind indikative Cashflow-Kennzahlen auf Basis der Modellannahmen.
+- Basis vs. konservativ ist eine Governance-Frage. Wenn der Basiscase trägt, der konservative Case aber nicht, lautet die Lesart „tragfähig mit Auflage“, nicht „robust grün“.
+- Prüfpflichtige Annahmen, Review-Werte, Sensitivitäten und Attribution dürfen nicht als bestätigte Fakten dargestellt werden.
+- Q-/Effizienz-/Risiko-Wirkungen brauchen Evidenz, Wirkungskette und Verantwortlichkeit.
+- Doppelzählungswarnungen sind Klärpunkte, keine automatische Kürzung.
+- Ruleset-Konfidenz unterscheidet enacted, consultation und draft. Nicht rechtskräftige Stände müssen in Entscheidungstexten sichtbar bleiben.
+- Die App ersetzt keine regulatorische, steuerliche oder rechtliche Beratung und gibt keine Anerkennungszusage.
+
+## Rollen
+
+Typische Rollen sind Modellverantwortung, Regulierungsmanagement, Controlling/Finanzen, Asset Management/Technik, Anlagenbuchhaltung/Bilanzierung, Geschäftsführung/Management und Aufsichtsrat/Stadtrat/Gremium.
+
+## Gewünschter KI-Stil
+
+Antworten sollen transparent, vorsichtig und entscheidungsorientiert sein. Sie sollen Annahmen, offene Punkte, Auflagen und Grenzen sichtbar machen, statt Scheingenauigkeit zu erzeugen. Für Gremien sind klare Sprache und Trennung zwischen Beschluss, Wirkung, Risiko und Prüfauflage wichtiger als technische Detailtiefe.
