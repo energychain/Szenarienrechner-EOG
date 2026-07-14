@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
@@ -6,6 +6,81 @@ const commit = process.env.VITE_BUILD_COMMIT || process.env.GITHUB_SHA?.slice(0,
 
 function link(href, label, className = 'button') {
   return `<a class="${className}" href="${href}">${label}</a>`;
+}
+
+const workflowDemos = [
+  {
+    image: 'assets/homepage/01-planungsstart.jpg',
+    title: 'Planungsrunde starten',
+    label: 'So beginnt man strukturiert',
+    text: 'Demodaten oder eigener Arbeitsstand öffnen, Rolle wählen und den Prozessstand sichtbar machen.',
+    alt: 'Start einer Planungsrunde mit Demodaten, Rollen, Stammdaten und Prozesshinweis'
+  },
+  {
+    image: 'assets/homepage/02-massnahmen-herleitung.jpg',
+    title: 'Maßnahmen und Annahmen herleiten',
+    label: 'So wird aus Bauchzahl eine Quelle',
+    text: 'Herleitungshelfer erklären Aktivierbarkeit, Risiko, Qualität, Nutzungsdauer und Finanzierungsspread.',
+    alt: 'Maßnahmenbewertung mit Herleitungshelfern für Aktivierung, Risiko, Qualität, AfA und Finanzierungsspread'
+  },
+  {
+    image: 'assets/homepage/03-eog-cashflow.jpg',
+    title: 'EOG und Cashflow trennen',
+    label: 'So liest man die Kennzahlen',
+    text: 'Regulatorische EOG-Wirkung, wirtschaftliche Überleitung und indikative Cashflow-Basis bleiben getrennt.',
+    alt: 'Entscheidungsansicht mit Trennung zwischen regulatorischer EOG-Wirkung und indikativer Cashflow-Basis'
+  },
+  {
+    image: 'assets/homepage/04-projektplan.jpg',
+    title: 'Projektplan steuern',
+    label: 'So wird die Story operativ',
+    text: 'Meilensteine, Rollen-Swimlanes, Abhängigkeiten und nächste Aufgaben je Rolle führen durch die Planungsrunde.',
+    alt: 'Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten und nächster fälliger Aufgabe'
+  },
+  {
+    image: 'assets/homepage/05-tabellenexport.jpg',
+    title: 'Daten für Excel exportieren',
+    label: 'So vermeidet man Datensilos',
+    text: 'XLSX und CSV-ZIP stellen Maßnahmen, KPIs, Jahreswerte, Projektplan, Klärpunkte und Provenienz bereit.',
+    alt: 'Menü Mehr mit XLSX- und CSV-ZIP-Exporten für Excel und nachgelagerte Systeme'
+  },
+  {
+    image: 'assets/homepage/06-ki-prompt.jpg',
+    title: 'KI-Prompt lokal erzeugen',
+    label: 'So nutzt man Unternehmens-KI',
+    text: 'Rollenbezogene Prompts übersetzen den Arbeitsstand für Gremium, Management, Controlling oder Regulierung.',
+    alt: 'KI-Prompt-Generator mit Rollenwahl, Datenumfang, Redaktionsoptionen und Prompt-Vorschau'
+  },
+  {
+    image: 'assets/homepage/07-html-mit-daten.jpg',
+    title: 'HTML mit Daten weitergeben',
+    label: 'So reist der Arbeitsstand mit',
+    text: 'Die App kann den aktuellen Modellstand als selbsttragende HTML-Datei für Kolleginnen und Kollegen speichern.',
+    alt: 'Menü Mehr mit HTML mit Daten speichern als selbsttragende Offline-Datei für Kolleginnen und Kollegen'
+  }
+];
+
+function renderWorkflowDemoCards() {
+  return workflowDemos.map(demo => `
+    <article class="demo-card">
+      <figure>
+        <img src="${demo.image}" alt="${demo.alt}" loading="lazy" width="1280" height="853">
+      </figure>
+      <div class="demo-copy">
+        <span>${demo.label}</span>
+        <h3>${demo.title}</h3>
+        <p>${demo.text}</p>
+      </div>
+    </article>`).join('');
+}
+
+function copyHomepageAssets() {
+  const source = 'docs/assets/homepage';
+  const target = 'dist/assets/homepage';
+  if (existsSync(source)) {
+    mkdirSync('dist/assets', { recursive: true });
+    cpSync(source, target, { recursive: true });
+  }
 }
 
 export function renderHomepage() {
@@ -85,6 +160,15 @@ export function renderHomepage() {
     .card h3 { margin: 0 0 0.45rem; font-size: 1.1rem; }
     .card p, .card li { color: var(--muted); }
     .card ul { padding-left: 1.1rem; margin: 0.55rem 0 0; }
+    .demo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; }
+    .demo-card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; box-shadow: 0 12px 32px rgba(16, 32, 51, 0.08); }
+    .demo-card figure { margin: 0; background: #dbe8f0; border-bottom: 1px solid var(--line); }
+    .demo-card img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; }
+    .demo-copy { padding: 1rem 1.1rem 1.15rem; }
+    .demo-copy span { display: inline-flex; color: var(--brand-dark); background: var(--soft); border: 1px solid #b8dfeb; border-radius: 999px; padding: 0.22rem 0.55rem; font-size: 0.82rem; font-weight: 850; margin-bottom: 0.7rem; }
+    .demo-copy h3 { margin: 0 0 0.35rem; }
+    .demo-copy p { color: var(--muted); margin: 0; }
+    .proof-note { margin-top: 1rem; color: var(--muted); font-size: 0.96rem; }
     .split { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 1rem; align-items: start; }
     .feature-list { display: grid; gap: 0.7rem; }
     .feature { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem; align-items: start; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 0.85rem; }
@@ -97,7 +181,7 @@ export function renderHomepage() {
     .cta p { color: #dff7ff; }
     .contact-box { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); border-radius: 18px; padding: 1rem; }
     footer { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 3rem; color: var(--muted); font-size: 0.92rem; }
-    @media (max-width: 880px) { .hero, .split, .cta { grid-template-columns: 1fr; } .grid, .grid.two { grid-template-columns: 1fr; } .nav { align-items: flex-start; flex-direction: column; } .status-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 880px) { .hero, .split, .cta { grid-template-columns: 1fr; } .grid, .grid.two, .demo-grid { grid-template-columns: 1fr; } .nav { align-items: flex-start; flex-direction: column; } .status-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -178,6 +262,17 @@ export function renderHomepage() {
     </div>
   </section>
 
+  <section id="workflow-proofs">
+    <div class="section-head">
+      <h2>So arbeitet die App in der Praxis.</h2>
+      <p>Die folgenden Workflow-Beweise sind echte Screenshots aus dem gebauten Browser-Artefakt. Sie zeigen nicht nur Feature-Namen, sondern konkrete Arbeitsschritte: starten, bewerten, entscheiden, planen, exportieren und weitergeben.</p>
+    </div>
+    <div class="demo-grid">
+      ${renderWorkflowDemoCards()}
+    </div>
+    <p class="proof-note">Die gezeigten Daten sind synthetische Demodaten. Für reale Planungen bleiben JSON und „HTML mit Daten speichern“ die kanonischen Arbeitsstände; XLSX/CSV, PDF und KI-Prompts sind Übergabe- und Kommunikationsartefakte.</p>
+  </section>
+
   <section id="moeglich">
     <div class="section-head">
       <h2>Was wird mit der App möglich?</h2>
@@ -244,6 +339,7 @@ export function renderHomepage() {
 
 export function buildHomepage() {
   mkdirSync('dist', { recursive: true });
+  copyHomepageAssets();
   writeFileSync('dist/index.html', renderHomepage());
   console.log('Built dist/index.html homepage');
 }

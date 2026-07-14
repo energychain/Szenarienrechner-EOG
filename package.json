@@ -10,6 +10,7 @@
     "build:docs": "node scripts/build-docs.mjs",
     "build:manifest": "node scripts/build-release-manifest.mjs",
     "build:homepage": "node scripts/build-homepage.mjs",
+    "generate:homepage-demos": "node scripts/generate-homepage-demos.mjs",
     "build:release": "npm run build && cp dist/index.html dist/app.html && cp dist/index.html dist/szenarienrechner-eog.html && npm run build:story && npm run build:docs && cp llm.txt llms.txt dist/ && npm run build:homepage && npm run build:manifest",
     "lint": "eslint src tests scripts",
     "test": "vitest run",

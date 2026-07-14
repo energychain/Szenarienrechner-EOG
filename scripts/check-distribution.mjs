@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { imprintSections } from '../src/trust-content.js';
 
 const expectedCsp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src https://energychain.github.io; object-src 'none'; base-uri 'none'; form-action 'none'";
@@ -27,8 +27,19 @@ assert(appHtml.includes('KI-Prompt erstellen'), 'Built app artifact must expose 
 assert(homepage.includes('Regulierte Finanzplanung verständlich'), 'Homepage must contain the public positioning headline.');
 assert(homepage.includes('Fachliche Features'), 'Homepage must list fachliche features.');
 assert(homepage.includes('Technische Features'), 'Homepage must list technical features.');
+assert(homepage.includes('So arbeitet die App in der Praxis'), 'Homepage must contain visual workflow proofs.');
+assert(homepage.includes('assets/homepage/01-planungsstart.jpg'), 'Homepage must reference generated workflow screenshots.');
 assert(homepage.includes('STROMDAO GmbH'), 'Homepage must provide STROMDAO contact context.');
 assert(homepage.includes('app.html'), 'Homepage must link to the browser app.');
+[
+  '01-planungsstart.jpg',
+  '02-massnahmen-herleitung.jpg',
+  '03-eog-cashflow.jpg',
+  '04-projektplan.jpg',
+  '05-tabellenexport.jpg',
+  '06-ki-prompt.jpg',
+  '07-html-mit-daten.jpg'
+].forEach(file => assert(existsSync(`dist/assets/homepage/${file}`), `Homepage demo asset missing from dist: ${file}`));
 assert(readFileSync('dist/llm.txt', 'utf8').includes('EOG-Wirkung ist nicht gleich Cashflow'), 'Build must publish llm.txt for prompt context.');
 assert(readFileSync('dist/llms.txt', 'utf8').includes('llm.txt'), 'Build must publish llms.txt pointer.');
 assert(appHtml.includes('Apache-2.0'), 'Built app artifact must show the Apache-2.0 license.');
