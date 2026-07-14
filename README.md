@@ -66,6 +66,7 @@ Typische Fragen, die die App strukturiert:
 - Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten, eigenen Aufgaben und nächster fälliger Aufgabe führen
 - Reports, Gremienvorlagen, Validierungsprotokolle und Starter-Kits als HTML/PDF-fähige Artefakte bereitstellen
 - rollenspezifische KI-Prompts lokal erzeugen, ohne KI-API oder automatische Übertragung
+- spreadsheet-freundliche Tabellen als XLSX-Arbeitsmappe oder CSV-ZIP lokal exportieren, damit Maßnahmen, KPIs, Projektplan, Klärpunkte und Provenienz nicht im Tool-Silo bleiben
 - App- und Ruleset-Aktualität nach expliziter Zustimmung prüfen
 - Feedback oder Regulierungsupdates über GitHub-Issue-Formulare vorbereiten, ohne Modelldaten automatisch zu übertragen
 
@@ -97,8 +98,9 @@ Ein produktiver TRL-6-Nachweis erfordert weiterhin eine reale, nicht öffentlich
 4. In der Entscheidungsansicht die Governance-Ampel lesen.
 5. EOG-/Cashflow-Überleitung und EOG-Zerlegung ansehen.
 6. „HTML mit Daten speichern“ testen und die erzeugte Datei erneut öffnen.
-7. Optional „Aktualität prüfen“ ausführen und bestätigen, dass keine Modelldaten übertragen werden.
-8. Feedback über GitHub Issue oder Support-Paket vorbereiten.
+7. „Tabellen als XLSX exportieren“ testen: Maßnahmen, Szenarien/KPIs, Projektplan und Provenienz müssen als weiterverwendbare Tabellenblätter vorliegen.
+8. Optional „Aktualität prüfen“ ausführen und bestätigen, dass keine Modelldaten übertragen werden.
+9. Feedback über GitHub Issue oder Support-Paket vorbereiten.
 
 ## Pilot-Feedback erwünscht
 
@@ -136,6 +138,8 @@ In der App selbst:
 
 - „Daten herunterladen“ erzeugt ein separates JSON-Modell.
 - „HTML mit Daten speichern“ erzeugt eine weitergabefähige Single-File-App mit eingebettetem Modellstand.
+- „Tabellen als XLSX exportieren“ erzeugt lokal eine Excel-Arbeitsmappe mit Übersicht, Maßnahmen, Szenarien/KPIs, Jahreswerten, Projektplan, Klärpunkten und Provenienz.
+- „Tabellen als CSV-ZIP exportieren“ erzeugt dieselben Tabellen als Excel-kompatible CSV-Dateien für Systeme, die kein XLSX importieren.
 - Beim Öffnen einer HTML-mit-Daten-Datei wird der eingebettete Stand vor eventuell vorhandenen Browserdaten geladen.
 - „Browserdaten löschen“ entfernt lokal gespeicherte Modelle aus dem Browserprofil.
 

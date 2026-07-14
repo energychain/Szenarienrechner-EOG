@@ -80,6 +80,7 @@ assert(adrDemo.includes('synthetische Demodaten'), 'ADR 0003 must document synth
 const dataFormat = readFileSync('DATA_FORMAT.md', 'utf8');
 assert(dataFormat.includes('localStorage'), 'DATA_FORMAT must document localStorage scope.');
 assert(dataFormat.includes('lastReleaseCheck'), 'DATA_FORMAT must document release-awareness persistence.');
+assert(dataFormat.includes('Tabellenexporte'), 'DATA_FORMAT must document spreadsheet export scope.');
 assert(dataFormat.includes('schemaVersion'), 'DATA_FORMAT must document schemaVersion.');
 assert(dataFormat.includes('regulatoryProfileId'), 'DATA_FORMAT must document regulatoryProfileId.');
 assert(dataFormat.includes('## Minimaler Projektumschlag'), 'DATA_FORMAT must document the minimal project envelope.');

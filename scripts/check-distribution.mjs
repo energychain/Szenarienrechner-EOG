@@ -16,7 +16,10 @@ assert(
   'Built HTML is missing the expected CSP meta tag.'
 );
 
-assert(!/https?:\/\//i.test(html.replaceAll('https://energychain.github.io', '').replaceAll('https://github.com/energychain/Szenarienrechner-EOG', '')), 'Built HTML must not contain unapproved external http(s) URLs.');
+assert(!/https?:\/\//i.test(html
+  .replaceAll('https://energychain.github.io', '')
+  .replaceAll('https://github.com/energychain/Szenarienrechner-EOG', '')
+  .replaceAll('http://schemas.openxmlformats.org', '')), 'Built HTML must not contain unapproved external http(s) URLs.');
 assert(!/\b(XMLHttpRequest|WebSocket|EventSource)\s*\(/.test(html), 'Built HTML must not contain push or socket network APIs.');
 assert(html.includes('release-manifest.json'), 'Built HTML must expose the consent-driven release manifest check.');
 assert(html.includes('KI-Prompt erstellen'), 'Built HTML must expose the local AI prompt export.');

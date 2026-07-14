@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:distribution": "node scripts/check-distribution.mjs",
     "test:docs": "node scripts/check-docs.mjs",
+    "test:browser": "node scripts/browser-smoke.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -21,6 +22,7 @@
     "@types/node": "^26.1.1",
     "eslint": "^9.31.0",
     "globals": "^15.15.0",
+    "playwright": "^1.61.1",
     "typescript": "^5.8.3",
     "vite": "^7.0.4",
     "vite-plugin-singlefile": "^2.3.0",
