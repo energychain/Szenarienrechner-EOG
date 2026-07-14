@@ -8,7 +8,8 @@ Die App ist kein reiner EOG-Rechner. Sie ist ein geführter Arbeitsraum für reg
 
 ## Direkt ausprobieren
 
-- Live-App: https://energychain.github.io/Szenarienrechner-EOG/
+- Mini-Homepage: https://energychain.github.io/Szenarienrechner-EOG/
+- Live-App: https://energychain.github.io/Szenarienrechner-EOG/app.html
 - Pilotprogramm: https://energychain.github.io/Szenarienrechner-EOG/docs/pilot-program.html
 - User-Story als HTML/PDF-Handout: https://energychain.github.io/Szenarienrechner-EOG/story/planungsrunde-userstory.html
 - Methodik & Vorlagen: https://energychain.github.io/Szenarienrechner-EOG/docs/index.html
@@ -128,8 +129,9 @@ npm run build:release
 
 Wichtigste Artefakte:
 
+- `dist/index.html`: statische Mini-Homepage mit Positionierung, Featurelisten, Kontakt und Einstieg in App/Dokumentation
+- `dist/app.html`: browserfähige Live-App für GitHub Pages
 - `dist/szenarienrechner-eog.html`: offline lauffähige Single-File-App
-- `dist/index.html`: technisches Vite-Buildartefakt
 - `dist/release-manifest.json`: Manifest mit App-/Ruleset-Stand und SHA-256
 - `dist/story/planungsrunde-userstory.html`: User-Story als HTML/PDF-Handout
 - `dist/docs/index.html`: Einstieg in Methodik, Vorlagen, Starter-Kits und Lernpfade
