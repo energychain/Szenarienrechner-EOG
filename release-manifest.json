@@ -3,8 +3,8 @@
   "app": {
     "version": "0.3.1",
     "commit": "c19f310481d9",
-    "buildTime": "2026-07-14T20:56:28.884Z",
-    "sha256": "b0944c184c56a788a6acb1f01407a546abb02003a10dab05a9405f27e03dfa60",
+    "buildTime": "2026-07-14T20:57:25.427Z",
+    "sha256": "728653c0f247a0c7a5bc37f9b8725b1633523595e39dc789ff4239ed199c2e3d",
     "downloadUrl": "https://github.com/energychain/Szenarienrechner-EOG/releases/latest",
     "changelogUrl": "https://github.com/energychain/Szenarienrechner-EOG/blob/main/CHANGELOG.md",
     "minSupportedVersion": "0.3.0"
