@@ -1,15 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-const commit = process.env.VITE_BUILD_COMMIT || (() => {
-  try {
-    return execSync('git rev-parse --short=12 HEAD', { encoding: 'utf8' }).trim();
-  } catch {
-    return 'local-build';
-  }
-})();
+const commit = process.env.VITE_BUILD_COMMIT || process.env.GITHUB_SHA?.slice(0, 12) || 'local-build';
 
 function link(href, label, className = 'button') {
   return `<a class="${className}" href="${href}">${label}</a>`;
