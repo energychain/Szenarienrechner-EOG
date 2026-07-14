@@ -11,6 +11,7 @@ const pages = [
   { source: 'docs/decision-artifacts.md', output: 'dist/docs/decision-artifacts.html', title: 'Entscheidungsartefakte · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/project-plan.md', output: 'dist/docs/project-plan.html', title: 'Projektplan · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/release-awareness.md', output: 'dist/docs/release-awareness.html', title: 'Aktualitäts-Erkennung · Szenarienrechner-EOG', back: 'index.html' },
+  { source: 'docs/pilot-program.md', output: 'dist/docs/pilot-program.html', title: 'Pilotprogramm · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/validation-methodology.md', output: 'dist/docs/validation-methodology.html', title: 'Validierungsmethodik · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/templates/massnahmensteckbrief.md', output: 'dist/docs/templates/massnahmensteckbrief.html', title: 'Vorlage Maßnahmensteckbrief · Szenarienrechner-EOG', back: '../index.html' },
   { source: 'docs/templates/gremienvorlage.md', output: 'dist/docs/templates/gremienvorlage.html', title: 'Vorlage Gremienvorlage · Szenarienrechner-EOG', back: '../index.html' },

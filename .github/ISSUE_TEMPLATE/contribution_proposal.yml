@@ -1,0 +1,56 @@
+name: Pull Request oder Fork ankündigen
+description: Einen geplanten Open-Source-Beitrag abstimmen, bevor Arbeit in einen PR fließt
+title: "[Contribution] "
+labels: [contribution]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dieses Formular hilft, kleine, prüfbare Beiträge früh abzustimmen. Bitte keine vertraulichen EVU-, Netz-, Projekt- oder Kundendaten einfügen.
+  - type: dropdown
+    id: contribution_type
+    attributes:
+      label: Art des Beitrags
+      options:
+        - Dokumentation / Erklärung
+        - Test / Qualitätssicherung
+        - UI / Verständlichkeit
+        - synthetisches Beispiel / Starter-Kit
+        - Regulierungsquelle / Parameterhinweis
+        - technische Refaktorierung
+        - fachliche Modelländerung
+        - Sonstiges
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Geplanter Scope
+      description: Was soll genau geändert werden? Bitte klein und überprüfbar beschreiben.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Nicht-Ziele
+      description: Was soll bewusst nicht geändert werden?
+    validations:
+      required: false
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Test- oder Prüfansatz
+      description: Welche Tests, Screenshots, Quellen oder Dokumentationschecks sollen den Beitrag absichern?
+    validations:
+      required: false
+  - type: checkboxes
+    id: neutrality
+    attributes:
+      label: Neutralität und Datenschutz
+      options:
+        - label: Der Beitrag verwendet keine realen Netzbetreiber-, Kunden-, Ortsnetz-, Projekt- oder Bescheiddaten.
+          required: true
+        - label: Fachliche Aussagen sind als Annahme, Quelle oder prüfpflichtige Modellgrenze erkennbar.
+          required: true
+        - label: Der Beitrag verändert fachliche Modelllogik nur, wenn dies explizit beschrieben und getestet wird.
+          required: true

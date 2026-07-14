@@ -1,0 +1,70 @@
+name: Pilot-Feedback / Methodik-Review
+description: Rückmeldung aus Selbsttest, Workshop, Methodik-Review oder real-but-private Benchmark
+title: "[Pilot] "
+labels: [pilot-feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Vielen Dank für Pilot-Feedback zum Szenarienrechner-EOG.
+
+        Bitte keine vertraulichen Netz-, Bescheid-, Kunden-, Projekt- oder Unternehmensdaten einfügen. Beschreiben Sie Erkenntnisse so, dass sie öffentlich nachvollziehbar sind, ohne interne Informationen offenzulegen.
+  - type: dropdown
+    id: pilot_path
+    attributes:
+      label: Pilotpfad
+      options:
+        - 30-Minuten-Selbsttest mit Demodaten
+        - Methodik-Review
+        - Real-but-private Benchmark mit anonymisierter Rückmeldung
+        - Lehr-/Workshop-Pilot
+        - Open-Source-Beitrag / Fork / PR-Vorbereitung
+        - Sonstiges
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Rolle / Perspektive
+      options:
+        - Regulierungsmanagement
+        - Controlling / Finanzplanung
+        - Asset Management / Netzplanung
+        - Anlagenbuchhaltung
+        - Management / Gremienvorbereitung
+        - Forschung / Lehre
+        - Beratung
+        - Open-Source-Community / Entwicklung
+        - Sonstiges
+    validations:
+      required: true
+  - type: textarea
+    id: findings
+    attributes:
+      label: Wichtigste Erkenntnisse
+      description: Was war verständlich, hilfreich, unklar oder fachlich nicht passend?
+      placeholder: "Beispiel: Die Trennung zwischen EOG-Wirkung und indikativer Cashflow-Sicht war hilfreich; unklar blieb ..."
+    validations:
+      required: true
+  - type: textarea
+    id: method_notes
+    attributes:
+      label: Methodische Hinweise
+      description: Welche Annahmen, Begriffe, Quellen, Prüfungen oder Modellgrenzen sollten ergänzt werden?
+    validations:
+      required: false
+  - type: textarea
+    id: oss_signal
+    attributes:
+      label: Open-Source-Signal
+      description: "Optional: Wurde ein Star vergeben, ein Fork erstellt oder ein PR vorbereitet? Bitte nur öffentliche GitHub-Links nennen."
+      placeholder: "Fork/PR/Issue-Link oder kurze Beschreibung"
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: App-Kontext
+      description: Falls aus der App geöffnet, sind hier Version, Build-Commit und Ruleset vorbefüllt. Modelldaten werden nicht automatisch angehängt.
+    validations:
+      required: false

@@ -9,6 +9,7 @@ Die App ist kein reiner EOG-Rechner. Sie ist ein geführter Arbeitsraum für reg
 ## Direkt ausprobieren
 
 - Live-App: https://energychain.github.io/Szenarienrechner-EOG/
+- Pilotprogramm: https://energychain.github.io/Szenarienrechner-EOG/docs/pilot-program.html
 - User-Story als HTML/PDF-Handout: https://energychain.github.io/Szenarienrechner-EOG/story/planungsrunde-userstory.html
 - Methodik & Vorlagen: https://energychain.github.io/Szenarienrechner-EOG/docs/index.html
 - Methodikhandbuch: https://energychain.github.io/Szenarienrechner-EOG/docs/handbook/regulierte-finanzplanung-vnb.html
@@ -17,6 +18,18 @@ Die App ist kein reiner EOG-Rechner. Sie ist ein geführter Arbeitsraum für reg
 - Aktualitäts- und Supportkonzept: https://energychain.github.io/Szenarienrechner-EOG/docs/release-awareness.html
 
 Die Live-App läuft clientseitig im Browser. Für sensible Arbeitsstände ist die empfohlene Nutzung weiterhin: Offline-HTML herunterladen oder über „HTML mit Daten speichern“ eine eigenständige Datei mit eingebettetem Arbeitsstand erzeugen.
+
+## Pilotanwender gesucht
+
+STROMDAO begleitet den Szenarienrechner-EOG als offenen Pilot für methodisch prüfbare, offline-first Finanzplanung regulierter Sparten. Gesucht werden Stadtwerke, VNB, Forschung, Beratung und Open-Source-Energie-Communities, die nicht nur Feedback geben, sondern den Open-Source-Gedanken sichtbar mittragen:
+
+1. Repository ansehen und bei Relevanz einen GitHub-Star vergeben.
+2. Fork erstellen, wenn eigene Tests, synthetische Beispiele oder Verbesserungen vorbereitet werden.
+3. Demodaten oder anonymisierte interne Kopien nutzen; keine vertraulichen Netz-, Bescheid-, Projekt- oder Unternehmensdaten veröffentlichen.
+4. Feedback als Pilot-Issue einreichen oder einen kleinen Pull Request vorbereiten.
+5. Methodische Hinweise mit Quellenstand, Annahmen und Grenzen dokumentieren.
+
+Einstieg: https://energychain.github.io/Szenarienrechner-EOG/docs/pilot-program.html
 
 ## Für wen ist das gedacht?
 

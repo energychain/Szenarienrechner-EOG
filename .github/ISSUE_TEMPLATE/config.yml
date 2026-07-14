@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Pilotprogramm lesen
+    url: https://energychain.github.io/Szenarienrechner-EOG/docs/pilot-program.html
+    about: Ablauf, Rollen und sichere Rückmeldewege für Pilotanwender.
+  - name: Live-App testen
+    url: https://energychain.github.io/Szenarienrechner-EOG/
+    about: Offline-first App mit Demodaten und HTML-mit-Daten-Export öffnen.
+  - name: Methodik und Vorlagen
+    url: https://energychain.github.io/Szenarienrechner-EOG/docs/index.html
+    about: Methodikhandbuch, Validierung, Starter-Kits, Vorlagen und Rollenpfade.

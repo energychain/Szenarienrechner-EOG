@@ -29,6 +29,18 @@ Ein PR ist erst fertig, wenn:
 - der PR einen Testnachweis enthaelt,
 - bei fachlichen Aenderungen `REGULATORY_ASSUMPTIONS.md`, `MODEL.md` oder passende Dokumentation aktualisiert wurde.
 
+## Pilotanwender und Open-Source-Signale
+
+Pilotanwender helfen besonders, wenn die Rückmeldung öffentlich nachvollziehbar und wiederverwendbar wird:
+
+1. Repository ansehen und bei Relevanz einen GitHub-Star vergeben.
+2. Fork erstellen, wenn eigene Tests, synthetische Fallstudien oder Verbesserungen vorbereitet werden.
+3. Pilot-Feedback als Issue einreichen, bevor vertrauliche Einzelfälle diskutiert werden.
+4. Kleine Pull Requests bevorzugen: ein Dokument, ein Test, eine UI-Verbesserung oder ein klarer fachlicher Hinweis.
+5. Real-but-private Benchmarks nur anonymisiert zusammenfassen; keine internen Zahlen, Bescheide oder Projektnamen veröffentlichen.
+
+Siehe auch `docs/pilot-program.md`.
+
 ## Fachliche Modelländerungen
 
 Fachliche Modelländerungen sind alle Aenderungen, die Berechnung, Klassifikation, Annahmen, Parameter, Governance-Status oder Report-Aussagen beeinflussen. Solche Aenderungen brauchen:

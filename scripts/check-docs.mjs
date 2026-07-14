@@ -19,6 +19,7 @@ const requiredDocs = [
   'docs/decision-artifacts.md',
   'docs/project-plan.md',
   'docs/release-awareness.md',
+  'docs/pilot-program.md',
   'docs/validation-methodology.md',
   'docs/templates/massnahmensteckbrief.md',
   'docs/templates/gremienvorlage.md',
@@ -88,6 +89,14 @@ const releaseAwareness = readFileSync('docs/release-awareness.md', 'utf8');
 assert(releaseAwareness.includes('kein Netzzugriff'), 'Release awareness doc must preserve offline-first wording.');
 assert(releaseAwareness.includes('release-manifest.json'), 'Release awareness doc must document the manifest.');
 assert(releaseAwareness.includes('Modelldaten werden nicht angehängt'), 'Release awareness doc must document support privacy.');
+
+const pilotProgram = readFileSync('docs/pilot-program.md', 'utf8');
+assert(pilotProgram.includes('STROMDAO GmbH'), 'Pilot program must identify the public steward.');
+assert(pilotProgram.includes('Star vergeben'), 'Pilot program must ask for visible OSS signals.');
+assert(pilotProgram.includes('Fork'), 'Pilot program must invite forks.');
+assert(pilotProgram.includes('Pull Request'), 'Pilot program must invite pull requests.');
+assert(pilotProgram.includes('Real-but-private Benchmark'), 'Pilot program must document private benchmark handling.');
+assert(pilotProgram.includes('vertraulichen'), 'Pilot program must preserve confidentiality guidance.');
 
 const story = readFileSync('docs/story/planungsrunde-userstory.md', 'utf8');
 assert(story.includes('Szenarienrechner-EOG') || story.includes('EOG-Planungsrunde'), 'Story doc must name the planning context.');
