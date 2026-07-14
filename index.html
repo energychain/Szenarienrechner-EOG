@@ -62,6 +62,15 @@
     .card h3 { margin: 0 0 0.45rem; font-size: 1.1rem; }
     .card p, .card li { color: var(--muted); }
     .card ul { padding-left: 1.1rem; margin: 0.55rem 0 0; }
+    .demo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; }
+    .demo-card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; box-shadow: 0 12px 32px rgba(16, 32, 51, 0.08); }
+    .demo-card figure { margin: 0; background: #dbe8f0; border-bottom: 1px solid var(--line); }
+    .demo-card img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; }
+    .demo-copy { padding: 1rem 1.1rem 1.15rem; }
+    .demo-copy span { display: inline-flex; color: var(--brand-dark); background: var(--soft); border: 1px solid #b8dfeb; border-radius: 999px; padding: 0.22rem 0.55rem; font-size: 0.82rem; font-weight: 850; margin-bottom: 0.7rem; }
+    .demo-copy h3 { margin: 0 0 0.35rem; }
+    .demo-copy p { color: var(--muted); margin: 0; }
+    .proof-note { margin-top: 1rem; color: var(--muted); font-size: 0.96rem; }
     .split { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 1rem; align-items: start; }
     .feature-list { display: grid; gap: 0.7rem; }
     .feature { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem; align-items: start; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 0.85rem; }
@@ -74,7 +83,7 @@
     .cta p { color: #dff7ff; }
     .contact-box { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); border-radius: 18px; padding: 1rem; }
     footer { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 3rem; color: var(--muted); font-size: 0.92rem; }
-    @media (max-width: 880px) { .hero, .split, .cta { grid-template-columns: 1fr; } .grid, .grid.two { grid-template-columns: 1fr; } .nav { align-items: flex-start; flex-direction: column; } .status-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 880px) { .hero, .split, .cta { grid-template-columns: 1fr; } .grid, .grid.two, .demo-grid { grid-template-columns: 1fr; } .nav { align-items: flex-start; flex-direction: column; } .status-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -153,6 +162,87 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <section id="workflow-proofs">
+    <div class="section-head">
+      <h2>So arbeitet die App in der Praxis.</h2>
+      <p>Die folgenden Workflow-Beweise sind echte Screenshots aus dem gebauten Browser-Artefakt. Sie zeigen nicht nur Feature-Namen, sondern konkrete Arbeitsschritte: starten, bewerten, entscheiden, planen, exportieren und weitergeben.</p>
+    </div>
+    <div class="demo-grid">
+      
+    <article class="demo-card">
+      <figure>
+        <img src="assets/homepage/01-planungsstart.jpg" alt="Start einer Planungsrunde mit Demodaten, Rollen, Stammdaten und Prozesshinweis" loading="lazy" width="1280" height="853">
+      </figure>
+      <div class="demo-copy">
+        <span>So beginnt man strukturiert</span>
+        <h3>Planungsrunde starten</h3>
+        <p>Demodaten oder eigener Arbeitsstand öffnen, Rolle wählen und den Prozessstand sichtbar machen.</p>
+      </div>
+    </article>
+    <article class="demo-card">
+      <figure>
+        <img src="assets/homepage/02-massnahmen-herleitung.jpg" alt="Maßnahmenbewertung mit Herleitungshelfern für Aktivierung, Risiko, Qualität, AfA und Finanzierungsspread" loading="lazy" width="1280" height="853">
+      </figure>
+      <div class="demo-copy">
+        <span>So wird aus Bauchzahl eine Quelle</span>
+        <h3>Maßnahmen und Annahmen herleiten</h3>
+        <p>Herleitungshelfer erklären Aktivierbarkeit, Risiko, Qualität, Nutzungsdauer und Finanzierungsspread.</p>
+      </div>
+    </article>
+    <article class="demo-card">
+      <figure>
+        <img src="assets/homepage/03-eog-cashflow.jpg" alt="Entscheidungsansicht mit Trennung zwischen regulatorischer EOG-Wirkung und indikativer Cashflow-Basis" loading="lazy" width="1280" height="853">
+      </figure>
+      <div class="demo-copy">
+        <span>So liest man die Kennzahlen</span>
+        <h3>EOG und Cashflow trennen</h3>
+        <p>Regulatorische EOG-Wirkung, wirtschaftliche Überleitung und indikative Cashflow-Basis bleiben getrennt.</p>
+      </div>
+    </article>
+    <article class="demo-card">
+      <figure>
+        <img src="assets/homepage/04-projektplan.jpg" alt="Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten und nächster fälliger Aufgabe" loading="lazy" width="1280" height="853">
+      </figure>
+      <div class="demo-copy">
+        <span>So wird die Story operativ</span>
+        <h3>Projektplan steuern</h3>
+        <p>Meilensteine, Rollen-Swimlanes, Abhängigkeiten und nächste Aufgaben je Rolle führen durch die Planungsrunde.</p>
+      </div>
+    </article>
+    <article class="demo-card">
+      <figure>
+        <img src="assets/homepage/05-tabellenexport.jpg" alt="Menü Mehr mit XLSX- und CSV-ZIP-Exporten für Excel und nachgelagerte Systeme" loading="lazy" width="1280" height="853">
+      </figure>
+      <div class="demo-copy">
+        <span>So vermeidet man Datensilos</span>
+        <h3>Daten für Excel exportieren</h3>
+        <p>XLSX und CSV-ZIP stellen Maßnahmen, KPIs, Jahreswerte, Projektplan, Klärpunkte und Provenienz bereit.</p>
+      </div>
+    </article>
+    <article class="demo-card">
+      <figure>
+        <img src="assets/homepage/06-ki-prompt.jpg" alt="KI-Prompt-Generator mit Rollenwahl, Datenumfang, Redaktionsoptionen und Prompt-Vorschau" loading="lazy" width="1280" height="853">
+      </figure>
+      <div class="demo-copy">
+        <span>So nutzt man Unternehmens-KI</span>
+        <h3>KI-Prompt lokal erzeugen</h3>
+        <p>Rollenbezogene Prompts übersetzen den Arbeitsstand für Gremium, Management, Controlling oder Regulierung.</p>
+      </div>
+    </article>
+    <article class="demo-card">
+      <figure>
+        <img src="assets/homepage/07-html-mit-daten.jpg" alt="Menü Mehr mit HTML mit Daten speichern als selbsttragende Offline-Datei für Kolleginnen und Kollegen" loading="lazy" width="1280" height="853">
+      </figure>
+      <div class="demo-copy">
+        <span>So reist der Arbeitsstand mit</span>
+        <h3>HTML mit Daten weitergeben</h3>
+        <p>Die App kann den aktuellen Modellstand als selbsttragende HTML-Datei für Kolleginnen und Kollegen speichern.</p>
+      </div>
+    </article>
+    </div>
+    <p class="proof-note">Die gezeigten Daten sind synthetische Demodaten. Für reale Planungen bleiben JSON und „HTML mit Daten speichern“ die kanonischen Arbeitsstände; XLSX/CSV, PDF und KI-Prompts sind Übergabe- und Kommunikationsartefakte.</p>
   </section>
 
   <section id="moeglich">
