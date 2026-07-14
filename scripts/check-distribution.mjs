@@ -29,6 +29,9 @@ assert(homepage.includes('Fachliche Features'), 'Homepage must list fachliche fe
 assert(homepage.includes('Technische Features'), 'Homepage must list technical features.');
 assert(homepage.includes('So arbeitet die App in der Praxis'), 'Homepage must contain visual workflow proofs.');
 assert(homepage.includes('assets/homepage/01-planungsstart.jpg'), 'Homepage must reference generated workflow screenshots.');
+assert(homepage.includes('Praxis-Beispiele als Karussell'), 'Homepage must present workflow screenshots as a carousel.');
+assert(homepage.includes('id="demoModal"'), 'Homepage must provide a modal for original-size workflow screenshots.');
+assert(homepage.includes('Screenshot groß ansehen'), 'Homepage must clearly invite users to open screenshots at readable size.');
 assert(homepage.includes('STROMDAO GmbH'), 'Homepage must provide STROMDAO contact context.');
 assert(homepage.includes('app.html'), 'Homepage must link to the browser app.');
 [
