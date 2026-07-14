@@ -123,7 +123,7 @@ const lastSeenEventKey = 'regulierte-sparten-szenario-rechner-last-seen-event';
 const roleKey = 'regulierte-sparten-szenario-rechner-role';
 const legacyStorageKeys = [];
 const modelVersion = 8;
-const appVersion = '0.3.0-dev';
+const appVersion = '0.3.1';
 const processPhases = [
   ['initialisierung', 'Initialisierung'],
   ['datenerhebung', 'Datenerhebung'],
