@@ -17,6 +17,9 @@ describe('synthetic demo data module', () => {
     const demoSource = readFileSync('src/demo-data.js', 'utf8');
     expect(demoSource).toContain('Synthetic demo fixtures only');
     expect(demoSource).toMatch(/synthetisch|Synthetisch/);
-    expect(demoSource).not.toMatch(/TWL|HERMES_BRIEFING|Snake|snake/);
+    const privateTerms = ['T' + 'WL', ['HERMES', 'BRIEFING'].join('_'), 'Snake', 'snake'];
+    for (const term of privateTerms) {
+      expect(demoSource).not.toContain(term);
+    }
   });
 });

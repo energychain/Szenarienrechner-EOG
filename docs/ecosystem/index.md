@@ -26,6 +26,7 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 | Regulatorik-Landkarte | Öffentliche Quellen einordnen | Orientierung ohne juristische Vollkommentierung |
 | Reifegradmodell | Eigenen Planungsprozess bewerten | Von Excel-Sammlung zu governance-fähiger Portfolioentscheidung |
 | Entscheidungsartefakte | Beschlussfähigkeit herstellen | Klare Empfehlung, offene Punkte, Evidenz und Verantwortlichkeiten |
+| Pilotprogramm | Fachliche Pilotanwender und OSS-Beiträge koordinieren | Star/Fork/Issue/PR-Pfad, Methodik-Review und real-but-private Benchmark |
 | TRL-6-Validierung | Real-but-private Benchmarkprozess steuern | Nachweisbarer Abgleich gegen Wirtschaftsplan/EOG-Unterlagen ohne öffentliche Vertraulichkeitsrisiken |
 
 ## Navigation
@@ -36,6 +37,7 @@ Die App ersetzt keine Rechts-, Steuer-, Prüfungs- oder Regulierungsberatung. Si
 - [Entscheidungsartefakte](decision-artifacts.html)
 - [Projektplan](project-plan.html)
 - [Aktualitäts-Erkennung und Support](release-awareness.html)
+- [Pilotprogramm](pilot-program.html)
 - [TRL-6-Validierung](validation-methodology.html)
 - [Vorlage Maßnahmensteckbrief](templates/massnahmensteckbrief.html)
 - [Vorlage Gremienvorlage](templates/gremienvorlage.html)
