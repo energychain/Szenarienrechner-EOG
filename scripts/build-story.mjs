@@ -191,7 +191,7 @@ export function renderPage(body) {
   </style>
 </head>
 <body>
-  <header><a href="../index.html">← Zur Anwendung</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
+  <header><a href="../app.html">← Zur Anwendung</a><button type="button" onclick="window.print()">Drucken / PDF speichern</button></header>
   <main>
     <article>
 ${body}

@@ -178,7 +178,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 0 — Kick-off: Finanzplanung zuerst als gemeinsamer Entscheidungsprozess
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=kickoff)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=kickoff)
 
 ![Startscreen Kick-off](screenshots/01-startscreen-kickoff.png)
 
@@ -208,7 +208,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 1 — Initialisierung: Aus Eingabefeldern wird eine Datenanforderung
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=initialisierung)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=initialisierung)
 
 ![Geführter Start mit Kontext-Hilfe](screenshots/02-guided-start-context-help.png)
 
@@ -241,7 +241,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 2 — Datenerhebung: Finanzplanung braucht Quellen, nicht nur Werte
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=datenerhebung)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=datenerhebung)
 
 ![Datenerhebung mit Prozessstatus](screenshots/03-datenerhebung-status.png)
 
@@ -272,7 +272,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 3 — Maßnahmenbewertung: Vom Budgettopf zum steuerbaren Portfolio
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=massnahmenbewertung)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=massnahmenbewertung)
 
 ![Maßnahmenkatalog mit ersten Fakten](screenshots/04-massnahmenkatalog-erste-fakten.png)
 
@@ -303,7 +303,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 4 — Technische Rückkopplung: Wirkannahmen sind keine stillen Erfolgsversprechen
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=technik-rueckkopplung)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=technik-rueckkopplung)
 
 ![Technische Rückkopplung in der Entscheidungsansicht](screenshots/05-technik-rueckkopplung-results.png)
 
@@ -334,7 +334,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 5 — Konsolidierung: Management betrachtet Finanzbild, Erlöslogik und Haken gemeinsam
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=konsolidierung)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=konsolidierung)
 
 ![Konsolidierung mit Managemententscheidung](screenshots/06-konsolidierung-managemententscheidung.png)
 
@@ -367,7 +367,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 6 — Entscheidungsvorlage: Aus Planung wird eine prüfbare Managementunterlage
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=entscheidungsvorlage)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=entscheidungsvorlage)
 
 ![Management-Report Entscheidungsvorlage](screenshots/07-management-report-entscheidungsvorlage.png)
 
@@ -398,7 +398,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 7 — Gremienvorlage: Aus Modelllogik wird ein beschlussfähiger Text
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=gremium)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=gremium)
 
 ![Gremienvorlage Beschluss](screenshots/08-gremienvorlage-beschluss.png)
 
@@ -424,7 +424,7 @@ Typische Nutzung in dieser Story:
 
 ## Meilenstein 8 — Beschluss und Archiv: Wiederaufnahme nach Monaten bleibt möglich
 
-[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/?story=archiv)
+[Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=archiv)
 
 ![Archiv und Re-Entry nach Beschluss](screenshots/09-archiv-reentry-abschluss.png)
 

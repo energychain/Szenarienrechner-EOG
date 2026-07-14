@@ -21,10 +21,11 @@ npm run test:docs
 
 ## Artefakte
 
-- `dist/index.html`: technisches Vite-Buildartefakt.
-- `dist/szenarienrechner-eog.html`: neutrales Release-Artefakt fuer Verteilung.
+- `dist/index.html`: statische Mini-Homepage mit Positionierung, Featurelisten, Kontakt und Einstiegspunkten.
+- `dist/app.html`: browserfähige Live-App für GitHub Pages.
+- `dist/szenarienrechner-eog.html`: identische Offline-App als neutral benanntes Release-Artefakt.
 
-Beide Dateien sollen nach `npm run build:release` denselben Inhalt haben.
+`app.html` und `szenarienrechner-eog.html` sollen nach `npm run build:release` denselben App-Inhalt haben; `index.html` ist die öffentliche Landingpage.
 
 ## Vertrauensprüfung
 

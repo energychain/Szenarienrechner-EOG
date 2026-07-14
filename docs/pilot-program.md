@@ -34,7 +34,7 @@ Ein guter Pilotbeitrag beginnt nicht mit vertraulichen Echtdaten, sondern mit ei
 
 ## 30-Minuten-Selbsttest
 
-1. Live-App öffnen: https://energychain.github.io/Szenarienrechner-EOG/
+1. Live-App öffnen: https://energychain.github.io/Szenarienrechner-EOG/app.html
 2. „Demodaten ansehen“ laden.
 3. User-Story öffnen und einen Meilenstein per Deep Link in der App nachvollziehen.
 4. Projektplan öffnen: Rollen, fällige Aufgaben und Klärpunkte prüfen.
