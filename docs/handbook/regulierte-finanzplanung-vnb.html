@@ -47,58 +47,269 @@
   <main>
     <article>
 <h1>Methodikhandbuch: Regulierte Finanzplanung für kleine VNBs</h1>
-<p>Dieses Handbuch beschreibt die Denkstruktur hinter dem Szenarienrechner-EOG. Es richtet sich an kleine und mittlere Stadtwerke, die Maßnahmen in Strom- und Gasnetzen wirtschaftlich, regulatorisch und governance-fähig planen müssen.</p>
+<p>Dieses Handbuch beschreibt die Denkstruktur hinter dem Szenarienrechner-EOG. Es richtet sich an kleine und mittlere Stadtwerke, Verteilnetzbetreiber, kommunale Versorger und Verbundorganisationen, die Maßnahmen in Strom- und Gasnetzen wirtschaftlich, regulatorisch und governance-fähig planen müssen.</p>
+<p>Der Text ist bewusst als fachliches Handbuch formuliert: Er soll ohne vertrauliche Unternehmensdaten veröffentlicht werden können, als SEO-fähige Wissensseite funktionieren und zugleich erklären, warum das Tool als offlinefähige Entscheidungsunterstützung mitgeliefert wird.</p>
+<h2>Kurzfassung</h2>
+<p>Regulierte Finanzplanung ist mehr als eine Investitionsrechnung. Eine Maßnahme kann technisch notwendig sein, Liquidität im Wirtschaftsplan binden, handelsrechtlich aktiviert oder als Aufwand behandelt werden, regulatorisch zeitversetzt wirken, Finanzierungskapital beanspruchen und im Gremium trotzdem erläuterungsbedürftig bleiben.</p>
+<p>Der Szenarienrechner-EOG strukturiert diese Perspektiven in einem gemeinsamen Arbeitsstand. Er berechnet keine verbindliche regulatorische Anerkennung und ersetzt keine Rechts-, Steuer-, Wirtschaftsprüfungs- oder Regulierungsberatung. Er macht aber sichtbar, welche Zahlen belegt sind, welche Annahmen prüfpflichtig bleiben, welche Effekte nur Sensitivitäten sind und welche Punkte vor einer Entscheidung geklärt werden müssen.</p>
+<h2>Zielgruppe und Nutzen</h2>
+<p>Typische Nutzerinnen und Nutzer sind:</p>
+<ul>
+<li>Geschäftsführung, kaufmännische Leitung und Spartenleitung,</li>
+<li>Regulierungsmanagement,</li>
+<li>Controlling und Finanzierung,</li>
+<li>Anlagenbuchhaltung und Rechnungswesen,</li>
+<li>Asset Management, Netzbetrieb und Projektleitung,</li>
+<li>Aufsichtsgremien, Betriebsausschüsse oder kommunale Entscheidungsgremien,</li>
+<li>Verbundorganisationen, die einheitliche Transparenz über mehrere Stadtwerke herstellen wollen.</li>
+</ul>
+<p>Der Nutzen liegt nicht darin, externe Expertise vollständig zu ersetzen. Der Nutzen liegt darin, Beratungs- und Abstimmungszeit auf die wirklich strittigen Punkte zu konzentrieren: Aktivierbarkeit, regulatorische Einordnung, Wirkungsverzug, KANU-/Transformationsannahmen, Finanzierungsschwellen, Governance-Auflagen und Entscheidungsreife.</p>
 <h2>Warum regulierte Finanzplanung anders ist</h2>
-<p>In regulierten Sparten reicht normales Investitionscontrolling nicht aus. Eine Maßnahme kann technisch notwendig sein, im Wirtschaftsplan Liquidität binden, handelsrechtlich aktiviert oder als Aufwand behandelt werden, regulatorisch zeitversetzt wirken und im Gremium trotzdem erklärungsbedürftig bleiben.</p>
-<p>Deshalb betrachtet die Methodik jede Maßnahme aus fünf Sichten:</p>
+<p>In einem unregulierten Geschäft kann eine Investition häufig als klassischer Business Case betrachtet werden: Investition, erwartete Erlöse, Kosten, Cashflow, Kapitalwert, Rendite. In regulierten Strom- und Gasnetzen reicht diese Sicht nicht aus.</p>
+<p>Die Erlösobergrenze, die Kostenbasis, regulatorische Periodenlogik, Kapitalkostenmechanik, Qualitäts- und Effizienzeffekte, mögliche Wirkungsverzüge und unternehmensspezifische Bescheide erzeugen eine zweite fachliche Realität neben dem reinen Zahlungsstrom. Gleichzeitig bleibt die handelsrechtliche und kaufmännische Sicht eigenständig: Aktivierbarkeit, Nutzungsdauer, Abschreibung und Aufwand müssen nicht deckungsgleich mit der regulatorischen Wirkung sein.</p>
+<p>Die Methodik trennt deshalb konsequent:</p>
+<ul>
+<li>technische Notwendigkeit,</li>
+<li>Wirtschaftsplan- und Budgetwirkung,</li>
+<li>HGB-/Bilanzierungslogik,</li>
+<li>regulatorische Modellwirkung,</li>
+<li>indikative Cashflow- und Finanzierungslogik,</li>
+<li>Governance- und Entscheidungsreife.</li>
+</ul>
+<h2>Die fünf Sichten auf eine Maßnahme</h2>
 <table><thead><tr>
 <th>Sicht</th>
 <th>Leitfrage</th>
 <th>Typische Rolle</th>
+<th>Beitrag im Szenarienrechner-EOG</th>
 </tr></thead><tbody>
 <tr>
 <td>Technik</td>
 <td>Warum ist die Maßnahme fachlich notwendig?</td>
 <td>Asset Management, Netzbetrieb</td>
+<td>Maßnahmentyp, Startjahr, Risiko, technische Evidenz, Wirkungskette</td>
 </tr>
 <tr>
 <td>Wirtschaftsplan</td>
 <td>Wann werden Budget und Liquidität belastet?</td>
 <td>Controlling, Finanzen</td>
+<td>Investitionssumme, OPEX, Reinvestition, Rückbau, Portfoliozuordnung</td>
 </tr>
 <tr>
 <td>HGB/Bilanzierung</td>
 <td>Was wird aktiviert, abgeschrieben oder als Aufwand behandelt?</td>
 <td>Anlagenbuchhaltung, Rechnungswesen</td>
+<td>Aktivierbarer Anteil, nicht aktivierter Anteil, HGB-Nutzungsdauer, AfA-Brücke</td>
 </tr>
 <tr>
 <td>Regulierung</td>
-<td>Welche Annahmen berühren EOG, Kapitalbasis, Kostenprüfung oder Qualität?</td>
+<td>Welche Annahmen berühren EOG, Kapitalbasis, Qualität, Effizienz oder Kostenprüfung?</td>
 <td>Regulierungsmanagement</td>
+<td>Regulierungsperiode, Verfahren, EOG-Kontext, Wirkungsverzug, Q-/Effizienz-/Risikoannahmen</td>
 </tr>
 <tr>
 <td>Governance</td>
-<td>Was ist belegt, was ist offen, was ist entscheidungsreif?</td>
+<td>Was ist belegt, offen oder entscheidungsreif?</td>
 <td>Management, Gremium, Revision</td>
+<td>Evidenztyp, Vertrauensstufe, Klärpunkte, Historie, Report und Beschlusslogik</td>
 </tr>
 </tbody></table>
+<p>Diese fünf Sichten verhindern, dass eine einzelne Kennzahl zu früh zur scheinbaren Wahrheit wird. Eine Maßnahme kann technisch zwingend sein, aber wirtschaftlich noch nicht entscheidungsreif. Sie kann regulatorisch plausibel sein, aber bilanzielle Klärung benötigen. Sie kann im Basisszenario tragfähig wirken, aber im konservativen Szenario kippen.</p>
 <h2>Strom und Gas unterscheiden</h2>
-<p>Strom ist in vielen VNBs von Elektrifizierung, Anschlussleistung, Digitalisierung und Netzausbau geprägt. Gas ist stärker durch Transformationspfade, Restnutzungsdauer, Reinvestitionszurückhaltung, Rückbaufragen und KANU-Kontext geprägt.</p>
-<p>Die App behandelt beide Sparten gemeinsam, aber nicht gleich. Gerade deshalb müssen Annahmen sichtbar bleiben.</p>
-<h2>Von der Maßnahmenliste zur Entscheidung</h2>
-<p>Ein belastbarer Prozess besteht aus sechs Schritten:</p>
+<p>Der Szenarienrechner-EOG behandelt Strom und Gas gemeinsam, aber nicht gleich.</p>
+<p>Bei Stromnetzen stehen häufig Elektrifizierung, Anschlussleistung, Netzausbau, Digitalisierung, Automatisierung, Versorgungsqualität und Engpassbeseitigung im Vordergrund. Die methodische Frage lautet oft: Welche Investitionen sind notwendig, wie wirken sie auf Kapitalbasis, Qualität, Effizienz und mittelfristige Entgelt- oder Budgetperspektive?</p>
+<p>Bei Gasnetzen sind Transformationspfade, Restnutzungsdauer, Reinvestitionszurückhaltung, Rückbau, mögliche Wasserstoff- oder Wärmestrategien, KANU-Kontext und kommunale Belastungsfragen stärker prägend. Die methodische Frage lautet hier oft: Welche Investition ist unter welcher Transformationsannahme noch sinnvoll, welche Restwerte oder Rückbaukosten sind zu berücksichtigen und welche regulatorischen Annahmen sind nur Arbeitsstand?</p>
+<p>Deshalb bleiben die Annahmen sichtbar. Das Tool soll keine harte Zukunftsprognose erzeugen, sondern Szenarien vergleichbar machen.</p>
+<h2>Datenmodell: Vom losen Excel-Stand zum prüfbaren Arbeitsstand</h2>
+<p>Ein belastbarer Arbeitsstand benötigt mindestens:</p>
 <ul>
-<li>Datenlage klären: Wirtschaftsplan, Maßnahmenliste, Anlagenbuchhaltung, Regulierungsdaten und technische Evidenz zusammentragen.</li>
-<li>Maßnahmen strukturieren: CAPEX/OPEX, Jahr, Nutzungsdauer, Aktivierbarkeit und Verantwortlichkeit erfassen.</li>
-<li>Wirkannahmen explizit machen: Qualitäts-, Effizienz-, Risiko- oder Portfolioeffekte nie versteckt als Fakten behandeln.</li>
-<li>Szenarien bilden: konservativ, basis und wertorientiert als Bandbreiten statt Scheingenauigkeit.</li>
-<li>Klärpunkte führen: offene Fragen mit Verantwortlichkeit und Auswirkung dokumentieren.</li>
-<li>Entscheidung vorbereiten: Zahlen, Annahmen, Risiken und Alternativen in eine verständliche Vorlage übersetzen.</li>
+<li>Sparte, Regulierungsverfahren, Startjahr und Betrachtungshorizont,</li>
+<li>bestehende EOG beziehungsweise regulatorische Referenzgröße,</li>
+<li>regulatorische Kapitalbasis oder vergleichbare Planungsgröße,</li>
+<li>Finanzierungssatz, Diskontsatz und Kapitalkostenannahmen,</li>
+<li>Maßnahmen mit Kosten, Jahr, Nutzungsdauer, Aktivierbarkeit und OPEX-Anteilen,</li>
+<li>Wirkannahmen mit Evidenz, Attribution, Vertrauensstufe und Governance-Status,</li>
+<li>offene Klärpunkte mit Verantwortung,</li>
+<li>Historie, Version und Quellenstand.</li>
 </ul>
-<h2>Was die App bewusst nicht tut</h2>
-<p>Sie prognostiziert keine regulatorische Anerkennung, trifft keine automatische Investitionsentscheidung und ersetzt keine Einzelfallberatung. Sie zwingt aber dazu, Annahmen, Evidenz und Klärpunkte sauber zu trennen.</p>
-<h2>Typisches Ergebnis</h2>
-<p>Am Ende steht kein bloßes Rechenergebnis, sondern ein entscheidungsfähiger Arbeitsstand: Modell, Historie, Report, offene Punkte, Zuständigkeiten und exportierbare Datei.</p>
+<p>Das Modell unterscheidet ausdrücklich zwischen Stammdaten, Maßnahmen, Wirkannahmen und Entscheidungskommentaren. Dadurch wird sichtbar, ob ein Ergebnis aus harten Eingaben, aus freigegebenen Annahmen oder aus noch prüfpflichtigen Effekten entsteht.</p>
+<h2>Aktivierbarkeit und CAPEX/OPEX-Split</h2>
+<p>Eine der wichtigsten methodischen Fragen lautet: Welcher Anteil einer Maßnahme ist aktivierbar und welcher Anteil bleibt Aufwand?</p>
+<p>Der Rechenkern bildet dafür einen Erwartungswert aus sicher aktivierbarem Anteil und unsicherem Anteil mit Eintrittswahrscheinlichkeit. Nicht aktivierte Anteile können als OPEX beziehungsweise Aufwand behandelt werden. Die App weist dabei ausdrücklich darauf hin, dass HGB-, Anlagenbuchhaltungs- und regulatorische Sicht auseinanderlaufen können.</p>
+<p>Die Methodik lautet:</p>
+<p>1. Aktivierbarkeit nicht pauschal annehmen.</p>
+<p>2. Sicheren und unsicheren Anteil trennen.</p>
+<p>3. Wahrscheinlichkeit nur verwenden, wenn sie fachlich begründet ist.</p>
+<p>4. HGB-Nutzungsdauer und regulatorische Nutzungsdauer getrennt sichtbar halten.</p>
+<p>5. Abweichungen als Klärpunkt dokumentieren, nicht verstecken.</p>
+<h2>Regulatorische Wirkung und EOG-Kontext</h2>
+<p>Die App modelliert eine indikative EOG-Wirkung aus mehreren Komponenten:</p>
+<ul>
+<li>Abschreibung auf aktiviertes Kapital,</li>
+<li>Kapitalverzinsung beziehungsweise Kapitalkostenlogik,</li>
+<li>OPEX- oder Aufwandseffekte, soweit im Modell angesetzt,</li>
+<li>Qualitäts-, Effizienz-, Risiko- und Portfolioeffekte als dokumentierte Wirkannahmen,</li>
+<li>Reinvestitions- und Rückbauannahmen,</li>
+<li>Wirkungsverzüge für CAPEX, OPEX und Q-/Effekte.</li>
+</ul>
+<p>Der aktuelle generische Parametersatz arbeitet mit fünfjährigen Regulierungsperioden, getrennten Periodenstarts für Gas und Strom und sichtbaren Default-Wirkungsverzügen. Der im Code hinterlegte Arbeitsstand verwendet CAPEX/OPEX/QE-Verzüge von 0/3/2 Jahren. Diese Vorbelegung ist ein Planungsmodell, keine verbindliche regulatorische Aussage.</p>
+<p>Wichtig ist die methodische Trennung: EOG-Wirkung ist nicht automatisch Cashflow. Sie ist eine modellierte regulatorische Sicht, die in der Finanzierungs- und Entscheidungslogik erläutert werden muss.</p>
+<h2>Wirkannahmen: Qualität, Effizienz, Risiko und Portfolio</h2>
+<p>Viele Business Cases in regulierten Sparten hängen nicht nur an CAPEX und Abschreibung, sondern an Wirkannahmen:</p>
+<ul>
+<li>Qualitätswirkung, zum Beispiel geringere Ausfallminuten,</li>
+<li>Effizienzwirkung, zum Beispiel geringerer Betriebsaufwand oder bessere Prozessqualität,</li>
+<li>Risikoreduktion, zum Beispiel geringere Eintrittswahrscheinlichkeit oder Schadenshöhe,</li>
+<li>Portfolioeffekt, zum Beispiel pauschale Zuordnung eines Gesamtsparten-Effekts zu einer Maßnahme.</li>
+</ul>
+<p>Der Szenarienrechner-EOG behandelt solche Effekte nicht als versteckte Excel-Zellen. Jede Wirkannahme soll eine Wirkungskette, einen Evidenztyp, eine Vertrauensstufe, eine Attribution und einen Governance-Status erhalten.</p>
+<p>Vertrauensstufen und Governance-Status sind entscheidend:</p>
+<ul>
+<li>Belegte Effekte können in der Basisrechnung geführt werden.</li>
+<li>Annahmen können mit Vorsicht in der Basis oder Sensitivität erscheinen.</li>
+<li>Prüfpunkte gehören nicht automatisch in eine Freigabe.</li>
+<li>Ausgeschlossene Effekte bleiben dokumentiert, aber ohne Ergebniswirkung.</li>
+</ul>
+<p>Bei vereinfachtem Regulierungsverfahren werden individuelle Q- und Effizienzeffekte dokumentiert, aber nicht als individueller Erlösbeitrag angesetzt.</p>
+<h2>Doppelzählung vermeiden</h2>
+<p>Ein typischer Fehler entsteht, wenn ein pauschaler Portfolioeffekt und ein direkter Qualitäts- oder Effizienzeffekt gleichzeitig auf dieselbe Maßnahme wirken. Das kann eine Doppelzählung erzeugen.</p>
+<p>Die Methodik korrigiert solche Fälle nicht automatisch, weil die richtige Behandlung fachlich entschieden werden muss. Stattdessen erzeugt der Rechenkern eine Warnung: Attribution und Wirkungskette prüfen, keine automatische Kürzung.</p>
+<p>Für die Praxis bedeutet das: Jede Wirkung braucht eine klare Herkunft. Entweder sie stammt aus einer maßnahmenspezifischen Wirkungskette oder aus einem Portfolioansatz. Wenn beides verwendet wird, muss die Überlappung begründet und dokumentiert werden.</p>
+<h2>Finanzierungslogik: Kapitalwert, IRR und MIRR</h2>
+<p>Die App zeigt Kapitalwert und Renditekennzahlen als indikative Finanzierungs- und Tragfähigkeitsgrößen. Sie behandelt diese Kennzahlen bewusst vorsichtig.</p>
+<p>Der Rechenkern prüft die Zahlungsstromstruktur:</p>
+<ul>
+<li>Bei genau einem Vorzeichenwechsel kann eine klassische IRR ausgewiesen werden.</li>
+<li>Bei mehreren Vorzeichenwechseln ist IRR mehrdeutig; die App zeigt stattdessen MIRR mit Finanzierungs- und Reinvestitionssatz.</li>
+<li>Ohne belastbare Zahlungsstromumkehr wird keine sinnvolle Renditekennzahl ausgewiesen.</li>
+</ul>
+<p>Das ist wichtig, weil Infrastrukturmaßnahmen oft nicht dem einfachen Muster „einmalige Investition, danach positive Rückflüsse“ folgen. Rückbau, Reinvestition, OPEX-Veränderungen oder Einmaleffekte können mehrere Vorzeichenwechsel erzeugen. Eine scheinbar präzise IRR wäre dann irreführend.</p>
+<h2>Szenarien: konservativ, basis, wertorientiert</h2>
+<p>Die Methodik arbeitet mit Szenarien statt Scheingenauigkeit.</p>
+<p>Das Basisszenario bildet den normalen Arbeitsstand ab. Das konservative Szenario reduziert prüfpflichtige oder unsichere Effekte und verwendet mindestens die Finanzierungsschwelle als Diskontuntergrenze. Das wertorientierte Szenario kann weitergehende Wirkannahmen einbeziehen, bleibt aber als Sensitivität erkennbar.</p>
+<p>Eine Entscheidung ist besonders belastbar, wenn sie nicht nur im Basisszenario positiv wirkt, sondern auch ohne prüfpflichtige Wirkannahmen beziehungsweise unter konservativer Bewertung tragfähig bleibt.</p>
+<h2>Governance-Entscheidung: Ampel nicht als Automatismus</h2>
+<p>Die App leitet aus Kapitalwert, Renditekennzahl, Finanzierungsschwelle, aktiven Maßnahmen und konservativer Gegenprüfung eine Governance-Lesart ab:</p>
+<ul>
+<li>nicht entscheidungsreif,</li>
+<li>nicht tragfähig im Basiscase,</li>
+<li>tragfähig mit Auflage,</li>
+<li>robust tragfähig.</li>
+</ul>
+<p>Diese Lesart ist keine automatische Investitionsentscheidung. Sie ist ein Entscheidungshinweis. Besonders wichtig ist die Kategorie „tragfähig mit Auflage“: Sie bedeutet, dass der Basiscase positiv sein kann, aber werttragende Annahmen noch bestätigt, reduziert oder bewusst als Entscheidungsrisiko dokumentiert werden müssen.</p>
+<h2>Rollen- und Prozessmodell</h2>
+<p>Der Szenarienrechner-EOG ist entlang einer Planungsrunde gedacht:</p>
+<p>1. Kick-off und Rollenklärung,</p>
+<p>2. Datenanforderung und Stammdaten,</p>
+<p>3. Maßnahmenstruktur und erste Modellierung,</p>
+<p>4. technische und regulatorische Rückkopplung,</p>
+<p>5. Konsolidierung und Szenariovergleich,</p>
+<p>6. Management- oder Gremienvorlage,</p>
+<p>7. Beschluss, Archiv und Wiedereinstieg.</p>
+<p>Das Tool führt diese Logik über Rollen, Prozessphase, Projektplan, Historie, Export und Report zusammen. Damit wird aus einem Rechenlauf ein wiederaufnahmefähiger Arbeitsstand.</p>
+<h2>Dokumentations- und Exportlogik</h2>
+<p>Für eine governance-fähige Planung reicht es nicht, Werte am Bildschirm zu sehen. Der Arbeitsstand muss transportierbar und prüfbar sein.</p>
+<p>Die App unterstützt deshalb:</p>
+<ul>
+<li>JSON-Export und -Import des Modells,</li>
+<li>selbstenthaltenden HTML-Export mit eingebetteten Daten,</li>
+<li>Report- und Entscheidungsvorlagen,</li>
+<li>Tabellenexporte,</li>
+<li>KI-Prompt-Export als lokale Übersetzungshilfe,</li>
+<li>Versions- und Ruleset-Hinweise,</li>
+<li>Support- und Aktualitätsinformationen ohne automatische Übertragung von Modelldaten.</li>
+</ul>
+<p>Die Offline-Logik ist Teil der Methodik. Sensible Planungsdaten bleiben im Browser beziehungsweise in der exportierten Datei. Eine Netzverbindung ist für die normale Nutzung nicht erforderlich.</p>
+<h2>Validierung mit real-but-private Benchmarkfällen</h2>
+<p>Der Sprung von einem Prototypen zu einem belastbaren Entscheidungswerkzeug entsteht nicht durch mehr UI, sondern durch kontrollierte Validierung.</p>
+<p>Ein real-but-private Benchmarkfall vergleicht das Modell mit einem echten, aber nicht veröffentlichten Planungsfall. Veröffentlicht werden nur Methodik, anonymisierte Abweichungstypen, generische Lessons Learned und gegebenenfalls synthetische Nachbildungsfälle. Nicht veröffentlicht werden echte Netzbetreiberbezüge, Bescheiddetails, interne Unterlagen oder vertrauliche Planungsdaten.</p>
+<p>Die Validierung beantwortet drei Fragen:</p>
+<p>1. Bildet das Modell die interne Finanzplanungslogik nachvollziehbar ab?</p>
+<p>2. Sind Abweichungen gegenüber Wirtschaftsplan, EOG-Bescheid, Kostenprüfung oder internen Unterlagen erklärbar?</p>
+<p>3. Welche Modellgrenzen müssen fachlich freigegeben oder bewusst als Vereinfachung akzeptiert werden?</p>
+<h2>Einführung im Stadtwerk oder Verbund</h2>
+<p>Für ein einzelnes Stadtwerk empfiehlt sich ein kleiner Einstieg:</p>
+<ul>
+<li>eine Sparte,</li>
+<li>ein Maßnahmencluster,</li>
+<li>ein Betrachtungshorizont,</li>
+<li>eine Managementfrage,</li>
+<li>eine gemeinsame Klärpunktliste.</li>
+</ul>
+<p>Für einen Verbund oder Replikator wie eine Stadtwerke-Kooperation ist der größere Nutzen die Standardisierung:</p>
+<ul>
+<li>einheitliche Begrifflichkeiten,</li>
+<li>vergleichbare Maßnahmensteckbriefe,</li>
+<li>gemeinsame Rollenlogik,</li>
+<li>konsistente Entscheidungsvorlagen,</li>
+<li>weniger Ad-hoc-Excel-Interpretation,</li>
+<li>bessere Vorbereitung externer Beratung.</li>
+</ul>
+<p>Das Ziel ist nicht, alle Unternehmen über einen identischen Zahlenkamm zu scheren. Das Ziel ist eine gemeinsame Methodik, in der lokale Besonderheiten sichtbar und vergleichbar dokumentiert werden.</p>
+<h2>Typische Fehler und Gegenmaßnahmen</h2>
+<table><thead><tr>
+<th>Fehler</th>
+<th>Risiko</th>
+<th>Gegenmaßnahme</th>
+</tr></thead><tbody>
+<tr>
+<td>EOG-Wirkung als sicheren Cashflow lesen</td>
+<td>Überschätzung der Tragfähigkeit</td>
+<td>EOG-Brücke und Cashflow-Hinweis sichtbar halten</td>
+</tr>
+<tr>
+<td>Aktivierbarkeit pauschal annehmen</td>
+<td>falsche Kapitalbasis und AfA-Sicht</td>
+<td>Aktivierbarkeit, HGB und Regulierung getrennt prüfen</td>
+</tr>
+<tr>
+<td>Q-/Effizienzannahmen ohne Evidenz einpreisen</td>
+<td>grüne Ampel auf unsicherer Basis</td>
+<td>Evidenztyp, Vertrauensstufe und konservatives Szenario nutzen</td>
+</tr>
+<tr>
+<td>Portfolio- und Direkteffekt gleichzeitig zählen</td>
+<td>Doppelzählung</td>
+<td>Attribution und Wirkungskette prüfen</td>
+</tr>
+<tr>
+<td>IRR trotz mehrerer Vorzeichenwechsel nutzen</td>
+<td>irreführende Rendite</td>
+<td>MIRR oder Kapitalwert als Leitgröße verwenden</td>
+</tr>
+<tr>
+<td>Regulierungsstand als endgültig behandeln</td>
+<td>Scheinsicherheit</td>
+<td>Ruleset, Quellenstand und Aktualitätsprüfung dokumentieren</td>
+</tr>
+<tr>
+<td>reale Daten in öffentliche Beispiele übernehmen</td>
+<td>Datenschutz- und Vertrauensrisiko</td>
+<td>nur synthetische Demodaten veröffentlichen</td>
+</tr>
+</tbody></table>
+<h2>Was das Tool bewusst nicht leistet</h2>
+<p>Der Szenarienrechner-EOG:</p>
+<ul>
+<li>ersetzt keine Rechts- oder Regulierungsberatung,</li>
+<li>ersetzt keine Prüfung durch Wirtschaftsprüfung, Steuerberatung oder Regulierungsmanagement,</li>
+<li>garantiert keine Anerkennung durch Behörden,</li>
+<li>trifft keine automatische Investitionsentscheidung,</li>
+<li>ist kein Cloud-Datenraum,</li>
+<li>enthält keine realen Netzbetreiber- oder Kundendaten,</li>
+<li>darf nicht als verbindliche Prognose zukünftiger Festlegungen verstanden werden.</li>
+</ul>
+<p>Die Stärke des Tools liegt gerade in dieser Begrenzung: Es erzeugt Transparenz, nicht Scheinsicherheit.</p>
+<h2>Praktische Startempfehlung</h2>
+<p>Ein guter erster Workshop dauert 90 bis 120 Minuten und hat vier Ergebnisse:</p>
+<p>1. Eine gemeinsame Definition der Entscheidungsfrage.</p>
+<p>2. Einen ersten synthetischen oder anonymisierten Modellstand.</p>
+<p>3. Eine Liste offener Klärpunkte mit Verantwortlichen.</p>
+<p>4. Einen Beschluss, welche Annahmen im Basisszenario zulässig sind und welche nur als Sensitivität erscheinen.</p>
+<p>Danach kann der Arbeitsstand schrittweise mit echten internen Daten gefüllt werden, ohne diese Daten öffentlich zu machen.</p>
+<h2>Fazit</h2>
+<p>Regulierte Finanzplanung für kleine und mittlere VNBs braucht kein weiteres isoliertes Excel-Modell. Sie braucht eine nachvollziehbare Methodik, die Technik, Controlling, Bilanzierung, Regulierung, Finanzierung und Governance in einen gemeinsamen Arbeitsstand bringt.</p>
+<p>Der Szenarienrechner-EOG liefert diese Methodik als offlinefähiges Open-Source-Werkzeug mit. Das Handbuch erklärt die fachliche Lesart: Annahmen sichtbar machen, Szenarien vergleichen, Klärpunkte führen, regulatorische Grenzen benennen und Entscheidungen so vorbereiten, dass Management und Gremien nicht nur eine Zahl sehen, sondern die dahinterliegende Verantwortung verstehen.</p>
     </article>
     <footer>Szenarienrechner-EOG · Orientierung und Methodik · Apache-2.0</footer>
   </main>
