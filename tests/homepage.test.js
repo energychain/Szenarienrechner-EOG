@@ -9,6 +9,8 @@ describe('static homepage', () => {
     expect(homepage).toContain('Regulierte Finanzplanung verständlich');
     expect(homepage).toContain('Mehr als ein EOG-Rechner');
     expect(homepage).toContain('App starten');
+    expect(homepage).toContain('Interaktive Demo ansehen');
+    expect(homepage).toContain('https://app.arcade.software/share/ZlZVVMORTrNI4FxeSxlB');
     expect(homepage).toContain('app.html');
     expect(homepage).toContain('Methodik & Vorlagen');
   });
@@ -69,6 +71,7 @@ describe('static homepage', () => {
     const readme = readFileSync('README.md', 'utf8');
     expect(readme).toContain('Mini-Homepage: https://energychain.github.io/Szenarienrechner-EOG/');
     expect(readme).toContain('Live-App: https://energychain.github.io/Szenarienrechner-EOG/app.html');
+    expect(readme).toContain('Geführte Arcade-Demo: https://app.arcade.software/share/ZlZVVMORTrNI4FxeSxlB');
     expect(readme).toContain('dist/app.html');
   });
 });

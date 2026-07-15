@@ -8,6 +8,12 @@ function link(href, label, className = 'button') {
   return `<a class="${className}" href="${href}">${label}</a>`;
 }
 
+function externalLink(href, label, className = 'button') {
+  return `<a class="${className}" href="${href}" target="_blank" rel="noopener">${label}</a>`;
+}
+
+const arcadeDemoUrl = 'https://app.arcade.software/share/ZlZVVMORTrNI4FxeSxlB';
+
 const workflowDemos = [
   {
     image: 'assets/homepage/01-planungsstart.jpg',
@@ -311,6 +317,7 @@ export function renderHomepage() {
       <p class="lead">Der Szenarienrechner-EOG ist ein browserbasiertes Open-Source-Werkzeug für Stadtwerke, EVUs und Verteilnetzbetreiber. Die App strukturiert Maßnahmenportfolios, regulatorische Wirkungen, Cashflow-Sichten, Projektplan, Gremienvorlagen und Exportartefakte — ohne Backend, Telemetrie oder automatische Datenübertragung.</p>
       <div class="actions">
         ${link('app.html', 'App starten', 'button primary')}
+        ${externalLink(arcadeDemoUrl, 'Interaktive Demo ansehen')}
         ${link('szenarienrechner-eog.html', 'Offline-HTML öffnen')}
         ${link('story/planungsrunde-userstory.html', 'User-Story lesen')}
         ${link('docs/index.html', 'Methodik & Vorlagen', 'button ghost')}
@@ -372,6 +379,7 @@ export function renderHomepage() {
     <div class="section-head">
       <h2>So arbeitet die App in der Praxis.</h2>
       <p>Die folgenden Workflow-Beweise sind echte Screenshots aus dem gebauten Browser-Artefakt. Sie zeigen nicht nur Feature-Namen, sondern konkrete Arbeitsschritte: starten, bewerten, entscheiden, planen, exportieren und weitergeben.</p>
+      <p>${externalLink(arcadeDemoUrl, 'Geführte Arcade-Demo: Von der Netzmaßnahme zur belastbaren Investitionsentscheidung', 'button primary')}</p>
     </div>
     <div class="demo-carousel-shell">
       <div class="demo-carousel-controls" aria-label="Praxis-Beispiele durchblättern">

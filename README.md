@@ -10,6 +10,7 @@ Die App ist kein reiner EOG-Rechner. Sie ist ein geführter Arbeitsraum für reg
 
 - Mini-Homepage: https://energychain.github.io/Szenarienrechner-EOG/
 - Live-App: https://energychain.github.io/Szenarienrechner-EOG/app.html
+- Geführte Arcade-Demo: https://app.arcade.software/share/ZlZVVMORTrNI4FxeSxlB
 - Pilotprogramm: https://energychain.github.io/Szenarienrechner-EOG/docs/pilot-program.html
 - User-Story als HTML/PDF-Handout: https://energychain.github.io/Szenarienrechner-EOG/story/planungsrunde-userstory.html
 - Methodik & Vorlagen: https://energychain.github.io/Szenarienrechner-EOG/docs/index.html
@@ -94,14 +95,15 @@ Ein produktiver TRL-6-Nachweis erfordert weiterhin eine reale, nicht öffentlich
 ## Empfohlener 30-Minuten-Selbsttest
 
 1. Live-App öffnen oder Offline-HTML nutzen.
-2. „Demodaten ansehen“ laden.
-3. Projektplan öffnen und die Rollen-/Meilensteinstruktur prüfen.
-4. In der Entscheidungsansicht die Governance-Ampel lesen.
-5. EOG-/Cashflow-Überleitung und EOG-Zerlegung ansehen.
-6. „HTML mit Daten speichern“ testen und die erzeugte Datei erneut öffnen.
-7. „Tabellen als XLSX exportieren“ testen: Maßnahmen, Szenarien/KPIs, Projektplan und Provenienz müssen als weiterverwendbare Tabellenblätter vorliegen.
-8. Optional „Aktualität prüfen“ ausführen und bestätigen, dass keine Modelldaten übertragen werden.
-9. Feedback über GitHub Issue oder Support-Paket vorbereiten.
+2. Optional die geführte Arcade-Demo ansehen, um den roten Faden „von der Netzmaßnahme zur belastbaren Investitionsentscheidung“ nachzuvollziehen.
+3. „Demodaten ansehen“ laden.
+4. Projektplan öffnen und die Rollen-/Meilensteinstruktur prüfen.
+5. In der Entscheidungsansicht die Governance-Ampel lesen.
+6. EOG-/Cashflow-Überleitung und EOG-Zerlegung ansehen.
+7. „HTML mit Daten speichern“ testen und die erzeugte Datei erneut öffnen.
+8. „Tabellen als XLSX exportieren“ testen: Maßnahmen, Szenarien/KPIs, Projektplan und Provenienz müssen als weiterverwendbare Tabellenblätter vorliegen.
+9. Optional „Aktualität prüfen“ ausführen und bestätigen, dass keine Modelldaten übertragen werden.
+10. Feedback über GitHub Issue oder Support-Paket vorbereiten.
 
 ## Pilot-Feedback erwünscht
 
