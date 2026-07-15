@@ -1,6 +1,6 @@
 # Methodik-Grafikserie: Szenarienrechner-EOG
 
-Diese Grafikserie übersetzt die Methodik des Szenarienrechner-EOG in sieben visuelle Arbeitsfolien. Sie ist als Master-Artefakt für BookStack, Präsentationen, LinkedIn-Carousels, Video-Storyboard und Workshop-Unterlagen gedacht.
+Diese Grafikserie übersetzt die Methodik des Szenarienrechner-EOG in acht visuelle Arbeitsfolien. Sie ist als Master-Artefakt für BookStack, Präsentationen, LinkedIn-Carousels, Video-Storyboard und Workshop-Unterlagen gedacht.
 
 ## Primärer Veröffentlichungsort
 
@@ -15,9 +15,11 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 5. IRR-Falle: Mehrdeutigkeit sichtbar machen
 6. Szenarien statt Scheingenauigkeit
 7. Governance-Reife statt bloßer Kennzahlen
+8. Schlüsselslide: QR-Code, Startseite und fünf Kernpunkte
 
 ## App-Deeplinks
 
+- Startseite: https://energychain.github.io/Szenarienrechner-EOG/index.html
 - Entscheidungsvorlage: https://energychain.github.io/Szenarienrechner-EOG/app.html?story=entscheidungsvorlage
 - Datenerhebung: https://energychain.github.io/Szenarienrechner-EOG/app.html?story=datenerhebung
 - Maßnahmenbewertung: https://energychain.github.io/Szenarienrechner-EOG/app.html?story=massnahmenbewertung
@@ -35,11 +37,14 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 - [Slide 5 als PNG](exports/methodik-slide-05.png)
 - [Slide 6 als PNG](exports/methodik-slide-06.png)
 - [Slide 7 als PNG](exports/methodik-slide-07.png)
+- [Slide 8 als PNG](exports/methodik-slide-08.png)
 
-![Kontaktbogen der sieben Methodik-Slides](exports/methodik-contact-sheet.png)
+![Kontaktbogen der acht Methodik-Slides](exports/methodik-contact-sheet.png)
 
 ## Repository-Pfade
 
+- `docs/visuals/methodik-slide-source.html`: HTML-Quelle für die exportierten PNG-Slides
 - `docs/visuals/methodik-grafikserie.html`: interaktiver, druckbarer HTML-Slide-Master
 - `docs/visuals/methodik-grafikserie.md`: redaktionelle Übersicht
-- `docs/visuals/exports/methodik-slide-01.png` bis `methodik-slide-07.png`: exportierte Einzelgrafiken für BookStack, Social Media und Präsentationen
+- `docs/visuals/exports/methodik-slide-01.png` bis `methodik-slide-08.png`: exportierte Einzelgrafiken für BookStack, Social Media und Präsentationen
+- `docs/visuals/exports/startseite-qr.svg`: QR-Code zur öffentlichen Startseite
