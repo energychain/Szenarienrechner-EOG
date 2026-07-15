@@ -5,6 +5,28 @@ import { spreadsheetTables, tableToCsv, tablesToCsvZip, tablesToXlsx } from '../
 import { buildInfo } from '../src/build-info.js';
 import { regulatoryParameterSet } from '../src/engine.js';
 
+function zipEntryText(zipBytes, entryName) {
+  const decoder = new TextDecoder();
+  let offset = 0;
+  while (offset < zipBytes.length - 30) {
+    const signature = zipBytes[offset] | (zipBytes[offset + 1] << 8) | (zipBytes[offset + 2] << 16) | (zipBytes[offset + 3] << 24);
+    if (signature !== 0x04034b50) break;
+    const method = zipBytes[offset + 8] | (zipBytes[offset + 9] << 8);
+    const compressedSize = zipBytes[offset + 18] | (zipBytes[offset + 19] << 8) | (zipBytes[offset + 20] << 16) | (zipBytes[offset + 21] << 24);
+    const nameLength = zipBytes[offset + 26] | (zipBytes[offset + 27] << 8);
+    const extraLength = zipBytes[offset + 28] | (zipBytes[offset + 29] << 8);
+    const nameStart = offset + 30;
+    const contentStart = nameStart + nameLength + extraLength;
+    const name = decoder.decode(zipBytes.slice(nameStart, nameStart + nameLength));
+    if (name === entryName) {
+      expect(method).toBe(0);
+      return decoder.decode(zipBytes.slice(contentStart, contentStart + compressedSize));
+    }
+    offset = contentStart + compressedSize;
+  }
+  throw new Error(`ZIP entry not found: ${entryName}`);
+}
+
 function demoModel() {
   return {
     appVersion: '0.3.0-test',
@@ -79,6 +101,13 @@ describe('spreadsheet exports', () => {
     expect(xlsx[1]).toBe(0x4b);
     expect(xlsxText).toContain('xl/workbook.xml');
     expect(xlsxText).toContain('Massnahmen');
+    const measuresSheetXml = zipEntryText(xlsx, 'xl/worksheets/sheet2.xml');
+    const sharedStringsXml = zipEntryText(xlsx, 'xl/sharedStrings.xml');
+    expect(measuresSheetXml).toContain('dimension ref="A1:AS6"');
+    expect(measuresSheetXml).toContain('<row r="2"');
+    expect(measuresSheetXml).toContain(' t="s"');
+    expect(sharedStringsXml).toContain('SAP-PSP-NA-2027-001');
+    expect(sharedStringsXml).toContain('Netzautomatisierung Demogebiet Alpha');
     expect(csvZip[0]).toBe(0x50);
     expect(csvZip[1]).toBe(0x4b);
     expect(csvText).toContain('Massnahmen.csv');

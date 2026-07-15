@@ -20,7 +20,11 @@ assert(
 assert(!/https?:\/\//i.test(appHtml
   .replaceAll('https://energychain.github.io', '')
   .replaceAll('https://github.com/energychain/Szenarienrechner-EOG', '')
-  .replaceAll('http://schemas.openxmlformats.org', '')), 'Built app artifact must not contain unapproved external http(s) URLs.');
+  .replaceAll('http://schemas.openxmlformats.org', '')
+  .replaceAll('http://purl.org/dc/elements/1.1/', '')
+  .replaceAll('http://purl.org/dc/terms/', '')
+  .replaceAll('http://purl.org/dc/dcmitype/', '')
+  .replaceAll('http://www.w3.org/2001/XMLSchema-instance', '')), 'Built app artifact must not contain unapproved external http(s) URLs.');
 assert(!/\b(XMLHttpRequest|WebSocket|EventSource)\s*\(/.test(appHtml), 'Built app artifact must not contain push or socket network APIs.');
 assert(appHtml.includes('release-manifest.json'), 'Built app artifact must expose the consent-driven release manifest check.');
 assert(appHtml.includes('KI-Prompt erstellen'), 'Built app artifact must expose the local AI prompt export.');
