@@ -29,6 +29,7 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 ## Dateien und direkte Artefakte
 
 - [Interaktives Online-Karussell / HTML-Slide-Master](methodik-grafikserie.html): Slides wechseln, optionalen Sprechertext einblenden, Voice-over pro Slide abspielen, per Klick groß öffnen, in der Großansicht weiterblättern und die komplette Präsentation im Vollbildmodus mit automatischem Audio-/Slide-Wechsel starten
+- [Öffentliches YouTube-Video](https://youtu.be/C2uSCCoMmnM): teilbarer Einstieg in die Methodik für Erstansprache, LinkedIn-Nachbereitung und externe Verweise
 - [YouTube-ready MP4-Video der kompletten Präsentation](video/methodik-grafikserie-youtube.mp4): 1920×1080, H.264/AAC, mit Voice-over und automatischem Slide-Ablauf
 - [Video-Preview-Kontaktbogen](video/methodik-grafikserie-youtube-preview.jpg)
 - [Kontaktbogen als PNG](exports/methodik-contact-sheet.png)
