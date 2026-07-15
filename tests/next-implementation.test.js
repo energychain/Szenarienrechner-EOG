@@ -26,9 +26,11 @@ describe('next consulting implementation docs and UI', () => {
   it('renders validation docs from the public docs ecosystem', () => {
     buildDocs();
     const ecosystem = read('docs/ecosystem/index.md');
+    const renderedIndex = read('dist/docs/index.html');
     const rendered = read('dist/docs/validation-methodology.html');
     expect(ecosystem).toContain('TRL-6-Validierung');
-    expect(ecosystem).toContain('validation-methodology.html');
+    expect(ecosystem).toContain('validation-methodology.md');
+    expect(renderedIndex).toContain('validation-methodology.html');
     expect(rendered).toContain('Drucken / PDF speichern');
     expect(rendered).toContain('Validierungsmethodik');
   });
