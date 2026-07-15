@@ -22,6 +22,7 @@ const requiredDocs = [
   'docs/ai-prompts.md',
   'docs/pilot-program.md',
   'docs/validation-methodology.md',
+  'docs/visuals/methodik-grafikserie.md',
   'docs/templates/massnahmensteckbrief.md',
   'docs/templates/gremienvorlage.md',
   'docs/templates/klaerpunktliste.md',

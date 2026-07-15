@@ -15,6 +15,8 @@ Die App ist kein reiner EOG-Rechner. Sie ist ein geführter Arbeitsraum für reg
 - User-Story als HTML/PDF-Handout: https://energychain.github.io/Szenarienrechner-EOG/story/planungsrunde-userstory.html
 - Methodik & Vorlagen: https://energychain.github.io/Szenarienrechner-EOG/docs/index.html
 - Methodikhandbuch: https://energychain.github.io/Szenarienrechner-EOG/docs/handbook/regulierte-finanzplanung-vnb.html
+- Methodik-Grafikserie: https://energychain.github.io/Szenarienrechner-EOG/docs/visuals/index.html
+- 7-Slide-Master: https://energychain.github.io/Szenarienrechner-EOG/docs/visuals/methodik-grafikserie.html
 - Projektplan-Dokumentation: https://energychain.github.io/Szenarienrechner-EOG/docs/project-plan.html
 - Starter-Kits: https://energychain.github.io/Szenarienrechner-EOG/docs/starter-kits/index.html
 - Aktualitäts- und Supportkonzept: https://energychain.github.io/Szenarienrechner-EOG/docs/release-awareness.html
@@ -175,6 +177,7 @@ Zentrale Projektdokumente:
 - `docs/project-plan.md`: Projektplan-Ansicht mit Meilensteinen, Rollen, Abhängigkeiten und eigenen Aufgaben
 - `docs/release-awareness.md`: Aktualitäts-Erkennung, Ruleset-Konfidenz und GitHub-Support
 - `docs/handbook/regulierte-finanzplanung-vnb.md`: Methodikhandbuch
+- `docs/visuals/methodik-grafikserie.md`: 7-Slide-Methodik-Grafikserie mit exportierten PNGs und HTML-Master
 - `docs/regulatory-map.md`: öffentliche Quellen und Einordnung zu Strom/Gas-Regulatorik
 - `docs/templates/`: Maßnahmensteckbrief, Gremienvorlage, Klärpunktliste, Datenanforderung, Workshopagenda, Validierungsprotokoll
 - `docs/starter-kits/`: Strom-Ortsnetz, Gas-Transformation, Spartenportfolio

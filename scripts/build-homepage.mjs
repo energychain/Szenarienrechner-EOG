@@ -425,7 +425,7 @@ export function renderHomepage() {
       <p>Die statischen Seiten sind als Mini-Wissensbasis aufgebaut: suchmaschinenfreundlich, druckbar und für interne Weitergabe geeignet.</p>
     </div>
     <div class="grid">
-      <article class="card"><h3>Methodik</h3><ul><li><a href="docs/handbook/regulierte-finanzplanung-vnb.html">Regulierte Finanzplanung für kleine VNBs</a></li><li><a href="docs/regulatory-map.html">Regulatorik-Landkarte Strom/Gas</a></li><li><a href="docs/maturity-model.html">Reifegradmodell</a></li></ul></article>
+      <article class="card"><h3>Methodik</h3><ul><li><a href="docs/handbook/regulierte-finanzplanung-vnb.html">Regulierte Finanzplanung für kleine VNBs</a></li><li><a href="docs/visuals/index.html">Methodik-Grafikserie</a></li><li><a href="docs/visuals/methodik-grafikserie.html">7-Slide-Master</a></li><li><a href="docs/regulatory-map.html">Regulatorik-Landkarte Strom/Gas</a></li><li><a href="docs/maturity-model.html">Reifegradmodell</a></li></ul></article>
       <article class="card"><h3>Arbeitsartefakte</h3><ul><li><a href="docs/templates/gremienvorlage.html">Gremienvorlage</a></li><li><a href="docs/templates/massnahmensteckbrief.html">Maßnahmensteckbrief</a></li><li><a href="docs/starter-kits/index.html">Starter-Kits</a></li></ul></article>
       <article class="card"><h3>Technische Nachweise</h3><ul><li><a href="release-manifest.json">Release-Manifest</a></li><li><a href="llm.txt">LLM-Kontextdatei</a></li><li><a href="https://github.com/energychain/Szenarienrechner-EOG">GitHub-Repository</a></li></ul></article>
     </div>

@@ -10,6 +10,7 @@ const docs = [
   'docs/decision-artifacts.md',
   'docs/project-plan.md',
   'docs/validation-methodology.md',
+  'docs/visuals/methodik-grafikserie.md',
   'docs/templates/massnahmensteckbrief.md',
   'docs/templates/gremienvorlage.md',
   'docs/templates/klaerpunktliste.md',
@@ -50,6 +51,8 @@ describe('consulting ecosystem docs', () => {
     expect(content).toContain('Projektplan');
     expect(content).toContain('Rollen-Swimlanes');
     expect(content).toContain('TRL-6-Validierung');
+    expect(content).toContain('Methodik-Grafikserie');
+    expect(content).toContain('../visuals/methodik-grafikserie.md');
     expect(content).toContain('Starter-Kits');
     expect(content).toContain('Strom-Ortsnetz');
     expect(content).toContain('Cernion');
@@ -71,6 +74,9 @@ describe('consulting ecosystem docs', () => {
     expect(index).toContain('Drucken / PDF speichern');
     expect(index).toContain('@media print');
     expect(index).toContain('Methodikhandbuch');
+    expect(index).toContain('Methodik-Grafikserie');
+    expect(index).toContain('href="visuals/index.html"');
+    expect(index).toContain('href="visuals/methodik-grafikserie.html"');
     expect(index).toContain('Projektplan');
     expect(index).toContain('Vorlagenpaket');
     expect(index).toContain('Starter-Kits');
@@ -83,5 +89,11 @@ describe('consulting ecosystem docs', () => {
     expect(projectPlan).toContain('Drucken / PDF speichern');
     expect(projectPlan).toContain('Rollen-Swimlanes');
     expect(projectPlan).toContain('Eigene Aufgaben');
+    const visuals = readFileSync('dist/docs/visuals/index.html', 'utf8');
+    expect(visuals).toContain('Drucken / PDF speichern');
+    expect(visuals).toContain('Interaktiver, druckbarer HTML-Slide-Master');
+    expect(existsSync('dist/docs/visuals/methodik-grafikserie.html')).toBe(true);
+    expect(existsSync('dist/docs/visuals/exports/methodik-slide-01.png')).toBe(true);
+    expect(existsSync('dist/docs/visuals/exports/methodik-contact-sheet.png')).toBe(true);
   });
 });

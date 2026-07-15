@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, posix, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderMarkdown } from './build-story.mjs';
 
@@ -14,6 +14,7 @@ const pages = [
   { source: 'docs/ai-prompts.md', output: 'dist/docs/ai-prompts.html', title: 'KI-Prompt-Export · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/pilot-program.md', output: 'dist/docs/pilot-program.html', title: 'Pilotprogramm · Szenarienrechner-EOG', back: 'index.html' },
   { source: 'docs/validation-methodology.md', output: 'dist/docs/validation-methodology.html', title: 'Validierungsmethodik · Szenarienrechner-EOG', back: 'index.html' },
+  { source: 'docs/visuals/methodik-grafikserie.md', output: 'dist/docs/visuals/index.html', title: 'Methodik-Grafikserie · Szenarienrechner-EOG', back: '../index.html' },
   { source: 'docs/templates/massnahmensteckbrief.md', output: 'dist/docs/templates/massnahmensteckbrief.html', title: 'Vorlage Maßnahmensteckbrief · Szenarienrechner-EOG', back: '../index.html' },
   { source: 'docs/templates/gremienvorlage.md', output: 'dist/docs/templates/gremienvorlage.html', title: 'Vorlage Gremienvorlage · Szenarienrechner-EOG', back: '../index.html' },
   { source: 'docs/templates/klaerpunktliste.md', output: 'dist/docs/templates/klaerpunktliste.html', title: 'Vorlage Klärpunktliste · Szenarienrechner-EOG', back: '../index.html' },
@@ -33,6 +34,48 @@ const pages = [
   { source: 'docs/examples/gas-transformation.md', output: 'dist/docs/examples/gas-transformation.html', title: 'Fallstudie Gas-Transformation · Szenarienrechner-EOG', back: '../index.html' },
   { source: 'docs/examples/spartenportfolio.md', output: 'dist/docs/examples/spartenportfolio.html', title: 'Fallstudie Spartenportfolio · Szenarienrechner-EOG', back: '../index.html' }
 ];
+
+const sourceToOutput = new Map(pages.map(page => [page.source, page.output]));
+
+function toPosixPath(path) {
+  return path.split('\\').join('/');
+}
+
+function rewriteMarkdownDocLinks(html, page) {
+  return html
+    .replace(/href="([^"]+\.md(?:#[^"]*)?)"/g, (match, rawHref) => {
+      const [hrefPath, hash = ''] = rawHref.split('#');
+      if (/^[a-z]+:/i.test(hrefPath)) return match;
+
+      const sourceTarget = posix.normalize(posix.join(posix.dirname(page.source), toPosixPath(hrefPath)));
+      const outputTarget = sourceToOutput.get(sourceTarget);
+      if (!outputTarget) return match;
+
+      const renderedHref = toPosixPath(relative(dirname(page.output), outputTarget)) + (hash ? `#${hash}` : '');
+      return `href="${renderedHref}"`;
+    })
+    .replace(/href="([^"]+\.html(?:#[^"]*)?)"/g, (match, rawHref) => {
+      const [hrefPath, hash = ''] = rawHref.split('#');
+      if (/^[a-z]+:/i.test(hrefPath)) return match;
+
+      const sourceTarget = posix.normalize(posix.join(posix.dirname(page.source), toPosixPath(hrefPath)));
+      if (sourceTarget !== 'docs/visuals/methodik-grafikserie.html') return match;
+
+      const renderedHref = toPosixPath(relative(dirname(page.output), 'dist/docs/visuals/methodik-grafikserie.html')) + (hash ? `#${hash}` : '');
+      return `href="${renderedHref}"`;
+    });
+}
+
+function copyVisualAssets() {
+  const source = 'docs/visuals';
+  const target = 'dist/docs/visuals';
+  if (!existsSync(source)) return;
+  mkdirSync(target, { recursive: true });
+  cpSync('docs/visuals/methodik-grafikserie.html', 'dist/docs/visuals/methodik-grafikserie.html');
+  if (existsSync('docs/visuals/exports')) {
+    cpSync('docs/visuals/exports', 'dist/docs/visuals/exports', { recursive: true });
+  }
+}
 
 function renderDocPage({ title, body, back }) {
   return `<!doctype html>
@@ -95,11 +138,13 @@ ${body}
 export function buildDocs() {
   for (const page of pages) {
     const markdown = readFileSync(page.source, 'utf8');
-    const html = renderDocPage({ title: page.title, body: renderMarkdown(markdown), back: page.back });
+    const body = rewriteMarkdownDocLinks(renderMarkdown(markdown), page);
+    const html = renderDocPage({ title: page.title, body, back: page.back });
     mkdirSync(dirname(page.output), { recursive: true });
     writeFileSync(page.output, html);
     console.log(`Built ${page.output}`);
   }
+  copyVisualAssets();
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
