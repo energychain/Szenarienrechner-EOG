@@ -96,6 +96,9 @@ describe('consulting ecosystem docs', () => {
     expect(slideMaster).toContain('Methodik-Slides als Karussell');
     expect(slideMaster).toContain('data-action="next"');
     expect(slideMaster).toContain('Slide-Großansicht');
+    expect(slideMaster).toContain('data-action="present"');
+    expect(slideMaster).toContain('Präsentation stoppen');
+    expect(slideMaster).toContain('fullscreenchange');
     expect(slideMaster).toContain('exports/methodik-slide-07.png');
     expect(existsSync('dist/docs/visuals/methodik-grafikserie.html')).toBe(true);
     expect(existsSync('dist/docs/visuals/exports/methodik-slide-01.png')).toBe(true);

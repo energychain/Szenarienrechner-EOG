@@ -28,7 +28,7 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 
 ## Dateien und direkte Artefakte
 
-- [Interaktives Online-Karussell / HTML-Slide-Master](methodik-grafikserie.html): Slides wechseln, optionalen Sprechertext einblenden, Voice-over pro Slide abspielen, per Klick groß öffnen und in der Großansicht weiterblättern
+- [Interaktives Online-Karussell / HTML-Slide-Master](methodik-grafikserie.html): Slides wechseln, optionalen Sprechertext einblenden, Voice-over pro Slide abspielen, per Klick groß öffnen, in der Großansicht weiterblättern und die komplette Präsentation im Vollbildmodus mit automatischem Audio-/Slide-Wechsel starten
 - [Kontaktbogen als PNG](exports/methodik-contact-sheet.png)
 - [Slide 1 als PNG](exports/methodik-slide-01.png)
 - [Slide 2 als PNG](exports/methodik-slide-02.png)
