@@ -78,6 +78,9 @@ function copyVisualAssets() {
   if (existsSync('docs/visuals/audio')) {
     cpSync('docs/visuals/audio', 'dist/docs/visuals/audio', { recursive: true });
   }
+  if (existsSync('docs/visuals/video')) {
+    cpSync('docs/visuals/video', 'dist/docs/visuals/video', { recursive: true });
+  }
 }
 
 function renderDocPage({ title, body, back }) {

@@ -17,10 +17,12 @@
     "test:distribution": "node scripts/check-distribution.mjs",
     "test:docs": "node scripts/check-docs.mjs",
     "test:browser": "node scripts/browser-smoke.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:methodik-video": "node scripts/build-methodik-video.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@types/node": "^26.1.1",
     "eslint": "^9.31.0",
     "globals": "^15.15.0",

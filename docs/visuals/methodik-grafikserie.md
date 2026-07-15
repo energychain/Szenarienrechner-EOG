@@ -29,6 +29,8 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 ## Dateien und direkte Artefakte
 
 - [Interaktives Online-Karussell / HTML-Slide-Master](methodik-grafikserie.html): Slides wechseln, optionalen Sprechertext einblenden, Voice-over pro Slide abspielen, per Klick groß öffnen, in der Großansicht weiterblättern und die komplette Präsentation im Vollbildmodus mit automatischem Audio-/Slide-Wechsel starten
+- [YouTube-ready MP4-Video der kompletten Präsentation](video/methodik-grafikserie-youtube.mp4): 1920×1080, H.264/AAC, mit Voice-over und automatischem Slide-Ablauf
+- [Video-Preview-Kontaktbogen](video/methodik-grafikserie-youtube-preview.jpg)
 - [Kontaktbogen als PNG](exports/methodik-contact-sheet.png)
 - [Slide 1 als PNG](exports/methodik-slide-01.png)
 - [Slide 2 als PNG](exports/methodik-slide-02.png)
@@ -48,4 +50,7 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 - `docs/visuals/methodik-grafikserie.md`: redaktionelle Übersicht
 - `docs/visuals/exports/methodik-slide-01.png` bis `methodik-slide-08.png`: exportierte Einzelgrafiken für BookStack, Social Media und Präsentationen
 - `docs/visuals/audio/methodik-slide-01.mp3` bis `methodik-slide-08.mp3`: Voice-over-Dateien für das Online-Karussell
+- `docs/visuals/video/methodik-grafikserie-youtube.mp4`: gerendertes YouTube-ready Video der kompletten Präsentation
+- `docs/visuals/video/methodik-grafikserie-youtube-preview.jpg`: Video-Preview-Kontaktbogen zur schnellen QA
 - `docs/visuals/exports/startseite-qr.svg`: QR-Code zur öffentlichen Startseite
+- `scripts/build-methodik-video.mjs`: rendert die Video-Datei aus Slide-PNGs und Voice-over-MP3s
