@@ -5,6 +5,17 @@ const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
 describe('process notice layout', () => {
+  it('links the top clarification counter to the clarification list', () => {
+    const ui = readFileSync(new URL('../src/ui.js', import.meta.url), 'utf8');
+
+    expect(html).toContain('id="clarificationCounter"');
+    expect(html).toContain('aria-label="Klärpunktliste öffnen"');
+    expect(ui).toContain('function openClarificationList()');
+    expect(ui).toContain("setView('results')");
+    expect(ui).toContain("document.getElementById('clarificationCounter')?.addEventListener('click', openClarificationList)");
+    expect(ui).toContain("document.getElementById('clarificationList')");
+  });
+
   it('can be dismissed with its hidden class', () => {
     expect(css).toMatch(/\.process-notice\.hidden\s*\{[^}]*display:\s*none/i);
   });

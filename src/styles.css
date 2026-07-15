@@ -994,6 +994,28 @@
       font-size: 12px;
     }
 
+    button.status-line {
+      display: block;
+      width: fit-content;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      text-align: left;
+    }
+
+    .status-link {
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-underline-offset: 3px;
+    }
+
+    .status-link:hover,
+    .status-link:focus-visible {
+      color: var(--accent);
+    }
+
     .event-summary,
     .maturity-panel,
     .clarification-list,

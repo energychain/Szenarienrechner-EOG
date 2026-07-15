@@ -1226,7 +1226,10 @@ function renderProcessUx() {
     `).join('');
   }
   const counter = document.getElementById('clarificationCounter');
-  if (counter) counter.textContent = openCount ? `${openCount} Klärpunkte offen` : 'Keine offenen Klärpunkte';
+  if (counter) {
+    counter.textContent = openCount ? `${openCount} Klärpunkte offen` : 'Keine offenen Klärpunkte';
+    counter.title = 'Zur Klärpunktliste springen';
+  }
   const storyMilestone = storyMilestoneForPhase(processState.phase, activeView);
   const storyLink = document.getElementById('storyContextLink');
   const activeTask = activeProjectTaskId ? findProjectPlanTask(projectPlan, activeProjectTaskId) : null;
@@ -3336,6 +3339,16 @@ function setView(view) {
   });
 }
 
+function openClarificationList() {
+  document.body.classList.remove('show-start');
+  setView('results');
+  requestAnimationFrame(() => {
+    const target = document.getElementById('clarificationList') || document.getElementById('maturityPanel');
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    target?.focus?.({ preventScroll: true });
+  });
+}
+
 function newMeasureTemplate() {
   const nextNumber = measures.length + 1;
   return {
@@ -5215,6 +5228,8 @@ document.querySelectorAll('[data-role-choice]').forEach(button => {
 document.getElementById('dismissProcessNotice').addEventListener('click', () => {
   document.getElementById('processNotice')?.classList.add('hidden');
 });
+
+document.getElementById('clarificationCounter')?.addEventListener('click', openClarificationList);
 
 document.addEventListener('click', event => {
   if (!event.target.closest('.info-dot') && !event.target.closest('#fieldHelpPopover')) hideFieldHelp();
