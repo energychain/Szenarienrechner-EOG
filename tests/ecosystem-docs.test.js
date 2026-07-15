@@ -91,7 +91,12 @@ describe('consulting ecosystem docs', () => {
     expect(projectPlan).toContain('Eigene Aufgaben');
     const visuals = readFileSync('dist/docs/visuals/index.html', 'utf8');
     expect(visuals).toContain('Drucken / PDF speichern');
-    expect(visuals).toContain('Interaktiver, druckbarer HTML-Slide-Master');
+    expect(visuals).toContain('Interaktives Online-Karussell / HTML-Slide-Master');
+    const slideMaster = readFileSync('dist/docs/visuals/methodik-grafikserie.html', 'utf8');
+    expect(slideMaster).toContain('Methodik-Slides als Karussell');
+    expect(slideMaster).toContain('data-action="next"');
+    expect(slideMaster).toContain('Slide-Großansicht');
+    expect(slideMaster).toContain('exports/methodik-slide-07.png');
     expect(existsSync('dist/docs/visuals/methodik-grafikserie.html')).toBe(true);
     expect(existsSync('dist/docs/visuals/exports/methodik-slide-01.png')).toBe(true);
     expect(existsSync('dist/docs/visuals/exports/methodik-contact-sheet.png')).toBe(true);

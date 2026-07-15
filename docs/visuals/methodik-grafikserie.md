@@ -26,7 +26,7 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 
 ## Dateien und direkte Artefakte
 
-- [Interaktiver, druckbarer HTML-Slide-Master](methodik-grafikserie.html)
+- [Interaktives Online-Karussell / HTML-Slide-Master](methodik-grafikserie.html): Slides wechseln, per Klick groß öffnen und in der Großansicht weiterblättern
 - [Kontaktbogen als PNG](exports/methodik-contact-sheet.png)
 - [Slide 1 als PNG](exports/methodik-slide-01.png)
 - [Slide 2 als PNG](exports/methodik-slide-02.png)

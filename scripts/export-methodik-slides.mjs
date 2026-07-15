@@ -12,8 +12,13 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, dev
 await page.goto(html, { waitUntil: 'networkidle' });
 const slides = await page.locator('.slide').count();
 for (let i = 0; i < slides; i += 1) {
-  const slide = page.locator('.slide').nth(i);
   const number = String(i + 1).padStart(2, '0');
+  await page.evaluate(index => {
+    document.querySelectorAll('.slide').forEach((slide, slideIndex) => {
+      slide.classList.toggle('is-active', slideIndex === index);
+    });
+  }, i);
+  const slide = page.locator('.slide').nth(i);
   await slide.screenshot({ path: `${outDir}/methodik-slide-${number}.png` });
   console.log(`Exported docs/visuals/exports/methodik-slide-${number}.png`);
 }
