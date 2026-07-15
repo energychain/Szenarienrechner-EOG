@@ -28,7 +28,7 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 
 ## Dateien und direkte Artefakte
 
-- [Interaktives Online-Karussell / HTML-Slide-Master](methodik-grafikserie.html): Slides wechseln, optionalen Sprechertext einblenden, per Klick groß öffnen und in der Großansicht weiterblättern
+- [Interaktives Online-Karussell / HTML-Slide-Master](methodik-grafikserie.html): Slides wechseln, optionalen Sprechertext einblenden, Voice-over pro Slide abspielen, per Klick groß öffnen und in der Großansicht weiterblättern
 - [Kontaktbogen als PNG](exports/methodik-contact-sheet.png)
 - [Slide 1 als PNG](exports/methodik-slide-01.png)
 - [Slide 2 als PNG](exports/methodik-slide-02.png)
@@ -47,4 +47,5 @@ Primär sollte die Grafikserie im GitHub-Repository versioniert werden. Dort ist
 - `docs/visuals/methodik-grafikserie.html`: interaktiver, druckbarer HTML-Slide-Master
 - `docs/visuals/methodik-grafikserie.md`: redaktionelle Übersicht
 - `docs/visuals/exports/methodik-slide-01.png` bis `methodik-slide-08.png`: exportierte Einzelgrafiken für BookStack, Social Media und Präsentationen
+- `docs/visuals/audio/methodik-slide-01.mp3` bis `methodik-slide-08.mp3`: Voice-over-Dateien für das Online-Karussell
 - `docs/visuals/exports/startseite-qr.svg`: QR-Code zur öffentlichen Startseite
