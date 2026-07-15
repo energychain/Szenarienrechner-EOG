@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initialMeasures } from '../src/demo-data.js';
+import { demoMeasures } from '../src/demo-data.js';
 import { normalizeProjectPlan } from '../src/project-plan.js';
 import { spreadsheetTables, tableToCsv, tablesToCsvZip, tablesToXlsx } from '../src/spreadsheet-export.js';
 import { buildInfo } from '../src/build-info.js';
@@ -31,7 +31,7 @@ function demoModel() {
       qDelta: '0.2',
       eDelta: '0.1'
     },
-    measures: initialMeasures,
+    measures: demoMeasures,
     projectPlan: normalizeProjectPlan(undefined, 2027),
     lastReleaseCheck: { checkedAt: '2026-07-13T10:00:00.000Z', status: 'current' }
   };
@@ -47,9 +47,17 @@ describe('spreadsheet exports', () => {
       'Jahreswerte',
       'Projektplan',
       'Klaerpunkte',
+      'Monitoring_Massnahmen',
+      'Monitoring_Aggregat',
+      'QReg_Netzleistung',
+      'Netzausbauplan_14d',
       'Provenienz'
     ]);
     expect(tables.find(table => table.name === 'Massnahmen')?.rows[0]).toContain('yearOneRegulatoryEogTeur');
+    expect(tables.find(table => table.name === 'Monitoring_Massnahmen')?.rows[0]).toContain('externalId');
+    expect(tables.find(table => table.name === 'Monitoring_Massnahmen')?.rows.flat()).toContain('SAP-PSP-NA-2027-001');
+    expect(tables.find(table => table.name === 'Monitoring_Aggregat')?.rows.flat()).toContain('Neubau/Ausbau/Erweiterung');
+    expect(tables.find(table => table.name === 'Netzausbauplan_14d')?.rows[0]).not.toContain('id');
     expect(tables.find(table => table.name === 'Projektplan')?.rows.length).toBeGreaterThan(60);
     expect(tables.find(table => table.name === 'Provenienz')?.rows.flat()).toContain(regulatoryParameterSet.id);
   });

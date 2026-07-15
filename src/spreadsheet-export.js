@@ -27,6 +27,58 @@ function round(value, digits = 2) {
   return Math.round(number * factor) / factor;
 }
 
+function text(value) {
+  return String(value ?? '').trim();
+}
+
+function externalMeasureId(measure) {
+  return text(measure.externalId);
+}
+
+function yesNoUnknown(value) {
+  if (value === 'yes') return 'ja';
+  if (value === 'no') return 'nein';
+  return 'unbekannt';
+}
+
+function investmentDecisionLabel(value) {
+  return {
+    planned: 'geplant',
+    decided: 'getroffen',
+    deferred: 'verschoben',
+    unknown: 'unbekannt'
+  }[value] || text(value) || 'unbekannt';
+}
+
+function monitoringProfileLabel(value) {
+  return {
+    monitoring: 'Monitoring aggregierbar',
+    qreg: 'Netzleistungsfähigkeit / Q-Reg',
+    nap14d: 'Netzausbauplan / §14d EnWG',
+    none: 'nicht zugeordnet'
+  }[value] || text(value) || 'nicht zugeordnet';
+}
+
+function monitoringQuality(measure) {
+  const missing = [];
+  if (!externalMeasureId(measure)) missing.push('externe ID');
+  if (!text(measure.monitoringCategory)) missing.push('Kategorie');
+  if (!text(measure.networkLevel)) missing.push('Netzebene/Druckstufe');
+  if (!text(measure.reportingStatus)) missing.push('Status');
+  return missing.length ? `prüfen: ${missing.join(', ')}` : 'strukturierte Mindestfelder vorhanden';
+}
+
+function profileIncluded(measure, profiles) {
+  return profiles.includes(text(measure.monitoringProfile));
+}
+
+function investmentBucket(category) {
+  const normalized = text(category).toLowerCase();
+  if (/neubau|ausbau|erweiter|verstärk|verstaerk/.test(normalized)) return 'Neubau/Ausbau/Erweiterung';
+  if (/erhalt|erneuer|ersatz|sanier|modern/.test(normalized)) return 'Erhalt/Erneuerung';
+  return 'nicht zugeordnet';
+}
+
 function roleLabel(roleId) {
   return projectPlanRoles[roleId] || roleId || '';
 }
@@ -81,7 +133,10 @@ export function spreadsheetTables(model, options = {}) {
   ];
 
   const measureRows = [[
-    'id', 'externalId', 'name', 'active', 'orgUnit', 'type', 'tags', 'year', 'costTeur', 'life', 'hgbLife',
+    'id', 'externalId', 'name', 'active', 'orgUnit', 'type', 'tags', 'monitoringProfile', 'monitoringCategory',
+    'networkLevel', 'reportingRegion', 'reportingStatus', 'capacityImpact', 'bottleneckRef', 'permitRequired',
+    'permitStatus', 'investmentDecisionStatus', 'investmentDecisionDate', 'alternativesChecked', 'flexibilityNeed',
+    'year', 'costTeur', 'life', 'hgbLife',
     'capitalCostMode', 'activationSecurePct', 'activationUncertainPct', 'activationProbabilityPct', 'expectedActivatedTeur',
     'opexRecognitionPct', 'opexPaTeur', 'opexDeltaPaTeur', 'reinvestMode', 'reinvestCostTeur', 'reinvestLife', 'decommissionCostTeur',
     'portfolioSharePct', 'rateMetric', 'ratePct', 'npvTeur', 'yearOneRegulatoryEogTeur', 'recurringRegulatoryEogTeur',
@@ -97,6 +152,19 @@ export function spreadsheetTables(model, options = {}) {
       measure.orgUnit || '',
       measure.type || '',
       Array.isArray(measure.tags) ? measure.tags.join(', ') : '',
+      monitoringProfileLabel(measure.monitoringProfile),
+      measure.monitoringCategory || '',
+      measure.networkLevel || '',
+      measure.reportingRegion || '',
+      measure.reportingStatus || '',
+      measure.capacityImpact || '',
+      measure.bottleneckRef || '',
+      yesNoUnknown(measure.permitRequired),
+      measure.permitStatus || '',
+      investmentDecisionLabel(measure.investmentDecisionStatus),
+      measure.investmentDecisionDate || '',
+      measure.alternativesChecked || '',
+      measure.flexibilityNeed || '',
       measure.year,
       round(measure.cost, 2),
       measure.life,
@@ -224,6 +292,116 @@ export function spreadsheetTables(model, options = {}) {
     });
   });
 
+  const monitoringMeasureRows = [[
+    'externalId', 'name', 'sector', 'profile', 'category', 'investmentBucket', 'networkLevel', 'region', 'status',
+    'plannedStartYear', 'commissioningYear', 'costTeur', 'opexPaTeur', 'opexDeltaPaTeur', 'active', 'dataQuality'
+  ]];
+  measures
+    .filter(measure => profileIncluded(measure, ['monitoring', 'qreg', 'nap14d']))
+    .forEach(measure => monitoringMeasureRows.push([
+      externalMeasureId(measure),
+      measure.name || '',
+      p.sector,
+      monitoringProfileLabel(measure.monitoringProfile),
+      measure.monitoringCategory || '',
+      investmentBucket(measure.monitoringCategory),
+      measure.networkLevel || '',
+      measure.reportingRegion || '',
+      measure.reportingStatus || '',
+      measure.plannedStartYear || '',
+      measure.year || '',
+      round(measure.cost, 2),
+      round(measure.opexPa || 0, 2),
+      round(measure.opexDeltaPa || 0, 2),
+      Boolean(measure.active),
+      monitoringQuality(measure)
+    ]));
+
+  const aggregateMap = new Map();
+  measures
+    .filter(measure => measure.active && profileIncluded(measure, ['monitoring', 'qreg', 'nap14d']))
+    .forEach(measure => {
+      const key = [p.sector, measure.year || '', investmentBucket(measure.monitoringCategory), measure.networkLevel || '', measure.reportingRegion || ''].join('|');
+      const existing = aggregateMap.get(key) || {
+        sector: p.sector,
+        year: measure.year || '',
+        bucket: investmentBucket(measure.monitoringCategory),
+        networkLevel: measure.networkLevel || '',
+        region: measure.reportingRegion || '',
+        count: 0,
+        capex: 0,
+        opex: 0,
+        ids: []
+      };
+      existing.count += 1;
+      existing.capex += Number(measure.cost) || 0;
+      existing.opex += Number(measure.opexPa) || 0;
+      if (externalMeasureId(measure)) existing.ids.push(externalMeasureId(measure));
+      aggregateMap.set(key, existing);
+    });
+  const monitoringAggregateRows = [[
+    'sector', 'year', 'investmentBucket', 'networkLevel', 'region', 'measureCount', 'capexTeur', 'opexPaTeur', 'externalIds', 'note'
+  ]];
+  [...aggregateMap.values()].forEach(item => monitoringAggregateRows.push([
+    item.sector,
+    item.year,
+    item.bucket,
+    item.networkLevel,
+    item.region,
+    item.count,
+    round(item.capex, 2),
+    round(item.opex, 2),
+    item.ids.join(', '),
+    'Aggregat zur Vorbereitung von Monitoring-/Excel-Abfragen; offizielles Vorlagen-Mapping fachlich prüfen.'
+  ]));
+
+  const qregRows = [[
+    'externalId', 'name', 'networkLevel', 'region', 'capacityImpact', 'impactAreas', 'evidenceTypes', 'dataQuality'
+  ]];
+  measures
+    .filter(measure => profileIncluded(measure, ['qreg']))
+    .forEach(measure => {
+      const impacts = impactAssumptionsFor(measure);
+      qregRows.push([
+        externalMeasureId(measure),
+        measure.name || '',
+        measure.networkLevel || '',
+        measure.reportingRegion || '',
+        measure.capacityImpact || '',
+        [...new Set(impacts.map(impact => impact.area).filter(Boolean))].join(', '),
+        [...new Set(impacts.map(impact => impact.evidenceType).filter(Boolean))].join(', '),
+        monitoringQuality(measure)
+      ]);
+    });
+
+  const napRows = [[
+    'externalId', 'name', 'category', 'networkLevel', 'region', 'bottleneckRef', 'capacityImpact', 'costTeur',
+    'plannedFiveYearWindow', 'commissioningYear', 'permitRequired', 'permitStatus', 'investmentDecisionStatus',
+    'investmentDecisionDate', 'alternativesChecked', 'flexibilityNeed', 'openIssues', 'dataQuality'
+  ]];
+  measures
+    .filter(measure => profileIncluded(measure, ['nap14d']))
+    .forEach(measure => napRows.push([
+      externalMeasureId(measure),
+      measure.name || '',
+      measure.monitoringCategory || '',
+      measure.networkLevel || '',
+      measure.reportingRegion || '',
+      measure.bottleneckRef || '',
+      measure.capacityImpact || '',
+      round(measure.cost, 2),
+      measure.year ? `${measure.year}-${Number(measure.year) + 4}` : '',
+      measure.year || '',
+      yesNoUnknown(measure.permitRequired),
+      measure.permitStatus || '',
+      investmentDecisionLabel(measure.investmentDecisionStatus),
+      measure.investmentDecisionDate || '',
+      measure.alternativesChecked || '',
+      measure.flexibilityNeed || '',
+      [measure.note || '', ...impactAssumptionsFor(measure).filter(impact => impact.confidence === 'review' || impact.governance === 'sensitivity').map(impact => impact.note || impact.title || '')].filter(Boolean).join(' | '),
+      monitoringQuality(measure)
+    ]));
+
   const provenanceRows = [
     ['Feld', 'Wert'],
     ['Export erstellt am', new Date().toISOString()],
@@ -243,6 +421,10 @@ export function spreadsheetTables(model, options = {}) {
     { name: 'Jahreswerte', rows: yearlyRows },
     { name: 'Projektplan', rows: projectRows },
     { name: 'Klaerpunkte', rows: warningRows },
+    { name: 'Monitoring_Massnahmen', rows: monitoringMeasureRows },
+    { name: 'Monitoring_Aggregat', rows: monitoringAggregateRows },
+    { name: 'QReg_Netzleistung', rows: qregRows },
+    { name: 'Netzausbauplan_14d', rows: napRows },
     { name: 'Provenienz', rows: provenanceRows }
   ];
 }

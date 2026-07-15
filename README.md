@@ -68,7 +68,7 @@ Typische Fragen, die die App strukturiert:
 - Projektplan mit Meilensteinen, Rollen-Swimlanes, Abhängigkeiten, eigenen Aufgaben und nächster fälliger Aufgabe führen
 - Reports, Gremienvorlagen, Validierungsprotokolle und Starter-Kits als HTML/PDF-fähige Artefakte bereitstellen
 - rollenspezifische KI-Prompts lokal erzeugen, ohne KI-API oder automatische Übertragung
-- spreadsheet-freundliche Tabellen als XLSX-Arbeitsmappe oder CSV-ZIP lokal exportieren, damit Maßnahmen, KPIs, Projektplan, Klärpunkte und Provenienz nicht im Tool-Silo bleiben
+- spreadsheet-freundliche Tabellen als XLSX-Arbeitsmappe oder CSV-ZIP lokal exportieren, damit Maßnahmen, KPIs, Projektplan, Klärpunkte, Monitoring-/Netzausbauplan-Vorbereitung und Provenienz nicht im Tool-Silo bleiben
 - App- und Ruleset-Aktualität nach expliziter Zustimmung prüfen
 - Feedback oder Regulierungsupdates über GitHub-Issue-Formulare vorbereiten, ohne Modelldaten automatisch zu übertragen
 

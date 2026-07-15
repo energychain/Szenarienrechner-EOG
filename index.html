@@ -955,6 +955,78 @@
 	          <div id="measureValidation" class="validation-messages" role="status" aria-live="polite"></div>
 	        </div>
         <div class="group">
+          <h3>Monitoring / Netzausbauplan</h3>
+          <p class="hint">Felder für behördennahe Excel-Abfragen und §14d-/Netzausbauplan-Vorbereitung. Die externe ID bleibt der Schlüssel aus SAP, PSP, Asset-Management oder einem anderen führenden System; interne App-IDs werden nicht als Behörden-/Monitoring-ID exportiert.</p>
+          <div class="grid2">
+            <div>
+              <label for="mMonitoringProfile">Exportprofil</label>
+              <select id="mMonitoringProfile">
+                <option value="none">nicht zugeordnet</option>
+                <option value="monitoring">Monitoring aggregierbar</option>
+                <option value="qreg">Netzleistungsfähigkeit / Q-Reg</option>
+                <option value="nap14d">Netzausbauplan / §14d EnWG</option>
+              </select>
+            </div>
+            <div>
+              <label for="mMonitoringCategory">Kategorie</label>
+              <input id="mMonitoringCategory" type="text" placeholder="z.B. Erneuerung, Ausbau, Optimierung">
+            </div>
+            <div>
+              <label for="mNetworkLevel">Netzebene / Druckstufe</label>
+              <input id="mNetworkLevel" type="text" placeholder="MS, NS, Hochdruck I ...">
+            </div>
+            <div>
+              <label for="mReportingRegion">Region / Netzgebiet</label>
+              <input id="mReportingRegion" type="text" placeholder="Cluster, PLZ-Gebiet, Netzgebiet">
+            </div>
+            <div>
+              <label for="mReportingStatus">Status</label>
+              <input id="mReportingStatus" type="text" placeholder="geplant, beschlossen, in Umsetzung">
+            </div>
+            <div>
+              <label for="mCapacityImpact">Kapazitätswirkung</label>
+              <input id="mCapacityImpact" type="text" placeholder="z.B. +2 MVA, Engpass reduziert">
+            </div>
+            <div>
+              <label for="mBottleneckRef">Engpass / Abschnitt</label>
+              <input id="mBottleneckRef" type="text" placeholder="Leitungsabschnitt, Station, Region">
+            </div>
+            <div>
+              <label for="mPermitRequired">Genehmigung erforderlich?</label>
+              <select id="mPermitRequired">
+                <option value="unknown">unbekannt</option>
+                <option value="yes">ja</option>
+                <option value="no">nein</option>
+              </select>
+            </div>
+            <div>
+              <label for="mPermitStatus">Genehmigungs-/Verfahrensstand</label>
+              <input id="mPermitStatus" type="text" placeholder="nicht gestartet, in Prüfung, erteilt">
+            </div>
+            <div>
+              <label for="mInvestmentDecisionStatus">Investitionsentscheidung</label>
+              <select id="mInvestmentDecisionStatus">
+                <option value="unknown">unbekannt</option>
+                <option value="planned">geplant</option>
+                <option value="decided">getroffen</option>
+                <option value="deferred">verschoben</option>
+              </select>
+            </div>
+            <div>
+              <label for="mInvestmentDecisionDate">Entscheidungsdatum</label>
+              <input id="mInvestmentDecisionDate" type="date">
+            </div>
+            <div>
+              <label for="mAlternativesChecked">Alternativenprüfung</label>
+              <input id="mAlternativesChecked" type="text" placeholder="kurzer Hinweis oder offen">
+            </div>
+            <div class="wide-field">
+              <label for="mFlexibilityNeed">Flexibilitäts-/Systemdienstleistungsbezug</label>
+              <input id="mFlexibilityNeed" type="text" placeholder="z.B. Spitzenkappung, Flexibilitätsbedarf, kein Bezug">
+            </div>
+          </div>
+        </div>
+        <div class="group">
           <h3>Lebenszyklus der Maßnahme</h3>
           <p class="hint">Errichtung ist oben erfasst. Betrieb, Erneuerung und Rückbau sind standardmäßig 0 und im Expertenmodus änderbar.</p>
           <div id="lifecycleTimeline" class="lifecycle-timeline" aria-label="Lebenszyklus-Zeitstrahl"></div>

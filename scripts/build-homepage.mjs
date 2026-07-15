@@ -360,6 +360,7 @@ export function renderHomepage() {
           <div class="feature"><span class="check">✓</span><div><strong>EOG-/Cashflow-Brücke</strong><br>Regulatorische EOG-Wirkung, wirtschaftliche Überleitung, laufende Effekte und Einmaleffekte getrennt.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Herleitungshelfer</strong><br>Q-Wirkung, Risiko-Erwartungswert, CAPEX/OPEX-Split, Nutzungsdauer/AfA und Finanzierungsspread.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Projektplan</strong><br>Meilensteine, Rollen-Swimlanes, Abhängigkeiten, eigene Aufgaben, nächste fällige Aufgabe je Rolle.</div></div>
+          <div class="feature"><span class="check">✓</span><div><strong>Monitoring-/§14d-Vorbereitung</strong><br>Externe Maßnahmen-ID, Netzebene, Region, Status, Genehmigungsstand, Kapazitätswirkung und Alternativenprüfung für Reporting-Profile.</div></div>
         </div>
       </div>
       <div class="card">
@@ -367,7 +368,7 @@ export function renderHomepage() {
         <div class="feature-list">
           <div class="feature"><span class="check">✓</span><div><strong>Offline-first Single-File</strong><br>Keine Telemetrie, keine Cookies, kein Backend; Daten bleiben lokal im Browser oder in exportierten Dateien.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>HTML mit Daten speichern</strong><br>App-Version und Arbeitsstand reisen gemeinsam als selbsttragende HTML-Datei.</div></div>
-          <div class="feature"><span class="check">✓</span><div><strong>Excel-freundliche Exporte</strong><br>XLSX und CSV-ZIP für Maßnahmen, KPIs, Jahreswerte, Projektplan, Klärpunkte und Provenienz.</div></div>
+          <div class="feature"><span class="check">✓</span><div><strong>Excel-freundliche Exporte</strong><br>XLSX und CSV-ZIP für Maßnahmen, KPIs, Jahreswerte, Projektplan, Klärpunkte, Monitoring-Aggregate, Q-Reg-Netzleistungsfähigkeit, §14d-Netzausbauplan und Provenienz.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Aktualitätsprüfung mit Einwilligung</strong><br>App-/Ruleset-Stand und SHA-256 über Manifest prüfen, ohne Modelldaten zu übertragen.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>KI-Prompt-Export</strong><br>Rollenbezogene Prompts lokal erzeugen; keine KI-API, keine automatische Übertragung.</div></div>
         </div>

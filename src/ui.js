@@ -97,6 +97,9 @@ const inputDefaults = {
 
 const detailIds = [
   'mName', 'mExternalId', 'mOrgUnit', 'mTags', 'mType', 'mCost', 'mYear', 'mSecure', 'mUncertain',
+  'mMonitoringProfile', 'mMonitoringCategory', 'mNetworkLevel', 'mReportingRegion', 'mReportingStatus',
+  'mCapacityImpact', 'mBottleneckRef', 'mPermitRequired', 'mPermitStatus', 'mInvestmentDecisionStatus',
+  'mInvestmentDecisionDate', 'mAlternativesChecked', 'mFlexibilityNeed',
   'mProbability', 'mOpexRecognition', 'mLife', 'mDepr', 'mQDirect',
   'mEDirect', 'mRiskAvoided', 'mPortfolioShare', 'mOpexPa',
   'mOpexDeltaPa', 'mReinvestCost', 'mReinvestMode', 'mReinvestLife', 'mDecommissionCost', 'mHgbLife',
@@ -187,7 +190,20 @@ const importFields = [
   ['opexRecognition', 'OPEX-Anerkennung %'],
   ['active', 'aktiv'],
   ['tags', 'Tags'],
-  ['templateId', 'Vorlage']
+  ['templateId', 'Vorlage'],
+  ['monitoringProfile', 'Monitoring-Profil'],
+  ['monitoringCategory', 'Monitoring-/§14d-Kategorie'],
+  ['networkLevel', 'Netzebene / Druckstufe'],
+  ['reportingRegion', 'Region / Netzgebiet'],
+  ['reportingStatus', 'Status Reporting'],
+  ['capacityImpact', 'Kapazitätswirkung'],
+  ['bottleneckRef', 'Engpass / Abschnitt'],
+  ['permitRequired', 'Genehmigung erforderlich'],
+  ['permitStatus', 'Genehmigungsstand'],
+  ['investmentDecisionStatus', 'Investitionsentscheidung'],
+  ['investmentDecisionDate', 'Entscheidungsdatum'],
+  ['alternativesChecked', 'Alternativenprüfung'],
+  ['flexibilityNeed', 'Flexibilitäts-/SDL-Bedarf']
 ];
 const importHeaderSynonyms = {
   externalId: ['psp', 'psp-element', 'projektnr', 'projektnummer', 'projekt-id', 'id', 'sap'],
@@ -204,7 +220,20 @@ const importHeaderSynonyms = {
   opexRecognition: ['opex-anerkennung', 'opex anerkennung', 'anerkennung'],
   active: ['aktiv', 'einplanen', 'auswahl'],
   tags: ['tags', 'schlagworte', 'label'],
-  templateId: ['vorlage', 'template', 'templateid']
+  templateId: ['vorlage', 'template', 'templateid'],
+  monitoringProfile: ['monitoring profil', 'exportprofil', 'reporting profil', 'bnetza profil'],
+  monitoringCategory: ['monitoring kategorie', '14d kategorie', 'netzausbau kategorie', 'maßnahmenkategorie', 'massnahmenkategorie'],
+  networkLevel: ['netzebene', 'spannungsebene', 'druckstufe'],
+  reportingRegion: ['region', 'netzgebiet', 'cluster', 'plz gebiet'],
+  reportingStatus: ['status', 'projektstatus', 'umsetzungsstatus'],
+  capacityImpact: ['kapazitätswirkung', 'kapazitaetswirkung', 'leistungswirkung', 'mva', 'mw'],
+  bottleneckRef: ['engpass', 'leitungsabschnitt', 'umspannstation', 'abschnitt'],
+  permitRequired: ['genehmigung erforderlich', 'planfeststellung', 'verfahren erforderlich'],
+  permitStatus: ['genehmigungsstand', 'verfahrensstand'],
+  investmentDecisionStatus: ['investitionsentscheidung', 'beschlussstatus', 'entscheidung status'],
+  investmentDecisionDate: ['entscheidungsdatum', 'beschlussdatum'],
+  alternativesChecked: ['alternativenprüfung', 'alternativenpruefung', 'alternativen'],
+  flexibilityNeed: ['flexibilitätsbedarf', 'flexibilitaetsbedarf', 'systemdienstleistung', 'sdl']
 };
 
 const impactAreaLabels = {
@@ -623,6 +652,19 @@ function normalizeMeasureForUi(measure, index = 0) {
     id: String(measure.id || 'import_' + Date.now().toString(36) + '_' + index),
     externalId: String(measure.externalId || ''),
     orgUnit: String(measure.orgUnit || ''),
+    monitoringProfile: String(measure.monitoringProfile || 'none'),
+    monitoringCategory: String(measure.monitoringCategory || ''),
+    networkLevel: String(measure.networkLevel || ''),
+    reportingRegion: String(measure.reportingRegion || ''),
+    reportingStatus: String(measure.reportingStatus || ''),
+    capacityImpact: String(measure.capacityImpact || ''),
+    bottleneckRef: String(measure.bottleneckRef || ''),
+    permitRequired: String(measure.permitRequired || 'unknown'),
+    permitStatus: String(measure.permitStatus || ''),
+    investmentDecisionStatus: String(measure.investmentDecisionStatus || 'unknown'),
+    investmentDecisionDate: String(measure.investmentDecisionDate || ''),
+    alternativesChecked: String(measure.alternativesChecked || ''),
+    flexibilityNeed: String(measure.flexibilityNeed || ''),
     tags: parseTags(measure.tags),
     hgbLife: Number(measure.hgbLife) || Number(measure.life) || 1,
     importStatus: String(measure.importStatus || ''),
@@ -2047,6 +2089,19 @@ function importedMeasureFromRow(row, mapping, index) {
     externalId: String(importValue(row, mapping, 'externalId') || '').trim(),
     name,
     orgUnit: String(importValue(row, mapping, 'orgUnit') || base.orgUnit || '').trim(),
+    monitoringProfile: String(importValue(row, mapping, 'monitoringProfile') || base.monitoringProfile || 'none').trim(),
+    monitoringCategory: String(importValue(row, mapping, 'monitoringCategory') || base.monitoringCategory || '').trim(),
+    networkLevel: String(importValue(row, mapping, 'networkLevel') || base.networkLevel || '').trim(),
+    reportingRegion: String(importValue(row, mapping, 'reportingRegion') || base.reportingRegion || '').trim(),
+    reportingStatus: String(importValue(row, mapping, 'reportingStatus') || base.reportingStatus || '').trim(),
+    capacityImpact: String(importValue(row, mapping, 'capacityImpact') || base.capacityImpact || '').trim(),
+    bottleneckRef: String(importValue(row, mapping, 'bottleneckRef') || base.bottleneckRef || '').trim(),
+    permitRequired: String(importValue(row, mapping, 'permitRequired') || base.permitRequired || 'unknown').trim(),
+    permitStatus: String(importValue(row, mapping, 'permitStatus') || base.permitStatus || '').trim(),
+    investmentDecisionStatus: String(importValue(row, mapping, 'investmentDecisionStatus') || base.investmentDecisionStatus || 'unknown').trim(),
+    investmentDecisionDate: String(importValue(row, mapping, 'investmentDecisionDate') || base.investmentDecisionDate || '').trim(),
+    alternativesChecked: String(importValue(row, mapping, 'alternativesChecked') || base.alternativesChecked || '').trim(),
+    flexibilityNeed: String(importValue(row, mapping, 'flexibilityNeed') || base.flexibilityNeed || '').trim(),
     type: ['wahl', 'noRegret', 'risiko'].includes(String(importValue(row, mapping, 'type')).trim()) ? String(importValue(row, mapping, 'type')).trim() : base.type,
     cost,
     year,
@@ -2231,7 +2286,7 @@ function bulkImportBack() {
 function applyBulkImport() {
   const plan = buildBulkImportPlan();
   const importedFields = new Set(Object.values(bulkImportState.mapping).filter(field => field !== 'ignore'));
-  const updateFieldNames = ['name', 'orgUnit', 'type', 'cost', 'year', 'life', 'hgbLife', 'secure', 'uncertain', 'probability', 'opexRecognition', 'active', 'tags', 'templateId'];
+  const updateFieldNames = ['name', 'orgUnit', 'type', 'cost', 'year', 'life', 'hgbLife', 'secure', 'uncertain', 'probability', 'opexRecognition', 'active', 'tags', 'templateId', 'monitoringProfile', 'monitoringCategory', 'networkLevel', 'reportingRegion', 'reportingStatus', 'capacityImpact', 'bottleneckRef', 'permitRequired', 'permitStatus', 'investmentDecisionStatus', 'investmentDecisionDate', 'alternativesChecked', 'flexibilityNeed'];
   measures = measures.map(measure => {
     const update = plan.updated.find(item => item.existing.id === measure.id);
     if (!update) return measure;
@@ -2296,6 +2351,13 @@ function exportCatalogCsv() {
       measure.cost,
       measure.life,
       measure.hgbLife || measure.life,
+      measure.monitoringProfile || '',
+      measure.monitoringCategory || '',
+      measure.networkLevel || '',
+      measure.reportingRegion || '',
+      measure.reportingStatus || '',
+      measure.permitRequired || '',
+      measure.investmentDecisionStatus || '',
       measure.active ? 'ja' : 'nein',
       tagsText(measure.tags),
       Number.isFinite(result.irr) ? (result.irr * 100).toFixed(2).replace('.', ',') : '',
@@ -2304,7 +2366,7 @@ function exportCatalogCsv() {
       (result.rows[0]?.ebit || 0).toFixed(2).replace('.', ',')
     ];
   });
-  const header = ['externalId', 'name', 'orgUnit', 'type', 'year', 'costTeur', 'life', 'hgbLife', 'active', 'tags', 'irrPct', 'npvTeur', 'eogJ1Teur', 'ebitJ1Teur'];
+  const header = ['externalId', 'name', 'orgUnit', 'type', 'year', 'costTeur', 'life', 'hgbLife', 'monitoringProfile', 'monitoringCategory', 'networkLevel', 'reportingRegion', 'reportingStatus', 'permitRequired', 'investmentDecisionStatus', 'active', 'tags', 'irrPct', 'npvTeur', 'eogJ1Teur', 'ebitJ1Teur'];
   const csv = [header, ...rows].map(row => row.map(csvEscape).join(';')).join('\n');
   downloadText('szenario-rechner-katalog.csv', csv);
   setStorageStatus('Katalog-CSV wurde vorbereitet.');
@@ -2312,9 +2374,9 @@ function exportCatalogCsv() {
 
 function downloadCsvTemplate() {
   const rows = [
-    ['externalId', 'name', 'orgUnit', 'type', 'year', 'costTeur', 'life', 'hgbLife', 'active', 'tags', 'templateId'],
-    ['PSP-1001', 'Ersatz Ortsnetzstation Muster', 'Netze Strom', 'wahl', '2028', '150', '35', '35', 'nein', 'RP5, Pflicht', 'tpl_ons_ersatz'],
-    ['PSP-2001', 'GDRA-Modernisierung Muster', 'Netze Gas', 'risiko', '2029', '420', '30', '30', 'nein', 'Gas, Sicherheit', 'tpl_gdra_modernisierung']
+    ['externalId', 'name', 'orgUnit', 'type', 'year', 'costTeur', 'life', 'hgbLife', 'active', 'tags', 'templateId', 'monitoringProfile', 'monitoringCategory', 'networkLevel', 'reportingRegion', 'reportingStatus'],
+    ['PSP-1001', 'Ersatz Ortsnetzstation Muster', 'Netze Strom', 'wahl', '2028', '150', '35', '35', 'nein', 'RP5, Pflicht', 'tpl_ons_ersatz', 'nap14d', 'Erneuerung', 'Mittelspannung', 'Cluster Nord', 'geplant'],
+    ['PSP-2001', 'GDRA-Modernisierung Muster', 'Netze Gas', 'risiko', '2029', '420', '30', '30', 'nein', 'Gas, Sicherheit', 'tpl_gdra_modernisierung', 'monitoring', 'Erhalt/Erneuerung', 'Mitteldruck', 'Netzgebiet Gas', 'geplant']
   ];
   downloadText('szenario-rechner-import-vorlage.csv', rows.map(row => row.map(csvEscape).join(';')).join('\n'));
 }
@@ -3295,6 +3357,19 @@ function newMeasureTemplate() {
     portfolioShare: 0,
     externalId: '',
     orgUnit: '',
+    monitoringProfile: 'none',
+    monitoringCategory: '',
+    networkLevel: '',
+    reportingRegion: '',
+    reportingStatus: 'geplant',
+    capacityImpact: '',
+    bottleneckRef: '',
+    permitRequired: 'unknown',
+    permitStatus: '',
+    investmentDecisionStatus: 'unknown',
+    investmentDecisionDate: '',
+    alternativesChecked: '',
+    flexibilityNeed: '',
     tags: [],
     hgbLife: 40,
     objectiveIds: [],
@@ -4077,6 +4152,19 @@ function renderDetail() {
   el.mExternalId.value = measure.externalId || '';
   el.mOrgUnit.value = measure.orgUnit || '';
   el.mTags.value = tagsText(measure.tags);
+  el.mMonitoringProfile.value = measure.monitoringProfile || 'none';
+  el.mMonitoringCategory.value = measure.monitoringCategory || '';
+  el.mNetworkLevel.value = measure.networkLevel || '';
+  el.mReportingRegion.value = measure.reportingRegion || '';
+  el.mReportingStatus.value = measure.reportingStatus || '';
+  el.mCapacityImpact.value = measure.capacityImpact || '';
+  el.mBottleneckRef.value = measure.bottleneckRef || '';
+  el.mPermitRequired.value = measure.permitRequired || 'unknown';
+  el.mPermitStatus.value = measure.permitStatus || '';
+  el.mInvestmentDecisionStatus.value = measure.investmentDecisionStatus || 'unknown';
+  el.mInvestmentDecisionDate.value = measure.investmentDecisionDate || '';
+  el.mAlternativesChecked.value = measure.alternativesChecked || '';
+  el.mFlexibilityNeed.value = measure.flexibilityNeed || '';
   el.mType.value = measure.type;
   el.mCost.value = measure.cost;
   el.mYear.value = measure.year;
@@ -4943,6 +5031,19 @@ function updateSelectedFromDetail() {
 	        name: el.mName.value,
 	        externalId: el.mExternalId.value.trim(),
 	        orgUnit: el.mOrgUnit.value.trim(),
+	        monitoringProfile: el.mMonitoringProfile.value,
+	        monitoringCategory: el.mMonitoringCategory.value.trim(),
+	        networkLevel: el.mNetworkLevel.value.trim(),
+	        reportingRegion: el.mReportingRegion.value.trim(),
+	        reportingStatus: el.mReportingStatus.value.trim(),
+	        capacityImpact: el.mCapacityImpact.value.trim(),
+	        bottleneckRef: el.mBottleneckRef.value.trim(),
+	        permitRequired: el.mPermitRequired.value,
+	        permitStatus: el.mPermitStatus.value.trim(),
+	        investmentDecisionStatus: el.mInvestmentDecisionStatus.value,
+	        investmentDecisionDate: el.mInvestmentDecisionDate.value,
+	        alternativesChecked: el.mAlternativesChecked.value.trim(),
+	        flexibilityNeed: el.mFlexibilityNeed.value.trim(),
 	        tags: parseTags(el.mTags.value),
 	        type: el.mType.value,
 	        cost: num('mCost'),

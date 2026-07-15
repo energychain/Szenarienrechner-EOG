@@ -22,6 +22,8 @@ describe('static homepage', () => {
     expect(homepage).toContain('Technische Features');
     expect(homepage).toContain('Offline-first Single-File');
     expect(homepage).toContain('Excel-freundliche Exporte');
+    expect(homepage).toContain('Monitoring-/§14d-Vorbereitung');
+    expect(homepage).toContain('§14d-Netzausbauplan');
   });
 
   it('shows visual workflow proofs from real app screenshots', () => {
@@ -72,6 +74,7 @@ describe('static homepage', () => {
     expect(readme).toContain('Mini-Homepage: https://energychain.github.io/Szenarienrechner-EOG/');
     expect(readme).toContain('Live-App: https://energychain.github.io/Szenarienrechner-EOG/app.html');
     expect(readme).toContain('Geführte Arcade-Demo: https://app.arcade.software/share/ZlZVVMORTrNI4FxeSxlB');
+    expect(readme).toContain('Monitoring-/Netzausbauplan-Vorbereitung');
     expect(readme).toContain('dist/app.html');
   });
 });
