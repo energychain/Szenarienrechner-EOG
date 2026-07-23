@@ -230,7 +230,8 @@ describe('calcMeasure depreciation scenarios', () => {
     }), p);
 
     expect(result.rows[0].opex).toBeCloseTo(-15, 4);
-    expect(result.rows[0].eog).toBeCloseTo(522.5, 4);
+    expect(result.rows[0].eog).toBeCloseTo(537.5, 4);
+    expect(result.rows[0].indicativeCashflow).toBeCloseTo(522.5, 4);
     expect(result.rows[2].reinvestDecommission).toBeCloseTo(-150, 4);
     expect(result.totex.nominal).toBeCloseTo(1210, 4);
     expect(result.totex.discounted).toBeGreaterThan(1000);
@@ -306,12 +307,25 @@ describe('scenario and portfolio parameters', () => {
     const metrics = portfolioDecisionMetrics(result);
 
     expect(result.yearly[0].regulatoryEogEffect).toBeCloseTo(573.75, 4);
-    expect(result.yearly[0].indicativeCashflow).toBeCloseTo(result.yearly[0].eog, 4);
+    expect(result.yearly[0].eog).toBeCloseTo(result.yearly[0].regulatoryEogEffect, 4);
+    expect(result.yearly[0].indicativeCashflow).toBeCloseTo(result.yearly[0].regulatoryEogEffect + result.yearly[0].economicOpex, 4);
     expect(result.yearly[0].economicOpex).toBeCloseTo(-15, 4);
     expect(metrics.yearOneRegulatoryEog).toBeCloseTo(573.75, 4);
     expect(metrics.recurringRegulatoryEog).toBeCloseTo(result.yearly[1].regulatoryEogEffect, 4);
     expect(metrics.yearOneOneOff).toBeCloseTo(500, 4);
     expect(metrics.cashflowBasis).toContain('indikativ');
+  });
+
+  it('calculates HGB EBIT from pure EOG effect plus net OPEX without double-counting OPEX', () => {
+    const p = params({ ...baseInputs, horizon: 1 });
+    const model = { measures: [baseMeasure({ cost: 1000, secure: 100, opexPa: 12, opexDeltaPa: 4, hgbLife: 10 })] };
+    const result = calcPortfolio(model, p);
+    const row = result.yearly[0];
+
+    expect(row.eog).toBeCloseTo(row.regulatoryEogEffect, 4);
+    expect(row.economicOpex).toBeCloseTo(-8, 4);
+    expect(row.ebit).toBeCloseTo(row.regulatoryEogEffect + row.economicOpex - row.hgbDepreciation, 4);
+    expect(row.ebit).not.toBeCloseTo(row.indicativeCashflow + row.economicOpex - row.hgbDepreciation, 4);
   });
 
   it('exposes conservative decision metrics without review-marked assumptions', () => {
