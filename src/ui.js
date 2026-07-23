@@ -3008,6 +3008,16 @@ function trendWord(value) {
   return 'unter';
 }
 
+function eogYearNarrative(result, metrics, activeText) {
+  const startYear = result.p.baseYear;
+  const firstFollowYear = startYear + 1;
+  return {
+    startYear,
+    firstFollowYear,
+    text: `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die modellierte EOG-Wirkung im Startjahr ${startYear} bei ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt nur im Startjahr. Der erste Folgejahreswert ${firstFollowYear} liegt bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)}; spätere Jahreswerte können durch AfA, Wirkungsverzüge, Reinvestitionen oder Rückbau abweichen.`
+  };
+}
+
 function renderManagementSummary(result, first, spread, decision, metrics) {
   const verdict = document.getElementById('managementVerdict');
   verdict.className = 'verdict-card ' + decision.cls;
@@ -3023,8 +3033,9 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
   const activeText = result.activeMeasures.length === 1 ? '1 aktive Maßnahme' : result.activeMeasures.length + ' aktive Maßnahmen';
   const tariff = tariffImpactLine(result.tariffImpact);
 
+  const narrative = eogYearNarrative(result, metrics, activeText);
   document.getElementById('managementStory').textContent = result.activeMeasures.length
-    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die modellierte EOG-Wirkung im Startjahr bei ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. Der erste Folgejahreswert liegt bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)}; spätere Jahreswerte können durch AfA, Wirkungsverzüge, Reinvestitionen oder Rückbau abweichen. Die indikative Portfolio-${metricLabel} beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht der erste Folgejahreswert rechnerisch etwa ${tariff.value}.` : ''}`
+    ? `${narrative.text} Die indikative Portfolio-${metricLabel} beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht der erste Folgejahreswert ${narrative.firstFollowYear} rechnerisch etwa ${tariff.value}.` : ''}`
     : 'Es ist keine aktive Maßnahme ausgewählt. Für eine Entscheidung müssen zuerst Maßnahmen aktiviert oder angelegt werden.';
 
   const knowledgeEffect = result.qePa + result.impactPa;
@@ -4752,8 +4763,9 @@ function renderReport(result, first, spread, decision, metrics) {
       <td>${esc(phaseLabel(snapshot.phase))}</td>
     </tr>
   `).join('') || '<tr><td colspan="4">Noch keine Snapshots dokumentiert.</td></tr>';
+  const narrative = eogYearNarrative(result, metrics, activeText);
   const story = result.activeMeasures.length
-    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die modellierte EOG-Wirkung im Startjahr bei ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. Der erste Folgejahreswert liegt bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)}; spätere Jahreswerte können abweichen. IRR und Kapitalwert sind indikative Cashflow-Kennzahlen: Portfolio-IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
+    ? `${narrative.text} IRR und Kapitalwert sind indikative Cashflow-Kennzahlen: Portfolio-IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
     : 'Es ist keine aktive Maßnahme ausgewählt. Der Report dokumentiert daher noch keinen belastbaren Business Case.';
   const strategyRows = strategyContributionRows(result) || '<tr><td colspan="5">Noch keine strategischen Ziele hinterlegt.</td></tr>';
   const strategyBars = strategyContributionBars(result);

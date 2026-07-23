@@ -2671,7 +2671,7 @@
 
     @media print {
       body { background: #fff; }
-      header, .process-strip, .view-tabs, .mode-strip, .sticky-kpis, footer, .modal, .report-actions { display: none !important; }
+      header, .process-strip, .process-notice, .view-tabs, .mode-strip, .sticky-kpis, footer, .modal, .report-actions { display: none !important; }
       main { display: block; padding: 0; }
       .app-view { display: none !important; }
       [data-view-panel="report"] { display: block !important; }
