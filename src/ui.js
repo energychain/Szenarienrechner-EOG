@@ -3024,7 +3024,7 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
   const tariff = tariffImpactLine(result.tariffImpact);
 
   document.getElementById('managementStory').textContent = result.activeMeasures.length
-    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die laufende modellierte EOG-Wirkung ab Jahr 2 bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)} p.a.; im Startjahr sind es ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. Die indikative Portfolio-${metricLabel} beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht die laufende rechnerische EOG-Wirkung etwa ${tariff.value}.` : ''}`
+    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die modellierte EOG-Wirkung im Startjahr bei ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. Der erste Folgejahreswert liegt bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)}; spätere Jahreswerte können durch AfA, Wirkungsverzüge, Reinvestitionen oder Rückbau abweichen. Die indikative Portfolio-${metricLabel} beträgt ${irrText}. ${spreadSentence}${result.tariffImpact.available ? ` Für einen Durchschnittshaushalt entspricht der erste Folgejahreswert rechnerisch etwa ${tariff.value}.` : ''}`
     : 'Es ist keine aktive Maßnahme ausgewählt. Für eine Entscheidung müssen zuerst Maßnahmen aktiviert oder angelegt werden.';
 
   const knowledgeEffect = result.qePa + result.impactPa;
@@ -3045,7 +3045,7 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
 
 	      const pills = [
 	        ['Invest ' + fmtTeur(result.invest), ''],
-	        ['laufende EOG ' + fmtTeur(metrics.recurringRegulatoryEog, 1), ''],
+	        ['Folgejahr-EOG ' + fmtTeur(metrics.recurringRegulatoryEog, 1), ''],
 	        ['Einmalig J1 ' + fmtTeur(metrics.yearOneOneOff, 1), metrics.yearOneOneOff ? 'warn' : ''],
 	        [`${metricLabel} indikativ ` + irrText, decision.cls],
 	        ['konservativ ' + (metrics.conservative ? (Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-') : '-'), metrics.conservativeGate === 'tragfaehig' ? 'good' : metrics.conservativeGate === 'auflage' ? 'warn' : 'bad']
@@ -3089,7 +3089,7 @@ function renderEogCashflowBridge(result, metrics) {
   const economicBridge = metrics.recurringIndicativeCashflow - metrics.recurringRegulatoryEog;
   const yearOneEconomicBridge = metrics.yearOneIndicativeCashflow - metrics.yearOneRegulatoryEog;
   document.getElementById('cashflowBridgeEog').textContent = fmtTeur(metrics.recurringRegulatoryEog, 1);
-  document.getElementById('cashflowBridgeEogText').textContent = `Laufende modellierte EOG-Wirkung ab Jahr 2. Startjahr: ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt.`;
+  document.getElementById('cashflowBridgeEogText').textContent = `Erster Folgejahreswert der modellierten EOG-Wirkung; spätere Jahre können abweichen. Startjahr: ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt nur im Startjahr.`;
   document.getElementById('cashflowBridgeEconomic').textContent = fmtTeur(economicBridge, 1);
   document.getElementById('cashflowBridgeEconomicText').textContent = `wirtschaftliche Überleitung aus laufenden OPEX-, Rückbau- und Reinvestitionsannahmen. Startjahr-Überleitung: ${fmtTeur(yearOneEconomicBridge, 1)}.`;
   document.getElementById('cashflowBridgeResult').textContent = fmtTeur(metrics.recurringIndicativeCashflow, 1);
@@ -3128,7 +3128,7 @@ function eogDecompositionTableHtml(result) {
   const recurring = recurringDecompositionRow(result);
   return [
     eogDecompositionRowHtml(`Jahr 1 (${first.year || result.p.baseYear})`, first),
-    eogDecompositionRowHtml(`laufendes Jahr (${recurring.year || result.p.baseYear + 1})`, recurring)
+    eogDecompositionRowHtml(`erstes Folgejahr (${recurring.year || result.p.baseYear + 1})`, recurring)
   ].join('');
 }
 
@@ -3144,13 +3144,13 @@ function renderMeetingFocus(result, first, spread, metrics = portfolioDecisionMe
   const spreadText = Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-';
   const rows = {
     management: [
-      meetingCard('management', 'decisionQuestion', 'Beschlussfrage', Number.isFinite(result.irr) ? irrText + ' IRR indikativ' : '', `Ist der Business Case bei ${fmtTeur(result.invest)} Investition und ${fmtTeur(metrics.recurringRegulatoryEog, 1)} laufender EOG-Wirkung mit den offenen Auflagen tragfähig?`),
+      meetingCard('management', 'decisionQuestion', 'Beschlussfrage', Number.isFinite(result.irr) ? irrText + ' IRR indikativ' : '', `Ist der Business Case bei ${fmtTeur(result.invest)} Investition und ${fmtTeur(metrics.recurringRegulatoryEog, 1)} EOG-Wirkung im ersten Folgejahr mit den offenen Auflagen tragfähig?`),
       meetingCard('management', 'whyItWorks', 'Warum es trägt', Number.isFinite(spread) ? spreadText + ' Spread' : '', `Rendite wird als indikativer Cashflow gegen FK-Zins ${fmtPct(result.p.financingRate * 100, 1)} und Kapitalwert ${fmtTeur(result.npv, 1)} gespiegelt; konservativ ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}.`),
       meetingCard('management', 'watchOut', 'Nicht übersehen', '', result.qePa + result.impactPa > 0 ? `Q/E- und Wirkannahmen von ${fmtTeur(result.qePa + result.impactPa, 1)} p.a. brauchen Nachweis, Attribution und Governance-Status.` : 'Ohne Portfolioeffekt zählt vor allem die direkte regulatorische Kapitalwirkung.')
     ],
     technik: [
       meetingCard('technik', 'technicalScope', 'Technische Betroffenheit', '', activeMeasureNames(result)),
-      meetingCard('technik', 'commissioningImpact', 'Inbetriebnahme & Wirkung', fmtTeur(first.regulatoryEogEffect, 1), `Modellierte EOG-Wirkung startet im Jahr ${result.p.baseYear}; laufend ab Jahr 2 ${fmtTeur(metrics.recurringRegulatoryEog, 1)}. Timing und Bau-/Inbetriebnahmejahr entscheiden über das Profil.`),
+      meetingCard('technik', 'commissioningImpact', 'Inbetriebnahme & Wirkung', fmtTeur(first.regulatoryEogEffect, 1), `Modellierte EOG-Wirkung startet im Jahr ${result.p.baseYear}; erster Folgejahreswert ${fmtTeur(metrics.recurringRegulatoryEog, 1)}. Timing, Wirkungsverzüge und spätere Sondereffekte entscheiden über das Profil.`),
       meetingCard('technik', 'riskArgument', 'Risikoargument', fmtTeur(result.yearly[0]?.opexRisk || 0, 1), 'OPEX/Risiko im Startjahr. Technik sollte Risikowert, Störungsfolgen und Umsetzungsrisiken validieren.')
     ],
     vnb: [
@@ -4548,7 +4548,7 @@ function plainCommitteeStory(result, first, metrics = portfolioDecisionMetrics(r
   const tariffText = result.tariffImpact.available
     ? ` Für einen Durchschnittshaushalt entspricht das rechnerisch etwa ${tariff.value}.`
     : '';
-  return `Das Modell bewertet ${activeText} mit ${fmtTeur(result.invest)} Investition. Die laufende modellierte EOG-Wirkung liegt bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)} p.a.; das Startjahr enthält ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt.${tariffText}`;
+  return `Das Modell bewertet ${activeText} mit ${fmtTeur(result.invest)} Investition. Die modellierte EOG-Wirkung liegt im ersten Folgejahr bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)}; spätere Jahreswerte können abweichen. Das Startjahr enthält ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt.${tariffText}`;
 }
 
 function committeeProposal(result) {
@@ -4745,7 +4745,7 @@ function renderReport(result, first, spread, decision, metrics) {
     </tr>
   `).join('') || '<tr><td colspan="4">Noch keine Snapshots dokumentiert.</td></tr>';
   const story = result.activeMeasures.length
-    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die laufende modellierte EOG-Wirkung bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)} p.a.; das Startjahr zeigt ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. IRR und Kapitalwert sind indikative Cashflow-Kennzahlen: Portfolio-IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
+    ? `Bei ${fmtTeur(result.invest)} Investition und ${activeText} liegt die modellierte EOG-Wirkung im Startjahr bei ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt. Der erste Folgejahreswert liegt bei ${fmtTeur(metrics.recurringRegulatoryEog, 1)}; spätere Jahreswerte können abweichen. IRR und Kapitalwert sind indikative Cashflow-Kennzahlen: Portfolio-IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : 'nicht berechenbar'} bei einem FK-Zins von ${fmtPct(result.p.financingRate * 100, 1)}.`
     : 'Es ist keine aktive Maßnahme ausgewählt. Der Report dokumentiert daher noch keinen belastbaren Business Case.';
   const strategyRows = strategyContributionRows(result) || '<tr><td colspan="5">Noch keine strategischen Ziele hinterlegt.</td></tr>';
   const strategyBars = strategyContributionBars(result);
@@ -4821,7 +4821,7 @@ function renderReport(result, first, spread, decision, metrics) {
       <div class="kpis">
         <div class="kpi"><div class="label">Investition</div><div class="value">${fmtTeur(result.invest)}</div><div class="sub">${activeText}</div></div>
         <div class="kpi"><div class="label">TOTEX Horizont</div><div class="value">${fmtTeur(result.totex.nominal, 1)}</div><div class="sub">diskontiert ${fmtTeur(result.totex.discounted, 1)}</div></div>
-        <div class="kpi"><div class="label">laufende EOG-Wirkung</div><div class="value">${fmtTeur(metrics.recurringRegulatoryEog, 1)}</div><div class="sub">Startjahr ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} · Einmaleffekt ${fmtTeur(metrics.yearOneOneOff, 1)}</div></div>
+        <div class="kpi"><div class="label">EOG-Wirkung Folgejahr</div><div class="value">${fmtTeur(metrics.recurringRegulatoryEog, 1)}</div><div class="sub">Startjahr ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} · Einmaleffekt im Startjahr ${fmtTeur(metrics.yearOneOneOff, 1)}</div></div>
         <div class="kpi"><div class="label">IRR indikativ</div><div class="value">${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</div><div class="sub">kein garantierter EOG-Cashflow</div></div>
         <div class="kpi"><div class="label">Kapitalwert</div><div class="value">${fmtTeur(result.npv, 1)}</div><div class="sub">Diskontsatz ${fmtPct(result.p.discountRate * 100, 1)}</div></div>
       </div>
@@ -4833,7 +4833,7 @@ function renderReport(result, first, spread, decision, metrics) {
       <div class="report-summary">
         <div class="report-box">
           <strong>Modellierte EOG-Wirkung</strong>
-          <p>${fmtTeur(metrics.recurringRegulatoryEog, 1)} laufend ab Jahr 2; Startjahr ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt.</p>
+          <p>${fmtTeur(metrics.recurringRegulatoryEog, 1)} erster Folgejahreswert; Startjahr ${fmtTeur(metrics.yearOneRegulatoryEog, 1)} inklusive ${fmtTeur(metrics.yearOneOneOff, 1)} Einmaleffekt nur im Startjahr. Spätere Jahreswerte können abweichen.</p>
         </div>
         <div class="report-box">
           <strong>wirtschaftliche Überleitung</strong>
@@ -4848,7 +4848,7 @@ function renderReport(result, first, spread, decision, metrics) {
 
     <section class="report-section">
       <h2>EOG-Zerlegung im Report</h2>
-      <p class="hint">Die Komponenten zeigen, welche Treiber den Jahr-1-Wert und das laufende Jahr prägen. Die wirtschaftliche Brücke bleibt getrennt von der regulatorischen EOG-Wirkung.</p>
+      <p class="hint">Die Komponenten zeigen, welche Treiber den Startjahreswert und den ersten Folgejahreswert prägen. Spätere Jahreswerte können abweichen; die wirtschaftliche Brücke bleibt getrennt von der regulatorischen EOG-Wirkung.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Sicht</th><th>AfA</th><th>Verzinsung</th><th>Reinvest-Asset</th><th>Q/E</th><th>Risiko</th><th>Einmal-OPEX</th><th>regulatorische EOG</th><th>wirtschaftliche Brücke</th><th>indikativer Cashflow</th></tr></thead>
@@ -4972,7 +4972,7 @@ function renderPortfolio() {
   document.getElementById('kpiActivated').textContent = fmtTeur(result.activated);
   document.getElementById('kpiActivatedSub').textContent = fmtPct(activatedShare, 1) + ' der Investitionen';
   document.getElementById('kpiEog').textContent = fmtTeur(metrics.recurringRegulatoryEog, 1);
-  document.getElementById('kpiEogSub').textContent = 'laufend ab Jahr 2; Startjahr ' + fmtTeur(metrics.yearOneRegulatoryEog, 1) + ', Einmaleffekt ' + fmtTeur(metrics.yearOneOneOff, 1);
+  document.getElementById('kpiEogSub').textContent = 'erster Folgejahreswert; Startjahr ' + fmtTeur(metrics.yearOneRegulatoryEog, 1) + ', Einmaleffekt im Startjahr ' + fmtTeur(metrics.yearOneOneOff, 1);
   document.getElementById('kpiIrr').textContent = Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-';
   document.getElementById('kpiIrrSub').textContent = 'indikativ, kein garantierter EOG-Cashflow';
   document.getElementById('kpiNpv').textContent = fmtTeur(result.npv, 1);

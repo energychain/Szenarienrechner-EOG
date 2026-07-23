@@ -11,8 +11,13 @@ describe('review findings 3.1-3.4 UI integration', () => {
   it('uses recurring EOG effect instead of year-1 peak as decision headline', () => {
     expect(ui).toContain('metrics.recurringRegulatoryEog');
     expect(ui).toContain('Einmaleffekt');
-    expect(html).toContain('laufende EOG-Wirkung');
+    expect(html).toContain('EOG-Wirkung Folgejahr');
     expect(ui).not.toContain('entsteht im ersten Jahr ein EOG-Zusatz');
+    expect(ui).not.toContain('laufende rechnerische EOG-Wirkung');
+    expect(ui).not.toContain('laufende modellierte EOG-Wirkung ab Jahr 2');
+    expect(ui).toContain('Der erste Folgejahreswert liegt bei');
+    expect(ui).toContain('spätere Jahreswerte können');
+    expect(ui).toContain('Einmaleffekt nur im Startjahr');
   });
 
   it('shows conservative judgement without review-marked assumptions in the verdict', () => {

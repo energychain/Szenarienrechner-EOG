@@ -46,7 +46,7 @@ describe('next consulting implementation docs and UI', () => {
     expect(ui).toContain('Verzinsung');
     expect(ui).toContain('Reinvest-Asset');
     expect(ui).toContain('Einmal-OPEX');
-    expect(ui).toContain('laufendes Jahr');
+    expect(ui).toContain('erstes Folgejahr');
     expect(ui).toContain('EOG-Zerlegung im Report');
   });
 
