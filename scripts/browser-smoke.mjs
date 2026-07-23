@@ -26,6 +26,14 @@ await page.getByText('Szenario-Rechner regulierte Sparten').waitFor({ timeout: 1
 await page.getByRole('button', { name: /Demodaten ansehen/ }).click();
 await page.getByRole('button', { name: /Projektplan/ }).click();
 await page.getByText('Nächste fällige Aufgabe je Rolle').waitFor({ timeout: 10000 });
+const fileInputsHidden = await page.locator('input[type="file"]').evaluateAll(inputs => inputs.every(input => {
+  const style = window.getComputedStyle(input);
+  const rect = input.getBoundingClientRect();
+  return style.display === 'none' || input.hidden || rect.width === 0 || rect.height === 0;
+}));
+if (!fileInputsHidden) {
+  throw new Error('Offline-Smoke-Test hat sichtbare native Datei-Auswahlfelder gefunden.');
+}
 await page.locator('.action-menu summary').click();
 await page.getByRole('button', { name: /Tabellen als XLSX exportieren/ }).waitFor({ timeout: 10000 });
 await page.getByRole('button', { name: /KI-Prompt erstellen/ }).waitFor({ timeout: 10000 });
