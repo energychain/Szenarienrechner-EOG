@@ -3160,7 +3160,7 @@ function renderMeetingFocus(result, first, spread, metrics = portfolioDecisionMe
     ],
     controlling: [
       meetingCard('controlling', 'investmentVolume', 'Investitionsvolumen', fmtTeur(result.invest), `${result.activeMeasures.length} aktive Maßnahmen im Szenario.`),
-      meetingCard('controlling', 'ebitYearOne', 'EBIT-Effekt Jahr 1', fmtTeur(first.ebit || 0, 1), 'Indikative Ergebnissicht: Erlöswirkung minus HGB-AfA und Netto-OPEX.'),
+      meetingCard('controlling', 'ebitYearOne', 'EBIT-Effekt Jahr 1', fmtTeur(first.ebit || 0, 1), 'Indikative Ergebnissicht: reine Erlöswirkung plus Netto-OPEX minus HGB-AfA.'),
       meetingCard('controlling', 'bridge', 'Überleitung kumuliert', fmtTeur(result.yearly.at(-1)?.bridgeCumulative || 0, 1), 'Timing-Differenz aus regulatorischer AfA minus HGB-AfA; mit Controlling abstimmen.')
     ],
     finanzierung: [

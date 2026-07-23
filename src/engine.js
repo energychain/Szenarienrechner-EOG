@@ -486,11 +486,11 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     const regulatoryCapexEffect = capexEffective ? depreciation + capitalReturn : 0;
     const regulatoryEogEffect = regulatoryCapexEffect + reinvestAssetEffect + firstYearOpex + yearlyQE + yearlyRisk;
     const indicativeCashflow = regulatoryEogEffect + economicOpex + reinvestDecommission;
-    const eog = indicativeCashflow;
+    const eog = regulatoryEogEffect;
     const hgbDepreciation = year >= start && year < start + hgbLife
       ? Math.min(active.activated / hgbLife, active.activated)
       : 0;
-    const ebit = eog - hgbDepreciation - (year >= start ? opexPa : 0) + (year >= start ? opexDeltaPa : 0);
+    const ebit = eog + economicOpex - hgbDepreciation;
     const bridge = depreciation - hgbDepreciation;
 
     if (year >= start) rest = Math.max(0, rest - depreciation);
