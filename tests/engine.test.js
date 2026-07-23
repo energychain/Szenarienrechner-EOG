@@ -288,13 +288,15 @@ describe('scenario and portfolio parameters', () => {
     expect(simplified.yearly[0].risk).toBeCloseTo(10, 4);
   });
 
-  it('calculates indicative tariff impact when annual energy is available', () => {
-    const model = { measures: [baseMeasure()] };
+  it('calculates indicative tariff impact from recurring EOG and keeps start-year impact separate', () => {
+    const model = { measures: [baseMeasure({ secure: 70, uncertain: 30, probability: 50, opexRecognition: 70 })] };
     const result = calcPortfolio(model, params({ ...baseInputs, annualEnergyGwh: 50, householdConsumptionKwh: 3000 }));
 
     expect(result.tariffImpact.available).toBe(true);
-    expect(result.tariffImpact.ctPerKwh).toBeCloseTo(result.yearly[0].regulatoryEogEffect * 100000 / 50000000, 6);
+    expect(result.tariffImpact.ctPerKwh).toBeCloseTo(result.yearly[1].regulatoryEogEffect * 100000 / 50000000, 6);
     expect(result.tariffImpact.householdEurPerYear).toBeCloseTo(result.tariffImpact.ctPerKwh * 30, 6);
+    expect(result.yearOneTariffImpact.ctPerKwh).toBeCloseTo(result.yearly[0].regulatoryEogEffect * 100000 / 50000000, 6);
+    expect(result.yearOneTariffImpact.householdEurPerYear).not.toBeCloseTo(result.tariffImpact.householdEurPerYear, 6);
   });
 
   it('separates regulatory EOG effect from indicative cash-flow and one-off effects', () => {

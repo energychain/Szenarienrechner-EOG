@@ -648,7 +648,8 @@ export function calcPortfolio(model, p) {
     riskPa,
     totex,
     warnings: results.flatMap(result => result.warnings || []),
-    tariffImpact: tariffImpactFor(yearly[0]?.regulatoryEogEffect || 0, p)
+    tariffImpact: tariffImpactFor(recurringValue(yearly, 'regulatoryEogEffect'), p),
+    yearOneTariffImpact: tariffImpactFor(yearly[0]?.regulatoryEogEffect || 0, p)
   };
 }
 
