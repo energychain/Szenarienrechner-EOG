@@ -20,6 +20,13 @@ describe('process notice layout', () => {
     expect(css).toMatch(/\.process-notice\.hidden\s*\{[^}]*display:\s*none/i);
   });
 
+  it('is not printed as part of report output', () => {
+    const printBlock = css.match(/@media print\s*\{[\s\S]*?\n\s*\}/)?.[0] || '';
+
+    expect(printBlock).toContain('.process-notice');
+    expect(printBlock).toMatch(/\.process-notice[^{;]*\{?[^}]*display:\s*none\s*!important/i);
+  });
+
   it('is placed near the top of the page flow instead of as a bottom overlay', () => {
     const rule = css.match(/\.process-notice\s*\{(?<body>[^}]*)\}/)?.groups?.body || '';
 

@@ -15,7 +15,9 @@ describe('review findings 3.1-3.4 UI integration', () => {
     expect(ui).not.toContain('entsteht im ersten Jahr ein EOG-Zusatz');
     expect(ui).not.toContain('laufende rechnerische EOG-Wirkung');
     expect(ui).not.toContain('laufende modellierte EOG-Wirkung ab Jahr 2');
-    expect(ui).toContain('Der erste Folgejahreswert liegt bei');
+    expect(ui).toContain('Der erste Folgejahreswert ${firstFollowYear} liegt bei');
+    expect(ui).toContain('im Startjahr ${startYear} bei');
+    expect(ui).toContain('Für einen Durchschnittshaushalt entspricht der erste Folgejahreswert ${firstFollowYear}');
     expect(ui).toContain('spätere Jahreswerte können');
     expect(ui).toContain('Einmaleffekt nur im Startjahr');
   });
