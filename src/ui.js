@@ -4299,7 +4299,7 @@ function renderYears(result) {
   if (caveat) caveat.classList.add('hidden');
   head.innerHTML = `
     <tr>
-      <th>Jahr</th><th>RP</th><th>Basis-EOG</th><th>AfA</th><th>Verzinsung</th><th>Q/E</th><th>Risiko</th><th>Einmalig</th><th>modellierte EOG-Wirkung</th><th>wirtschaftl. OPEX/Rückbau</th><th>indik. Cashflow</th><th>EOG gesamt</th>
+      <th>Jahr</th><th>RP</th><th>Basis-EOG</th><th>AfA/KANU regulatorisch</th><th>Verzinsung</th><th>Q/E</th><th>Risiko</th><th>Einmalig</th><th>modellierte EOG-Wirkung</th><th>wirtschaftl. OPEX/Rückbau</th><th>indik. Cashflow</th><th>EOG gesamt</th>
     </tr>
   `;
   document.getElementById('yearBody').innerHTML = result.yearly.map(row => `

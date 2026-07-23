@@ -72,6 +72,13 @@ describe('next consulting implementation docs and UI', () => {
     expect(ui).toContain('Finanzierungsspread-Erklärer');
   });
 
+  it('labels the regulatory year table depreciation as AfA/KANU regulatorisch', () => {
+    const html = read('index.html');
+    const ui = read('src/ui.js');
+    expect(html).toContain('AfA/KANU regulatorisch');
+    expect(ui).toContain('AfA/KANU regulatorisch');
+  });
+
   it('surfaces ruleset-as-data and advanced capital-cost inputs', () => {
     const html = read('index.html');
     const engine = read('src/engine.js');
