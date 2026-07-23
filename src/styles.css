@@ -1398,6 +1398,7 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
+      min-width: 0;
     }
 
     .report-section h2 {
@@ -1525,9 +1526,49 @@
 
     .table-wrap {
       max-height: 292px;
+      max-width: 100%;
       overflow: auto;
       border: 1px solid var(--line);
       border-radius: 8px;
+    }
+
+    .strategy-contribution-table {
+      table-layout: fixed;
+      min-width: 760px;
+    }
+
+    .strategy-contribution-table th:nth-child(1),
+    .strategy-contribution-table td:nth-child(1) { width: 18%; }
+
+    .strategy-contribution-table th:nth-child(2),
+    .strategy-contribution-table td:nth-child(2),
+    .strategy-contribution-table th:nth-child(3),
+    .strategy-contribution-table td:nth-child(3),
+    .strategy-contribution-table th:nth-child(4),
+    .strategy-contribution-table td:nth-child(4) { width: 15%; }
+
+    .strategy-contribution-table th:nth-child(5),
+    .strategy-contribution-table td:nth-child(5) { width: 37%; }
+
+    .strategy-measures-cell {
+      text-align: left;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: normal;
+      vertical-align: top;
+    }
+
+    .strategy-measure-list {
+      display: grid;
+      gap: 4px;
+      margin: 0;
+      padding-left: 16px;
+      white-space: normal;
+    }
+
+    .strategy-measure-list li {
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     .chart {

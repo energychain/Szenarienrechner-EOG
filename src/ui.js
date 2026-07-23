@@ -4392,26 +4392,34 @@ function scenarioLabel(name) {
   return name === 'basis' ? 'Basis' : name === 'konservativ' ? 'Konservativ' : 'Wert';
 }
 
+function strategyMeasureNamesCell(items) {
+  if (!items.length) return '<span class="strategy-measure-empty">-</span>';
+  return `
+    <ul class="strategy-measure-list">
+      ${items.map(item => `<li>${esc(item.measure.name)}</li>`).join('')}
+    </ul>
+  `;
+}
+
 function strategyContributionRows(result) {
   const objectiveRows = strategy.objectives.map(objective => {
     const matching = result.results.filter(item => (item.measure.objectiveIds || []).includes(objective.id));
     const invest = matching.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0);
     const firstEog = matching.reduce((sum, item) => sum + (item.rows[0]?.regulatoryEogEffect || 0), 0);
     const risk = matching.reduce((sum, item) => sum + item.riskReductionPa, 0);
-    const names = matching.map(item => item.measure.name).join(', ');
     return `
       <tr>
         <td>${esc(objective.label)}</td>
         <td>${fmtTeur(invest, 1)}</td>
         <td>${fmtTeur(firstEog, 1)}</td>
         <td>${fmtTeur(risk, 1)}</td>
-        <td>${names ? esc(names) : '-'}</td>
+        <td class="strategy-measures-cell">${strategyMeasureNamesCell(matching)}</td>
       </tr>
     `;
   }).join('');
   const unassigned = result.results.filter(item => !(item.measure.objectiveIds || []).length);
   const unassignedRow = unassigned.length
-    ? `<tr class="warn-row"><td>Ohne Zielzuordnung</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + (item.rows[0]?.regulatoryEogEffect || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + item.riskReductionPa, 0), 1)}</td><td>${esc(unassigned.map(item => item.measure.name).join(', '))}</td></tr>`
+    ? `<tr class="warn-row"><td>Ohne Zielzuordnung</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + Number(item.measure.cost || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + (item.rows[0]?.regulatoryEogEffect || 0), 0), 1)}</td><td>${fmtTeur(unassigned.reduce((sum, item) => sum + item.riskReductionPa, 0), 1)}</td><td class="strategy-measures-cell">${strategyMeasureNamesCell(unassigned)}</td></tr>`
     : '';
   return objectiveRows + unassignedRow;
 }
@@ -4882,7 +4890,7 @@ function renderReport(result, first, spread, decision, metrics) {
       <p class="hint">${strategyHint}</p>
       ${strategyBars}
       <div class="table-wrap">
-        <table>
+        <table class="strategy-contribution-table">
           <thead><tr><th>Ziel</th><th>Investition</th><th>EOG-Wirkung Startjahr</th><th>Risikoreduktion p.a.</th><th>Maßnahmen</th></tr></thead>
           <tbody>${strategyRows}</tbody>
         </table>
