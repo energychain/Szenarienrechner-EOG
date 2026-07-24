@@ -121,6 +121,20 @@ Typische Nutzung in dieser Story:
 
 Damit wird die App zum wiederaufnahmefähigen Arbeitsstand: Kennzahlen, Annahmen, Report und Projektsteuerung bleiben in einer Datei verbunden.
 
+## Gas-Transformationspfad: Stilllegung, Rückbau und Rückstellungen strukturieren
+
+Bei Gasnetzen reicht eine klassische Reinvestitionssicht nicht aus. Eine Maßnahme kann Weiterbetrieb sichern, eine Stilllegung vorbereiten, physischen Rückbau auslösen, im Boden belassen werden oder als H2-/Umwidmungsoption offen bleiben. Gleichzeitig entstehen bilanzielle und regulatorische Prüffragen: Rückstellungsfähigkeit, Wegfall der sogenannten Ewigkeitsvermutung, Kostenabgrenzung zwischen Stilllegung und Rückbau, KANU-/AfA-Wirkung, KAnEu-/Ist-Kosten-Behandlung und spätere Netzentgeltwirkung.
+
+**Situation im EVU:** In einer Gas-Planungsrunde wird eine Maßnahme nicht nur als Kostenposition bewertet. Bilanzierung fragt, ob eine Verpflichtung und ein belastbarer Erfüllungszeitpunkt vorliegen. Regulierungsmanagement fragt, ob ein Kostenpfad, KAnEu-/Ist-Kosten-Behandlung oder ein noch unsicherer Ruleset-Stand betroffen ist. Asset Management fragt, ob technisch weiterbetrieben, stillgelegt, zurückgebaut oder umgewidmet werden soll.
+
+**Fachliche Frage:** Welche Herleitung ist erforderlich, bevor ein Wert in Gremienvorlage, Wirtschaftsplan oder Rückstellungsdiskussion auftauchen darf?
+
+**App-Beitrag:** Bei Sparte Gas zeigt die App im Maßnahmenformular den **Gas-Transformationspfad**. Dort werden Pfad, Objektart, Pflicht-/Anspruchsgrund, Ewigkeitsvermutung, Rückstellungs-Check, regulatorische Behandlung und Evidenz dokumentiert. Die App formuliert daraus HGB-/Rückstellungsfragen und regulatorische Prüffragen, trifft aber keine automatische Rückstellungs-, Rückbaupflicht- oder Anerkennungsentscheidung.
+
+**Ergebnis:** Stilllegung, Rückbau, Reinvestition, H2-/Umwidmung und Belassen im Boden werden nicht als freie Notiz versteckt, sondern als prüfpflichtige Fachschicht im Arbeitsstand geführt. Bei Strom bleibt diese Ebene ausgeblendet und ohne Wirkung.
+
+**Beraterhinweis:** Ein Senior Consultant würde gerade bei Gas verhindern, dass „dauerhafter Weiterbetrieb“ ungeprüft als Default bestehen bleibt. Der Wegfall der Ewigkeitsvermutung wird deshalb als Option sichtbar gemacht: nicht als automatische Bilanzierungsentscheidung, sondern als Anlass, Verpflichtung, Kostenhöhe, Zeitpunkt, Wahrscheinlichkeit und regulatorische Behandlung sauber zu prüfen.
+
 ## Aktualitätsprüfung und GitHub-Support als Vertrauensschicht
 
 Eine Planungsrunde kann mehrere Monate dauern. In dieser Zeit können sich nicht nur Kosten, Projekte oder Gremienfristen verändern, sondern auch die regulatorische Einordnung: neue Festlegungen, Konsultationsstände, Parameterstände oder Hinweise aus der Praxis. Gerade deshalb reicht es nicht, eine offline gespeicherte HTML-Datei nur als Rechenstand zu betrachten. Sie muss auch zeigen, **auf welchem App-Stand und welchem Regulierungsstand** sie beruht.

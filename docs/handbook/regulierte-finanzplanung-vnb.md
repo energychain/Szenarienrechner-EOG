@@ -61,6 +61,20 @@ Bei Gasnetzen sind Transformationspfade, Restnutzungsdauer, Reinvestitionszurüc
 
 Deshalb bleiben die Annahmen sichtbar. Das Tool soll keine harte Zukunftsprognose erzeugen, sondern Szenarien vergleichbar machen.
 
+## Gas-Transformationspfad: Stilllegung, Rückbau und Rückstellungen
+
+Für Gas-Maßnahmen ergänzt die Methodik eine eigene Fachschicht. Sie trennt Weiterbetrieb, Stilllegung ohne physischen Rückbau, physischen Rückbau, Reinvestition, H2-/Umwidmungsoption und Belassen beziehungsweise Duldung im Boden. Diese Unterscheidung ist wichtig, weil technische Maßnahme, HGB-/Rückstellungsfrage und regulatorische Kostenbehandlung nicht identisch sind.
+
+Der Gas-Transformationspfad ist ausdrücklich ein Prüf- und Dokumentationsrahmen. Er entscheidet nicht automatisch, ob eine Rückstellung zu bilden ist, ob eine Rückbaupflicht besteht oder ob Kosten als KAnEu, Ist-Kosten oder in einem Kostenpfad regulatorisch berücksichtigt werden. Er macht nur sichtbar, welche Herleitung vor einer Entscheidung erforderlich ist:
+
+1. Objektart klären: Anschlussleitung, allgemeines Gasverteilnetz, Station, potenzielle Wasserstoffleitung oder sonstige Gas-Anlage.
+2. Maßnahmepfad einordnen: Weiterbetrieb, Stilllegung, Rückbau, Reinvestition, Umwidmung oder Belassen im Boden.
+3. Wegfall der sogenannten Ewigkeitsvermutung bewusst behandeln: dauerhaften Weiterbetrieb nicht ungeprüft als Default unterstellen.
+4. HGB-/Rückstellungsfragen prüfen: Verpflichtung, Kostenhöhe, Zeitpunkt und Wahrscheinlichkeit belegen.
+5. Regulatorische Behandlung nur als prüfpflichtige Herleitung führen: KAnEu-/Ist-Kosten-/Kostenpfad-Frage, Ruleset-Konfidenz, Quelle und spätere Festlegungsänderungen dokumentieren.
+
+Für Strom-Maßnahmen bleibt diese Ebene ausgeblendet und ohne Wirkung.
+
 ## Datenmodell: Vom losen Excel-Stand zum prüfbaren Arbeitsstand
 
 Ein belastbarer Arbeitsstand benötigt mindestens:

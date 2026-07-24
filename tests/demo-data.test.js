@@ -22,4 +22,15 @@ describe('synthetic demo data module', () => {
       expect(demoSource).not.toContain(term);
     }
   });
+
+  it('includes synthetic gas transformation examples for the Gas-only review path', () => {
+    const gasExamples = demoMeasures.filter(measure => measure.orgUnit === 'Netze Gas');
+
+    expect(gasExamples.length).toBeGreaterThan(0);
+    expect(gasExamples.some(measure => measure.gasTransformationPath === 'physicalDismantling')).toBe(true);
+    expect(gasExamples.some(measure => measure.gasEternityAssumption === 'removed')).toBe(true);
+    expect(gasExamples.some(measure => measure.gasProvisionAssessment === 'checkProvision')).toBe(true);
+    expect(gasExamples.some(measure => measure.gasRegulatoryTreatment === 'kaneuIstCostsReview')).toBe(true);
+    expect(gasExamples.every(measure => String(measure.gasTransformationEvidence || '').includes('Synthetisch'))).toBe(true);
+  });
 });
