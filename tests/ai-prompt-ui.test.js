@@ -13,6 +13,10 @@ describe('AI prompt export UI', () => {
     expect(html).toContain('id="copyAiPrompt"');
     expect(html).toContain('id="downloadAiPrompt"');
     expect(ui).toContain("from './ai-prompt-generator.js'");
+    expect(ui).toContain('copyTextToClipboard');
+    expect(ui).toContain('document.execCommand');
+    expect(ui).toContain('window.isSecureContext');
+    expect(ui).toContain('manuell mit Strg/Cmd+C');
     expect(ui).not.toMatch(/api\.openai|chatgpt|copilot\.microsoft|anthropic|gemini/i);
   });
 
