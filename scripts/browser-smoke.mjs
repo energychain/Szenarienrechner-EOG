@@ -57,6 +57,16 @@ exportedPage.on('pageerror', error => exportedErrors.push(error.message));
 await exportedPage.goto(pathToFileURL(selfContainedPath).href, { waitUntil: 'domcontentloaded' });
 await exportedPage.getByText('HTML-Datei mit eingebettetem Datenstand geladen.').waitFor({ timeout: 10000 });
 await exportedPage.getByRole('heading', { name: /Projektplan aus der Userstory/ }).waitFor({ timeout: 10000 });
+await exportedPage.locator('.action-menu').evaluate(menu => menu.setAttribute('open', ''));
+await exportedPage.locator('#openAiPromptGenerator').click();
+await exportedPage.locator('#aiPromptRole').selectOption('challenge');
+await exportedPage.locator('#aiPromptOutput').waitFor({ timeout: 10000 });
+await exportedPage.evaluate(() => {
+  Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+  document.execCommand = command => command === 'copy';
+});
+await exportedPage.getByRole('button', { name: /In Zwischenablage kopieren/ }).click();
+await exportedPage.getByText(/Lokaler Fallback wurde genutzt|Prompt ist markiert/).waitFor({ timeout: 10000 });
 if (exportedErrors.length) {
   throw new Error(`HTML-mit-Daten-Export erzeugt Browser-Fehler: ${exportedErrors.join(' | ')}`);
 }

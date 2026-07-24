@@ -1655,18 +1655,40 @@ function closeAiPromptGenerator() {
   document.getElementById('aiPromptModal').classList.add('hidden');
 }
 
+async function copyTextToClipboard(text, output) {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return 'clipboard-api';
+  }
+
+  if (output) {
+    output.focus();
+    output.select();
+    output.setSelectionRange?.(0, text.length);
+  }
+
+  if (document.queryCommandSupported?.('copy') !== false) {
+    const copied = document.execCommand?.('copy');
+    if (copied) return 'exec-command';
+  }
+
+  throw new Error('clipboard unavailable');
+}
+
 async function copyAiPrompt() {
   const output = document.getElementById('aiPromptOutput');
   const text = output?.value || currentAiPrompt();
   try {
-    await navigator.clipboard.writeText(text);
-    setStorageStatus('KI-Prompt wurde in die Zwischenablage kopiert. Bitte vor Nutzung im Unternehmenssystem prüfen.');
+    const method = await copyTextToClipboard(text, output);
+    const suffix = method === 'exec-command' ? ' Lokaler Fallback wurde genutzt.' : '';
+    setStorageStatus(`KI-Prompt wurde in die Zwischenablage kopiert.${suffix} Bitte vor Nutzung im Unternehmenssystem prüfen.`);
   } catch (_error) {
     if (output) {
       output.focus();
       output.select();
+      output.setSelectionRange?.(0, text.length);
     }
-    setStorageStatus('Zwischenablage nicht verfügbar. Prompt ist markiert und kann manuell kopiert werden.');
+    setStorageStatus('Zwischenablage nicht verfügbar. Prompt ist markiert und kann manuell mit Strg/Cmd+C kopiert werden.');
   }
 }
 
