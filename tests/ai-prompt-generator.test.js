@@ -40,9 +40,36 @@ describe('AI prompt generator', () => {
       'regulation',
       'assetManagement',
       'accounting',
-      'projectControl'
+      'projectControl',
+      'challenge'
     ]);
     expect(promptRoles.find(role => role.id === 'committee')?.title).toContain('Aufsichtsrat');
+    expect(promptRoles.find(role => role.id === 'challenge')?.title).toContain('Arbeitsstand hinterfragen');
+  });
+
+  it('builds a challenge prompt that asks for prüfpflichtige critique instead of decisions', () => {
+    const gasModel = {
+      ...demoModel,
+      inputs: { ...demoModel.inputs, sector: 'gas' },
+      strategy: {
+        sampReference: 'Kapitalverzinsungsparameter, H2-/KANU-Ausnahmeabgrenzung sowie methodische Überleitung von Stilllegung, AfA/KANU und EOG-Wirkung bleiben offen.'
+      }
+    };
+    const prompt = buildAiPrompt(gasModel, {
+      ...defaultAiPromptOptions,
+      roleId: 'challenge',
+      dataScope: 'standard',
+      includeProjectPlan: true,
+      omitNotes: true
+    }, { buildInfo: build, ruleset: regulatoryParameterSet });
+
+    expect(prompt).toContain('Arbeitsstand hinterfragen');
+    expect(prompt).toContain('Belastbare Aussagen');
+    expect(prompt).toContain('Prüfpflichtige Annahmen');
+    expect(prompt).toContain('Widersprüche / Unschärfen');
+    expect(prompt).toContain('Gas-spezifische Prüfspuren');
+    expect(prompt).toContain('Triff keine regulatorische, rechtliche oder bilanzielle Entscheidung');
+    expect(prompt).toContain('Stilllegung, Rückbau, Rückstellungen und Ewigkeitsvermutung');
   });
 
   it('builds a committee prompt with llm.txt context, provenance and governance caveats', () => {

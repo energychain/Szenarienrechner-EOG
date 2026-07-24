@@ -51,6 +51,12 @@ export const promptRoles = [
     title: 'Projektsteuerung / PMO',
     task: 'Analysiere den Projektplan. Welche Aufgaben sind blockiert, welche Rollen müssen handeln, welche nächsten Schritte sind kritisch, welche Klärpunkte gefährden die Gremienreife?',
     output: ['nächste Schritte', 'Blockierte Aufgaben', 'Rollen mit Handlungsbedarf', 'Termin-/Gate-Risiken', 'Vorbereitung der Gremienreife']
+  },
+  {
+    id: 'challenge',
+    title: 'Arbeitsstand hinterfragen',
+    task: 'Hinterfrage den aktuellen Arbeitsstand fachlich-kritisch. Suche keine glatte Management-Erzählung, sondern belastbare Aussagen, prüfpflichtige Annahmen, Widersprüche, Datenlücken und nächste Klärfragen. Triff keine regulatorische, rechtliche oder bilanzielle Entscheidung; formuliere Prüf- und Klärfragen. Falls die Sparte Gas betroffen ist, prüfe besonders Stilllegung, Rückbau, Rückstellungen und Ewigkeitsvermutung sowie KAnEu-/Ist-Kosten-Behandlung als offene Herleitung.',
+    output: ['Kurzurteil zum Arbeitsstand', 'Belastbare Aussagen', 'Prüfpflichtige Annahmen', 'Widersprüche / Unschärfen', 'Gas-spezifische Prüfspuren', 'Fragen an Regulierungsmanagement', 'Fragen an Bilanzierung / Rechnungswesen', 'Fragen an Technik / Asset Management', 'Fragen an Management / Gremium', 'Empfohlene nächste Klärpunkte im Projektplan']
   }
 ];
 

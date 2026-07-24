@@ -22,8 +22,12 @@ describe('AI prompt export UI', () => {
     const docs = readFileSync('docs/ai-prompts.md', 'utf8');
     expect(llm).toContain('Szenarienrechner-EOG');
     expect(llm).toContain('EOG-Wirkung ist nicht gleich Cashflow');
+    expect(llm).toContain('Arbeitsstand hinterfragen');
+    expect(llm).toContain('KAnEu-/Ist-Kosten-Behandlung');
     expect(llms).toContain('llm.txt');
     expect(docs).toContain('KI-Prompt erstellen');
     expect(docs).toContain('keine automatische Übertragung');
+    expect(docs).toContain('Arbeitsstand hinterfragen');
+    expect(docs).toContain('Stilllegung, Rückbau, Rückstellungen');
   });
 });
