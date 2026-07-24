@@ -111,6 +111,8 @@ const story = readFileSync('docs/story/planungsrunde-userstory.md', 'utf8');
 assert(story.includes('Szenarienrechner-EOG') || story.includes('EOG-Planungsrunde'), 'Story doc must name the planning context.');
 assert(story.includes('Bidirektionale Navigation'), 'Story doc must explain bidirectional navigation.');
 assert(story.includes('Projektplan als Struktur-Element'), 'Story doc must explain the project plan as operational structure.');
+assert(story.includes('Gas-Transformationspfad: Stilllegung, Rückbau und Rückstellungen strukturieren'), 'Story doc must explain the Gas transformation path.');
+assert(story.includes('Wegfall der sogenannten Ewigkeitsvermutung'), 'Story doc must mention the Gas eternity-assumption review point.');
 assert(story.includes('KI-Prompt-Export als Übersetzungsschicht'), 'Story doc must explain the AI prompt export as translation layer.');
 assert(story.includes('nächste fällige Aufgabe'), 'Story doc must explain project plan next-task guidance.');
 for (const id of ['kickoff', 'initialisierung', 'datenerhebung', 'massnahmenbewertung', 'technik-rueckkopplung', 'konsolidierung', 'entscheidungsvorlage', 'gremium', 'archiv']) {

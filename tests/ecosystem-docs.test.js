@@ -65,6 +65,9 @@ describe('consulting ecosystem docs', () => {
     expect(regulatoryMap).toContain('StromNEV');
     expect(regulatoryMap).toContain('GasNEV');
     expect(regulatoryMap).toContain('KANU');
+    expect(regulatoryMap).toContain('Gas-Transformationspfad');
+    expect(regulatoryMap).toContain('Ewigkeitsvermutung');
+    expect(regulatoryMap).toContain('KAnEu');
     expect(regulatoryMap).toContain('Strom-spezifische Planungsfragen');
     expect(regulatoryMap).toContain('Gas-spezifische Planungsfragen');
   });

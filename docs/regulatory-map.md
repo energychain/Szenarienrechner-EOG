@@ -30,14 +30,18 @@ Gas-VNBs müssen Reinvestition, Rückbau, Restnutzungsdauer, Transformation und 
 
 Typische Klärpunkte:
 
-- Ist Reinvestition, Instandhaltung, Umwidmung oder Rückbau die passende Option?
+- Ist Reinvestition, Instandhaltung, Stilllegung, Umwidmung, Belassen im Boden oder physischer Rückbau die passende Option?
+- Betrifft die Maßnahme eine Anschlussleitung, das allgemeine Gasverteilnetz, eine Station oder eine potenzielle Wasserstoffleitung?
 - Welche Nutzungsdauerannahme ist fachlich begründet?
 - Welche Rückbau- oder Restwertwirkung wird nur indikativ betrachtet?
+- Ist der Wegfall der sogenannten Ewigkeitsvermutung zu berücksichtigen oder bleibt dauerhafter Weiterbetrieb nur eine Arbeitshypothese?
+- Welche HGB-/Rückstellungsfragen müssen zu Verpflichtung, Kostenhöhe, Zeitpunkt und Wahrscheinlichkeit geklärt werden?
+- Welche regulatorische Behandlung ist nur prüfpflichtig herzuleiten, etwa KAnEu-, Ist-Kosten- oder Kostenpfad-Fragen?
 - Welche Transformationsannahme gehört nicht als harte Rechenwahrheit ins Modell?
 
 ## Was die App daraus macht
 
-Der Szenarienrechner-EOG nutzt diese Themen nicht als automatische Anerkennungslogik. Er strukturiert sie als Annahmen, Evidenz, Szenarien und Klärpunkte.
+Der Szenarienrechner-EOG nutzt diese Themen nicht als automatische Anerkennungslogik. Er strukturiert sie als Annahmen, Evidenz, Szenarien und Klärpunkte. Der Gas-Transformationspfad ist deshalb kein Rückstellungs- oder Anerkennungsautomat, sondern eine Prüfebene für Stilllegung, Rückbau, Ewigkeitsvermutung, HGB-/Rückstellungsfragen und regulatorische Behandlung.
 
 ## Weitere öffentliche Quellen zum Weiterlesen
 
