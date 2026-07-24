@@ -1210,6 +1210,40 @@
       font-weight: 800;
     }
 
+    body.sector-strom .gas-only {
+      display: none !important;
+    }
+
+    body.sector-gas .gas-transformation-summary,
+    body.sector-gas .gas-only.helper-card {
+      display: block;
+    }
+
+    .gas-transformation-summary {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #f0c36a;
+      border-radius: 10px;
+      background: #fff8e8;
+    }
+
+    .gas-transformation-summary ul {
+      margin: 8px 0 0 18px;
+      padding: 0;
+    }
+
+    .gas-transformation-summary .meta {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .helper-card.gas-only {
+      border-left-color: #9a5a4d;
+      background: #fffaf7;
+    }
+
     .summary-hero {
       display: grid;
       grid-template-columns: minmax(280px, 1.1fr) minmax(320px, 1.6fr);

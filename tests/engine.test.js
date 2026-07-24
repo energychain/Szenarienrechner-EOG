@@ -4,6 +4,7 @@ import {
   activationSplitHelper,
   depreciationLifeHelper,
   financingSpreadHelper,
+  gasTransformationHelper,
   capitalCostRateFor,
   capitalCostSettingsFor,
   calcMeasure,
@@ -132,6 +133,50 @@ describe('financial helpers', () => {
     expect(helper.qeRiskContributionTeur).toBeCloseTo(75, 4);
     expect(helper.explanation).toContain('Q/E');
     expect(helper.warning).toContain('keine Marktrendite');
+  });
+
+  it('structures gas shutdown, dismantling and provision questions without deciding them', () => {
+    const helper = gasTransformationHelper({
+      sector: 'gas',
+      path: 'physicalDismantling',
+      assetScope: 'connectionLine',
+      obligationBasis: 'legalOrContractual',
+      eternityAssumption: 'removed',
+      provisionAssessment: 'checkProvision',
+      regulatoryTreatment: 'kanuOrActualCostReview',
+      plannedYear: '2035',
+      costEstimate: 250,
+      evidence: 'Konzessions-/Vertragslage pruefen'
+    });
+    expect(helper.applicable).toBe(true);
+    expect(helper.recommendedQuestion).toBe('Rückstellung prüfen');
+    expect(helper.confidence).toBe('review');
+    expect(helper.hgbChecklist).toEqual(expect.arrayContaining([
+      expect.stringContaining('Ewigkeitsvermutung'),
+      expect.stringContaining('konkrete Verpflichtung')
+    ]));
+    expect(helper.regulatoryChecklist.join(' ')).toContain('KAnEu');
+    expect(helper.governance).toContain('keine automatische Entscheidung');
+  });
+
+  it('keeps the gas transformation helper inactive for Strom measures', () => {
+    const helper = gasTransformationHelper({ sector: 'strom', path: 'physicalDismantling', costEstimate: 250 });
+    expect(helper.applicable).toBe(false);
+    expect(helper.summary).toContain('nur für Gas');
+  });
+
+  it('adds gas transformation review warnings to the portfolio without affecting Strom', () => {
+    const gasModel = { measures: [baseMeasure({
+      gasTransformationPath: 'physicalDismantling',
+      gasEternityAssumption: 'removed',
+      gasProvisionAssessment: 'checkProvision',
+      decommissionCost: 100
+    })] };
+    const gasResult = calcPortfolio(gasModel, params(baseInputs));
+    expect(gasResult.warnings.some(item => item.type === 'gas_transformation_review')).toBe(true);
+
+    const stromResult = calcPortfolio(gasModel, params({ ...baseInputs, sector: 'strom' }));
+    expect(stromResult.warnings.some(item => item.type === 'gas_transformation_review')).toBe(false);
   });
 });
 
