@@ -27,5 +27,6 @@ describe('gas transformation UI', () => {
     expect(uiJs).toContain('gasRegulatoryTreatment: el.mGasRegulatoryTreatment.value');
     expect(uiJs).toContain('Rückstellung prüfen');
     expect(uiJs).toContain('keine automatische Entscheidung');
+    expect(uiJs).toContain('Nutzungsdauer-Entscheid erforderlich');
   });
 });

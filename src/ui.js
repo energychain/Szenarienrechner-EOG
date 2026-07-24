@@ -2917,7 +2917,9 @@ function gasTransformationForMeasure(measure, p = currentParams()) {
     regulatoryTreatment: measure.gasRegulatoryTreatment || 'unclear',
     plannedYear: measure.decommissionYear || measure.year || '',
     costEstimate: measure.decommissionCost || 0,
-    evidence: measure.gasTransformationEvidence || ''
+    evidence: measure.gasTransformationEvidence || '',
+    life: measure.life || '',
+    kanuEndYear: p.kanuEndYear || ''
   });
 }
 
@@ -2930,8 +2932,10 @@ function renderGasTransformationLayer(measure) {
     return;
   }
   const helper = gasTransformationForMeasure(measure, p);
+  const lifeConflict = helper.recommendedQuestion === 'Nutzungsdauer-Entscheid erforderlich';
   node.innerHTML = `
     <div class="meta">prüfpflichtige Gas-Herleitung · ${esc(helper.confidence)}</div>
+    ${lifeConflict ? '<div class="warning-card compact"><strong>Nutzungsdauer-Entscheid erforderlich</strong><p>Die Nutzungsdauer kollidiert mit KANU-/Transformationshorizont und Wegfall der Ewigkeitsvermutung; Kennzahlen erst nach bewusster fachlicher Freigabe nutzen.</p></div>' : ''}
     <strong>${esc(helper.summary)}</strong>
     <p class="hint">${esc(helper.governance)}</p>
     <div class="grid2">

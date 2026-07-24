@@ -70,8 +70,9 @@ Der Gas-Transformationspfad ist ausdrücklich ein Prüf- und Dokumentationsrahme
 1. Objektart klären: Anschlussleitung, allgemeines Gasverteilnetz, Station, potenzielle Wasserstoffleitung oder sonstige Gas-Anlage.
 2. Maßnahmepfad einordnen: Weiterbetrieb, Stilllegung, Rückbau, Reinvestition, Umwidmung oder Belassen im Boden.
 3. Wegfall der sogenannten Ewigkeitsvermutung bewusst behandeln: dauerhaften Weiterbetrieb nicht ungeprüft als Default unterstellen.
-4. HGB-/Rückstellungsfragen prüfen: Verpflichtung, Kostenhöhe, Zeitpunkt und Wahrscheinlichkeit belegen.
-5. Regulatorische Behandlung nur als prüfpflichtige Herleitung führen: KAnEu-/Ist-Kosten-/Kostenpfad-Frage, Ruleset-Konfidenz, Quelle und spätere Festlegungsänderungen dokumentieren.
+4. Nutzungsdauer/KANU-Konflikte explizit entscheiden: Wenn eine Gas-Maßnahme nach Wegfall der Ewigkeitsvermutung mit langer Nutzungsdauer über den KANU-/Transformationshorizont hinaus läuft, markiert die App dies als „Nutzungsdauer-Entscheid erforderlich“. Der Nutzer muss dann fachlich festhalten, ob Nutzungsdauer verkürzt, H2-/Umwidmung belegt, dauerhafter Weiterbetrieb begründet oder der Widerspruch als Klärpunkt geführt wird.
+5. HGB-/Rückstellungsfragen prüfen: Verpflichtung, Kostenhöhe, Zeitpunkt und Wahrscheinlichkeit belegen.
+6. Regulatorische Behandlung nur als prüfpflichtige Herleitung führen: KAnEu-/Ist-Kosten-/Kostenpfad-Frage, Ruleset-Konfidenz, Quelle und spätere Festlegungsänderungen dokumentieren.
 
 Für Strom-Maßnahmen bleibt diese Ebene ausgeblendet und ohne Wirkung.
 

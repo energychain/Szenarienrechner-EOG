@@ -390,7 +390,9 @@ export function gasTransformationHelper({
   regulatoryTreatment = 'unclear',
   plannedYear = '',
   costEstimate = 0,
-  evidence = ''
+  evidence = '',
+  life = '',
+  kanuEndYear = ''
 } = {}) {
   if (sector !== 'gas') {
     return {
@@ -405,16 +407,22 @@ export function gasTransformationHelper({
   const normalizedScope = gasAssetScopeLabels[assetScope] ? assetScope : 'distributionLine';
   const cost = Math.max(0, finiteNumber(costEstimate));
   const year = plannedYear === '' || plannedYear === null || plannedYear === undefined ? null : Math.round(finiteNumber(plannedYear));
+  const usefulLife = life === '' || life === null || life === undefined ? null : Math.max(1, Math.round(finiteNumber(life)));
+  const kanuHorizon = kanuEndYear === '' || kanuEndYear === null || kanuEndYear === undefined ? null : Math.round(finiteNumber(kanuEndYear));
+  const lifeEndYear = year !== null && usefulLife !== null ? year + usefulLife : null;
   const eternityRemoved = eternityAssumption === 'removed';
   const obligationConcrete = obligationBasis === 'legalOrContractual' || obligationBasis === 'concession' || obligationBasis === 'customerContract';
   const dismantlingLike = normalizedPath === 'physicalDismantling' || normalizedPath === 'shutdownOnly' || normalizedPath === 'tolerateInGround';
+  const lifeHorizonConflict = Boolean(eternityRemoved && lifeEndYear !== null && kanuHorizon !== null && lifeEndYear > kanuHorizon);
   const shouldCheckProvision = provisionAssessment === 'checkProvision' || (eternityRemoved && dismantlingLike && (obligationConcrete || cost > 0));
   const confidence = 'review';
-  const recommendedQuestion = shouldCheckProvision
-    ? 'Rückstellung prüfen'
-    : normalizedPath === 'h2Option'
-      ? 'H2-/KANU-Ausnahme prüfen'
-      : 'Klärpunkt dokumentieren';
+  const recommendedQuestion = lifeHorizonConflict
+    ? 'Nutzungsdauer-Entscheid erforderlich'
+    : shouldCheckProvision
+      ? 'Rückstellung prüfen'
+      : normalizedPath === 'h2Option'
+        ? 'H2-/KANU-Ausnahme prüfen'
+        : 'Klärpunkt dokumentieren';
   return {
     applicable: true,
     path: normalizedPath,
@@ -427,11 +435,27 @@ export function gasTransformationHelper({
     regulatoryTreatment,
     plannedYear: year,
     costEstimate: cost,
+    life: usefulLife,
+    lifeEndYear,
+    kanuEndYear: kanuHorizon,
+    lifeHorizonConflict: {
+      conflict: lifeHorizonConflict,
+      lifeYears: usefulLife,
+      lifeEndYear,
+      kanuEndYear: kanuHorizon,
+      reason: lifeHorizonConflict
+        ? `Nutzungsdauer ${usefulLife} Jahre bis ${lifeEndYear} kollidiert mit Wegfall der Ewigkeitsvermutung und KANU-/Transformationshorizont ${kanuHorizon}.`
+        : ''
+    },
     evidence: String(evidence || '').trim(),
     confidence,
     recommendedQuestion,
     summary: `${gasTransformationPathLabels[normalizedPath]} · ${gasAssetScopeLabels[normalizedScope]} · ${recommendedQuestion}`,
     hgbChecklist: [
+      ...(lifeHorizonConflict ? [
+        `Nutzerentscheid erforderlich: Nutzungsdauer ${usefulLife} Jahre (${year} bis ${lifeEndYear}) gegen KANU-/Transformationshorizont ${kanuHorizon}, kommunale Wärmeplanung und Wegfall der Ewigkeitsvermutung spiegeln.`,
+        'Entscheidungsoption dokumentieren: Nutzungsdauer verkürzen, H2-/Umwidmungsoption belegen, dauerhaften Weiterbetrieb ausdrücklich begründen oder Widerspruch als Klärpunkt führen.'
+      ] : []),
       'Wegfall der Ewigkeitsvermutung als Option dokumentieren: dauerhafter Weiterbetrieb nicht ungeprüft unterstellen.',
       'konkrete Verpflichtung prüfen: gesetzlich, vertraglich, Konzession, Kunden-/Anschlussverhältnis oder faktische Verpflichtung.',
       'Stilllegungskosten und physische Rückbaukosten getrennt schätzen und zeitlich einordnen.',
@@ -443,7 +467,9 @@ export function gasTransformationHelper({
       'Auswirkung auf Erlösobergrenzen, Netzentgelte und Kostenpfad nicht als Anerkennungszusage darstellen.',
       'H2-/KANU-Ausnahmeabgrenzung separat prüfen, wenn Umwidmung oder potenzielle Wasserstoffleitung betroffen ist.'
     ],
-    governance: 'Der Gas-Transformationspfad strukturiert prüfpflichtige Herleitungen; er trifft keine automatische Entscheidung zu Rückstellung, Rückbaupflicht oder regulatorischer Anerkennung.'
+    governance: lifeHorizonConflict
+      ? `Nutzerentscheid erforderlich: Die App trifft keine Entscheidung, ob ${usefulLife} Jahre Nutzungsdauer bis ${lifeEndYear} fachlich vertretbar sind. Nutzungsdauer, KANU-/Transformationshorizont, kommunale Wärmeplanung und Wegfall der Ewigkeitsvermutung müssen vor Nutzung der Kennzahlen bewusst freigegeben oder als Klärpunkt geführt werden.`
+      : 'Der Gas-Transformationspfad strukturiert prüfpflichtige Herleitungen; er trifft keine automatische Entscheidung zu Rückstellung, Rückbaupflicht oder regulatorischer Anerkennung.'
   };
 }
 
@@ -483,7 +509,9 @@ export function gasTransformationWarningsFor(measure, p) {
     regulatoryTreatment: measure.gasRegulatoryTreatment || 'unclear',
     plannedYear: measure.decommissionYear || measure.year || '',
     costEstimate: measure.decommissionCost || 0,
-    evidence: measure.gasTransformationEvidence || ''
+    evidence: measure.gasTransformationEvidence || '',
+    life: measure.life || '',
+    kanuEndYear: p.kanuEndYear || ''
   });
   if (!helper.applicable) return [];
   const needsReview = helper.recommendedQuestion !== 'Klärpunkt dokumentieren'
@@ -491,16 +519,17 @@ export function gasTransformationWarningsFor(measure, p) {
     || helper.eternityAssumption === 'removed'
     || helper.regulatoryTreatment !== 'unclear';
   if (!needsReview) return [];
-  return [{
-    type: 'gas_transformation_review',
-    key: `gas-transformation:${measure.id}`,
+  const baseWarning = {
+    type: helper.lifeHorizonConflict?.conflict ? 'gas_life_horizon_conflict' : 'gas_transformation_review',
+    key: helper.lifeHorizonConflict?.conflict ? `gas-life-horizon:${measure.id}` : `gas-transformation:${measure.id}`,
     area: 'Gas-Transformationspfad',
     targetPhase: 'massnahmenbewertung',
     measureId: measure.id,
     measure: measure.name || 'Maßnahme',
     title: helper.recommendedQuestion,
-    detail: `${helper.summary}. ${helper.governance}`
-  }];
+    detail: `${helper.summary}. ${helper.lifeHorizonConflict?.reason ? helper.lifeHorizonConflict.reason + ' ' : ''}${helper.governance}`
+  };
+  return [baseWarning];
 }
 
 export function capitalCostSettingsFor(inputs = {}, parameterSet = regulatoryParameterSet) {
