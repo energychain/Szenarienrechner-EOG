@@ -1065,6 +1065,76 @@
           </div>
           <p class="hint expert-defaults">Defaults: keine zusätzlichen Betriebs-, Reinvestitions- oder Rückbaukosten. Bei Gas sind Rückbaukosten und Restwertrisiko rund um das KANU-Zieljahr besonders relevant.</p>
         </div>
+        <div id="gasTransformationLayer" class="group gas-only">
+          <h3>Gas-Transformationspfad</h3>
+          <p class="hint warning">Gas-spezifische Strukturierung für Stilllegung, Rückbau und Rückstellungen. Die App trifft keine Rückstellungs-, Rückbaupflicht- oder Anerkennungsentscheidung; sie führt prüfpflichtige Herleitungen.</p>
+          <div class="grid2">
+            <div>
+              <label for="mGasTransformationPath">Pfad</label>
+              <select id="mGasTransformationPath">
+                <option value="unclear">offen / zu klären</option>
+                <option value="continueOperation">Weiterbetrieb</option>
+                <option value="shutdownOnly">Stilllegung ohne physischen Rückbau</option>
+                <option value="physicalDismantling">Physischer Rückbau</option>
+                <option value="reinvestment">Reinvestition / Erneuerung</option>
+                <option value="h2Option">H2-/Umwidmungsoption</option>
+                <option value="tolerateInGround">Belassen/Duldung im Boden</option>
+              </select>
+            </div>
+            <div>
+              <label for="mGasAssetScope">Objektart</label>
+              <select id="mGasAssetScope">
+                <option value="distributionLine">allgemeines Gasverteilnetz</option>
+                <option value="connectionLine">Gasnetzanschlussleitung / Hausanschluss</option>
+                <option value="station">Station / Anlage</option>
+                <option value="h2Candidate">potenzielle Wasserstoffleitung</option>
+                <option value="other">sonstige Gas-Anlage</option>
+              </select>
+            </div>
+            <div>
+              <label for="mGasObligationBasis">Pflicht-/Anspruchsgrund</label>
+              <select id="mGasObligationBasis">
+                <option value="unclear">offen / zu prüfen</option>
+                <option value="legalOrContractual">gesetzlich oder vertraglich konkret</option>
+                <option value="concession">Konzession / Wegenutzung</option>
+                <option value="customerContract">Kunden-/Anschlussverhältnis</option>
+                <option value="noneKnown">derzeit keine konkrete Pflicht bekannt</option>
+              </select>
+            </div>
+            <div>
+              <label for="mGasEternityAssumption">Ewigkeitsvermutung</label>
+              <select id="mGasEternityAssumption">
+                <option value="unclear">offen / prüfpflichtig</option>
+                <option value="removed">Wegfall der Ewigkeitsvermutung berücksichtigen</option>
+                <option value="continued">dauerhafter Weiterbetrieb als Arbeitshypothese</option>
+              </select>
+            </div>
+            <div>
+              <label for="mGasProvisionAssessment">Rückstellungs-Check</label>
+              <select id="mGasProvisionAssessment">
+                <option value="unclear">offen / zu prüfen</option>
+                <option value="checkProvision">Rückstellung prüfen</option>
+                <option value="notConcrete">noch nicht hinreichend konkret</option>
+                <option value="notApplicable">nicht einschlägig</option>
+              </select>
+            </div>
+            <div>
+              <label for="mGasRegulatoryTreatment">Regulatorische Behandlung</label>
+              <select id="mGasRegulatoryTreatment">
+                <option value="unclear">offen / zu prüfen</option>
+                <option value="kanuOrActualCostReview">KAnEu-/Ist-Kosten-Behandlung prüfen</option>
+                <option value="costPathReview">Kostenpfad / EOG-Wirkung prüfen</option>
+                <option value="h2ExceptionReview">H2-/KANU-Ausnahme prüfen</option>
+                <option value="notModeled">nicht modelliert</option>
+              </select>
+            </div>
+            <div class="wide-field">
+              <label for="mGasTransformationEvidence">Quelle / Evidenz / Klärpunkt</label>
+              <textarea id="mGasTransformationEvidence" rows="2" placeholder="z.B. Konzessionsvertrag, NDAV/BGB-Prüfung, BRÜCKEN/NEST-Quelle, Rechts-/Bilanzierungsreview offen"></textarea>
+            </div>
+          </div>
+          <div id="gasTransformationSummary" class="gas-transformation-summary"></div>
+        </div>
         <div>
           <h3>Direkte Zusatzwirkung</h3>
           <div class="grid2">
@@ -1096,6 +1166,7 @@
             <article id="helperQImpact" class="helper-card"></article>
             <article id="helperDepreciationLife" class="helper-card"></article>
             <article id="helperFinancingSpread" class="helper-card"></article>
+            <article id="helperGasTransformation" class="helper-card gas-only"></article>
           </div>
         </div>
         <div class="group">

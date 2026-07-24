@@ -7,6 +7,7 @@ import {
   depreciationLifeHelper,
   expectedActivated,
   financingSpreadHelper,
+  gasTransformationHelper,
   impactAssumptionsFor,
   params as engineParams,
   portfolioDecisionMetrics,
@@ -103,7 +104,8 @@ const detailIds = [
   'mProbability', 'mOpexRecognition', 'mLife', 'mDepr', 'mQDirect',
   'mEDirect', 'mRiskAvoided', 'mPortfolioShare', 'mOpexPa',
   'mOpexDeltaPa', 'mReinvestCost', 'mReinvestMode', 'mReinvestLife', 'mDecommissionCost', 'mHgbLife',
-  'mDecommissionYear', 'mNote'
+  'mDecommissionYear', 'mGasTransformationPath', 'mGasAssetScope', 'mGasObligationBasis',
+  'mGasEternityAssumption', 'mGasProvisionAssessment', 'mGasRegulatoryTreatment', 'mGasTransformationEvidence', 'mNote'
 ];
 
 
@@ -586,7 +588,8 @@ const expertFieldIds = [
   'mType', 'mSecure', 'mUncertain', 'mProbability', 'mOpexRecognition',
   'mDepr', 'mQDirect', 'mEDirect', 'mRiskAvoided', 'mPortfolioShare',
   'mOpexPa', 'mOpexDeltaPa', 'mReinvestCost', 'mReinvestMode', 'mReinvestLife', 'mDecommissionCost',
-  'mDecommissionYear'
+  'mDecommissionYear', 'mHgbLife', 'mGasTransformationPath', 'mGasAssetScope', 'mGasObligationBasis',
+  'mGasEternityAssumption', 'mGasProvisionAssessment', 'mGasRegulatoryTreatment', 'mGasTransformationEvidence'
 ];
 
 function periodText(period) {
@@ -2804,6 +2807,7 @@ function renderHelperCalculators(measure) {
   const qNode = document.getElementById('helperQImpact');
   const depreciationNode = document.getElementById('helperDepreciationLife');
   const spreadNode = document.getElementById('helperFinancingSpread');
+  const gasNode = document.getElementById('helperGasTransformation');
   if (!activationNode || !riskNode || !qNode || !depreciationNode || !spreadNode) return;
 
   const p = currentParams();
@@ -2869,6 +2873,50 @@ function renderHelperCalculators(measure) {
     <p><span class="big">${fmtPct(spread.spreadPp, 1)}</span><br>${esc(measureResult.returnMetric.label)} minus FK-Zins.</p>
     <p class="hint">${esc(spread.explanation)} ${esc(spread.warning)}</p>
   `;
+
+  if (gasNode) {
+    const gas = gasTransformationForMeasure(measure, p);
+    gasNode.innerHTML = p.sector === 'gas' ? `
+      <strong>Gas-Transformationspfad</strong>
+      <p><span class="big">${esc(gas.recommendedQuestion || 'Rückstellung prüfen')}</span><br>${esc(gas.summary)}</p>
+      <p class="hint">${esc(gas.governance || 'keine automatische Entscheidung')}</p>
+    ` : '';
+  }
+}
+
+function gasTransformationForMeasure(measure, p = currentParams()) {
+  return gasTransformationHelper({
+    sector: p.sector,
+    path: measure.gasTransformationPath || 'unclear',
+    assetScope: measure.gasAssetScope || 'distributionLine',
+    obligationBasis: measure.gasObligationBasis || 'unclear',
+    eternityAssumption: measure.gasEternityAssumption || 'unclear',
+    provisionAssessment: measure.gasProvisionAssessment || 'unclear',
+    regulatoryTreatment: measure.gasRegulatoryTreatment || 'unclear',
+    plannedYear: measure.decommissionYear || measure.year || '',
+    costEstimate: measure.decommissionCost || 0,
+    evidence: measure.gasTransformationEvidence || ''
+  });
+}
+
+function renderGasTransformationLayer(measure) {
+  const node = document.getElementById('gasTransformationSummary');
+  if (!node) return;
+  const p = currentParams();
+  if (p.sector !== 'gas' || !measure) {
+    node.innerHTML = '';
+    return;
+  }
+  const helper = gasTransformationForMeasure(measure, p);
+  node.innerHTML = `
+    <div class="meta">prüfpflichtige Gas-Herleitung · ${esc(helper.confidence)}</div>
+    <strong>${esc(helper.summary)}</strong>
+    <p class="hint">${esc(helper.governance)}</p>
+    <div class="grid2">
+      <div><strong>HGB-/Rückstellungsfragen</strong><ul>${helper.hgbChecklist.slice(0, 3).map(item => `<li>${esc(item)}</li>`).join('')}</ul></div>
+      <div><strong>Regulatorische Fragen</strong><ul>${helper.regulatoryChecklist.slice(0, 3).map(item => `<li>${esc(item)}</li>`).join('')}</ul></div>
+    </div>
+  `;
 }
 
 function renderGlobalValidation() {
@@ -2888,6 +2936,9 @@ function renderGlobalValidation() {
     }
   });
   const simplified = el.regulationProcedure.value === 'simplified';
+  const sector = el.sector.value === 'strom' ? 'strom' : 'gas';
+  document.body.classList.toggle('sector-gas', sector === 'gas');
+  document.body.classList.toggle('sector-strom', sector === 'strom');
   document.body.classList.toggle('simplified-procedure', simplified);
   const simplifiedHint = document.getElementById('simplifiedHint');
   if (simplifiedHint) simplifiedHint.classList.toggle('hidden', !simplified);
@@ -4199,6 +4250,13 @@ function renderDetail() {
   el.mDecommissionCost.value = measure.decommissionCost || 0;
   el.mHgbLife.value = measure.hgbLife || measure.life || 1;
   el.mDecommissionYear.value = measure.decommissionYear ?? '';
+  el.mGasTransformationPath.value = measure.gasTransformationPath || 'unclear';
+  el.mGasAssetScope.value = measure.gasAssetScope || 'distributionLine';
+  el.mGasObligationBasis.value = measure.gasObligationBasis || 'unclear';
+  el.mGasEternityAssumption.value = measure.gasEternityAssumption || 'unclear';
+  el.mGasProvisionAssessment.value = measure.gasProvisionAssessment || 'unclear';
+  el.mGasRegulatoryTreatment.value = measure.gasRegulatoryTreatment || 'unclear';
+  el.mGasTransformationEvidence.value = measure.gasTransformationEvidence || '';
   el.mNote.value = measure.note || '';
   renderMeasureObjectives(measure);
 
@@ -4212,6 +4270,7 @@ function renderDetail() {
 	      ];
 	      document.getElementById('selectedPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
 	      renderMeasureValidation(measure);
+      renderGasTransformationLayer(measure);
       renderHelperCalculators(measure);
       renderImpactAssumptions(measure);
       const timeline = document.getElementById('lifecycleTimeline');
@@ -5087,6 +5146,13 @@ function updateSelectedFromDetail() {
 	        decommissionCost: num('mDecommissionCost'),
 	        hgbLife: Math.max(1, Math.round(num('mHgbLife') || num('mLife'))),
 	        decommissionYear: el.mDecommissionYear.value === '' ? '' : Math.round(num('mDecommissionYear')),
+        gasTransformationPath: el.mGasTransformationPath.value,
+        gasAssetScope: el.mGasAssetScope.value,
+        gasObligationBasis: el.mGasObligationBasis.value,
+        gasEternityAssumption: el.mGasEternityAssumption.value,
+        gasProvisionAssessment: el.mGasProvisionAssessment.value,
+        gasRegulatoryTreatment: el.mGasRegulatoryTreatment.value,
+        gasTransformationEvidence: el.mGasTransformationEvidence.value.trim(),
 	        note: el.mNote.value
   });
   renderAll();

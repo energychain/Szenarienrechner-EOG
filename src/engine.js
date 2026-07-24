@@ -362,6 +362,91 @@ export function financingSpreadHelper({
   };
 }
 
+const gasTransformationPathLabels = {
+  continueOperation: 'Weiterbetrieb',
+  shutdownOnly: 'Stilllegung ohne physischen Rückbau',
+  physicalDismantling: 'Physischer Rückbau',
+  reinvestment: 'Reinvestition / Erneuerung',
+  h2Option: 'H2-/Umwidmungsoption',
+  tolerateInGround: 'Belassen/Duldung im Boden',
+  unclear: 'offen / zu klären'
+};
+
+const gasAssetScopeLabels = {
+  connectionLine: 'Gasnetzanschlussleitung / Hausanschluss',
+  distributionLine: 'allgemeines Gasverteilnetz',
+  station: 'Station / Anlage',
+  h2Candidate: 'potenzielle Wasserstoffleitung',
+  other: 'sonstige Gas-Anlage'
+};
+
+export function gasTransformationHelper({
+  sector = 'gas',
+  path = 'unclear',
+  assetScope = 'distributionLine',
+  obligationBasis = 'unclear',
+  eternityAssumption = 'unclear',
+  provisionAssessment = 'unclear',
+  regulatoryTreatment = 'unclear',
+  plannedYear = '',
+  costEstimate = 0,
+  evidence = ''
+} = {}) {
+  if (sector !== 'gas') {
+    return {
+      applicable: false,
+      summary: 'Gas-Transformationspfad ist nur für Gas-Maßnahmen aktiv; Strom bleibt unberührt.',
+      hgbChecklist: [],
+      regulatoryChecklist: [],
+      governance: 'Keine Wirkung auf Strom-Maßnahmen.'
+    };
+  }
+  const normalizedPath = gasTransformationPathLabels[path] ? path : 'unclear';
+  const normalizedScope = gasAssetScopeLabels[assetScope] ? assetScope : 'distributionLine';
+  const cost = Math.max(0, finiteNumber(costEstimate));
+  const year = plannedYear === '' || plannedYear === null || plannedYear === undefined ? null : Math.round(finiteNumber(plannedYear));
+  const eternityRemoved = eternityAssumption === 'removed';
+  const obligationConcrete = obligationBasis === 'legalOrContractual' || obligationBasis === 'concession' || obligationBasis === 'customerContract';
+  const dismantlingLike = normalizedPath === 'physicalDismantling' || normalizedPath === 'shutdownOnly' || normalizedPath === 'tolerateInGround';
+  const shouldCheckProvision = provisionAssessment === 'checkProvision' || (eternityRemoved && dismantlingLike && (obligationConcrete || cost > 0));
+  const confidence = 'review';
+  const recommendedQuestion = shouldCheckProvision
+    ? 'Rückstellung prüfen'
+    : normalizedPath === 'h2Option'
+      ? 'H2-/KANU-Ausnahme prüfen'
+      : 'Klärpunkt dokumentieren';
+  return {
+    applicable: true,
+    path: normalizedPath,
+    pathLabel: gasTransformationPathLabels[normalizedPath],
+    assetScope: normalizedScope,
+    assetScopeLabel: gasAssetScopeLabels[normalizedScope],
+    obligationBasis,
+    eternityAssumption,
+    provisionAssessment,
+    regulatoryTreatment,
+    plannedYear: year,
+    costEstimate: cost,
+    evidence: String(evidence || '').trim(),
+    confidence,
+    recommendedQuestion,
+    summary: `${gasTransformationPathLabels[normalizedPath]} · ${gasAssetScopeLabels[normalizedScope]} · ${recommendedQuestion}`,
+    hgbChecklist: [
+      'Wegfall der Ewigkeitsvermutung als Option dokumentieren: dauerhafter Weiterbetrieb nicht ungeprüft unterstellen.',
+      'konkrete Verpflichtung prüfen: gesetzlich, vertraglich, Konzession, Kunden-/Anschlussverhältnis oder faktische Verpflichtung.',
+      'Stilllegungskosten und physische Rückbaukosten getrennt schätzen und zeitlich einordnen.',
+      'Kostenhöhe, Erfüllungszeitpunkt und Wahrscheinlichkeit als Rückstellungs-Voraussetzungen belegen.'
+    ],
+    regulatoryChecklist: [
+      'Regulatorische Behandlung als KAnEu, Ist-Kosten oder ungeklärte Kostenposition nur als prüfpflichtige Herleitung führen.',
+      'BRÜCKEN-/NEST-/Ruleset-Stand, Quelle und Konfidenz für Stilllegung, Rückbau und Rückstellungen dokumentieren.',
+      'Auswirkung auf Erlösobergrenzen, Netzentgelte und Kostenpfad nicht als Anerkennungszusage darstellen.',
+      'H2-/KANU-Ausnahmeabgrenzung separat prüfen, wenn Umwidmung oder potenzielle Wasserstoffleitung betroffen ist.'
+    ],
+    governance: 'Der Gas-Transformationspfad strukturiert prüfpflichtige Herleitungen; er trifft keine automatische Entscheidung zu Rückstellung, Rückbaupflicht oder regulatorischer Anerkennung.'
+  };
+}
+
 function hasDirectQeEffect(measure, p) {
   if (finiteNumber(measure.qDirect) !== 0 || finiteNumber(measure.eDirect) !== 0) return true;
   return impactAssumptionsFor(measure).some(impact => {
@@ -383,6 +468,38 @@ export function doubleCountingWarningsFor(measure, p, portfolioEffectPa = portfo
     measure: measure.name || 'Maßnahme',
     title: 'Mögliche Doppelzählung Q/Effizienz',
     detail: 'Für diese Maßnahme sind pauschaler Portfolio-Q/Effekt und direkte Q-/Effizienzwirkungen gleichzeitig angesetzt. Attribution und Wirkungskette prüfen; keine automatische Kürzung.'
+  }];
+}
+
+export function gasTransformationWarningsFor(measure, p) {
+  if (p.sector !== 'gas' || !measure?.active) return [];
+  const helper = gasTransformationHelper({
+    sector: p.sector,
+    path: measure.gasTransformationPath || 'unclear',
+    assetScope: measure.gasAssetScope || 'distributionLine',
+    obligationBasis: measure.gasObligationBasis || 'unclear',
+    eternityAssumption: measure.gasEternityAssumption || 'unclear',
+    provisionAssessment: measure.gasProvisionAssessment || 'unclear',
+    regulatoryTreatment: measure.gasRegulatoryTreatment || 'unclear',
+    plannedYear: measure.decommissionYear || measure.year || '',
+    costEstimate: measure.decommissionCost || 0,
+    evidence: measure.gasTransformationEvidence || ''
+  });
+  if (!helper.applicable) return [];
+  const needsReview = helper.recommendedQuestion !== 'Klärpunkt dokumentieren'
+    || helper.path !== 'unclear'
+    || helper.eternityAssumption === 'removed'
+    || helper.regulatoryTreatment !== 'unclear';
+  if (!needsReview) return [];
+  return [{
+    type: 'gas_transformation_review',
+    key: `gas-transformation:${measure.id}`,
+    area: 'Gas-Transformationspfad',
+    targetPhase: 'massnahmenbewertung',
+    measureId: measure.id,
+    measure: measure.name || 'Maßnahme',
+    title: helper.recommendedQuestion,
+    detail: `${helper.summary}. ${helper.governance}`
   }];
 }
 
@@ -556,7 +673,10 @@ export function calcPortfolio(model, p) {
     const result = calcMeasure(measure, p, portfolioEffect);
     return {
       ...result,
-      warnings: doubleCountingWarningsFor(measure, p, portfolioEffect)
+      warnings: [
+        ...doubleCountingWarningsFor(measure, p, portfolioEffect),
+        ...gasTransformationWarningsFor(measure, p)
+      ]
     };
   });
   const yearly = Array.from({ length: p.horizon }, (_, i) => ({
