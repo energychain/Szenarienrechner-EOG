@@ -15,6 +15,9 @@ Viele EVU-Rollen brauchen eine Übersetzung derselben Planung in unterschiedlich
 - Asset Management / Technik
 - Anlagenbuchhaltung / Bilanzierung
 - Projektsteuerung / PMO
+- Arbeitsstand hinterfragen
+
+Der Prompt-Typ „Arbeitsstand hinterfragen“ ist bewusst keine Berichtsvorlage. Er soll den aktuellen Arbeitsstand fachlich challengen: belastbare Aussagen von prüfpflichtigen Annahmen trennen, Widersprüche und Datenlücken sichtbar machen, Fragen an Regulierung, Bilanzierung, Technik und Management formulieren und bei Gas-Maßnahmen Stilllegung, Rückbau, Rückstellungen, Ewigkeitsvermutung sowie KAnEu-/Ist-Kosten-Behandlung als offene Herleitung prüfen. Er trifft keine regulatorische, rechtliche oder bilanzielle Entscheidung.
 
 ## Datenschutzmodell
 

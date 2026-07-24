@@ -18,10 +18,12 @@ Die App sendet keine Modelldaten an KI-Systeme. Ein KI-Prompt wird lokal erzeugt
 - Doppelzählungswarnungen sind Klärpunkte, keine automatische Kürzung.
 - Ruleset-Konfidenz unterscheidet enacted, consultation und draft. Nicht rechtskräftige Stände müssen in Entscheidungstexten sichtbar bleiben.
 - Die App ersetzt keine regulatorische, steuerliche oder rechtliche Beratung und gibt keine Anerkennungszusage.
+- Beim Prompt-Typ „Arbeitsstand hinterfragen“ soll das KI-System kritisch prüfen, welche Aussagen belastbar sind, welche Annahmen prüfpflichtig bleiben, wo Widersprüche oder Datenlücken bestehen und welche Klärfragen an Regulierung, Bilanzierung, Technik und Management zurückgehen. Es soll keine regulatorische, rechtliche oder bilanzielle Entscheidung treffen.
+- Bei Gas-Transformationsfällen sind Stilllegung, Rückbau, Rückstellungen, Wegfall der Ewigkeitsvermutung sowie KAnEu-/Ist-Kosten-Behandlung als prüfpflichtige Herleitungen zu behandeln.
 
 ## Rollen
 
-Typische Rollen sind Modellverantwortung, Regulierungsmanagement, Controlling/Finanzen, Asset Management/Technik, Anlagenbuchhaltung/Bilanzierung, Geschäftsführung/Management und Aufsichtsrat/Stadtrat/Gremium.
+Typische Rollen sind Modellverantwortung, Regulierungsmanagement, Controlling/Finanzen, Asset Management/Technik, Anlagenbuchhaltung/Bilanzierung, Projektsteuerung/PMO, Geschäftsführung/Management und Aufsichtsrat/Stadtrat/Gremium. Zusätzlich gibt es den Prompt-Typ „Arbeitsstand hinterfragen“ für eine rollenübergreifende Challenge des Planungsstands.
 
 ## Gewünschter KI-Stil
 
