@@ -221,6 +221,9 @@ export function params(inputs, overrides = {}) {
     eDelta,
     annualEnergyGwh: finiteNumber(inputs.annualEnergyGwh, NaN),
     householdConsumptionKwh: finiteNumber(inputs.householdConsumptionKwh, sector === 'gas' ? 15000 : 2900),
+    rulesetId: regulatoryParameterSet.id,
+    rulesetConfidence: regulatoryParameterSet.confidence,
+    rulesetSourceRef: regulatoryParameterSet.sourceRef,
     assumptionMode: 'basis',
     effectLags: {
       capex: Math.max(0, Math.round(finiteNumber(inputs.capexLagYears, defaultEffectLags.capex))),
@@ -373,6 +376,7 @@ const gasTransformationPathLabels = {
 };
 
 const gasAssetScopeLabels = {
+  unclear: 'Objektart offen / zu klären',
   connectionLine: 'Gasnetzanschlussleitung / Hausanschluss',
   distributionLine: 'allgemeines Gasverteilnetz',
   station: 'Station / Anlage',
@@ -383,7 +387,7 @@ const gasAssetScopeLabels = {
 export function gasTransformationHelper({
   sector = 'gas',
   path = 'unclear',
-  assetScope = 'distributionLine',
+  assetScope = 'unclear',
   obligationBasis = 'unclear',
   eternityAssumption = 'unclear',
   provisionAssessment = 'unclear',
@@ -404,7 +408,7 @@ export function gasTransformationHelper({
     };
   }
   const normalizedPath = gasTransformationPathLabels[path] ? path : 'unclear';
-  const normalizedScope = gasAssetScopeLabels[assetScope] ? assetScope : 'distributionLine';
+  const normalizedScope = gasAssetScopeLabels[assetScope] ? assetScope : 'unclear';
   const cost = Math.max(0, finiteNumber(costEstimate));
   const year = plannedYear === '' || plannedYear === null || plannedYear === undefined ? null : Math.round(finiteNumber(plannedYear));
   const usefulLife = life === '' || life === null || life === undefined ? null : Math.max(1, Math.round(finiteNumber(life)));
@@ -501,7 +505,7 @@ export function gasTransformationInputForMeasure(measure = {}, p = {}) {
   return {
     sector: p.sector || 'gas',
     path: measure.gasTransformationPath || 'unclear',
-    assetScope: measure.gasAssetScope || 'distributionLine',
+    assetScope: measure.gasAssetScope || 'unclear',
     obligationBasis: measure.gasObligationBasis || 'unclear',
     eternityAssumption: measure.gasEternityAssumption || 'unclear',
     provisionAssessment: measure.gasProvisionAssessment || 'unclear',
@@ -814,6 +818,7 @@ function recurringValue(yearly, key) {
 function decisionSnapshot(result) {
   const spread = Number.isFinite(result.irr) ? result.irr - result.p.financingRate : NaN;
   const carries = Number.isFinite(spread) && spread >= 0.01 && result.npv > 0;
+  const warnings = Array.isArray(result.warnings) ? result.warnings : [];
   return {
     irr: result.irr,
     rateMetricKind: result.returnMetric?.kind || 'irr',
@@ -830,12 +835,33 @@ function decisionSnapshot(result) {
     yearOneIndicativeCashflow: result.yearly[0]?.indicativeCashflow || 0,
     recurringIndicativeCashflow: recurringValue(result.yearly, 'indicativeCashflow'),
     yearOneOneOff: result.yearly[0]?.firstYearOpex || 0,
+    warningCount: warnings.length,
+    gasTransformationWarningCount: warnings.filter(warning => String(warning.type || '').startsWith('gas_')).length,
+    rulesetConfidence: result.p?.rulesetConfidence || regulatoryParameterSet.confidence,
+    rulesetId: result.p?.rulesetId || regulatoryParameterSet.id,
     carries,
     verdictClass: carries ? 'good' : 'bad'
   };
 }
 
-function governanceDecisionFor(basis, conservative) {
+function decisionReservationsFor(basis, scenarioComparison) {
+  const reservations = [];
+  if (basis.rulesetConfidence && basis.rulesetConfidence !== 'enacted') {
+    reservations.push(`Regulierungsstand ${basis.rulesetId} ist ${basis.rulesetConfidence} und damit ein prüfpflichtiger Arbeitsstand.`);
+  }
+  if (basis.warningCount > 0) {
+    reservations.push(`${basis.warningCount} offene Prüf-/Klärhinweise vor Beschluss bearbeiten.`);
+  }
+  if (basis.gasTransformationWarningCount > 0) {
+    reservations.push('Gas-Transformations-, Stilllegungs-, Rückbau- oder Rückstellungsfragen ausdrücklich fachlich freigeben oder als Klärpunkt führen.');
+  }
+  if (scenarioComparison?.identicalBasisConservative) {
+    reservations.push('Basis- und Konservativ-Szenario sind identisch; das konservative Urteil ist kein zusätzlicher Stresstest.');
+  }
+  return reservations;
+}
+
+function governanceDecisionFor(basis, conservative, scenarioComparison = null) {
   if (basis.activeMeasureCount === 0 || basis.investment <= 0 || !Number.isFinite(basis.irr)) {
     return {
       status: 'nicht_entscheidungsreif',
@@ -863,19 +889,51 @@ function governanceDecisionFor(basis, conservative) {
       recommendation: 'Nicht als unbedingte Freigabe lesen. Vor Beschluss sind die werttragenden Annahmen zu bestätigen, zu reduzieren oder als bewusstes Entscheidungsrisiko zu dokumentieren.'
     };
   }
+  const reservations = decisionReservationsFor(basis, scenarioComparison);
   return {
     status: 'robust',
     cls: 'good',
     title: 'Robust tragfähig',
     text: 'Die Maßnahme trägt sowohl im Basiscase als auch ohne prüfpflichtige Wirkannahmen bzw. unter konservativer Bewertung.',
-    recommendation: 'Zur Entscheidung geeignet; Attribution, Datenstand und regulatorische Grenzen trotzdem dokumentieren.'
+    recommendation: reservations.length
+      ? `Als prüfpflichtigen Arbeitsstand nutzen; vor Beschluss ${reservations.join(' ')}`
+      : 'Robust tragfähig; Attribution, Datenstand und regulatorische Grenzen trotzdem dokumentieren.'
+  };
+}
+
+function metricDelta(a, b, tolerance = 0.000001) {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+  return Math.abs(a - b) <= tolerance;
+}
+
+function scenarioComparisonFor(basis, conservative) {
+  if (!conservative) {
+    return {
+      identicalBasisConservative: false,
+      note: 'Konservatives Szenario nicht geprüft.'
+    };
+  }
+  const identicalBasisConservative = [
+    metricDelta(basis.irr, conservative.irr),
+    metricDelta(basis.npv, conservative.npv),
+    metricDelta(basis.yearOneRegulatoryEog, conservative.yearOneRegulatoryEog),
+    metricDelta(basis.recurringRegulatoryEog, conservative.recurringRegulatoryEog),
+    metricDelta(basis.yearOneIndicativeCashflow, conservative.yearOneIndicativeCashflow),
+    metricDelta(basis.recurringIndicativeCashflow, conservative.recurringIndicativeCashflow)
+  ].every(Boolean);
+  return {
+    identicalBasisConservative,
+    note: identicalBasisConservative
+      ? 'Basis- und Konservativ-Szenario sind identisch; das konservative Urteil liefert keine zusätzliche Stressprüfung.'
+      : 'Basis- und Konservativ-Szenario unterscheiden sich; konservatives Urteil als Sensitivität lesen.'
   };
 }
 
 export function portfolioDecisionMetrics(result, conservativeResult = null) {
   const basis = decisionSnapshot(result);
   const conservative = conservativeResult ? decisionSnapshot(conservativeResult) : null;
-  const governanceDecision = governanceDecisionFor(basis, conservative);
+  const scenarioComparison = scenarioComparisonFor(basis, conservative);
+  const governanceDecision = governanceDecisionFor(basis, conservative, scenarioComparison);
   const conservativeGate = conservative
     ? governanceDecision.status === 'auflage'
       ? 'auflage'
@@ -887,6 +945,7 @@ export function portfolioDecisionMetrics(result, conservativeResult = null) {
     ...basis,
     basis,
     conservative,
+    scenarioComparison,
     conservativeGate,
     governanceDecision,
     cashflowBasis: 'IRR und Kapitalwert nutzen den indikativen Cashflow aus modellierter EOG-Wirkung abzüglich wirtschaftlicher OPEX-/Rückbau-/Reinvestitionsannahmen; keine garantierten Zahlungsströme.'
