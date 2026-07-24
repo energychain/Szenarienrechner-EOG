@@ -3114,6 +3114,9 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
   if (result.activeMeasures.length && result.tariffImpact.available) {
     document.getElementById('managementCaveat').textContent += ' Entgeltwirkung indikativ: ' + result.tariffImpact.caveat;
   }
+  if (result.activeMeasures.length && metrics.scenarioComparison?.identicalBasisConservative) {
+    document.getElementById('managementCaveat').textContent += ' Basis- und Konservativ-Szenario sind identisch; das konservative Urteil ist kein zusätzlicher Stresstest.';
+  }
 
   document.getElementById('managementNextStep').textContent = result.activeMeasures.length
     ? 'Im Meeting die drei offenen Annahmen festziehen: Aktivierungsprofil, regulatorische Anerkennung und zurechenbare Portfolio-/Risikowirkung.'
@@ -3133,8 +3136,9 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
 	        `Rot: Spread < -1,0 Prozentpunkt oder Spread nicht belastbar.`,
 	        `Aktuell Basis: Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}.`,
 	        `Ohne prüfpflichtige Annahmen: ${metrics.conservative?.rateMetricLabel || 'IRR'} ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${metrics.conservative ? fmtTeur(metrics.conservative.npv, 1) : '-'}.`,
-	        `${metricLabel}/NPV sind indikative Cashflow-Kennzahlen, keine garantierten Zahlungsströme aus der EOG.`
-	      ].map(item => `<li>${esc(item)}</li>`).join('');
+	        `${metricLabel}/NPV sind indikative Cashflow-Kennzahlen, keine garantierten Zahlungsströme aus der EOG.`,
+        metrics.scenarioComparison?.identicalBasisConservative ? metrics.scenarioComparison.note : ''
+	      ].filter(Boolean).map(item => `<li>${esc(item)}</li>`).join('');
 	    }
 
 function meetingCard(focus, key, title, value, text) {
@@ -4276,7 +4280,7 @@ function renderDetail() {
   el.mHgbLife.value = measure.hgbLife || measure.life || 1;
   el.mDecommissionYear.value = measure.decommissionYear ?? '';
   el.mGasTransformationPath.value = measure.gasTransformationPath || 'unclear';
-  el.mGasAssetScope.value = measure.gasAssetScope || 'distributionLine';
+  el.mGasAssetScope.value = measure.gasAssetScope || 'unclear';
   el.mGasObligationBasis.value = measure.gasObligationBasis || 'unclear';
   el.mGasEternityAssumption.value = measure.gasEternityAssumption || 'unclear';
   el.mGasProvisionAssessment.value = measure.gasProvisionAssessment || 'unclear';
@@ -4900,7 +4904,8 @@ function renderReport(result, first, spread, decision, metrics) {
         <div class="report-box">
           <strong>Urteil</strong>
           <p>${decision.title}</p>
-          <p class="hint">Ohne prüfpflichtige Annahmen: IRR ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${metrics.conservative ? fmtTeur(metrics.conservative.npv, 1) : '-'}. ${metrics.conservativeGate === 'auflage' ? 'Basiscase nur mit Auflage/Evidenz beschlussreif.' : ''}</p>
+          <p class="hint">${esc(metrics.governanceDecision.recommendation)}</p>
+          <p class="hint">Ohne prüfpflichtige Annahmen: IRR ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}, Kapitalwert ${metrics.conservative ? fmtTeur(metrics.conservative.npv, 1) : '-'}. ${metrics.conservativeGate === 'auflage' ? 'Basiscase nur mit Auflage/Evidenz beschlussreif.' : ''} ${metrics.scenarioComparison?.identicalBasisConservative ? metrics.scenarioComparison.note : ''}</p>
         </div>
         <div class="report-box">
           <strong>Governance-Hinweis</strong>

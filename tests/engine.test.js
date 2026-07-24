@@ -159,6 +159,19 @@ describe('financial helpers', () => {
     expect(helper.governance).toContain('keine automatische Entscheidung');
   });
 
+  it('does not silently export an empty gas asset scope as general distribution grid', () => {
+    const helper = gasTransformationHelper({
+      sector: 'gas',
+      path: 'physicalDismantling',
+      assetScope: '',
+      eternityAssumption: 'removed',
+      provisionAssessment: 'checkProvision'
+    });
+    expect(helper.assetScope).toBe('unclear');
+    expect(helper.assetScopeLabel).toContain('offen');
+    expect(helper.summary).not.toContain('allgemeines Gasverteilnetz');
+  });
+
   it('keeps the gas transformation helper inactive for Strom measures', () => {
     const helper = gasTransformationHelper({ sector: 'strom', path: 'physicalDismantling', costEstimate: 250 });
     expect(helper.applicable).toBe(false);
@@ -454,6 +467,41 @@ describe('scenario and portfolio parameters', () => {
       cls: 'good',
       title: 'Robust tragfähig'
     });
+    expect(metrics.governanceDecision.recommendation).not.toContain('Zur Entscheidung geeignet');
+    expect(metrics.governanceDecision.recommendation).toContain('prüfpflichtigen Arbeitsstand');
+  });
+
+  it('flags identical basis and conservative scenarios as limited stress-test evidence', () => {
+    const measure = baseMeasure({ cost: 1000, qDirect: 0, eDirect: 0, riskAvoided: 0 });
+    const base = params({ ...baseInputs, returnRate: 8, financingRate: 5, discountRate: 5, horizon: 10 });
+    const basis = calcPortfolio({ measures: [measure] }, base);
+    const conservative = calcPortfolio({ measures: [measure] }, scenarioParams(base, 'konservativ'));
+    const metrics = portfolioDecisionMetrics(basis, conservative);
+
+    expect(metrics.scenarioComparison.identicalBasisConservative).toBe(true);
+    expect(metrics.scenarioComparison.note).toContain('Basis- und Konservativ-Szenario sind identisch');
+  });
+
+  it('softens recommendation when gas transformation warnings are open', () => {
+    const measure = baseMeasure({
+      cost: 1000,
+      qDirect: 0,
+      eDirect: 0,
+      riskAvoided: 0,
+      gasTransformationPath: 'physicalDismantling',
+      gasEternityAssumption: 'removed',
+      gasProvisionAssessment: 'checkProvision',
+      decommissionCost: 0,
+      life: 1
+    });
+    const base = params({ ...baseInputs, returnRate: 12, financingRate: 3, discountRate: 3, horizon: 10 });
+    const basis = calcPortfolio({ measures: [measure] }, base);
+    const conservative = calcPortfolio({ measures: [measure] }, scenarioParams(base, 'konservativ'));
+    const metrics = portfolioDecisionMetrics(basis, conservative);
+
+    expect(basis.warnings.some(item => item.type === 'gas_transformation_review')).toBe(true);
+    expect(metrics.governanceDecision.recommendation).toContain('Gas-Transformations');
+    expect(metrics.governanceDecision.recommendation).not.toContain('Zur Entscheidung geeignet');
   });
 
   it('marks a negative basis case as not carrying regardless of conservative scenario', () => {

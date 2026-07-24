@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const uiJs = readFileSync(new URL('../src/ui.js', import.meta.url), 'utf8');
+const engineJs = readFileSync(new URL('../src/engine.js', import.meta.url), 'utf8');
 
 describe('gas transformation UI', () => {
   it('adds a gas-specific transformation layer without making it a Strom input path', () => {
@@ -28,5 +29,17 @@ describe('gas transformation UI', () => {
     expect(uiJs).toContain('Rückstellung prüfen');
     expect(uiJs).toContain('keine automatische Entscheidung');
     expect(uiJs).toContain('Nutzungsdauer-Entscheid erforderlich');
+  });
+
+  it('keeps unknown gas object scope explicitly open instead of defaulting to distribution grid', () => {
+    expect(indexHtml).toContain('<option value="unclear">Objektart offen / zu klären</option>');
+    expect(uiJs).toContain("el.mGasAssetScope.value = measure.gasAssetScope || 'unclear'");
+    expect(uiJs).not.toContain("measure.gasAssetScope || 'distributionLine'");
+  });
+
+  it('shows cautious scenario and decision wording in report views', () => {
+    expect(uiJs).toContain('Basis- und Konservativ-Szenario sind identisch');
+    expect(engineJs).toContain('prüfpflichtigen Arbeitsstand');
+    expect(uiJs).toContain('metrics.governanceDecision.recommendation');
   });
 });
