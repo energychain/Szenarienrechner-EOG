@@ -129,7 +129,7 @@ Bei Gasnetzen reicht eine klassische Reinvestitionssicht nicht aus. Eine Maßnah
 
 **Fachliche Frage:** Welche Herleitung ist erforderlich, bevor ein Wert in Gremienvorlage, Wirtschaftsplan oder Rückstellungsdiskussion auftauchen darf?
 
-**App-Beitrag:** Bei Sparte Gas zeigt die App im Maßnahmenformular den **Gas-Transformationspfad**. Dort werden Pfad, Objektart, Pflicht-/Anspruchsgrund, Ewigkeitsvermutung, Rückstellungs-Check, regulatorische Behandlung und Evidenz dokumentiert. Die App formuliert daraus HGB-/Rückstellungsfragen und regulatorische Prüffragen, trifft aber keine automatische Rückstellungs-, Rückbaupflicht- oder Anerkennungsentscheidung.
+**App-Beitrag:** Bei Sparte Gas zeigt die App im Maßnahmenformular den **Gas-Transformationspfad**. Dort werden Pfad, Objektart, Pflicht-/Anspruchsgrund, Ewigkeitsvermutung, Rückstellungs-Check, regulatorische Behandlung und Evidenz dokumentiert. Die App formuliert daraus HGB-/Rückstellungsfragen und regulatorische Prüffragen, trifft aber keine automatische Rückstellungs-, Rückbaupflicht- oder Anerkennungsentscheidung. Wenn eine lange Gas-Nutzungsdauer nach Wegfall der Ewigkeitsvermutung über den KANU-/Transformationshorizont hinausläuft, zeigt sie zusätzlich **„Nutzungsdauer-Entscheid erforderlich“** und verlangt eine bewusste fachliche Einordnung, bevor Kennzahlen unkritisch verwendet werden.
 
 **Ergebnis:** Stilllegung, Rückbau, Reinvestition, H2-/Umwidmung und Belassen im Boden werden nicht als freie Notiz versteckt, sondern als prüfpflichtige Fachschicht im Arbeitsstand geführt. Bei Strom bleibt diese Ebene ausgeblendet und ohne Wirkung.
 

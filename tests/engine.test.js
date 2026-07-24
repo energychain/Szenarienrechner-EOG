@@ -170,13 +170,52 @@ describe('financial helpers', () => {
       gasTransformationPath: 'physicalDismantling',
       gasEternityAssumption: 'removed',
       gasProvisionAssessment: 'checkProvision',
-      decommissionCost: 100
+      decommissionCost: 100,
+      life: 1
     })] };
     const gasResult = calcPortfolio(gasModel, params(baseInputs));
     expect(gasResult.warnings.some(item => item.type === 'gas_transformation_review')).toBe(true);
 
     const stromResult = calcPortfolio(gasModel, params({ ...baseInputs, sector: 'strom' }));
     expect(stromResult.warnings.some(item => item.type === 'gas_transformation_review')).toBe(false);
+  });
+
+  it('requires an explicit user decision when gas useful life extends beyond KANU horizon after eternity assumption removal', () => {
+    const helper = gasTransformationHelper({
+      sector: 'gas',
+      path: 'physicalDismantling',
+      assetScope: 'distributionLine',
+      obligationBasis: 'unclear',
+      eternityAssumption: 'removed',
+      provisionAssessment: 'checkProvision',
+      regulatoryTreatment: 'unclear',
+      plannedYear: '2031',
+      life: '40',
+      kanuEndYear: '2045'
+    });
+    expect(helper.recommendedQuestion).toBe('Nutzungsdauer-Entscheid erforderlich');
+    expect(helper.lifeHorizonConflict).toMatchObject({
+      conflict: true,
+      lifeEndYear: 2071,
+      kanuEndYear: 2045
+    });
+    expect(helper.hgbChecklist.join(' ')).toContain('40 Jahre');
+    expect(helper.hgbChecklist.join(' ')).toContain('2071');
+    expect(helper.governance).toContain('Nutzerentscheid');
+
+    const model = { measures: [baseMeasure({
+      year: 2031,
+      life: 40,
+      depr: 'kanuLinear',
+      gasTransformationPath: 'physicalDismantling',
+      gasEternityAssumption: 'removed',
+      gasProvisionAssessment: 'checkProvision'
+    })] };
+    const result = calcPortfolio(model, params({ ...baseInputs, baseYear: 2031, kanuEndYear: 2045, horizon: 5 }));
+    const warning = result.warnings.find(item => item.type === 'gas_life_horizon_conflict');
+    expect(warning).toBeTruthy();
+    expect(warning.title).toContain('Nutzungsdauer-Entscheid');
+    expect(warning.detail).toContain('2071');
   });
 });
 
