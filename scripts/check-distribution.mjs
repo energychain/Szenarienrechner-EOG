@@ -1,9 +1,13 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { imprintSections } from '../src/trust-content.js';
 
 const expectedCsp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src https://energychain.github.io; object-src 'none'; base-uri 'none'; form-action 'none'";
-const appHtml = readFileSync('dist/szenarienrechner-eog.html', 'utf8');
+const appArtifact = readFileSync('dist/szenarienrechner-eog.html');
+const appHtml = appArtifact.toString('utf8');
+const appPageHtml = readFileSync('dist/app.html', 'utf8');
 const homepage = readFileSync('dist/index.html', 'utf8');
+const releaseManifest = JSON.parse(readFileSync('dist/release-manifest.json', 'utf8'));
 const readme = readFileSync('README.md', 'utf8');
 
 function assert(condition, message) {
@@ -28,6 +32,23 @@ assert(!/https?:\/\//i.test(appHtml
 assert(!/\b(XMLHttpRequest|WebSocket|EventSource)\s*\(/.test(appHtml), 'Built app artifact must not contain push or socket network APIs.');
 assert(appHtml.includes('release-manifest.json'), 'Built app artifact must expose the consent-driven release manifest check.');
 assert(appHtml.includes('KI-Prompt erstellen'), 'Built app artifact must expose the local AI prompt export.');
+const builtCommit = appHtml.match(/<meta name="build-commit" content="([^"]+)"/)?.[1];
+const appPageCommit = appPageHtml.match(/<meta name="build-commit" content="([^"]+)"/)?.[1];
+const appSha256 = createHash('sha256').update(appArtifact).digest('hex');
+assert(builtCommit, 'Built app artifact must include a build-commit meta tag.');
+assert(appPageCommit, 'Browser app artifact must include a build-commit meta tag.');
+assert(
+  releaseManifest.app.commit === builtCommit,
+  `Release manifest commit ${releaseManifest.app.commit} must match built app commit ${builtCommit}.`
+);
+assert(
+  appPageCommit === builtCommit,
+  `Browser app commit ${appPageCommit} must match offline app commit ${builtCommit}.`
+);
+assert(
+  releaseManifest.app.sha256 === appSha256,
+  `Release manifest sha256 ${releaseManifest.app.sha256} must match offline artifact sha256 ${appSha256}.`
+);
 assert(homepage.includes('Regulierte Finanzplanung verständlich'), 'Homepage must contain the public positioning headline.');
 assert(homepage.includes('Fachliche Features'), 'Homepage must list fachliche features.');
 assert(homepage.includes('Technische Features'), 'Homepage must list technical features.');
