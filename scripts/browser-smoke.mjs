@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
@@ -37,6 +38,28 @@ if (!fileInputsHidden) {
 await page.locator('.action-menu summary').click();
 await page.getByRole('button', { name: /Tabellen als XLSX exportieren/ }).waitFor({ timeout: 10000 });
 await page.getByRole('button', { name: /KI-Prompt erstellen/ }).waitFor({ timeout: 10000 });
+const [selfContainedDownload] = await Promise.all([
+  page.waitForEvent('download'),
+  page.getByRole('button', { name: /HTML mit Daten speichern/ }).click()
+]);
+const selfContainedPath = resolve('/tmp', selfContainedDownload.suggestedFilename());
+await selfContainedDownload.saveAs(selfContainedPath);
+const selfContainedHtml = await readFile(selfContainedPath, 'utf8');
+if (!selfContainedHtml.includes('embedded-model-state')) {
+  throw new Error('HTML-mit-Daten-Export enthält keinen eingebetteten Modellstand.');
+}
+const exportedPage = await context.newPage();
+const exportedErrors = [];
+exportedPage.on('console', msg => {
+  if (msg.type() === 'error') exportedErrors.push(msg.text());
+});
+exportedPage.on('pageerror', error => exportedErrors.push(error.message));
+await exportedPage.goto(pathToFileURL(selfContainedPath).href, { waitUntil: 'domcontentloaded' });
+await exportedPage.getByText('HTML-Datei mit eingebettetem Datenstand geladen.').waitFor({ timeout: 10000 });
+await exportedPage.getByRole('heading', { name: /Projektplan aus der Userstory/ }).waitFor({ timeout: 10000 });
+if (exportedErrors.length) {
+  throw new Error(`HTML-mit-Daten-Export erzeugt Browser-Fehler: ${exportedErrors.join(' | ')}`);
+}
 await browser.close();
 
 if (externalRequests.length) {
