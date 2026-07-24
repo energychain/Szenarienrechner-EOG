@@ -8,6 +8,7 @@ import {
   expectedActivated,
   financingSpreadHelper,
   gasTransformationHelper,
+  gasTransformationInputForMeasure,
   impactAssumptionsFor,
   params as engineParams,
   portfolioDecisionMetrics,
@@ -2907,20 +2908,7 @@ function renderHelperCalculators(measure) {
 }
 
 function gasTransformationForMeasure(measure, p = currentParams()) {
-  return gasTransformationHelper({
-    sector: p.sector,
-    path: measure.gasTransformationPath || 'unclear',
-    assetScope: measure.gasAssetScope || 'distributionLine',
-    obligationBasis: measure.gasObligationBasis || 'unclear',
-    eternityAssumption: measure.gasEternityAssumption || 'unclear',
-    provisionAssessment: measure.gasProvisionAssessment || 'unclear',
-    regulatoryTreatment: measure.gasRegulatoryTreatment || 'unclear',
-    plannedYear: measure.decommissionYear || measure.year || '',
-    costEstimate: measure.decommissionCost || 0,
-    evidence: measure.gasTransformationEvidence || '',
-    life: measure.life || '',
-    kanuEndYear: p.kanuEndYear || ''
-  });
+  return gasTransformationHelper(gasTransformationInputForMeasure(measure, p));
 }
 
 function renderGasTransformationLayer(measure) {

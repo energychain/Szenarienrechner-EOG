@@ -497,10 +497,9 @@ export function doubleCountingWarningsFor(measure, p, portfolioEffectPa = portfo
   }];
 }
 
-export function gasTransformationWarningsFor(measure, p) {
-  if (p.sector !== 'gas' || !measure?.active) return [];
-  const helper = gasTransformationHelper({
-    sector: p.sector,
+export function gasTransformationInputForMeasure(measure = {}, p = {}) {
+  return {
+    sector: p.sector || 'gas',
     path: measure.gasTransformationPath || 'unclear',
     assetScope: measure.gasAssetScope || 'distributionLine',
     obligationBasis: measure.gasObligationBasis || 'unclear',
@@ -512,7 +511,12 @@ export function gasTransformationWarningsFor(measure, p) {
     evidence: measure.gasTransformationEvidence || '',
     life: measure.life || '',
     kanuEndYear: p.kanuEndYear || ''
-  });
+  };
+}
+
+export function gasTransformationWarningsFor(measure, p) {
+  if (p.sector !== 'gas' || !measure?.active) return [];
+  const helper = gasTransformationHelper(gasTransformationInputForMeasure(measure, p));
   if (!helper.applicable) return [];
   const needsReview = helper.recommendedQuestion !== 'Klärpunkt dokumentieren'
     || helper.path !== 'unclear'
