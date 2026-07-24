@@ -6,7 +6,12 @@ export function downloadBlob(blob, filename, documentRef = document, urlRef = UR
   documentRef.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  urlRef.revokeObjectURL(url);
+  const revoke = () => urlRef.revokeObjectURL(url);
+  if (typeof window !== 'undefined' && typeof window.setTimeout === 'function') {
+    window.setTimeout(revoke, 1000);
+  } else {
+    setTimeout(revoke, 1000);
+  }
 }
 
 export function exportStamp(state) {
@@ -21,8 +26,11 @@ export function jsonForHtmlScript(value) {
 }
 
 export function htmlWithEmbeddedModelState(html, state) {
-  const cleaned = String(html).replace(/\n?\s*<script id="embedded-model-state" type="application\/json">[\s\S]*?<\/script>/g, '');
+  const cleaned = String(html).replace(/\n?\s*<script id="embedded-model-state" type="application\/json">[\s\S]*?<\/script>\s*(?=<\/body>)/g, '');
   const embeddedStateScript = `\n  <script id="embedded-model-state" type="application/json">${jsonForHtmlScript(state)}</script>\n`;
-  if (cleaned.includes('</body>')) return cleaned.replace('</body>', `${embeddedStateScript}</body>`);
+  const bodyCloseIndex = cleaned.lastIndexOf('</body>');
+  if (bodyCloseIndex !== -1) {
+    return `${cleaned.slice(0, bodyCloseIndex)}${embeddedStateScript}${cleaned.slice(bodyCloseIndex)}`;
+  }
   return `${cleaned}${embeddedStateScript}`;
 }
