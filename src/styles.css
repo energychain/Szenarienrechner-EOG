@@ -1214,6 +1214,14 @@
       display: none !important;
     }
 
+    body.sector-gas .strom-only {
+      display: none !important;
+    }
+
+    body.sector-strom .strom-only {
+      display: block;
+    }
+
     body.sector-gas .gas-transformation-summary,
     body.sector-gas .gas-only.helper-card {
       display: block;

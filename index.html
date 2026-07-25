@@ -906,6 +906,13 @@
                 <option value="risiko">Risikomaßnahme</option>
               </select>
             </div>
+            <div class="strom-only">
+              <label for="mEffectType">Wirkungstyp Strom</label>
+              <select id="mEffectType">
+                <option value="classic">klassische CAPEX-Maßnahme</option>
+                <option value="flexibility">Flexibilität / Netzfahrplan</option>
+              </select>
+            </div>
             <div>
               <label for="mCost">Kosten TEUR</label>
               <input id="mCost" type="number" min="0" step="1">
@@ -1025,6 +1032,37 @@
               <input id="mFlexibilityNeed" type="text" placeholder="z.B. Spitzenkappung, Flexibilitätsbedarf, kein Bezug">
             </div>
           </div>
+        </div>
+        <div id="stromFlexibilityLayer" class="group strom-only">
+          <h3>Flexibilität / Netzfahrplan</h3>
+          <p class="hint warning">Strom-spezifische Objektklasse für Flexibilitäten, Netzfahrplan, vermiedene oder verschobene CAPEX und AGNeS-/Steuerungsbezug. Flexibilität wird nicht automatisch als klassische Netz-CAPEX interpretiert.</p>
+          <div class="grid2">
+            <div><label for="mFlexibilityUseCase">Use Case</label><select id="mFlexibilityUseCase"><option value="netzfahrplan">Netzfahrplan</option><option value="capexAvoidance">vermiedene CAPEX</option><option value="storage">Speicher / flexibles Asset</option><option value="controllableLoad">steuerbare Last / Erzeugung</option><option value="other">sonstiger Flexibilitätsfall</option></select></div>
+            <div><label for="mFlexibilityStatus">Flexibilitätsstatus</label><select id="mFlexibilityStatus"><option value="context">Kontext, nicht rechenwirksam</option><option value="pruefpflichtig">prüfpflichtig</option><option value="quantified">quantifiziert, noch nicht aktiv</option><option value="active">aktiv rechenwirksam</option></select></div>
+            <div><label for="mRegulatoryTreatment">Regulatorische Behandlung</label><select id="mRegulatoryTreatment"><option value="unknown">offen / unbekannt</option><option value="capex_avoidance">CAPEX-Vermeidung</option><option value="opex_recognition">OPEX-Anerkennung</option><option value="mixed">gemischt</option><option value="not_applicable">nicht einschlägig</option></select></div>
+            <div><label for="mNetworkScheduleStatus">Netzfahrplan-Status</label><select id="mNetworkScheduleStatus"><option value="missing">fehlt</option><option value="draft">Entwurf</option><option value="validated">validiert</option></select></div>
+            <label class="check-option"><input id="mNetworkScheduleRequired" type="checkbox" checked> Netzfahrplan erforderlich</label>
+            <div><label for="mNetworkConstraintRef">Engpass / Netzbereich</label><input id="mNetworkConstraintRef" type="text" placeholder="offen"></div>
+            <div><label for="mAffectedNetworkLevel">Netzebene</label><select id="mAffectedNetworkLevel"><option value="">offen</option><option value="NS">NS</option><option value="MS">MS</option><option value="UW">UW</option><option value="cross_level">ebenenübergreifend</option></select></div>
+            <div><label for="mActivationWindow">Flexibilitätsfenster</label><input id="mActivationWindow" type="text" placeholder="offen"></div>
+            <div class="wide-field"><label for="mDispatchLogic">Abruf-/Dispatchlogik</label><input id="mDispatchLogic" type="text" placeholder="offen"></div>
+            <div><label for="mAvoidedCapexTeur">vermiedene CAPEX TEUR</label><input id="mAvoidedCapexTeur" type="number" min="0" step="1"></div>
+            <div><label for="mAvoidedCapexConfidence">CAPEX-Vermeidung Evidenz</label><select id="mAvoidedCapexConfidence"><option value="none">keine</option><option value="low">niedrig</option><option value="medium">mittel</option><option value="high">hoch</option></select></div>
+            <div><label for="mDeferredCapexTeur">verschobene CAPEX TEUR</label><input id="mDeferredCapexTeur" type="number" min="0" step="1"></div>
+            <div><label for="mDeferredCapexFromYear">Verschiebung von Jahr</label><input id="mDeferredCapexFromYear" type="number" step="1"></div>
+            <div><label for="mDeferredCapexToYear">Verschiebung bis Jahr</label><input id="mDeferredCapexToYear" type="number" step="1"></div>
+            <div class="wide-field"><label for="mCapexAvoidanceEvidenceRef">Nachweis CAPEX-Vermeidung</label><input id="mCapexAvoidanceEvidenceRef" type="text" placeholder="offen"></div>
+            <div><label for="mFlexOpexPaTeur">Flex-OPEX TEUR p.a.</label><input id="mFlexOpexPaTeur" type="number" min="0" step="1"></div>
+            <div><label for="mFlexOpexStartYear">OPEX ab Jahr</label><input id="mFlexOpexStartYear" type="number" step="1"></div>
+            <div><label for="mFlexOpexDurationYears">OPEX-Dauer Jahre</label><input id="mFlexOpexDurationYears" type="number" min="0" step="1"></div>
+            <div><label for="mOpexRecognitionStatus">OPEX-Anerkennung</label><select id="mOpexRecognitionStatus"><option value="unknown">offen</option><option value="pruefpflichtig">prüfpflichtig</option><option value="expected">erwartet</option><option value="not_recognized">nicht anerkannt</option></select></div>
+            <div class="wide-field"><label for="mOpexEvidenceRef">Nachweis Flex-OPEX</label><input id="mOpexEvidenceRef" type="text" placeholder="offen"></div>
+            <label class="check-option"><input id="mAgnesRelevant" type="checkbox"> AGNeS relevant</label>
+            <div><label for="mAgnesRole">AGNeS-Rolle</label><select id="mAgnesRole"><option value="offen">offen</option><option value="Steuerung">Steuerung</option><option value="Abruf">Abruf</option><option value="Prognose">Prognose</option><option value="Netzfahrplan">Netzfahrplan</option><option value="Nachweis">Nachweis</option></select></div>
+            <div><label for="mAgnesIntegrationStatus">AGNeS-Integration</label><select id="mAgnesIntegrationStatus"><option value="not_assessed">nicht bewertet</option><option value="required">erforderlich</option><option value="available">vorhanden</option><option value="unavailable">nicht verfügbar</option><option value="not_applicable">nicht einschlägig</option></select></div>
+            <div class="wide-field"><label for="mAgnesDataNeeded">AGNeS-Datenbedarf</label><input id="mAgnesDataNeeded" type="text" placeholder="Netzfahrplan, Abruflogik, Flexibilitätsfenster, Nachweisführung"></div>
+          </div>
+          <div id="flexibilitySummary" class="gas-transformation-summary"></div>
         </div>
         <div class="group">
           <h3>Lebenszyklus der Maßnahme</h3>

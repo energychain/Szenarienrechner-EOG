@@ -29,6 +29,8 @@ https://energychain.github.io/Szenarienrechner-EOG/llm.txt
 
 Wenn ein Unternehmens-LLM diese URL nicht abrufen kann, enthält der Prompt trotzdem die wichtigsten Interpretationsregeln: EOG ist nicht Cashflow, Basis vs. konservativ bleibt sichtbar, prüfpflichtige Annahmen sind keine bestätigten Fakten und es gibt keine regulatorische Anerkennungszusage.
 
+Für Strom-Flexibilitäten enthält der Prompt zusätzlich eine feste Abgrenzung: Flexibilitätsobjekte, Netzfahrpläne, Speicher-/Laststeuerung und AGNeS-Bezüge sind nicht automatisch klassische Netz-CAPEX. Sie beschreiben mögliche OPEX-gegen-CAPEX-Substitutionen. Eine rechnerische Wirkung soll erst interpretiert werden, wenn Netzfahrplan, vermiedene oder verschobene CAPEX, jährliche Flex-OPEX und Steuerungs-/Nachweislogik belastbar dokumentiert sind.
+
 ## Nutzung
 
 1. Arbeitsstand prüfen.

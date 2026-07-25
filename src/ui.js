@@ -7,6 +7,7 @@ import {
   depreciationLifeHelper,
   expectedActivated,
   financingSpreadHelper,
+  flexibilityHelper,
   gasTransformationHelper,
   gasTransformationInputForMeasure,
   impactAssumptionsFor,
@@ -98,7 +99,12 @@ const inputDefaults = {
 };
 
 const detailIds = [
-  'mName', 'mExternalId', 'mOrgUnit', 'mTags', 'mType', 'mCost', 'mYear', 'mSecure', 'mUncertain',
+  'mName', 'mExternalId', 'mOrgUnit', 'mTags', 'mType', 'mEffectType', 'mFlexibilityUseCase', 'mFlexibilityStatus',
+  'mRegulatoryTreatment', 'mNetworkScheduleRequired', 'mNetworkScheduleStatus', 'mNetworkConstraintRef',
+  'mAffectedNetworkLevel', 'mActivationWindow', 'mDispatchLogic', 'mAvoidedCapexTeur', 'mAvoidedCapexConfidence',
+  'mDeferredCapexTeur', 'mDeferredCapexFromYear', 'mDeferredCapexToYear', 'mCapexAvoidanceEvidenceRef',
+  'mFlexOpexPaTeur', 'mFlexOpexStartYear', 'mFlexOpexDurationYears', 'mOpexRecognitionStatus', 'mOpexEvidenceRef',
+  'mAgnesRelevant', 'mAgnesRole', 'mAgnesIntegrationStatus', 'mAgnesDataNeeded', 'mCost', 'mYear', 'mSecure', 'mUncertain',
   'mMonitoringProfile', 'mMonitoringCategory', 'mNetworkLevel', 'mReportingRegion', 'mReportingStatus',
   'mCapacityImpact', 'mBottleneckRef', 'mPermitRequired', 'mPermitStatus', 'mInvestmentDecisionStatus',
   'mInvestmentDecisionDate', 'mAlternativesChecked', 'mFlexibilityNeed',
@@ -669,6 +675,31 @@ function normalizeMeasureForUi(measure, index = 0) {
     investmentDecisionDate: String(measure.investmentDecisionDate || ''),
     alternativesChecked: String(measure.alternativesChecked || ''),
     flexibilityNeed: String(measure.flexibilityNeed || ''),
+    effectType: measure.effectType === 'flexibility' ? 'flexibility' : 'classic',
+    flexibilityUseCase: String(measure.flexibilityUseCase || 'netzfahrplan'),
+    flexibilityStatus: ['context', 'pruefpflichtig', 'quantified', 'active'].includes(measure.flexibilityStatus) ? measure.flexibilityStatus : 'context',
+    regulatoryTreatment: String(measure.regulatoryTreatment || 'unknown'),
+    networkScheduleRequired: measure.networkScheduleRequired !== false,
+    networkScheduleStatus: String(measure.networkScheduleStatus || 'missing'),
+    networkConstraintRef: String(measure.networkConstraintRef || ''),
+    affectedNetworkLevel: String(measure.affectedNetworkLevel || ''),
+    activationWindow: String(measure.activationWindow || ''),
+    dispatchLogic: String(measure.dispatchLogic || ''),
+    avoidedCapexTeur: Number(measure.avoidedCapexTeur) || 0,
+    avoidedCapexConfidence: String(measure.avoidedCapexConfidence || 'none'),
+    deferredCapexTeur: Number(measure.deferredCapexTeur) || 0,
+    deferredCapexFromYear: measure.deferredCapexFromYear ?? '',
+    deferredCapexToYear: measure.deferredCapexToYear ?? '',
+    capexAvoidanceEvidenceRef: String(measure.capexAvoidanceEvidenceRef || ''),
+    flexOpexPaTeur: Number(measure.flexOpexPaTeur) || 0,
+    flexOpexStartYear: measure.flexOpexStartYear ?? '',
+    flexOpexDurationYears: Number(measure.flexOpexDurationYears) || 0,
+    opexRecognitionStatus: String(measure.opexRecognitionStatus || 'unknown'),
+    opexEvidenceRef: String(measure.opexEvidenceRef || ''),
+    agnesRelevant: Boolean(measure.agnesRelevant),
+    agnesRole: String(measure.agnesRole || 'offen'),
+    agnesIntegrationStatus: String(measure.agnesIntegrationStatus || 'not_assessed'),
+    agnesDataNeeded: Array.isArray(measure.agnesDataNeeded) ? measure.agnesDataNeeded.map(String) : parseTags(measure.agnesDataNeeded),
     tags: parseTags(measure.tags),
     hgbLife: Number(measure.hgbLife) || Number(measure.life) || 1,
     importStatus: String(measure.importStatus || ''),
@@ -2967,6 +2998,27 @@ function renderGasTransformationLayer(measure) {
   `;
 }
 
+function renderFlexibilityLayer(measure) {
+  const node = document.getElementById('flexibilitySummary');
+  if (!node) return;
+  const p = currentParams();
+  if (p.sector !== 'strom' || !measure || measure.effectType !== 'flexibility') {
+    node.innerHTML = '';
+    return;
+  }
+  const helper = flexibilityHelper(measure, p);
+  node.innerHTML = `
+    <div class="meta">Strom-Flexibilität · ${esc(helper.statusLabel || '')}</div>
+    <strong>${esc(helper.summary)}</strong>
+    <p class="hint">${esc(helper.governance)}</p>
+    ${helper.warnings.length ? `<div class="warning-card compact"><strong>Prüfung erforderlich</strong><ul>${helper.warnings.map(item => `<li>${esc(item)}</li>`).join('')}</ul></div>` : ''}
+    <div class="grid2">
+      <div><strong>CAPEX-Vermeidung</strong><p>${fmtTeur(helper.avoidedCapexTeur)} vermieden · ${fmtTeur(helper.deferredCapexTeur)} verschoben</p></div>
+      <div><strong>Flex-OPEX / AGNeS</strong><p>${fmtTeur(helper.flexOpexPaTeur)} p.a. · ${helper.agnesRelevant ? esc(helper.agnesRole) : 'kein AGNeS-Bezug gesetzt'}</p></div>
+    </div>
+  `;
+}
+
 function renderGlobalValidation() {
   const node = document.getElementById('globalValidation');
   if (!node) return;
@@ -3150,6 +3202,9 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
   }
   if (result.activeMeasures.length && metrics.scenarioComparison?.identicalBasisConservative) {
     document.getElementById('managementCaveat').textContent += ' Basis- und Konservativ-Szenario sind identisch; das konservative Urteil ist kein zusätzlicher Stresstest.';
+  }
+  if (result.flexibilitySummary?.totalCount) {
+    document.getElementById('managementCaveat').textContent += ` Flexibilität / Netzfahrplan: ${result.flexibilitySummary.totalCount} Objekt(e), davon ${result.flexibilitySummary.activeCount} rechenwirksam. Flexibilitätsobjekte sind OPEX-gegen-CAPEX-Substitutionen und keine klassischen Netz-CAPEX; Netzfahrplan und AGNeS-/Nachweislogik prüfen.`;
   }
 
   document.getElementById('managementNextStep').textContent = result.activeMeasures.length
@@ -3497,6 +3552,31 @@ function newMeasureTemplate() {
     investmentDecisionDate: '',
     alternativesChecked: '',
     flexibilityNeed: '',
+    effectType: 'classic',
+    flexibilityUseCase: 'netzfahrplan',
+    flexibilityStatus: 'context',
+    regulatoryTreatment: 'unknown',
+    networkScheduleRequired: true,
+    networkScheduleStatus: 'missing',
+    networkConstraintRef: '',
+    affectedNetworkLevel: '',
+    activationWindow: '',
+    dispatchLogic: '',
+    avoidedCapexTeur: 0,
+    avoidedCapexConfidence: 'none',
+    deferredCapexTeur: 0,
+    deferredCapexFromYear: '',
+    deferredCapexToYear: '',
+    capexAvoidanceEvidenceRef: '',
+    flexOpexPaTeur: 0,
+    flexOpexStartYear: '',
+    flexOpexDurationYears: 0,
+    opexRecognitionStatus: 'unknown',
+    opexEvidenceRef: '',
+    agnesRelevant: false,
+    agnesRole: 'offen',
+    agnesIntegrationStatus: 'not_assessed',
+    agnesDataNeeded: [],
     tags: [],
     hgbLife: 40,
     objectiveIds: [],
@@ -4293,6 +4373,31 @@ function renderDetail() {
   el.mAlternativesChecked.value = measure.alternativesChecked || '';
   el.mFlexibilityNeed.value = measure.flexibilityNeed || '';
   el.mType.value = measure.type;
+  el.mEffectType.value = measure.effectType || 'classic';
+  el.mFlexibilityUseCase.value = measure.flexibilityUseCase || 'netzfahrplan';
+  el.mFlexibilityStatus.value = measure.flexibilityStatus || 'context';
+  el.mRegulatoryTreatment.value = measure.regulatoryTreatment || 'unknown';
+  el.mNetworkScheduleRequired.checked = measure.networkScheduleRequired !== false;
+  el.mNetworkScheduleStatus.value = measure.networkScheduleStatus || 'missing';
+  el.mNetworkConstraintRef.value = measure.networkConstraintRef || '';
+  el.mAffectedNetworkLevel.value = measure.affectedNetworkLevel || '';
+  el.mActivationWindow.value = measure.activationWindow || '';
+  el.mDispatchLogic.value = measure.dispatchLogic || '';
+  el.mAvoidedCapexTeur.value = measure.avoidedCapexTeur || 0;
+  el.mAvoidedCapexConfidence.value = measure.avoidedCapexConfidence || 'none';
+  el.mDeferredCapexTeur.value = measure.deferredCapexTeur || 0;
+  el.mDeferredCapexFromYear.value = measure.deferredCapexFromYear ?? '';
+  el.mDeferredCapexToYear.value = measure.deferredCapexToYear ?? '';
+  el.mCapexAvoidanceEvidenceRef.value = measure.capexAvoidanceEvidenceRef || '';
+  el.mFlexOpexPaTeur.value = measure.flexOpexPaTeur || 0;
+  el.mFlexOpexStartYear.value = measure.flexOpexStartYear ?? '';
+  el.mFlexOpexDurationYears.value = measure.flexOpexDurationYears || 0;
+  el.mOpexRecognitionStatus.value = measure.opexRecognitionStatus || 'unknown';
+  el.mOpexEvidenceRef.value = measure.opexEvidenceRef || '';
+  el.mAgnesRelevant.checked = Boolean(measure.agnesRelevant);
+  el.mAgnesRole.value = measure.agnesRole || 'offen';
+  el.mAgnesIntegrationStatus.value = measure.agnesIntegrationStatus || 'not_assessed';
+  el.mAgnesDataNeeded.value = Array.isArray(measure.agnesDataNeeded) ? measure.agnesDataNeeded.join(', ') : (measure.agnesDataNeeded || '');
   el.mCost.value = measure.cost;
   el.mYear.value = measure.year;
   el.mSecure.value = measure.secure;
@@ -4334,6 +4439,7 @@ function renderDetail() {
 	      document.getElementById('selectedPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
 	      renderMeasureValidation(measure);
       renderGasTransformationLayer(measure);
+      renderFlexibilityLayer(measure);
       renderHelperCalculators(measure);
       renderImpactAssumptions(measure);
       const timeline = document.getElementById('lifecycleTimeline');
@@ -5189,6 +5295,31 @@ function updateSelectedFromDetail() {
 	        investmentDecisionDate: el.mInvestmentDecisionDate.value,
 	        alternativesChecked: el.mAlternativesChecked.value.trim(),
 	        flexibilityNeed: el.mFlexibilityNeed.value.trim(),
+        effectType: el.mEffectType.value === 'flexibility' ? 'flexibility' : 'classic',
+        flexibilityUseCase: el.mFlexibilityUseCase.value,
+        flexibilityStatus: el.mFlexibilityStatus.value,
+        regulatoryTreatment: el.mRegulatoryTreatment.value,
+        networkScheduleRequired: el.mNetworkScheduleRequired.checked,
+        networkScheduleStatus: el.mNetworkScheduleStatus.value,
+        networkConstraintRef: el.mNetworkConstraintRef.value.trim(),
+        affectedNetworkLevel: el.mAffectedNetworkLevel.value,
+        activationWindow: el.mActivationWindow.value.trim(),
+        dispatchLogic: el.mDispatchLogic.value.trim(),
+        avoidedCapexTeur: num('mAvoidedCapexTeur'),
+        avoidedCapexConfidence: el.mAvoidedCapexConfidence.value,
+        deferredCapexTeur: num('mDeferredCapexTeur'),
+        deferredCapexFromYear: el.mDeferredCapexFromYear.value === '' ? '' : Math.round(num('mDeferredCapexFromYear')),
+        deferredCapexToYear: el.mDeferredCapexToYear.value === '' ? '' : Math.round(num('mDeferredCapexToYear')),
+        capexAvoidanceEvidenceRef: el.mCapexAvoidanceEvidenceRef.value.trim(),
+        flexOpexPaTeur: num('mFlexOpexPaTeur'),
+        flexOpexStartYear: el.mFlexOpexStartYear.value === '' ? '' : Math.round(num('mFlexOpexStartYear')),
+        flexOpexDurationYears: Math.max(0, Math.round(num('mFlexOpexDurationYears'))),
+        opexRecognitionStatus: el.mOpexRecognitionStatus.value,
+        opexEvidenceRef: el.mOpexEvidenceRef.value.trim(),
+        agnesRelevant: el.mAgnesRelevant.checked,
+        agnesRole: el.mAgnesRole.value,
+        agnesIntegrationStatus: el.mAgnesIntegrationStatus.value,
+        agnesDataNeeded: parseTags(el.mAgnesDataNeeded.value),
 	        tags: parseTags(el.mTags.value),
 	        type: el.mType.value,
 	        cost: num('mCost'),

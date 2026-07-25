@@ -153,6 +153,14 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
     id: merged.anonymizeMeasures ? `measure-${index + 1}` : String(measure.id || `measure-${index + 1}`),
     name: merged.anonymizeMeasures ? `Maßnahme ${index + 1}` : String(measure.name || `Maßnahme ${index + 1}`),
     type: measure.type || '',
+    effectType: measure.effectType || 'classic',
+    flexibilityStatus: measure.flexibilityStatus || '',
+    networkScheduleStatus: measure.networkScheduleStatus || '',
+    avoidedCapexTeur: roundTeur(measure.avoidedCapexTeur, merged.roundAmounts),
+    deferredCapexTeur: roundTeur(measure.deferredCapexTeur, merged.roundAmounts),
+    flexOpexPaTeur: roundTeur(measure.flexOpexPaTeur, merged.roundAmounts),
+    agnesRelevant: Boolean(measure.agnesRelevant),
+    agnesRole: measure.agnesRole || '',
     year: finiteNumber(measure.year, null),
     costTeur: roundTeur(measure.cost, merged.roundAmounts),
     secureActivationPct: finiteNumber(measure.secure, 0),
@@ -202,6 +210,7 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       cashflowCaveat: metrics.cashflowBasis
     },
     warnings: basis.warnings || [],
+    flexibility: basis.flexibilitySummary,
     measures,
     projectPlan: merged.includeProjectPlan ? summarizeProjectPlan(model?.projectPlan) : null
   };
@@ -238,6 +247,7 @@ ${outputFormat}
 - EOG-Wirkung ist nicht gleich Cashflow. IRR/MIRR und Kapitalwert beruhen auf einer indikativen Cashflow-Sicht.
 - Basis vs. konservativ ist entscheidend: Wenn der Basiscase trägt, der konservative Case aber kippt, ist das keine robuste Freigabe, sondern eine Entscheidung mit Auflage.
 - Prüfpflichtige Annahmen, Q/E-Wirkungen, Risikoannahmen und Attribution nicht als bestätigte Fakten darstellen.
+- Flexibilitätsobjekte sind nicht als klassische CAPEX-Maßnahmen zu interpretieren. Sie bilden mögliche OPEX-gegen-CAPEX-Substitutionen ab; ohne validierten Netzfahrplan, quantifizierte vermiedene/verschobene CAPEX und jährliche Flex-OPEX keine automatische Ergebniswirkung. AGNeS-Relevanz ist als eigener Prüfpunkt zu führen.
 - Keine regulatorische, steuerliche oder rechtliche Anerkennungszusage formulieren.
 - Klärpunkte und Auflagen sichtbar machen, statt sie durch glatte Formulierungen zu verdecken.
 
