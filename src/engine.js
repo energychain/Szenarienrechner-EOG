@@ -540,6 +540,130 @@ export function gasTransformationWarningsFor(measure, p) {
   return [baseWarning];
 }
 
+const flexibilityStatusLabels = {
+  context: 'Kontextobjekt',
+  pruefpflichtig: 'prüfpflichtig',
+  quantified: 'quantifiziert, nicht rechenwirksam',
+  active: 'aktiv rechenwirksam'
+};
+
+function isStromFlexibilityMeasure(measure = {}, p = {}) {
+  return p.sector === 'strom' && measure.effectType === 'flexibility';
+}
+
+function normalizedFlexibilityStatus(value) {
+  return flexibilityStatusLabels[value] ? value : 'context';
+}
+
+export function flexibilityHelper(measure = {}, p = {}) {
+  if (p.sector !== 'strom') {
+    return {
+      applicable: false,
+      summary: 'Flexibilitäts-/Netzfahrplan-Logik ist nur für Strom aktiv; Gas-Transformationspfad bleibt getrennt.',
+      warnings: [],
+      governance: 'Keine Wirkung auf Gas-Maßnahmen.'
+    };
+  }
+  if (measure.effectType !== 'flexibility') {
+    return {
+      applicable: false,
+      summary: 'Keine Flexibilitätsobjektklasse gesetzt.',
+      warnings: [],
+      governance: 'Klassische CAPEX-Maßnahme bleibt unverändert.'
+    };
+  }
+  const status = normalizedFlexibilityStatus(measure.flexibilityStatus);
+  const scheduleRequired = measure.networkScheduleRequired !== false;
+  const scheduleStatus = measure.networkScheduleStatus || 'missing';
+  const hasValidatedSchedule = !scheduleRequired || scheduleStatus === 'validated';
+  const avoidedCapex = Math.max(0, finiteNumber(measure.avoidedCapexTeur));
+  const deferredCapex = Math.max(0, finiteNumber(measure.deferredCapexTeur));
+  const flexOpex = Math.max(0, finiteNumber(measure.flexOpexPaTeur));
+  const duration = Math.max(0, Math.round(finiteNumber(measure.flexOpexDurationYears)));
+  const agnesRelevant = Boolean(measure.agnesRelevant);
+  const active = status === 'active' && hasValidatedSchedule && (avoidedCapex > 0 || deferredCapex > 0 || flexOpex > 0);
+  const warnings = [];
+  if (scheduleRequired && scheduleStatus !== 'validated') warnings.push('Flexibilitätswirkung nicht rechenwirksam: Netzfahrplan fehlt oder ist nicht validiert.');
+  if ((status === 'active' || status === 'quantified') && avoidedCapex <= 0 && deferredCapex <= 0) warnings.push('Vermiedene oder verschobene CAPEX sind nicht belastbar quantifiziert.');
+  if ((status === 'active' || status === 'quantified') && flexOpex <= 0) warnings.push('Jährliche Flex-OPEX sind nicht belastbar quantifiziert.');
+  if (agnesRelevant && (!measure.agnesIntegrationStatus || measure.agnesIntegrationStatus === 'not_assessed')) warnings.push('AGNeS-Bezug prüfpflichtig: Steuerungs-, Abruf-, Prognose- oder Nachweislogik ist zu klären.');
+  const discount = 1 + finiteNumber(p.discountRate);
+  const deferredFromOffset = Math.max(0, Math.round(finiteNumber(measure.deferredCapexFromYear, p.baseYear)) - p.baseYear);
+  const netPresentValueTeur = active
+    ? avoidedCapex + deferredCapex / Math.pow(discount, deferredFromOffset) - (duration || p.horizon) * flexOpex / Math.pow(discount, 1)
+    : 0;
+  return {
+    applicable: true,
+    effectType: 'flexibility',
+    status,
+    statusLabel: flexibilityStatusLabels[status],
+    useCase: measure.flexibilityUseCase || 'netzfahrplan',
+    regulatoryTreatment: measure.regulatoryTreatment || 'unknown',
+    networkScheduleRequired: scheduleRequired,
+    networkScheduleStatus: scheduleStatus,
+    networkConstraintRef: String(measure.networkConstraintRef || ''),
+    affectedNetworkLevel: String(measure.affectedNetworkLevel || ''),
+    activationWindow: String(measure.activationWindow || ''),
+    dispatchLogic: String(measure.dispatchLogic || ''),
+    avoidedCapexTeur: avoidedCapex,
+    avoidedCapexConfidence: measure.avoidedCapexConfidence || 'none',
+    deferredCapexTeur: deferredCapex,
+    deferredCapexFromYear: finiteNumber(measure.deferredCapexFromYear, null),
+    deferredCapexToYear: finiteNumber(measure.deferredCapexToYear, null),
+    flexOpexPaTeur: flexOpex,
+    flexOpexStartYear: finiteNumber(measure.flexOpexStartYear, p.baseYear),
+    flexOpexDurationYears: duration,
+    opexRecognitionStatus: measure.opexRecognitionStatus || 'unknown',
+    agnesRelevant,
+    agnesRole: measure.agnesRole || 'offen',
+    agnesIntegrationStatus: measure.agnesIntegrationStatus || 'not_assessed',
+    agnesDataNeeded: Array.isArray(measure.agnesDataNeeded) ? measure.agnesDataNeeded : [],
+    active,
+    netPresentValueTeur,
+    warnings,
+    summary: `Flexibilität / Netzfahrplan · ${flexibilityStatusLabels[status]} · ${agnesRelevant ? 'AGNeS-Bezug prüfpflichtig' : 'AGNeS nicht gesetzt'}`,
+    governance: 'Flexibilitätsobjekte sind keine klassische CAPEX-Maßnahme. Sie strukturieren OPEX-gegen-CAPEX-Substitution; Ergebniswirkung erst bei validiertem Netzfahrplan, quantifizierter CAPEX-Vermeidung und Flex-OPEX.'
+  };
+}
+
+export function flexibilityWarningsFor(measure, p) {
+  if (!measure?.active || !isStromFlexibilityMeasure(measure, p)) return [];
+  const helper = flexibilityHelper(measure, p);
+  if (!helper.applicable || (!helper.warnings.length && helper.status === 'active')) return [];
+  return [{
+    type: 'strom_flexibility_review',
+    key: `strom-flexibility:${measure.id}`,
+    area: 'Flexibilität / Netzfahrplan',
+    targetPhase: 'massnahmenbewertung',
+    measureId: measure.id,
+    measure: measure.name || 'Maßnahme',
+    title: helper.active ? 'Flexibilitätswirkung aktiv, Herleitung prüfen' : 'Flexibilitätswirkung nicht rechenwirksam',
+    detail: `${helper.summary}. ${helper.warnings.join(' ')} ${helper.governance}`
+  }];
+}
+
+function flexibilityRowsForMeasure(measure, p) {
+  const helper = flexibilityHelper(measure, p);
+  const rows = Array.from({ length: p.horizon }, (_, i) => ({
+    year: p.baseYear + i,
+    flexibilityAvoidedCapexEffect: 0,
+    flexibilityDeferredCapexEffect: 0,
+    flexibilityOpexEffect: 0,
+    flexibilityNetEffect: 0
+  }));
+  if (!helper.active) return { helper, rows };
+  const startYear = Math.round(finiteNumber(measure.flexOpexStartYear, p.baseYear));
+  const duration = helper.flexOpexDurationYears || p.horizon;
+  rows.forEach(row => {
+    if (row.year === p.baseYear) row.flexibilityAvoidedCapexEffect = helper.avoidedCapexTeur;
+    if (helper.deferredCapexTeur > 0 && row.year === Math.round(finiteNumber(measure.deferredCapexFromYear, p.baseYear))) row.flexibilityDeferredCapexEffect += helper.deferredCapexTeur;
+    if (helper.deferredCapexTeur > 0 && row.year === Math.round(finiteNumber(measure.deferredCapexToYear, p.baseYear))) row.flexibilityDeferredCapexEffect -= helper.deferredCapexTeur;
+    if (row.year >= startYear && row.year < startYear + duration) row.flexibilityOpexEffect = -helper.flexOpexPaTeur;
+    row.flexibilityNetEffect = row.flexibilityAvoidedCapexEffect + row.flexibilityDeferredCapexEffect + row.flexibilityOpexEffect;
+  });
+  return { helper, rows };
+}
+
 export function capitalCostSettingsFor(inputs = {}, parameterSet = regulatoryParameterSet) {
   const defaults = parameterSet.capitalCostDefaults || {};
   const mode = inputs.capitalCostMode === 'advanced' ? 'advanced' : 'simple';
@@ -571,6 +695,7 @@ export function eligibleCapitalFor(avgCapital, p) {
   return Math.max(0, avgCapital * (1 - deductionShare));
 }
 
+/** @returns {any} */
 export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   const active = expectedActivated(measure);
   const opex = active.nonActivated * clamp(finiteNumber(measure.opexRecognition), 0, 100) / 100;
@@ -593,6 +718,54 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   const reinvestAnnualDepreciation = reinvestLife > 0 ? reinvestCost / reinvestLife : 0;
   const effectLags = { capex: 0, opex: 0, qe: 0, ...(p.effectLags || {}) };
   const rows = [];
+
+  if (isStromFlexibilityMeasure(measure, p)) {
+    const { helper, rows: flexibilityRows } = flexibilityRowsForMeasure(measure, p);
+    const flexRows = flexibilityRows.map(row => ({
+      year: row.year,
+      depreciation: 0,
+      capitalReturn: 0,
+      eligibleCapital: 0,
+      regulatoryCapexEffect: 0,
+      reinvestDepreciation: 0,
+      reinvestCapitalReturn: 0,
+      reinvestAssetEffect: 0,
+      reinvestmentTreatment: 'none',
+      qAndE: 0,
+      opex: row.flexibilityOpexEffect,
+      economicOpex: row.flexibilityOpexEffect,
+      firstYearOpex: 0,
+      regulatoryEogEffect: 0,
+      indicativeCashflow: row.flexibilityNetEffect,
+      risk: 0,
+      opexRisk: 0,
+      reinvestDecommission: 0,
+      hgbDepreciation: 0,
+      ebit: row.flexibilityNetEffect,
+      bridge: 0,
+      eog: 0,
+      flexibilityAvoidedCapexEffect: row.flexibilityAvoidedCapexEffect,
+      flexibilityDeferredCapexEffect: row.flexibilityDeferredCapexEffect,
+      flexibilityOpexEffect: row.flexibilityOpexEffect,
+      flexibilityNetEffect: row.flexibilityNetEffect
+    }));
+    const flows = [0, ...flexRows.map(row => row.indicativeCashflow)];
+    const returnMetric = returnMetricFor(flows);
+    return {
+      measure,
+      activated: 0,
+      activeShare: 0,
+      rows: flexRows,
+      returnMetric,
+      rateMetricLabel: returnMetric.label,
+      irr: returnMetric.value,
+      npv: npv(p.discountRate, flows),
+      impactSummary: { qAndE: 0, risk: 0, included: [], sensitivity: [] },
+      totex: { nominal: helper.flexOpexPaTeur * (helper.flexOpexDurationYears || p.horizon), discounted: 0 },
+      riskReductionPa: 0,
+      flexibility: helper
+    };
+  }
 
   for (let i = 0; i < p.horizon; i++) {
     const year = p.baseYear + i;
@@ -712,7 +885,8 @@ export function calcPortfolio(model, p) {
       ...result,
       warnings: [
         ...doubleCountingWarningsFor(measure, p, portfolioEffect),
-        ...gasTransformationWarningsFor(measure, p)
+        ...gasTransformationWarningsFor(measure, p),
+        ...flexibilityWarningsFor(measure, p)
       ]
     };
   });
@@ -739,7 +913,11 @@ export function calcPortfolio(model, p) {
     ebit: 0,
     bridge: 0,
     bridgeCumulative: 0,
-    eog: 0
+    eog: 0,
+    flexibilityAvoidedCapexEffect: 0,
+    flexibilityDeferredCapexEffect: 0,
+    flexibilityOpexEffect: 0,
+    flexibilityNetEffect: 0
   }));
 
   results.forEach(result => {
@@ -764,10 +942,14 @@ export function calcPortfolio(model, p) {
       yearly[i].ebit += row.ebit;
       yearly[i].bridge += row.bridge;
       yearly[i].eog += row.eog;
+      yearly[i].flexibilityAvoidedCapexEffect += row.flexibilityAvoidedCapexEffect || 0;
+      yearly[i].flexibilityDeferredCapexEffect += row.flexibilityDeferredCapexEffect || 0;
+      yearly[i].flexibilityOpexEffect += row.flexibilityOpexEffect || 0;
+      yearly[i].flexibilityNetEffect += row.flexibilityNetEffect || 0;
     });
   });
 
-  const invest = activeMeasures.reduce((sum, measure) => sum + finiteNumber(measure.cost), 0);
+  const invest = activeMeasures.reduce((sum, measure) => sum + (isStromFlexibilityMeasure(measure, p) ? 0 : finiteNumber(measure.cost)), 0);
   const activated = results.reduce((sum, result) => sum + result.activated, 0);
   const flows = [-invest, ...yearly.map(row => row.indicativeCashflow)];
   const returnMetric = invest > 0
@@ -782,6 +964,18 @@ export function calcPortfolio(model, p) {
     nominal: sum.nominal + result.totex.nominal,
     discounted: sum.discounted + result.totex.discounted
   }), { nominal: 0, discounted: 0 });
+  const flexHelpers = results.map(result => result.flexibility).filter(Boolean);
+  const flexibilitySummary = {
+    totalCount: activeMeasures.filter(measure => isStromFlexibilityMeasure(measure, p)).length,
+    activeCount: flexHelpers.filter(helper => helper.active).length,
+    contextCount: flexHelpers.filter(helper => helper.status === 'context').length,
+    reviewCount: flexHelpers.filter(helper => helper.status === 'pruefpflichtig' || helper.warnings?.length).length,
+    quantifiedCount: flexHelpers.filter(helper => helper.status === 'quantified').length,
+    avoidedCapexTeur: flexHelpers.reduce((sum, helper) => sum + helper.avoidedCapexTeur, 0),
+    deferredCapexTeur: flexHelpers.reduce((sum, helper) => sum + helper.deferredCapexTeur, 0),
+    flexOpexPaTeur: flexHelpers.reduce((sum, helper) => sum + helper.flexOpexPaTeur, 0),
+    netPresentValueTeur: flexHelpers.reduce((sum, helper) => sum + helper.netPresentValueTeur, 0)
+  };
   let bridgeCumulative = 0;
   yearly.forEach(row => {
     row.regulatoryPeriod = regulatoryPeriodFor(p.sector, row.year);
@@ -804,6 +998,7 @@ export function calcPortfolio(model, p) {
     impactPa,
     riskPa,
     totex,
+    flexibilitySummary,
     warnings: results.flatMap(result => result.warnings || []),
     tariffImpact: tariffImpactFor(recurringValue(yearly, 'regulatoryEogEffect'), p),
     yearOneTariffImpact: tariffImpactFor(yearly[0]?.regulatoryEogEffect || 0, p)

@@ -37,6 +37,12 @@ Es ersetzt keine Rechts- oder Regulierungsberatung und keine unternehmensspezifi
 - Reinvestitionslogik entweder als vereinfachter Einmalabzug oder optional als neuer Anlagenzugang mit eigener Nutzungsdauer, AfA und Verzinsungskette. Der vereinfachte Einmalabzug bleibt als freigegebener Default erhalten; bei voraussichtlich aktivierungsfähiger Reinvestition soll der neue Anlagenzugang fachlich geprüft werden.
 - qualitative oder quantitative Wirkannahmen.
 
+### Strom-Flexibilitäten
+
+Für die Sparte Strom kann eine Maßnahme als `effectType: flexibility` geführt werden. Diese Objektklasse ist von klassischen CAPEX-Maßnahmen getrennt: Sie dokumentiert Flexibilität, Netzfahrplan, steuerbare Lasten/Erzeuger, Speicher- oder Engpassbezug sowie mögliche AGNeS-/Steuerungs- und Nachweislogik. Standardmäßig ist ein Flexibilitätsobjekt nur Kontext oder prüfpflichtiger Arbeitsstand.
+
+Eine Ergebniswirkung entsteht nur, wenn das Objekt aktiv ist und die Mindestlogik getragen wird: validierter Netzfahrplan, quantifizierte vermiedene oder verschobene CAPEX und jährliche Flex-OPEX. Ohne diese Angaben erzeugt die App einen Klärpunkt und setzt keine automatische Flexibilitätswirkung an. Gas-Transformationslogik bleibt davon getrennt.
+
 ### Szenarien
 
 Die App arbeitet mit Szenarien wie konservativ, Basis und Wert. Szenarien dienen dazu, Unsicherheit sichtbar zu machen, nicht Scheingenauigkeit zu erzeugen.

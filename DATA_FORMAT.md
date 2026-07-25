@@ -33,6 +33,8 @@ Aktueller Modellstand (`version: 8`) führt zusätzlich fachlich freigegebene De
 - `model.inputs.capexLagYears`, `model.inputs.opexLagYears`, `model.inputs.qeLagYears`: optionale Verzugsannahmen in Jahren. Fehlt ein Feld in alten Exporten, greift die aktuelle fachliche Vorbelegung 0/3/2, sofern der Import nicht bewusst andere Werte setzt.
 - `measure.reinvestMode`: `oneOff` (Default, fachlich freigegebener vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Brücke) oder `assetAddition` (neuer Anlagenzugang mit eigener AfA-/Verzinsungskette).
 - `measure.reinvestLife`: Nutzungsdauer des optionalen Reinvestitions-Anlagenzugangs; fehlt der Wert, wird die normale Maßnahmennutzungsdauer genutzt.
+- `measure.effectType`: `classic` oder `flexibility`. `flexibility` ist Strom-spezifisch und führt Flexibilität/Netzfahrplan als eigene Objektklasse, nicht als klassische CAPEX-Maßnahme.
+- Strom-Flexibilitätsfelder wie `flexibilityStatus`, `networkScheduleStatus`, `networkConstraintRef`, `avoidedCapexTeur`, `deferredCapexTeur`, `flexOpexPaTeur`, `agnesRelevant`, `agnesRole` und `agnesIntegrationStatus` dokumentieren OPEX-gegen-CAPEX-Substitutionen. Ohne validierten Netzfahrplan und quantifizierte Werte bleibt die Wirkung nicht rechenwirksam.
 
 Die fachlich freigegebene Vorbelegung für neue Modelle lautet `capexLagYears = 0`, `opexLagYears = 3`, `qeLagYears = 2`. Diese Werte sind prüfpflichtige Startannahmen; importierte Altmodelle können sie überschreiben oder bei Migration die aktuellen Defaults übernehmen.
 
