@@ -1277,6 +1277,22 @@
     </div>
   </div>
 
+  <div id="runtimeErrorModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="runtimeErrorTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="runtimeErrorTitle">Fehler beim Verarbeiten der Datei</h2>
+      </div>
+      <div class="dialog-body">
+        <p class="hint warning">Der Rechner konnte einen Vorgang nicht vollständig ausführen. Der aktuelle Arbeitsstand wurde nicht automatisch überschrieben.</p>
+        <div id="runtimeErrorMessage" class="import-review" role="alert"></div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="runtimeErrorClose">Schließen</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
   <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="dialog">
       <div class="dialog-head">
