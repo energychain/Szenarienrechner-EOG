@@ -1521,6 +1521,35 @@ function setStorageStatus(text) {
   }, 4500);
 }
 
+function errorMessageText(error) {
+  if (error?.message) return String(error.message);
+  if (error?.reason?.message) return String(error.reason.message);
+  if (error?.error?.message) return String(error.error.message);
+  return String(error || 'Unbekannter Fehler');
+}
+
+function showRuntimeError(title, error, details = '') {
+  const modal = document.getElementById('runtimeErrorModal');
+  const titleNode = document.getElementById('runtimeErrorTitle');
+  const bodyNode = document.getElementById('runtimeErrorMessage');
+  if (!modal || !titleNode || !bodyNode) {
+    setStorageStatus(`${title}: ${errorMessageText(error)}`);
+    return;
+  }
+  titleNode.textContent = title || 'Fehler';
+  const message = errorMessageText(error);
+  bodyNode.innerHTML = `
+    <p><strong>${esc(message)}</strong></p>
+    ${details ? `<p>${esc(details)}</p>` : ''}
+    <p class="hint">Bitte prüfen Sie, ob die Datei zu diesem Rechner passt. Falls der Fehler reproduzierbar ist, kann über „Feedback / Support melden“ ein Support-Hinweis mit Versionskontext erzeugt werden.</p>
+  `;
+  modal.classList.remove('hidden');
+}
+
+function closeRuntimeError() {
+  document.getElementById('runtimeErrorModal')?.classList.add('hidden');
+}
+
 function activeRulesetInfo() {
   return rulesetInfo(regulatoryParameterSet);
 }
@@ -2026,8 +2055,13 @@ function importModelFile(file) {
       applyModelState({ model: incoming.model, history: incoming.history });
       saveToBrowser(true);
       setStorageStatus('Import erfolgreich. Daten wurden im Browser gespeichert.');
-    } catch (_error) {
+    } catch (error) {
       setStorageStatus('Import fehlgeschlagen: JSON-Datei passt nicht zum Rechner.');
+      showRuntimeError(
+        'Import fehlgeschlagen',
+        error,
+        'Die JSON-Datei konnte nicht vollständig migriert oder angewendet werden. Der vorhandene Arbeitsstand wurde nicht übernommen.'
+      );
     }
   });
   reader.readAsText(file);
@@ -5685,6 +5719,17 @@ document.getElementById('wizardBack').addEventListener('click', wizardBack);
 document.getElementById('wizardNext').addEventListener('click', wizardForward);
 document.getElementById('wizardModal').addEventListener('click', event => {
   if (event.target.id === 'wizardModal') closeWizard();
+});
+
+document.getElementById('runtimeErrorClose').addEventListener('click', closeRuntimeError);
+document.getElementById('runtimeErrorModal').addEventListener('click', event => {
+  if (event.target.id === 'runtimeErrorModal') closeRuntimeError();
+});
+window.addEventListener('error', event => {
+  showRuntimeError('JavaScript-Fehler', event.error || event.message, 'Der Fehler wurde sichtbar gemacht, damit er nicht nur in der Browser-Konsole erscheint.');
+});
+window.addEventListener('unhandledrejection', event => {
+  showRuntimeError('JavaScript-Fehler', event.reason, 'Eine asynchrone Aktion wurde nicht vollständig verarbeitet.');
 });
 
 document.getElementById('resetModel').addEventListener('click', () => {

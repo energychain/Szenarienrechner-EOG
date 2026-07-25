@@ -192,9 +192,14 @@ export function createDefaultProjectPlan(baseYear = new Date().getFullYear()) {
   };
 }
 
+function projectPlanObject(value) {
+  return value && typeof value === 'object' ? value : {};
+}
+
 function incomingTaskMap(value = {}) {
+  const source = projectPlanObject(value);
   const map = new Map();
-  for (const milestone of Array.isArray(value.milestones) ? value.milestones : []) {
+  for (const milestone of Array.isArray(source.milestones) ? source.milestones : []) {
     for (const item of Array.isArray(milestone.tasks) ? milestone.tasks : []) {
       if (item?.id) map.set(String(item.id), item);
     }
@@ -255,10 +260,11 @@ function normalizeUserTask(incoming = {}, milestone) {
 }
 
 export function normalizeProjectPlan(value = {}, baseYear = new Date().getFullYear()) {
-  const taskMap = incomingTaskMap(value);
-  const base = createDefaultProjectPlan(value.baseYear || baseYear);
+  const source = projectPlanObject(value);
+  const taskMap = incomingTaskMap(source);
+  const base = createDefaultProjectPlan(source.baseYear || baseYear);
   const incomingUserTasksByMilestone = new Map();
-  for (const milestone of Array.isArray(value.milestones) ? value.milestones : []) {
+  for (const milestone of Array.isArray(source.milestones) ? source.milestones : []) {
     for (const item of Array.isArray(milestone.tasks) ? milestone.tasks : []) {
       if (item?.source === 'user' || String(item?.id || '').startsWith('user-')) {
         const milestoneId = String(item.milestoneId || milestone.id || '');
@@ -270,8 +276,8 @@ export function normalizeProjectPlan(value = {}, baseYear = new Date().getFullYe
   const normalized = {
     ...base,
     schemaVersion: projectPlanSchemaVersion,
-    baseYear: Number.isFinite(Number(value.baseYear)) ? Math.round(Number(value.baseYear)) : base.baseYear,
-    targetDecisionMilestone: String(value.targetDecisionMilestone || base.targetDecisionMilestone),
+    baseYear: Number.isFinite(Number(source.baseYear)) ? Math.round(Number(source.baseYear)) : base.baseYear,
+    targetDecisionMilestone: String(source.targetDecisionMilestone || base.targetDecisionMilestone),
     milestones: base.milestones.map(milestone => {
       const templateTasks = milestone.tasks.map(item => normalizeTask(item, taskMap.get(item.id)));
       const userTasks = (incomingUserTasksByMilestone.get(milestone.id) || [])
