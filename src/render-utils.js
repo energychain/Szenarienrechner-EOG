@@ -21,6 +21,18 @@ export function fmtPlain(value, digits = 0) {
   return deNumberFormat(digits).format(value);
 }
 
+export function fmtTeurPerYear(value, digits = 1) {
+  if (!Number.isFinite(Number(value))) return '-';
+  return `${fmtPlain(Number(value), digits)} TEUR pro Jahr`;
+}
+
+export function normalizeGermanTeurText(value) {
+  return String(value ?? '')
+    .replace(/(\d+)\.(\d{1,3})\s*\/\s*(\d+)\.(\d{1,3})(?=\s*TEUR\b)/g, '$1,$2 / $3,$4')
+    .replace(/(\d+)\.(\d{1,3})(?=\s*TEUR\/?a\b)/g, '$1,$2')
+    .replace(/(\d+)\.(\d{1,3})(?=\s*TEUR\b)/g, '$1,$2');
+}
+
 export function esc(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')

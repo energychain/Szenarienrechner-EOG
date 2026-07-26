@@ -78,7 +78,16 @@ import {
 import { imprintSections } from './trust-content.js';
 import { demoMeasures, initialMeasures } from './demo-data.js';
 import { downloadBlob, exportStamp, htmlWithEmbeddedModelState } from './export-utils.js';
-import { esc, formatDateShort, fmtEur, fmtPct, fmtPlain, fmtTeur } from './render-utils.js';
+import {
+  esc,
+  formatDateShort,
+  fmtEur,
+  fmtPct,
+  fmtPlain,
+  fmtTeur,
+  fmtTeurPerYear,
+  normalizeGermanTeurText
+} from './render-utils.js';
 import { buildAiPrompt, defaultAiPromptOptions, promptRoles } from './ai-prompt-generator.js';
 import { spreadsheetTables, tablesToCsvZip, tablesToXlsx } from './spreadsheet-export.js';
 
@@ -3937,7 +3946,7 @@ function renderMeasureWizardStep() {
       ['Erwartet aktivierbar', fmtTeur(active.activated) + ' (' + fmtPct(active.share * 100, 1) + ')'],
       ['AfA-Szenario', d.depr],
       ['Direkte Q/E-Wirkung', fmtTeur(Number(d.qDirect) + Number(d.eDirect), 1) + ' p.a.'],
-	          ['Risikowert', fmtTeur(d.riskAvoided, 1) + ' p.a.'],
+	          ['Risikowert', fmtTeurPerYear(d.riskAvoided, 1)],
 	          ['Portfolioanteil', fmtPct(d.portfolioShare)]
 	        ])}
 	        ${validation.messages.length ? `<div class="validation-messages active" role="status"><strong>Annahmen begrenzt</strong><ul>${validation.messages.map(message => `<li>${esc(message)}</li>`).join('')}</ul></div>` : ''}
@@ -4205,7 +4214,7 @@ function riskFieldsHtml(impact) {
     return `
       <div class="wide-field">
         <div class="note warning">
-          Bisheriger pauschaler Risikowert: ${fmtTeur(impact.amount, 1)} p.a. Für bessere Nachvollziehbarkeit auf Wahrscheinlichkeit mal Schadenshöhe umstellen.
+          Bisheriger pauschaler Risikowert: ${fmtTeurPerYear(impact.amount, 1)}. Für bessere Nachvollziehbarkeit auf Wahrscheinlichkeit mal Schadenshöhe umstellen.
           <button type="button" data-action="convertRisk" data-impact-id="${esc(impact.id)}">Umstellen</button>
         </div>
       </div>
@@ -4229,7 +4238,7 @@ function riskFieldsHtml(impact) {
       <input type="number" data-impact-field="riskImpact" data-impact-id="${esc(impact.id)}" value="${impact.riskImpact}" min="0" step="1">
     </div>
     <div class="risk-calculation">
-      <strong>Erwartungswert:</strong> ${fmtTeur(riskExpectedValue(impact), 1)} p.a.
+      <strong>Erwartungswert:</strong> ${fmtTeurPerYear(riskExpectedValue(impact), 1)}
       <span class="hint">Risikomatrix vorher/nachher</span>
       ${riskMatrixHtml(impact)}
     </div>
@@ -4248,7 +4257,7 @@ function renderImpactAssumptions(measure) {
       <div class="impact-card-head">
         <div>
           <strong>${esc(impact.title)}</strong>
-          <div class="impact-meta">${impactAreaLabel(impact.area)} · ${fmtTeur(impact.amount * impact.attribution, 1)} p.a. · ${impactGovernanceLabel(impact.governance)}</div>
+          <div class="impact-meta">${impactAreaLabel(impact.area)} · ${impact.area === 'risk' ? fmtTeurPerYear(impact.amount * impact.attribution, 1) : `${fmtTeur(impact.amount * impact.attribution, 1)} p.a.`} · ${impactGovernanceLabel(impact.governance)}</div>
         </div>
         <div class="impact-actions">
           ${confidenceBadge(impact.confidence)}
@@ -4829,7 +4838,7 @@ function committeeReportHtml(result, first, spread, metrics = portfolioDecisionM
     };
   }).sort((a, b) => b.invest - a.invest);
   const riskText = result.riskPa > 0
-    ? `Die erfassten Risikodaten zeigen eine erwartete Risikoreduktion von ${fmtTeur(result.riskPa, 1)} pro Jahr. Dieser Wert entsteht aus Eintrittswahrscheinlichkeit vorher/nachher und Schadenshöhe.`
+    ? `Die erfassten Risikodaten zeigen eine erwartete Risikoreduktion von ${fmtTeurPerYear(result.riskPa, 1)}. Dieser Wert entsteht aus Eintrittswahrscheinlichkeit vorher/nachher und Schadenshöhe und ist als prüfpflichtiger Arbeitswert zu validieren.`
     : 'Für den Arbeitsstand ist noch keine belastbare Risikoreduktion hinterlegt.';
   const financeLine = `Für Rückfragen: IRR ${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}, Kapitalwert ${fmtTeur(result.npv, 1)}, Spread ${Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-'}, EBIT Jahr 1 ${fmtTeur(ebitYearOne, 1)}.`;
   const ruleset = activeRulesetInfo();
@@ -4937,7 +4946,9 @@ function renderReport(result, first, spread, decision, metrics) {
       </tr>
     `;
   }).join('');
-  const measureRows = result.results.map(item => `
+  const measureRows = result.results.map(item => {
+    const normalizedNote = normalizeGermanTeurText(item.measure.note || '');
+    return `
     <tr>
       <td>${esc(item.measure.name)}</td>
       <td>${item.measure.year}</td>
@@ -4948,9 +4959,10 @@ function renderReport(result, first, spread, decision, metrics) {
       <td>${impactCounts(item.measure).total || '-'}</td>
       <td>${reinvestTreatmentLabel(item.measure)}</td>
       <td>${Number.isFinite(item.irr) ? fmtPct(item.irr * 100, 1) : '-'}</td>
-      <td>${String(item.measure.note || '').trim() ? `${esc(item.measure.note)} · ${esc(reinvestTreatmentNote(item.measure))}` : esc(reinvestTreatmentNote(item.measure))}</td>
+      <td>${normalizedNote.trim() ? `${esc(normalizedNote)} · ${esc(reinvestTreatmentNote(item.measure))}` : esc(reinvestTreatmentNote(item.measure))}</td>
     </tr>
-  `).join('') || '<tr><td colspan="10">Keine aktive Maßnahme im Report.</td></tr>';
+  `;
+  }).join('') || '<tr><td colspan="10">Keine aktive Maßnahme im Report.</td></tr>';
   const impactRows = allImpactAssumptions(true).map(item => `
     <tr>
       <td>${esc(item.measure.name)}</td>
@@ -4971,7 +4983,7 @@ function renderReport(result, first, spread, decision, metrics) {
     ? notes.map(measure => `
       <article>
         <h3>${esc(measure.name)}</h3>
-        <p>${esc(measure.note)}</p>
+        <p>${esc(normalizeGermanTeurText(measure.note))}</p>
       </article>
     `).join('')
     : '<p class="hint">Keine Maßnahmennotizen erfasst.</p>';
