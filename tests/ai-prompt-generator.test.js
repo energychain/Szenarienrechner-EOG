@@ -120,4 +120,79 @@ describe('AI prompt generator', () => {
     expect(prompt).toContain('nächste Schritte');
     expect(prompt).not.toContain('Netzautomatisierung Demogebiet Alpha');
   });
+
+  it('deduplicates Strom flexibility and AGNeS defaults in prompt exports', () => {
+    const classicMeasures = Array.from({ length: 55 }, (_, index) => ({
+      id: `classic-${index + 1}`,
+      name: `Klassische CAPEX-Maßnahme ${index + 1}`,
+      active: true,
+      effectType: 'classic',
+      flexibilityStatus: 'context',
+      networkScheduleStatus: 'missing',
+      avoidedCapexTeur: 0,
+      deferredCapexTeur: 0,
+      flexOpexPaTeur: 0,
+      agnesRelevant: false,
+      agnesRole: 'offen',
+      year: 2027,
+      cost: 10,
+      secure: 90,
+      uncertain: 0,
+      probability: 0,
+      life: 20
+    }));
+    const flexibilityObject = {
+      id: 'flex-context-1',
+      name: 'Flexibilitätsprüfung Netzfahrplan Demo',
+      active: false,
+      effectType: 'flexibility',
+      flexibilityStatus: 'pruefpflichtig',
+      networkScheduleRequired: true,
+      networkScheduleStatus: 'missing',
+      networkConstraintRef: 'Engpass offen',
+      affectedNetworkLevel: 'MS',
+      avoidedCapexTeur: 0,
+      deferredCapexTeur: 0,
+      flexOpexPaTeur: 0,
+      agnesRelevant: true,
+      agnesRole: 'Netzfahrplan',
+      agnesIntegrationStatus: 'not_assessed',
+      year: 2027,
+      cost: 0,
+      life: 1
+    };
+    const model = {
+      ...demoModel,
+      measures: [...classicMeasures, flexibilityObject]
+    };
+
+    const snapshot = redactModelForPrompt(model, {
+      ...defaultAiPromptOptions,
+      roleId: 'challenge',
+      dataScope: 'standard',
+      omitNotes: true
+    }, { buildInfo: build, ruleset: regulatoryParameterSet });
+    const prompt = buildAiPrompt(model, {
+      ...defaultAiPromptOptions,
+      roleId: 'challenge',
+      dataScope: 'standard',
+      omitNotes: true
+    }, { buildInfo: build, ruleset: regulatoryParameterSet });
+
+    expect(snapshot.measures).toHaveLength(55);
+    expect(snapshot.measures[0]).not.toHaveProperty('agnesRelevant');
+    expect(snapshot.measures[0]).not.toHaveProperty('agnesRole');
+    expect(snapshot.measures[0]).not.toHaveProperty('flexibilityStatus');
+    expect(snapshot.flexibilityObjects).toHaveLength(1);
+    expect(snapshot.flexibilityObjects[0].id).toBe('flex-context-1');
+    expect(snapshot.flexibilityObjects[0].active).toBe(false);
+    expect(snapshot.flexibilityObjects[0].agnesRelevant).toBe(true);
+    expect(snapshot.flexibility.klärpunkte).toContain('strom_flexibility_review');
+    expect(snapshot.flexibility.agnesSummary).toContain('1 Flexibilitätsobjekt');
+
+    expect(prompt).toContain('## Strom-Flexibilitätsobjekte / Netzfahrplan / AGNeS');
+    expect(prompt).toContain('strom_flexibility_review');
+    expect((prompt.match(/"agnesRelevant": false/g) || []).length).toBe(0);
+    expect((prompt.match(/"agnesRole": "offen"/g) || []).length).toBe(0);
+  });
 });

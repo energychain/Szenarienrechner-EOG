@@ -33,5 +33,7 @@ describe('AI prompt export UI', () => {
     expect(docs).toContain('keine automatische Übertragung');
     expect(docs).toContain('Arbeitsstand hinterfragen');
     expect(docs).toContain('Stilllegung, Rückbau, Rückstellungen');
+    expect(docs).toContain('Strom-Flexibilitätsobjekte / Netzfahrplan / AGNeS');
+    expect(docs).toContain('strom_flexibility_review');
   });
 });
