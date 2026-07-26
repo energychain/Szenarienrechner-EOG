@@ -1,5 +1,6 @@
 import {
   calcPortfolio,
+  flexibilityHelper,
   params as engineParams,
   portfolioDecisionMetrics,
   regulatoryParameterSet,
@@ -89,8 +90,100 @@ function roleFor(id) {
   return promptRoles.find(role => role.id === id) || promptRoles[0];
 }
 
+function allMeasures(model) {
+  return Array.isArray(model?.measures) ? model.measures : [];
+}
+
 function activeMeasures(model) {
-  return (Array.isArray(model?.measures) ? model.measures : []).filter(measure => measure.active !== false);
+  return allMeasures(model).filter(measure => measure.active !== false);
+}
+
+function isFlexibilityObject(measure = {}) {
+  return measure.effectType === 'flexibility'
+    || ['pruefpflichtig', 'quantified', 'active'].includes(measure.flexibilityStatus)
+    || Boolean(measure.agnesRelevant)
+    || measure.importStatus === 'flexibility_review';
+}
+
+function baseMeasurePromptFields(measure, index, options) {
+  return {
+    id: options.anonymizeMeasures ? `measure-${index + 1}` : String(measure.id || `measure-${index + 1}`),
+    name: options.anonymizeMeasures ? `Maßnahme ${index + 1}` : String(measure.name || `Maßnahme ${index + 1}`),
+    type: measure.type || '',
+    year: finiteNumber(measure.year, null),
+    costTeur: roundTeur(measure.cost, options.roundAmounts),
+    secureActivationPct: finiteNumber(measure.secure, 0),
+    uncertainActivationPct: finiteNumber(measure.uncertain, 0),
+    probabilityPct: finiteNumber(measure.probability, 0),
+    lifeYears: finiteNumber(measure.life, 0),
+    reinvestMode: measure.reinvestMode || 'oneOff',
+    portfolioSharePct: finiteNumber(measure.portfolioShare, 0),
+    directQTeurPa: roundTeur(measure.qDirect, options.roundAmounts),
+    directEfficiencyTeurPa: roundTeur(measure.eDirect, options.roundAmounts),
+    riskAvoidedTeurPa: roundTeur(measure.riskAvoided, options.roundAmounts),
+    note: options.omitNotes ? '' : (measure.note || '')
+  };
+}
+
+function flexibilityObjectPromptFields(measure, index, options, params) {
+  const helper = flexibilityHelper(measure, params);
+  return {
+    ...baseMeasurePromptFields(measure, index, options),
+    active: measure.active !== false,
+    effectType: 'flexibility',
+    flexibilityStatus: measure.flexibilityStatus || 'context',
+    flexibilityUseCase: measure.flexibilityUseCase || 'netzfahrplan',
+    networkScheduleRequired: measure.networkScheduleRequired !== false,
+    networkScheduleStatus: measure.networkScheduleStatus || 'missing',
+    networkConstraintRef: measure.networkConstraintRef || '',
+    affectedNetworkLevel: measure.affectedNetworkLevel || '',
+    dispatchLogic: measure.dispatchLogic || '',
+    avoidedCapexTeur: roundTeur(measure.avoidedCapexTeur, options.roundAmounts),
+    avoidedCapexConfidence: measure.avoidedCapexConfidence || 'none',
+    deferredCapexTeur: roundTeur(measure.deferredCapexTeur, options.roundAmounts),
+    deferredCapexFromYear: finiteNumber(measure.deferredCapexFromYear, null),
+    deferredCapexToYear: finiteNumber(measure.deferredCapexToYear, null),
+    flexOpexPaTeur: roundTeur(measure.flexOpexPaTeur, options.roundAmounts),
+    flexOpexStartYear: finiteNumber(measure.flexOpexStartYear, null),
+    flexOpexDurationYears: finiteNumber(measure.flexOpexDurationYears, null),
+    opexRecognitionStatus: measure.opexRecognitionStatus || 'unknown',
+    agnesRelevant: Boolean(measure.agnesRelevant),
+    agnesRole: measure.agnesRole || 'offen',
+    agnesIntegrationStatus: measure.agnesIntegrationStatus || 'not_assessed',
+    agnesDataNeeded: Array.isArray(measure.agnesDataNeeded) ? measure.agnesDataNeeded.map(String) : [],
+    rechenwirksam: Boolean(helper.active),
+    reviewReason: helper.warnings?.join(' ') || (helper.active ? '' : 'Flexibilitätsobjekt ist nicht rechenwirksam.'),
+    governance: helper.governance || ''
+  };
+}
+
+function flexibilityPromptSummary(flexibilityObjects = []) {
+  const agnesRelevant = flexibilityObjects.filter(measure => measure.agnesRelevant).length;
+  const activeEffects = flexibilityObjects.filter(measure => measure.rechenwirksam).length;
+  const reviewObjects = flexibilityObjects.filter(measure => !measure.rechenwirksam).length;
+  const totalAvoided = flexibilityObjects.reduce((sum, measure) => sum + finiteNumber(measure.avoidedCapexTeur), 0);
+  const totalDeferred = flexibilityObjects.reduce((sum, measure) => sum + finiteNumber(measure.deferredCapexTeur), 0);
+  const totalOpex = flexibilityObjects.reduce((sum, measure) => sum + finiteNumber(measure.flexOpexPaTeur), 0);
+  const needsReview = flexibilityObjects.some(measure => !measure.rechenwirksam);
+  return {
+    objectCount: flexibilityObjects.length,
+    activeEffects,
+    reviewObjects,
+    avoidedCapexTeur: totalAvoided,
+    deferredCapexTeur: totalDeferred,
+    flexOpexPaTeur: totalOpex,
+    agnesRelevantObjects: agnesRelevant,
+    agnesSummary: agnesRelevant > 0
+      ? `AGNeS-Relevanz: ${agnesRelevant} Flexibilitätsobjekt${agnesRelevant === 1 ? '' : 'e'} prüfpflichtig; ${activeEffects} aktive Flexibilitätswirkungen.`
+      : 'AGNeS-Relevanz: keine als AGNeS-relevant markierten Flexibilitätsobjekte.',
+    caveat: flexibilityObjects.length > 0
+      ? 'AGNeS ist nur bei Flexibilitäts-/Netzfahrplanobjekten als Prüfpunkt zu berücksichtigen. Klassische CAPEX-Maßnahmen ohne AGNeS-Relevanz wurden nicht einzeln mit AGNeS-Feldern exportiert.'
+      : '',
+    klärpunkte: needsReview ? ['strom_flexibility_review'] : [],
+    reviewDetail: needsReview
+      ? 'Flexibilitätsobjekt nicht rechenwirksam: Netzfahrplan fehlt oder ist nicht validiert; vermiedene/verschobene CAPEX und Flex-OPEX nicht vollständig quantifiziert; AGNeS-/Nachweislogik prüfen.'
+      : ''
+  };
 }
 
 function impactSummary(measure, options) {
@@ -149,32 +242,19 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
   const metrics = portfolioDecisionMetrics(basis, conservative);
   const includeMeasures = merged.dataScope !== 'summary';
   const includeDetailedMeasures = merged.dataScope === 'detailed';
-  const measures = includeMeasures ? activeMeasures(model).map((measure, index) => ({
-    id: merged.anonymizeMeasures ? `measure-${index + 1}` : String(measure.id || `measure-${index + 1}`),
-    name: merged.anonymizeMeasures ? `Maßnahme ${index + 1}` : String(measure.name || `Maßnahme ${index + 1}`),
-    type: measure.type || '',
-    effectType: measure.effectType || 'classic',
-    flexibilityStatus: measure.flexibilityStatus || '',
-    networkScheduleStatus: measure.networkScheduleStatus || '',
-    avoidedCapexTeur: roundTeur(measure.avoidedCapexTeur, merged.roundAmounts),
-    deferredCapexTeur: roundTeur(measure.deferredCapexTeur, merged.roundAmounts),
-    flexOpexPaTeur: roundTeur(measure.flexOpexPaTeur, merged.roundAmounts),
-    agnesRelevant: Boolean(measure.agnesRelevant),
-    agnesRole: measure.agnesRole || '',
-    year: finiteNumber(measure.year, null),
-    costTeur: roundTeur(measure.cost, merged.roundAmounts),
-    secureActivationPct: finiteNumber(measure.secure, 0),
-    uncertainActivationPct: finiteNumber(measure.uncertain, 0),
-    probabilityPct: finiteNumber(measure.probability, 0),
-    lifeYears: finiteNumber(measure.life, 0),
-    reinvestMode: measure.reinvestMode || 'oneOff',
-    portfolioSharePct: finiteNumber(measure.portfolioShare, 0),
-    directQTeurPa: roundTeur(measure.qDirect, merged.roundAmounts),
-    directEfficiencyTeurPa: roundTeur(measure.eDirect, merged.roundAmounts),
-    riskAvoidedTeurPa: roundTeur(measure.riskAvoided, merged.roundAmounts),
-    note: merged.omitNotes ? '' : (measure.note || ''),
-    impactAssumptions: includeDetailedMeasures ? impactSummary(measure, merged) : []
-  })) : [];
+  const candidateMeasures = allMeasures(model);
+  const promptFlexibilityObjects = includeMeasures && params.sector === 'strom'
+    ? candidateMeasures
+      .filter(isFlexibilityObject)
+      .map((measure, index) => flexibilityObjectPromptFields(measure, index, merged, params))
+    : [];
+  const measures = includeMeasures ? activeMeasures(model)
+    .filter(measure => !isFlexibilityObject(measure))
+    .map((measure, index) => ({
+      ...baseMeasurePromptFields(measure, index, merged),
+      impactAssumptions: includeDetailedMeasures ? impactSummary(measure, merged) : []
+    })) : [];
+  const promptFlexibilitySummary = flexibilityPromptSummary(promptFlexibilityObjects);
 
   return {
     context: {
@@ -209,9 +289,18 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       conservativeNpvTeur: roundTeur(metrics.conservative?.npv, merged.roundAmounts),
       cashflowCaveat: metrics.cashflowBasis
     },
-    warnings: basis.warnings || [],
-    flexibility: basis.flexibilitySummary,
+    warnings: [...(basis.warnings || []), ...(promptFlexibilitySummary.klärpunkte || []).map(type => ({
+      type,
+      area: 'Flexibilität / Netzfahrplan',
+      title: 'Flexibilitätswirkung nicht rechenwirksam',
+      detail: promptFlexibilitySummary.reviewDetail
+    }))],
+    flexibility: {
+      ...promptFlexibilitySummary,
+      ...(basis.flexibilitySummary || {})
+    },
     measures,
+    flexibilityObjects: promptFlexibilityObjects,
     projectPlan: merged.includeProjectPlan ? summarizeProjectPlan(model?.projectPlan) : null
   };
 }
@@ -220,6 +309,23 @@ function dataScopeHint(scope) {
   if (scope === 'summary') return 'Nur aggregierte Kennzahlen und Prozess-/Projektplan-Auszug. Keine Maßnahmenliste.';
   if (scope === 'detailed') return 'Ausführlicher Prompt mit Maßnahmen und Wirkannahmen. Vor Nutzung besonders sorgfältig redigieren.';
   return 'Standard: Kennzahlen, gerundete Maßnahmenwerte und Projektplan-Auszug; Notizen standardmäßig ausgelassen.';
+}
+
+function flexibilityPromptSection(snapshot) {
+  const objects = Array.isArray(snapshot.flexibilityObjects) ? snapshot.flexibilityObjects : [];
+  if (!objects.length) return '';
+  const lines = objects.map(object => `- ${object.name}: Status ${object.flexibilityStatus}; Netzfahrplan ${object.networkScheduleStatus}; rechenwirksam ${object.rechenwirksam ? 'ja' : 'nein'}; AGNeS ${object.agnesRelevant ? object.agnesRole : 'nicht relevant'}; Prüfgrund: ${object.reviewReason || 'keine offene Prüfnotiz'}`);
+  const summary = snapshot.flexibility || {};
+  return `
+## Strom-Flexibilitätsobjekte / Netzfahrplan / AGNeS
+Klassische CAPEX-Maßnahmen werden ohne Default-Flexibilitätsfelder exportiert. Flexibilitäts-/Netzfahrplanobjekte stehen separat, auch wenn sie nicht rechenwirksam sind.
+
+${summary.agnesSummary || ''}
+${summary.caveat || ''}
+${summary.klärpunkte?.length ? `Klärpunkt: ${summary.klärpunkte.join(', ')}. ${summary.reviewDetail || ''}` : ''}
+
+${lines.join('\n')}
+`;
 }
 
 export function buildAiPrompt(model, options = defaultAiPromptOptions, context = {}) {
@@ -259,7 +365,7 @@ Ruleset-Konfidenz: ${snapshot.context.rulesetConfidence}
 Quelle/Stand: ${snapshot.context.rulesetSourceRef}
 Datenumfang: ${dataScopeHint(merged.dataScope)}
 Redaktion: Maßnahmennamen ${merged.anonymizeMeasures ? 'anonymisiert' : 'original'}, Beträge ${merged.roundAmounts ? 'gerundet' : 'nicht gerundet'}, Notizen ${merged.omitNotes ? 'ausgelassen' : 'enthalten'}.
-
+${flexibilityPromptSection(snapshot)}
 ## Planungsdaten als JSON
 \`\`\`json
 ${JSON.stringify(snapshot, null, 2)}

@@ -21,6 +21,7 @@ Die App sendet keine Modelldaten an KI-Systeme. Ein KI-Prompt wird lokal erzeugt
 - Beim Prompt-Typ „Arbeitsstand hinterfragen“ soll das KI-System kritisch prüfen, welche Aussagen belastbar sind, welche Annahmen prüfpflichtig bleiben, wo Widersprüche oder Datenlücken bestehen und welche Klärfragen an Regulierung, Bilanzierung, Technik und Management zurückgehen. Es soll keine regulatorische, rechtliche oder bilanzielle Entscheidung treffen.
 - Bei Gas-Transformationsfällen sind Stilllegung, Rückbau, Rückstellungen, Wegfall der Ewigkeitsvermutung sowie KAnEu-/Ist-Kosten-Behandlung als prüfpflichtige Herleitungen zu behandeln.
 - Bei Strom-Flexibilitäten sind Flexibilitätsobjekte, Netzfahrpläne, Speicher-/Laststeuerung und AGNeS-Bezüge nicht als klassische CAPEX-Maßnahmen zu interpretieren. Sie beschreiben mögliche OPEX-gegen-CAPEX-Substitutionen; ohne validierten Netzfahrplan, quantifizierte vermiedene/verschobene CAPEX und jährliche Flex-OPEX keine automatische Ergebniswirkung.
+- Im Prompt-Export werden Strom-Flexibilitäts- und AGNeS-Informationen dedupliziert: Klassische CAPEX-Maßnahmen ohne Flexibilitätsbezug enthalten keine wiederholten Default-Felder wie `agnesRelevant=false`; relevante Flexibilitäts-/Netzfahrplanobjekte erscheinen separat und können den Klärpunkt `strom_flexibility_review` tragen.
 
 ## Rollen
 
