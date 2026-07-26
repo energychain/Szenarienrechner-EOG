@@ -182,3 +182,8 @@ Migrationen sollen explizit, klein und testbar sein:
 - Entfernte Felder werden moeglichst in Historie oder Review-Hinweisen dokumentiert.
 - Fehlerhafte oder unvollstaendige Dateien werden nicht still korrigiert, sondern zur Importpruefung markiert.
 - Migrationen aendern keine fachlichen Berechnungsergebnisse ohne gesonderte Modelländerung.
+
+
+## Strom-Robustheit und Plausibilitätslogik
+
+Für die Sparte Strom führt die App zusätzliche aggregierte Prüfhinweise, ohne Gas-Logiken zu verändern: `strom_conservative_case_missing` bei fehlendem echten konservativen Stresstest, `strom_regulatory_framework_review` für NEST-/Regulierungsrahmen-Sensitivität, getrennte Sicht auf Kernportfolio und Scope-Kandidaten, Defaultannahmen, RiskAvoided-Evidenz, Nutzungsdauer-Plausibilisierung, No-Regret-Überverwendung und Projekt-/Reifegradstatus. Diese Hinweise relativieren KPI-Ergebnisse als Befassungs-/Prüfstand; sie entfernen keine Werte automatisch.

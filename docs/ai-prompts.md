@@ -42,3 +42,8 @@ Flexibilitäts- und AGNeS-Daten werden im Prompt dedupliziert: Klassische CAPEX-
 5. Prompt prüfen.
 6. In Zwischenablage kopieren oder als `.txt` speichern.
 7. Nur in ein intern freigegebenes KI-System einfügen.
+
+
+## Strom-Robustheit und Plausibilitätslogik
+
+Für die Sparte Strom führt die App zusätzliche aggregierte Prüfhinweise, ohne Gas-Logiken zu verändern: `strom_conservative_case_missing` bei fehlendem echten konservativen Stresstest, `strom_regulatory_framework_review` für NEST-/Regulierungsrahmen-Sensitivität, getrennte Sicht auf Kernportfolio und Scope-Kandidaten, Defaultannahmen, RiskAvoided-Evidenz, Nutzungsdauer-Plausibilisierung, No-Regret-Überverwendung und Projekt-/Reifegradstatus. Diese Hinweise relativieren KPI-Ergebnisse als Befassungs-/Prüfstand; sie entfernen keine Werte automatisch.
