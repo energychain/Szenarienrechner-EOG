@@ -31,5 +31,7 @@ describe('explainability UI', () => {
     expect(ui).toContain('portfolioSensitivityTornadoFor');
     expect(ui).toContain('RiskAvoided ±25 %');
     expect(ui).toContain('Nutzungsdauer ±20 %');
+    expect(ui).toContain('Sidecar-Finanzsignale');
+    expect(ui).toContain('calculationImpact');
   });
 });
