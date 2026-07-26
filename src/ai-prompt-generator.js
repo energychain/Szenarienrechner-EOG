@@ -233,6 +233,69 @@ function summarizeProjectPlan(plan) {
   };
 }
 
+
+function projectMaturityWarningsFor(model = {}) {
+  const warnings = [];
+  const purpose = model.process?.purpose || model.process?.phaseTargets?.initialisierung || '';
+  const nextStep = model.process?.nextStep || model.process?.resume?.nextStep || '';
+  const plan = summarizeProjectPlan(model.projectPlan);
+  const blockers = plan?.counts?.blocked || 0;
+  if (!purpose || !nextStep || blockers > 0) {
+    warnings.push({
+      type: 'project_maturity_review',
+      area: 'Projekt-/Reifegradstatus',
+      title: 'Projekt-/Reifegradstatus offen',
+      detail: 'Die Kennzahlen sind als indikative Rechensicht zu verstehen. Projektauftrag, Rollen, validierte Artefakte oder nächste Prüfschritte sind noch nicht vollständig dokumentiert.'
+    });
+  }
+  return warnings;
+}
+
+function segmentationForPrompt(segmentation = {}, roundAmounts = true) {
+  const convert = bucket => ({
+    count: bucket?.count || 0,
+    investTeur: roundTeur(bucket?.invest || 0, roundAmounts),
+    npvTeur: roundTeur(bucket?.npv || 0, roundAmounts),
+    yearOneRegulatoryEogTeur: roundTeur(bucket?.yearOneRegulatoryEog || 0, roundAmounts),
+    recurringRegulatoryEogTeur: roundTeur(bucket?.recurringRegulatoryEog || 0, roundAmounts)
+  });
+  return {
+    corePortfolio: convert(segmentation.corePortfolio),
+    scopeCandidate: convert(segmentation.scopeCandidate),
+    optionSensitive: convert(segmentation.optionSensitive),
+    contextObject: convert(segmentation.contextObject),
+    flexibilityObject: convert(segmentation.flexibilityObject)
+  };
+}
+
+function stromReviewSection(snapshot) {
+  if (snapshot.planning?.sector !== 'strom') return '';
+  const review = snapshot.stromReview || {};
+  const warnings = Array.isArray(review.warningTypes) ? review.warningTypes : [];
+  return `
+## Robustheit / Szenariologik
+${warnings.includes('strom_conservative_case_missing') ? 'Klärpunkt strom_conservative_case_missing: Konservatives Szenario nicht parametrisiert; Basiscase nicht als Robustheitsnachweis lesen.' : 'Konservatives Szenario separat prüfen.'}
+
+## Regulatorischer Sensitivitätsrahmen Strom / NEST
+${warnings.includes('strom_regulatory_framework_review') ? 'Klärpunkt strom_regulatory_framework_review: Regulatorischer Parameterstand/Reformrahmen pruefpflichtig; NEST-/CAPEX-/OPEX-/Flexibilitätswirkungen als Sensitivität nachführen.' : 'Kein aggregierter Strom-Regulierungsreview im Snapshot.'}
+
+## Kernportfolio vs. Scope-Kandidaten
+${JSON.stringify(snapshot.portfolioSegmentation || {}, null, 2)}
+
+## Defaultannahmen und Nutzungsdauern
+${warnings.filter(type => ['strom_default_assumptions_review', 'useful_life_plausibility_review', 'measure_specific_parameters_missing'].includes(type)).join(', ') || 'Keine aggregierten Default-/Nutzungsdauerhinweise.'}
+
+## RiskAvoided-Evidenz
+${warnings.filter(type => String(type).startsWith('risk_avoidance')).join(', ') || 'Keine aggregierten RiskAvoided-Hinweise.'}
+
+## No-Regret-Klassifikation
+${warnings.includes('no_regret_overuse_review') ? 'Klärpunkt no_regret_overuse_review: No-Regret-Kategorie differenzieren.' : 'Keine aggregierte No-Regret-Überdehnung im Snapshot.'}
+
+## Projekt-/Reifegradstatus
+${warnings.includes('project_maturity_review') ? 'Klärpunkt project_maturity_review: Projektauftrag, Rollen, Artefakte oder nächste Prüfschritte offen.' : 'Kein aggregierter Projekt-Reifegradhinweis im Snapshot.'}
+`;
+}
+
 export function redactModelForPrompt(model, options = defaultAiPromptOptions, context = {}) {
   const merged = { ...defaultAiPromptOptions, ...options };
   const inputs = model?.inputs || {};
@@ -255,6 +318,13 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       impactAssumptions: includeDetailedMeasures ? impactSummary(measure, merged) : []
     })) : [];
   const promptFlexibilitySummary = flexibilityPromptSummary(promptFlexibilityObjects);
+  const projectMaturityWarnings = params.sector === 'strom' ? projectMaturityWarningsFor(model) : [];
+  const combinedWarnings = [...(basis.warnings || []), ...(metrics.interpretationWarnings || []), ...projectMaturityWarnings, ...(promptFlexibilitySummary.klärpunkte || []).map(type => ({
+    type,
+    area: 'Flexibilität / Netzfahrplan',
+    title: 'Flexibilitätswirkung nicht rechenwirksam',
+    detail: promptFlexibilitySummary.reviewDetail
+  }))];
 
   return {
     context: {
@@ -289,16 +359,16 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       conservativeNpvTeur: roundTeur(metrics.conservative?.npv, merged.roundAmounts),
       cashflowCaveat: metrics.cashflowBasis
     },
-    warnings: [...(basis.warnings || []), ...(promptFlexibilitySummary.klärpunkte || []).map(type => ({
-      type,
-      area: 'Flexibilität / Netzfahrplan',
-      title: 'Flexibilitätswirkung nicht rechenwirksam',
-      detail: promptFlexibilitySummary.reviewDetail
-    }))],
+    warnings: combinedWarnings,
     flexibility: {
       ...promptFlexibilitySummary,
       ...(basis.flexibilitySummary || {})
     },
+    stromReview: params.sector === 'strom' ? {
+      warningTypes: [...new Set(combinedWarnings.map(warning => warning.type).filter(Boolean))],
+      notes: combinedWarnings.map(warning => warning.detail || warning.title).filter(Boolean).slice(0, 12)
+    } : null,
+    portfolioSegmentation: params.sector === 'strom' ? segmentationForPrompt(basis.portfolioSegmentation, merged.roundAmounts) : null,
     measures,
     flexibilityObjects: promptFlexibilityObjects,
     projectPlan: merged.includeProjectPlan ? summarizeProjectPlan(model?.projectPlan) : null
@@ -365,6 +435,7 @@ Ruleset-Konfidenz: ${snapshot.context.rulesetConfidence}
 Quelle/Stand: ${snapshot.context.rulesetSourceRef}
 Datenumfang: ${dataScopeHint(merged.dataScope)}
 Redaktion: Maßnahmennamen ${merged.anonymizeMeasures ? 'anonymisiert' : 'original'}, Beträge ${merged.roundAmounts ? 'gerundet' : 'nicht gerundet'}, Notizen ${merged.omitNotes ? 'ausgelassen' : 'enthalten'}.
+${stromReviewSection(snapshot)}
 ${flexibilityPromptSection(snapshot)}
 ## Planungsdaten als JSON
 \`\`\`json

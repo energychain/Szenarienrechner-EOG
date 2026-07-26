@@ -875,6 +875,112 @@ export function portfolioEffectFor(measure, p) {
   return globalEffect * clamp(finiteNumber(measure.portfolioShare), 0, 100) / 100;
 }
 
+
+const stromPortfolioClasses = {
+  core_portfolio: 'corePortfolio',
+  scope_candidate: 'scopeCandidate',
+  option_sensitive: 'optionSensitive',
+  context_only: 'contextObject',
+  flexibility: 'flexibilityObject',
+  excluded: 'excluded'
+};
+
+function normalizedPortfolioClassification(measure = {}) {
+  const raw = String(measure.portfolioClassification || measure.portfolioClass || measure.strategyType || '').trim();
+  if (stromPortfolioClasses[raw]) return raw;
+  if (measure.effectType === 'flexibility') return 'flexibility';
+  if (measure.active === false) return 'excluded';
+  if (measure.importStatus === 'unconfirmed' || measure.type === 'scope_candidate') return 'scope_candidate';
+  if (measure.type === 'context_only' || measure.importStatus === 'context') return 'context_only';
+  if (measure.type === 'option_sensitive' || measure.type === 'wahl') return 'option_sensitive';
+  return 'core_portfolio';
+}
+
+function emptySegmentationBucket() {
+  return { count: 0, invest: 0, npv: 0, yearOneRegulatoryEog: 0, recurringRegulatoryEog: 0 };
+}
+
+export function portfolioSegmentationFor(results = [], p = {}) {
+  const buckets = {
+    corePortfolio: emptySegmentationBucket(),
+    scopeCandidate: emptySegmentationBucket(),
+    optionSensitive: emptySegmentationBucket(),
+    contextObject: emptySegmentationBucket(),
+    flexibilityObject: emptySegmentationBucket(),
+    excluded: emptySegmentationBucket()
+  };
+  results.forEach(result => {
+    const measure = result.measure || {};
+    const key = stromPortfolioClasses[normalizedPortfolioClassification(measure)] || 'corePortfolio';
+    const bucket = buckets[key];
+    bucket.count += 1;
+    bucket.invest += isStromFlexibilityMeasure(measure, p) ? 0 : finiteNumber(measure.cost);
+    bucket.npv += Number.isFinite(result.npv) ? result.npv : 0;
+    bucket.yearOneRegulatoryEog += result.rows?.[0]?.regulatoryEogEffect || 0;
+    bucket.recurringRegulatoryEog += recurringValue(result.rows || [], 'regulatoryEogEffect');
+  });
+  return buckets;
+}
+
+function hasRiskEvidence(measure = {}) {
+  const status = measure.riskAvoidedEvidenceStatus || '';
+  return ['documented', 'estimated'].includes(status) || (Array.isArray(measure.impactAssumptions) && measure.impactAssumptions.some(impact => impact.area === 'risk' && (impact.evidence || impact.evidenceType !== 'open')));
+}
+
+function usefulLifeRangeFor(assetType = '') {
+  const type = String(assetType || '').toLowerCase();
+  if (['digitalization', 'control', 'communication', 'it'].includes(type)) return [3, 15];
+  if (['transformer', 'substation'].includes(type)) return [20, 45];
+  if (['cable', 'line', 'civil_works'].includes(type)) return [25, 60];
+  return [1, 60];
+}
+
+function stromMeasurePlausibilityWarningsFor(measure = {}, p = {}) {
+  if (p.sector !== 'strom' || !measure.active || isStromFlexibilityMeasure(measure, p)) return [];
+  const warnings = [];
+  const risk = finiteNumber(measure.riskAvoided);
+  if (risk > 0 && !hasRiskEvidence(measure)) {
+    warnings.push({ type: 'risk_avoidance_evidence_missing', key: `risk-evidence:${measure.id}`, area: 'RiskAvoided-Evidenz', targetPhase: 'massnahmenbewertung', measureId: measure.id, measure: measure.name || 'Maßnahme', title: 'RiskAvoided-Herleitung offen', detail: 'Risikovermeidungswerte werden weiter gerechnet, sind aber ohne Evidenzstatus/Wirkungskette als prüfpflichtiger Werttreiber zu lesen.' });
+  }
+  if (risk > Math.max(0.000001, finiteNumber(measure.cost))) {
+    warnings.push({ type: 'risk_avoidance_outlier_review', key: `risk-outlier:${measure.id}`, area: 'RiskAvoided-Evidenz', targetPhase: 'massnahmenbewertung', measureId: measure.id, measure: measure.name || 'Maßnahme', title: 'RiskAvoided-Ausreißer prüfen', detail: 'Der jährliche Risikovermeidungswert liegt über der Investition; bitte Methode, Zeitraum und Evidenz prüfen.' });
+  }
+  const [minLife, maxLife] = usefulLifeRangeFor(measure.assetType || measure.measureAssetType || '');
+  const life = finiteNumber(measure.life);
+  const lifeStatus = measure.usefulLifeEvidenceStatus || 'not_assessed';
+  if ((measure.assetType || measure.measureAssetType) && (life < minLife || life > maxLife || ['default', 'not_assessed'].includes(lifeStatus))) {
+    warnings.push({ type: 'useful_life_plausibility_review', key: `useful-life:${measure.id}`, area: 'Nutzungsdauer-Plausibilisierung', targetPhase: 'massnahmenbewertung', measureId: measure.id, measure: measure.name || 'Maßnahme', title: 'Nutzungsdauer nach Maßnahmentyp prüfen', detail: `Die angesetzte Nutzungsdauer (${life || 0} Jahre) ist für ${measure.assetType || measure.measureAssetType} prüfpflichtig; technische/wirtschaftliche Nutzungsdauer und Reinvestitionszyklen prüfen.` });
+  }
+  return warnings;
+}
+
+function repeatedValueCount(measures, key) {
+  const counts = new Map();
+  measures.forEach(measure => counts.set(measure[key], (counts.get(measure[key]) || 0) + 1));
+  return Math.max(0, ...counts.values());
+}
+
+function stromPortfolioPlausibilityWarningsFor(activeMeasures = [], p = {}, results = []) {
+  if (p.sector !== 'strom') return [];
+  const classic = activeMeasures.filter(measure => !isStromFlexibilityMeasure(measure, p));
+  const warnings = [];
+  if (classic.length >= 3 && (p.rulesetConfidence !== 'enacted' || regulatoryParameterSet.confidence !== 'enacted')) {
+    warnings.push({ type: 'strom_regulatory_framework_review', key: 'strom-regulatory-framework-review', area: 'Regulatorischer Sensitivitätsrahmen Strom / NEST', targetPhase: 'konsolidierung', title: 'Regulatorischer Sensitivitätsrahmen offen', detail: 'Der regulatorische Parameterstand ist prüfpflichtig; mögliche Auswirkungen von NEST/Reformrahmen auf CAPEX-/OPEX-Behandlung, Flexibilitätslogik und EOG-Wirkung als Sensitivität nachführen.' });
+  }
+  if (classic.length >= 3 && (repeatedValueCount(classic, 'secure') >= 3 || repeatedValueCount(classic, 'probability') >= 3 || repeatedValueCount(classic, 'life') >= 3)) {
+    warnings.push({ type: 'strom_default_assumptions_review', key: 'strom-default-assumptions-review', area: 'Defaultannahmen', targetPhase: 'massnahmenbewertung', title: 'Defaultannahmen erkannt', detail: 'Mehrere Maßnahmen verwenden identische Aktivierungsquoten, Wahrscheinlichkeiten oder Nutzungsdauern. Bitte prüfen, ob echte Einzelbewertungen oder Import-/Modell-Defaults vorliegen.' });
+  }
+  const noRegretCount = classic.filter(measure => ['noRegret', 'no_regret_working_assumption', 'no_regret_confirmed'].includes(measure.type)).length;
+  if (classic.length >= 3 && noRegretCount / classic.length >= 0.8) {
+    warnings.push({ type: 'no_regret_overuse_review', key: 'no-regret-overuse-review', area: 'No-Regret-Klassifikation', targetPhase: 'massnahmenbewertung', title: 'No-Regret-Kategorie überdehnt', detail: 'Die No-Regret-Kategorie ist derzeit nicht ausreichend differenzierend. Pflichtmaßnahmen, Kernportfolio, Scope-Kandidaten und Optionen getrennt klassifizieren.' });
+  }
+  const segmentation = portfolioSegmentationFor(results, p);
+  if (segmentation.scopeCandidate.count > 0) {
+    warnings.push({ type: 'scope_candidate_separation_review', key: 'scope-candidate-separation-review', area: 'Kernportfolio vs. Scope-Kandidaten', targetPhase: 'konsolidierung', title: 'Scope-Kandidaten getrennt betrachten', detail: `Das Gesamtergebnis enthält ${segmentation.scopeCandidate.count} aktive Scope-Kandidaten; Kernportfolio und Optionen getrennt ausweisen.` });
+  }
+  return warnings;
+}
+
 export function calcPortfolio(model, p) {
   const measures = Array.isArray(model?.measures) ? model.measures : [];
   const activeMeasures = measures.filter(measure => measure.active);
@@ -886,7 +992,8 @@ export function calcPortfolio(model, p) {
       warnings: [
         ...doubleCountingWarningsFor(measure, p, portfolioEffect),
         ...gasTransformationWarningsFor(measure, p),
-        ...flexibilityWarningsFor(measure, p)
+        ...flexibilityWarningsFor(measure, p),
+        ...stromMeasurePlausibilityWarningsFor(measure, p)
       ]
     };
   });
@@ -965,6 +1072,8 @@ export function calcPortfolio(model, p) {
     discounted: sum.discounted + result.totex.discounted
   }), { nominal: 0, discounted: 0 });
   const flexHelpers = results.map(result => result.flexibility).filter(Boolean);
+  const portfolioSegmentation = portfolioSegmentationFor(results, p);
+  const portfolioWarnings = stromPortfolioPlausibilityWarningsFor(activeMeasures, p, results);
   const flexibilitySummary = {
     totalCount: activeMeasures.filter(measure => isStromFlexibilityMeasure(measure, p)).length,
     activeCount: flexHelpers.filter(helper => helper.active).length,
@@ -999,7 +1108,8 @@ export function calcPortfolio(model, p) {
     riskPa,
     totex,
     flexibilitySummary,
-    warnings: results.flatMap(result => result.warnings || []),
+    portfolioSegmentation,
+    warnings: [...results.flatMap(result => result.warnings || []), ...portfolioWarnings],
     tariffImpact: tariffImpactFor(recurringValue(yearly, 'regulatoryEogEffect'), p),
     yearOneTariffImpact: tariffImpactFor(yearly[0]?.regulatoryEogEffect || 0, p)
   };
@@ -1034,6 +1144,7 @@ function decisionSnapshot(result) {
     gasTransformationWarningCount: warnings.filter(warning => String(warning.type || '').startsWith('gas_')).length,
     rulesetConfidence: result.p?.rulesetConfidence || regulatoryParameterSet.confidence,
     rulesetId: result.p?.rulesetId || regulatoryParameterSet.id,
+    sector: result.p?.sector || '',
     carries,
     verdictClass: carries ? 'good' : 'bad'
   };
@@ -1075,6 +1186,15 @@ function governanceDecisionFor(basis, conservative, scenarioComparison = null) {
       recommendation: 'Zurückstellen, umplanen oder mit Pflicht-, Risiko- oder Strategiegründen außerhalb der Wirtschaftlichkeitslogik entscheiden.'
     };
   }
+  if (basis.sector === 'strom' && scenarioComparison?.identicalBasisConservative) {
+    return {
+      status: 'stresstest_offen',
+      cls: 'warn',
+      title: 'Basiscase tragfähig, Stresstest offen',
+      text: 'Das konservative Szenario weicht derzeit nicht vom Basisszenario ab. Die ausgewiesene Tragfähigkeit ist daher als Basiscase-Ergebnis zu lesen; ein eigenständiger Stresstest liegt noch nicht vor.',
+      recommendation: 'Konservatives Szenario parametrisieren oder als Klärpunkt strom_conservative_case_missing führen, bevor Robustheit behauptet wird.'
+    };
+  }
   if (conservative && !conservative.carries) {
     return {
       status: 'auflage',
@@ -1097,7 +1217,7 @@ function governanceDecisionFor(basis, conservative, scenarioComparison = null) {
 }
 
 function metricDelta(a, b, tolerance = 0.000001) {
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return !Number.isFinite(a) && !Number.isFinite(b);
   return Math.abs(a - b) <= tolerance;
 }
 
@@ -1129,6 +1249,11 @@ export function portfolioDecisionMetrics(result, conservativeResult = null) {
   const conservative = conservativeResult ? decisionSnapshot(conservativeResult) : null;
   const scenarioComparison = scenarioComparisonFor(basis, conservative);
   const governanceDecision = governanceDecisionFor(basis, conservative, scenarioComparison);
+  const interpretationWarnings = basis.sector === 'strom' && scenarioComparison.identicalBasisConservative ? [{
+    type: 'strom_conservative_case_missing',
+    title: 'Konservatives Szenario nicht parametrisiert',
+    detail: 'Das konservative Szenario weicht derzeit nicht vom Basisszenario ab; ein eigenständiger Stresstest liegt noch nicht vor.'
+  }] : [];
   const conservativeGate = conservative
     ? governanceDecision.status === 'auflage'
       ? 'auflage'
@@ -1141,6 +1266,7 @@ export function portfolioDecisionMetrics(result, conservativeResult = null) {
     basis,
     conservative,
     scenarioComparison,
+    interpretationWarnings,
     conservativeGate,
     governanceDecision,
     cashflowBasis: 'IRR und Kapitalwert nutzen den indikativen Cashflow aus modellierter EOG-Wirkung abzüglich wirtschaftlicher OPEX-/Rückbau-/Reinvestitionsannahmen; keine garantierten Zahlungsströme.'

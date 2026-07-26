@@ -30,3 +30,8 @@ Typische Rollen sind Modellverantwortung, Regulierungsmanagement, Controlling/Fi
 ## Gewünschter KI-Stil
 
 Antworten sollen transparent, vorsichtig und entscheidungsorientiert sein. Sie sollen Annahmen, offene Punkte, Auflagen und Grenzen sichtbar machen, statt Scheingenauigkeit zu erzeugen. Für Gremien sind klare Sprache und Trennung zwischen Beschluss, Wirkung, Risiko und Prüfauflage wichtiger als technische Detailtiefe.
+
+
+## Strom-Robustheit und Plausibilitätslogik
+
+Für die Sparte Strom führt die App zusätzliche aggregierte Prüfhinweise, ohne Gas-Logiken zu verändern: `strom_conservative_case_missing` bei fehlendem echten konservativen Stresstest, `strom_regulatory_framework_review` für NEST-/Regulierungsrahmen-Sensitivität, getrennte Sicht auf Kernportfolio und Scope-Kandidaten, Defaultannahmen, RiskAvoided-Evidenz, Nutzungsdauer-Plausibilisierung, No-Regret-Überverwendung und Projekt-/Reifegradstatus. Diese Hinweise relativieren KPI-Ergebnisse als Befassungs-/Prüfstand; sie entfernen keine Werte automatisch.

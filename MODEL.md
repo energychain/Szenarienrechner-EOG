@@ -93,3 +93,8 @@ Das Modell erzeugt unter anderem:
 ## Technische Abgrenzung
 
 Der DOM-freie Rechenkern liegt in `src/engine.js`. UI, Import, Report und lokale Speicherung liegen in `src/ui.js` und sollen schrittweise modularisiert werden. Rechenlogik soll testbar bleiben und nicht implizit in UI-Rendering wandern.
+
+
+## Strom-Robustheit und Plausibilitätslogik
+
+Für die Sparte Strom führt die App zusätzliche aggregierte Prüfhinweise, ohne Gas-Logiken zu verändern: `strom_conservative_case_missing` bei fehlendem echten konservativen Stresstest, `strom_regulatory_framework_review` für NEST-/Regulierungsrahmen-Sensitivität, getrennte Sicht auf Kernportfolio und Scope-Kandidaten, Defaultannahmen, RiskAvoided-Evidenz, Nutzungsdauer-Plausibilisierung, No-Regret-Überverwendung und Projekt-/Reifegradstatus. Diese Hinweise relativieren KPI-Ergebnisse als Befassungs-/Prüfstand; sie entfernen keine Werte automatisch.

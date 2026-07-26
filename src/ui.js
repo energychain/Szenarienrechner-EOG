@@ -3206,6 +3206,17 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
   if (result.flexibilitySummary?.totalCount) {
     document.getElementById('managementCaveat').textContent += ` Flexibilität / Netzfahrplan: ${result.flexibilitySummary.totalCount} Objekt(e), davon ${result.flexibilitySummary.activeCount} rechenwirksam. Flexibilitätsobjekte sind OPEX-gegen-CAPEX-Substitutionen und keine klassischen Netz-CAPEX; Netzfahrplan und AGNeS-/Nachweislogik prüfen.`;
   }
+  const warningTypes = new Set((result.warnings || []).map(warning => warning.type));
+  if (result.p.sector === 'strom' && warningTypes.size) {
+    const stromCaveats = [];
+    if (warningTypes.has('strom_regulatory_framework_review')) stromCaveats.push('Regulatorischer Sensitivitätsrahmen Strom/NEST offen.');
+    if (warningTypes.has('scope_candidate_separation_review')) stromCaveats.push('Kernportfolio und Scope-Kandidaten getrennt betrachten.');
+    if (warningTypes.has('strom_default_assumptions_review')) stromCaveats.push('Defaultannahmen erkannt.');
+    if (warningTypes.has('risk_avoidance_evidence_missing') || warningTypes.has('risk_avoidance_outlier_review')) stromCaveats.push('RiskAvoided-Herleitung prüfpflichtig.');
+    if (warningTypes.has('useful_life_plausibility_review')) stromCaveats.push('Nutzungsdauern nach Maßnahmentyp plausibilisieren.');
+    if (warningTypes.has('no_regret_overuse_review')) stromCaveats.push('No-Regret-Kategorie differenzieren.');
+    if (stromCaveats.length) document.getElementById('managementCaveat').textContent += ' Strom-Prüfrahmen: ' + stromCaveats.join(' ');
+  }
 
   document.getElementById('managementNextStep').textContent = result.activeMeasures.length
     ? 'Im Meeting die drei offenen Annahmen festziehen: Aktivierungsprofil, regulatorische Anerkennung und zurechenbare Portfolio-/Risikowirkung.'
