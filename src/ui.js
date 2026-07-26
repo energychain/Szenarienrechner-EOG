@@ -1117,16 +1117,18 @@ function renderProjectPlan() {
     ${renderProjectRoleSwimlanes(projectPlan)}
     <div class="project-plan-swimlanes">
       ${projectPlan.milestones.map(milestone => `
-        <article class="project-plan-milestone" data-project-milestone="${esc(milestone.id)}">
-          <header>
+        <details class="project-plan-milestone" data-project-milestone="${esc(milestone.id)}" ${milestone.tasks.some(task => task.id === activeProjectTaskId || task.id === nextReady?.task.id || task.status === 'in_progress') ? 'open' : ''}>
+          <summary class="project-milestone-summary">
             <div>
               <p class="eyebrow">${esc(milestone.id.toUpperCase())} · ${esc(projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths))}</p>
               <h3>${esc(milestone.title)}</h3>
               <p>${esc(milestone.entryCriteria)} → <strong>${esc(milestone.exitArtifact)}</strong></p>
             </div>
+          </summary>
+          <div class="project-milestone-actions">
             <button type="button" class="ghost" data-project-add="${esc(milestone.id)}">Aufgabe hinzufügen</button>
             <a href="${esc(projectPlanDeepLinkForTask({ deepLinkKey: milestone.storyKey }))}" class="secondary-link" data-project-jump="${esc(milestone.tasks[0]?.id || '')}">App öffnen</a>
-          </header>
+          </div>
           <div class="project-task-list">
             ${milestone.tasks.map(item => {
               const state = taskStates[item.id] || { effectiveStatus: item.status, dependencyBlocked: false, missingDependencies: [] };
@@ -1137,14 +1139,21 @@ function renderProjectPlan() {
                 ? `<input class="project-task-title-input" data-project-field="${esc(item.id)}" data-project-field-name="title" type="text" value="${esc(item.title)}" aria-label="Titel der eigenen Aufgabe">`
                 : `<strong>${esc(item.title)}</strong>`;
               const skippedText = item.templateSkipped ? ' · als nicht zutreffend übersprungen' : '';
+              const taskOpen = activeProjectTaskId === item.id || nextReady?.task.id === item.id || item.status === 'in_progress';
+              const taskMeta = `${projectPlanRoles[item.ownerRole] || item.ownerRole} · fällig ${projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths, item.dueOffsetDays)}${item.evidenceRequired ? ` · Evidenz: ${item.evidenceRequired}` : ''}${projectPlanDependencyHint(state)}${skippedText}`;
               return `
-              <div class="project-task ${esc(state.effectiveStatus)} ${state.dependencyBlocked ? 'dependency-blocked' : ''} ${item.templateSkipped ? 'template-skipped' : ''} ${item.source === 'user' ? 'user-task' : 'template-task'} ${activeProjectTaskId === item.id ? 'active' : ''}" data-project-task="${esc(item.id)}">
-                <div class="project-task-main">
-                  <div class="project-task-title">
-                    ${titleControl}${sourceBadge}
-                    <span>${esc(projectPlanRoles[item.ownerRole] || item.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, milestone.plannedOffsetMonths, item.dueOffsetDays))}${item.evidenceRequired ? ` · Evidenz: ${esc(item.evidenceRequired)}` : ''}${projectPlanDependencyHint(state)}${skippedText}</span>
-                  </div>
-                  <p>${esc(item.resultArtifact)}${item.origin ? ` · Herkunft: ${esc(item.origin)}` : ''}${item.dependsOn.length ? ` · abhängig von ${esc(item.dependsOn.join(', '))}` : ''}</p>
+              <details class="project-task ${esc(state.effectiveStatus)} ${state.dependencyBlocked ? 'dependency-blocked' : ''} ${item.templateSkipped ? 'template-skipped' : ''} ${item.source === 'user' ? 'user-task' : 'template-task'} ${activeProjectTaskId === item.id ? 'active' : ''}" data-project-task="${esc(item.id)}" ${taskOpen ? 'open' : ''}>
+                <summary class="project-task-summary">
+                  <span class="project-task-summary-title"><strong>${esc(item.title)}</strong>${sourceBadge}</span>
+                  <span>${esc(taskMeta)}</span>
+                </summary>
+                <div class="project-task-expanded">
+                  <div class="project-task-main">
+                    <div class="project-task-title">
+                      ${titleControl}${sourceBadge}
+                      <span>${esc(taskMeta)}</span>
+                    </div>
+                    <p>${esc(item.resultArtifact)}${item.origin ? ` · Herkunft: ${esc(item.origin)}` : ''}${item.dependsOn.length ? ` · abhängig von ${esc(item.dependsOn.join(', '))}` : ''}</p>
                   ${item.source === 'user' ? `
                     <div class="project-user-task-fields">
                       <label>Frist +Tage <input data-project-field="${esc(item.id)}" data-project-field-name="dueOffsetDays" type="number" step="1" value="${esc(item.dueOffsetDays)}"></label>
@@ -1167,11 +1176,12 @@ function renderProjectPlan() {
                   </select>
                   ${item.source === 'template' ? `<button type="button" data-project-skip="${esc(item.id)}">${item.templateSkipped ? 'wieder aktivieren' : 'nicht zutreffend'}</button>` : `<button type="button" class="danger" data-project-delete="${esc(item.id)}">löschen</button>`}
                   <button type="button" data-project-jump="${esc(item.id)}" ${jumpDisabled}>Zur App</button>
+                  </div>
                 </div>
-              </div>`;
+              </details>`;
             }).join('')}
           </div>
-        </article>
+        </details>
       `).join('')}
     </div>
   `;
@@ -2743,8 +2753,35 @@ function closeImprintModal() {
   document.getElementById('imprintModal').classList.add('hidden');
 }
 
+function catalogNavigationList() {
+  const p = currentParams();
+  return filteredMeasures(p);
+}
+
+function updateMeasureStepper() {
+  const list = catalogNavigationList();
+  const index = list.findIndex(item => item.id === selectedId);
+  const position = document.getElementById('measureEditPosition');
+  const prev = document.getElementById('measureEditPrev');
+  const next = document.getElementById('measureEditNext');
+  if (position) position.textContent = index >= 0 ? `${index + 1} von ${list.length} im aktuellen Filter` : `${list.length} im aktuellen Filter`;
+  if (prev) prev.disabled = index <= 0;
+  if (next) next.disabled = index < 0 || index >= list.length - 1;
+}
+
+function navigateMeasureInCatalog(delta) {
+  const list = catalogNavigationList();
+  const index = list.findIndex(item => item.id === selectedId);
+  const next = list[index + delta];
+  if (!next) return;
+  selectedId = next.id;
+  renderAll();
+  renderDetail();
+}
+
 function openMeasureEditModal() {
   renderDetail();
+  updateMeasureStepper();
   document.getElementById('measureEditModal').classList.remove('hidden');
 }
 
@@ -4522,6 +4559,7 @@ function renderDetail() {
 	        }
         renderImpactAssumptions({ impactAssumptions: [] });
         renderHelperCalculators({ cost: 0, secure: 0, uncertain: 0, probability: 0, opexRecognition: 0, impactAssumptions: [] });
+        updateMeasureStepper();
         const timeline = document.getElementById('lifecycleTimeline');
         if (timeline) timeline.innerHTML = '';
 	        return;
@@ -4614,6 +4652,7 @@ function renderDetail() {
       renderHelperCalculators(measure);
       renderMeasureDrilldown(measure);
       renderImpactAssumptions(measure);
+      updateMeasureStepper();
       const timeline = document.getElementById('lifecycleTimeline');
       if (timeline) timeline.innerHTML = lifecycleTimelineHtml(measure, p);
 	    }
@@ -5981,6 +6020,8 @@ document.getElementById('imprintModal').addEventListener('click', event => {
   if (event.target.id === 'imprintModal') closeImprintModal();
 });
 document.getElementById('measureEditClose').addEventListener('click', closeMeasureEditModal);
+document.getElementById('measureEditPrev').addEventListener('click', () => navigateMeasureInCatalog(-1));
+document.getElementById('measureEditNext').addEventListener('click', () => navigateMeasureInCatalog(1));
 document.getElementById('measureEditModal').addEventListener('click', event => {
   if (event.target.id === 'measureEditModal') closeMeasureEditModal();
 });

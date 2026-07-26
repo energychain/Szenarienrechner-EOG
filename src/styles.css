@@ -2885,3 +2885,120 @@
       .table-wrap { max-height: none; overflow: visible; border: 1px solid #ddd; }
       th { position: static; }
     }
+
+    .catalog-toolbox {
+      display: grid;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .catalog-filter-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 10px;
+    }
+
+    .toolbox-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 6px 12px;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .toolbox-head small {
+      color: var(--muted);
+    }
+
+    .project-plan-milestone summary,
+    .project-task summary {
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .project-plan-milestone summary::-webkit-details-marker,
+    .project-task summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .project-milestone-summary {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      background: var(--soft);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .project-milestone-summary::after,
+    .project-task-summary::after {
+      content: 'aufklappen';
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .project-plan-milestone[open] > .project-milestone-summary::after,
+    .project-task[open] > .project-task-summary::after {
+      content: 'zuklappen';
+    }
+
+    .project-milestone-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 10px 12px 0;
+    }
+
+    .project-task-summary {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto auto;
+      gap: 8px 12px;
+      align-items: center;
+    }
+
+    .project-task-summary > span:last-of-type {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .project-task-summary-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 6px;
+      align-items: center;
+    }
+
+    .project-task-expanded {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(260px, auto);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .measure-dialog-nav {
+      gap: 12px;
+      align-items: center;
+    }
+
+    .measure-stepper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 820px) {
+      .project-task-summary,
+      .project-task-expanded {
+        grid-template-columns: 1fr;
+      }
+      .project-milestone-actions,
+      .measure-stepper {
+        justify-content: flex-start;
+      }
+    }
