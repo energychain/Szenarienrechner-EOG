@@ -143,6 +143,22 @@
 <li>Historie, Version und Quellenstand.</li>
 </ul>
 <p>Das Modell unterscheidet ausdrücklich zwischen Stammdaten, Maßnahmen, Wirkannahmen und Entscheidungskommentaren. Dadurch wird sichtbar, ob ein Ergebnis aus harten Eingaben, aus freigegebenen Annahmen oder aus noch prüfpflichtigen Effekten entsteht.</p>
+<h2>Kontext &amp; Evidenz: Sidecar neben der Maßnahmenliste</h2>
+<p>Regulierte Finanzplanung braucht mehr als Maßnahmen. Häufig sind Quellen, Datenqualitätsfragen, vorgelagerte Abhängigkeiten, Last- oder Kundenpfade, Steuerbarkeit, Asset-Mapping oder Prozessfähigkeit entscheidungsrelevant, ohne selbst eine Investitionsmaßnahme zu sein. Für diese Fälle nutzt der Szenarienrechner-EOG den Bereich <strong>„Kontext &amp; Evidenz“</strong>.</p>
+<p>Die Leitfrage lautet: <strong>Ist dieser Punkt eine Maßnahme oder ein Sidecar-Objekt?</strong></p>
+<p>Ein Punkt gehört typischerweise in die Maßnahmenliste, wenn er Kosten, Aktivierbarkeit, Nutzungsdauer, OPEX, Reinvestition, Rückbau oder eine explizite Wirkung in der Szenariorechnung trägt. Ein Punkt gehört typischerweise in den Sidecar, wenn er eine Quelle, Datenqualität, Prozessfähigkeit, externe Abhängigkeit, Steuerbarkeit, Last-/Kundenentwicklung oder fachlichen Kontext beschreibt, der eine Bewertung stützt oder blockiert, aber nicht automatisch KPI-wirksam sein soll.</p>
+<p>Sidecar-Objekte führen deshalb immer mindestens:</p>
+<ul>
+<li>Sparte und Objektklasse,</li>
+<li>Status und Evidenzstatus,</li>
+<li>Rechenwirkung von „keine“ bis „aktiv“,</li>
+<li>Sensitivität und Exportstatus,</li>
+<li>Quellenreferenzen und offene Fragen,</li>
+<li>optionale Verknüpfungen zu Maßnahmen oder Szenarien.</li>
+</ul>
+<p>Für Strom sind typische Sidecar-Kategorien Netzkoppelung, Großanschluss-/Lastentwicklung, Flexibilität/Netzfahrplan, Steuerbarkeit, Redispatch, iMSys/CLS, Asset-Mapping und Datenqualität. Für Gas sind typische Kategorien Kunden-/Lastpfade, Stilllegung/Rückbau, Umwidmung/Wasserstofffähigkeit, Wärmeplanung, No-Regret-Kontext, Asset-Mapping, Datenqualität und externe Abhängigkeiten.</p>
+<p>Wichtig ist die KPI-Abgrenzung: Sidecar-Objekte sind standardmäßig nicht CAPEX-, OPEX-, RAB-, EOG-, IRR- oder NPV-wirksam. Sie werden im Management Report verdichtet als Evidenzlage, Datenqualität, Rechenwirkung und offene Arbeits-/Prüfaufträge dargestellt. Im KI-Prompt erscheinen sie ebenfalls als eigener Abschnitt „Kontext &amp; Evidenz / Sidecar“, damit Unternehmens-KI den Arbeitsstand hinterfragen kann, ohne Sidecar-Objekte mit Maßnahmen zu verwechseln.</p>
+<p>Diese Trennung verhindert zwei typische Fehler: Kontextwissen wird nicht als künstliche Maßnahme in KPIs eingerechnet, verschwindet aber auch nicht in unstrukturierten Notizen außerhalb des Modells.</p>
 <h2>Aktivierbarkeit und CAPEX/OPEX-Split</h2>
 <p>Eine der wichtigsten methodischen Fragen lautet: Welcher Anteil einer Maßnahme ist aktivierbar und welcher Anteil bleibt Aufwand?</p>
 <p>Der Rechenkern bildet dafür einen Erwartungswert aus sicher aktivierbarem Anteil und unsicherem Anteil mit Eintrittswahrscheinlichkeit. Nicht aktivierte Anteile können als OPEX beziehungsweise Aufwand behandelt werden. Die App weist dabei ausdrücklich darauf hin, dass HGB-, Anlagenbuchhaltungs- und regulatorische Sicht auseinanderlaufen können.</p>

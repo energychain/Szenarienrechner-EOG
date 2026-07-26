@@ -22,6 +22,8 @@ Die App sendet keine Modelldaten an KI-Systeme. Ein KI-Prompt wird lokal erzeugt
 - Bei Gas-Transformationsfällen sind Stilllegung, Rückbau, Rückstellungen, Wegfall der Ewigkeitsvermutung sowie KAnEu-/Ist-Kosten-Behandlung als prüfpflichtige Herleitungen zu behandeln.
 - Bei Strom-Flexibilitäten sind Flexibilitätsobjekte, Netzfahrpläne, Speicher-/Laststeuerung und AGNeS-Bezüge nicht als klassische CAPEX-Maßnahmen zu interpretieren. Sie beschreiben mögliche OPEX-gegen-CAPEX-Substitutionen; ohne validierten Netzfahrplan, quantifizierte vermiedene/verschobene CAPEX und jährliche Flex-OPEX keine automatische Ergebniswirkung.
 - Im Prompt-Export werden Strom-Flexibilitäts- und AGNeS-Informationen dedupliziert: Klassische CAPEX-Maßnahmen ohne Flexibilitätsbezug enthalten keine wiederholten Default-Felder wie `agnesRelevant=false`; relevante Flexibilitäts-/Netzfahrplanobjekte erscheinen separat und können den Klärpunkt `strom_flexibility_review` tragen.
+- Sidecar-Objekte aus „Kontext & Evidenz“ sind nicht als Maßnahmen oder KPI-Beiträge zu lesen. Sie beschreiben Quellen, Datenqualität, Abhängigkeiten, Steuerungsfähigkeit oder fachlichen Kontext und sind standardmäßig nicht CAPEX-, OPEX-, RAB-, EOG-, IRR- oder NPV-wirksam.
+- Bei Sidecar-Objekten muss das KI-System Evidenzstatus, Rechenwirkung, Sensitivität, Exportstatus und offene Fragen beachten. Sanitisiert exportierte Sidecar-Objekte dürfen nicht mit fehlenden Quellen verwechselt werden; Detailquellen können bewusst ausgeblendet sein.
 
 ## Rollen
 

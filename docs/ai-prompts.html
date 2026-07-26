@@ -69,6 +69,16 @@
 <p>Wenn ein Unternehmens-LLM diese URL nicht abrufen kann, enthält der Prompt trotzdem die wichtigsten Interpretationsregeln: EOG ist nicht Cashflow, Basis vs. konservativ bleibt sichtbar, prüfpflichtige Annahmen sind keine bestätigten Fakten und es gibt keine regulatorische Anerkennungszusage.</p>
 <p>Für Strom-Flexibilitäten enthält der Prompt zusätzlich eine feste Abgrenzung: Flexibilitätsobjekte, Netzfahrpläne, Speicher-/Laststeuerung und AGNeS-Bezüge sind nicht automatisch klassische Netz-CAPEX. Sie beschreiben mögliche OPEX-gegen-CAPEX-Substitutionen. Eine rechnerische Wirkung soll erst interpretiert werden, wenn Netzfahrplan, vermiedene oder verschobene CAPEX, jährliche Flex-OPEX und Steuerungs-/Nachweislogik belastbar dokumentiert sind.</p>
 <p>Flexibilitäts- und AGNeS-Daten werden im Prompt dedupliziert: Klassische CAPEX-Maßnahmen enthalten keine leeren Default-Felder wie <code>agnesRelevant=false</code> oder <code>agnesRole=offen</code>. Flexibilitäts-/Netzfahrplanobjekte erscheinen stattdessen in einem eigenen Abschnitt „Strom-Flexibilitätsobjekte / Netzfahrplan / AGNeS“ — auch dann, wenn sie als Kontext- oder Prüfobjekt nicht rechenwirksam sind. Wenn ein Flexibilitätsobjekt wegen fehlendem Netzfahrplan, fehlender Quantifizierung oder ungeklärter AGNeS-/Nachweislogik nicht wirkt, wird der Klärpunkt <code>strom_flexibility_review</code> ausgegeben.</p>
+<h2>Kontext &amp; Evidenz / Sidecar im Prompt</h2>
+<p>Wenn der Arbeitsstand Sidecar-Objekte enthält, erzeugt der Prompt einen eigenen Abschnitt <strong>„Kontext &amp; Evidenz / Sidecar“</strong>. Diese Objekte werden nicht als Maßnahmen, CAPEX oder KPI-Beiträge dargestellt. Sie beschreiben Quellen, Datenqualität, Abhängigkeiten, Steuerungsfähigkeit oder spartenspezifischen Kontext, der eine Bewertung stützt oder blockiert.</p>
+<p>Der Prompt berücksichtigt dabei die Export- und Sensitivitätslogik der Sidecar-Objekte:</p>
+<ul>
+<li><code>exportStatus=excluded</code> wird nicht in den Prompt übernommen.</li>
+<li><code>exportStatus=sanitized_only</code> entfernt Detailzusammenfassungen und Quellenreferenzen und hält nur die entscheidungsrelevante Struktur.</li>
+<li>Sidecar-Objekte bleiben als nicht KPI-wirksam gekennzeichnet, solange keine explizite Rechenwirkung definiert ist.</li>
+<li>Offene Fragen werden als Arbeits-/Prüfauftrag formuliert, nicht als Beschluss- oder Freigabeaussage.</li>
+</ul>
+<p>Für den Prompt-Typ <strong>„Arbeitsstand hinterfragen“</strong> ist der Sidecar besonders relevant: Das KI-System soll prüfen, ob Datenqualität, Quellenlage, Steuerungsfähigkeit oder externe Abhängigkeiten ausreichend dokumentiert sind und welche Fragen an Regulierung, Bilanzierung, Technik, Datenmanagement oder Management zurückgespielt werden müssen.</p>
 <h2>Nutzung</h2>
 <p>1. Arbeitsstand prüfen.</p>
 <p>2. Menü „Mehr“ öffnen.</p>
