@@ -886,13 +886,29 @@ const stromPortfolioClasses = {
 };
 
 function normalizedPortfolioClassification(measure = {}) {
+  const importStatus = String(measure.importStatus || '').toLowerCase();
+  const decisionStatus = String(measure.investmentDecisionStatus || '').toLowerCase();
+  const reportingStatus = String(measure.reportingStatus || '').toLowerCase();
+  const orgUnit = String(measure.orgUnit || '').toLowerCase();
+  const type = String(measure.type || '').toLowerCase();
   const raw = String(measure.portfolioClassification || measure.portfolioClass || measure.strategyType || '').trim();
-  if (stromPortfolioClasses[raw]) return raw;
-  if (measure.effectType === 'flexibility') return 'flexibility';
+
+  if (measure.effectType === 'flexibility' || importStatus === 'flexibility_review') return 'flexibility';
+  if (importStatus === 'context_only' || importStatus === 'context' || type === 'context_only') return 'context_only';
   if (measure.active === false) return 'excluded';
-  if (measure.importStatus === 'unconfirmed' || measure.type === 'scope_candidate') return 'scope_candidate';
-  if (measure.type === 'context_only' || measure.importStatus === 'context') return 'context_only';
-  if (measure.type === 'option_sensitive' || measure.type === 'wahl') return 'option_sensitive';
+  if (
+    importStatus.includes('strategic_scope_candidate')
+    || importStatus.includes('scope_candidate')
+    || decisionStatus.includes('scope-kandidat')
+    || decisionStatus.includes('scope kandidat')
+    || reportingStatus.includes('strategischer arbeitsstand')
+    || orgUnit.includes('zielnetzplanung')
+    || orgUnit.includes('strategische infrastruktur')
+    || type === 'scope_candidate'
+    || measure.importStatus === 'unconfirmed'
+  ) return 'scope_candidate';
+  if (type === 'option_sensitive' || type === 'wahl' || importStatus.includes('option') || importStatus.includes('sensitivity')) return 'option_sensitive';
+  if (stromPortfolioClasses[raw]) return raw;
   return 'core_portfolio';
 }
 
@@ -900,17 +916,25 @@ function emptySegmentationBucket() {
   return { count: 0, invest: 0, npv: 0, yearOneRegulatoryEog: 0, recurringRegulatoryEog: 0 };
 }
 
-export function portfolioSegmentationFor(results = [], p = {}) {
-  const buckets = {
+function emptySegmentation() {
+  return {
     corePortfolio: emptySegmentationBucket(),
     scopeCandidate: emptySegmentationBucket(),
     optionSensitive: emptySegmentationBucket(),
     contextObject: emptySegmentationBucket(),
     flexibilityObject: emptySegmentationBucket(),
-    excluded: emptySegmentationBucket()
+    excluded: emptySegmentationBucket(),
+    mappingNote: 'Segmentierung basiert auf importStatus, investmentDecisionStatus, reportingStatus, effectType und orgUnit; Statusfelder haben Vorrang vor Kostenhöhe oder bloßer Aktivität.'
   };
+}
+
+export function portfolioSegmentationFor(results = [], p = {}, allMeasures = []) {
+  const buckets = emptySegmentation();
+  const seen = new Set();
   results.forEach(result => {
     const measure = result.measure || {};
+    const id = String(measure.id || '');
+    if (id) seen.add(id);
     const key = stromPortfolioClasses[normalizedPortfolioClassification(measure)] || 'corePortfolio';
     const bucket = buckets[key];
     bucket.count += 1;
@@ -918,6 +942,15 @@ export function portfolioSegmentationFor(results = [], p = {}) {
     bucket.npv += Number.isFinite(result.npv) ? result.npv : 0;
     bucket.yearOneRegulatoryEog += result.rows?.[0]?.regulatoryEogEffect || 0;
     bucket.recurringRegulatoryEog += recurringValue(result.rows || [], 'regulatoryEogEffect');
+  });
+  allMeasures.forEach(measure => {
+    const id = String(measure?.id || '');
+    if (id && seen.has(id)) return;
+    const key = stromPortfolioClasses[normalizedPortfolioClassification(measure)] || 'corePortfolio';
+    if (!['contextObject', 'flexibilityObject', 'excluded', 'scopeCandidate', 'optionSensitive'].includes(key)) return;
+    const bucket = buckets[key];
+    bucket.count += 1;
+    bucket.invest += isStromFlexibilityMeasure(measure, p) ? 0 : finiteNumber(measure.cost);
   });
   return buckets;
 }
@@ -935,6 +968,16 @@ function usefulLifeRangeFor(assetType = '') {
   return [1, 60];
 }
 
+function inferredStromAssetType(measure = {}) {
+  const explicit = String(measure.assetType || measure.measureAssetType || '').trim();
+  if (explicit) return explicit;
+  const text = [measure.name, measure.type, measure.monitoringCategory, measure.tags?.join(' ')].filter(Boolean).join(' ').toLowerCase();
+  if (/digital|it|software|kommunikation|communication|steuer|control|fernwirk|leittechnik|netzleitsystem|messtechnik|smart|imsys|smgw|cls/.test(text)) return 'communication';
+  if (/trafo|transformator|station|umspann/.test(text)) return 'transformer';
+  if (/kabel|leitung|trasse|tiefbau/.test(text)) return 'cable';
+  return '';
+}
+
 function stromMeasurePlausibilityWarningsFor(measure = {}, p = {}) {
   if (p.sector !== 'strom' || !measure.active || isStromFlexibilityMeasure(measure, p)) return [];
   const warnings = [];
@@ -945,11 +988,13 @@ function stromMeasurePlausibilityWarningsFor(measure = {}, p = {}) {
   if (risk > Math.max(0.000001, finiteNumber(measure.cost))) {
     warnings.push({ type: 'risk_avoidance_outlier_review', key: `risk-outlier:${measure.id}`, area: 'RiskAvoided-Evidenz', targetPhase: 'massnahmenbewertung', measureId: measure.id, measure: measure.name || 'Maßnahme', title: 'RiskAvoided-Ausreißer prüfen', detail: 'Der jährliche Risikovermeidungswert liegt über der Investition; bitte Methode, Zeitraum und Evidenz prüfen.' });
   }
-  const [minLife, maxLife] = usefulLifeRangeFor(measure.assetType || measure.measureAssetType || '');
+  const inferredAssetType = inferredStromAssetType(measure);
+  const [minLife, maxLife] = usefulLifeRangeFor(inferredAssetType);
   const life = finiteNumber(measure.life);
   const lifeStatus = measure.usefulLifeEvidenceStatus || 'not_assessed';
-  if ((measure.assetType || measure.measureAssetType) && (life < minLife || life > maxLife || ['default', 'not_assessed'].includes(lifeStatus))) {
-    warnings.push({ type: 'useful_life_plausibility_review', key: `useful-life:${measure.id}`, area: 'Nutzungsdauer-Plausibilisierung', targetPhase: 'massnahmenbewertung', measureId: measure.id, measure: measure.name || 'Maßnahme', title: 'Nutzungsdauer nach Maßnahmentyp prüfen', detail: `Die angesetzte Nutzungsdauer (${life || 0} Jahre) ist für ${measure.assetType || measure.measureAssetType} prüfpflichtig; technische/wirtschaftliche Nutzungsdauer und Reinvestitionszyklen prüfen.` });
+  const missingExplicitAssetType = inferredAssetType && !(measure.assetType || measure.measureAssetType);
+  if (inferredAssetType && (missingExplicitAssetType || life < minLife || life > maxLife || ['default', 'not_assessed'].includes(lifeStatus))) {
+    warnings.push({ type: 'useful_life_plausibility_review', key: `useful-life:${measure.id}`, area: 'Nutzungsdauer-Plausibilisierung', targetPhase: 'massnahmenbewertung', measureId: measure.id, measure: measure.name || 'Maßnahme', title: 'Nutzungsdauer nach Maßnahmentyp prüfen', detail: `Die angesetzte Nutzungsdauer (${life || 0} Jahre) ist für ${inferredAssetType} prüfpflichtig; assetType-Mapping, technische/wirtschaftliche Nutzungsdauer und Reinvestitionszyklen prüfen.` });
   }
   return warnings;
 }
@@ -1072,7 +1117,7 @@ export function calcPortfolio(model, p) {
     discounted: sum.discounted + result.totex.discounted
   }), { nominal: 0, discounted: 0 });
   const flexHelpers = results.map(result => result.flexibility).filter(Boolean);
-  const portfolioSegmentation = portfolioSegmentationFor(results, p);
+  const portfolioSegmentation = portfolioSegmentationFor(results, p, measures);
   const portfolioWarnings = stromPortfolioPlausibilityWarningsFor(activeMeasures, p, results);
   const flexibilitySummary = {
     totalCount: activeMeasures.filter(measure => isStromFlexibilityMeasure(measure, p)).length,
@@ -1255,11 +1300,13 @@ export function portfolioDecisionMetrics(result, conservativeResult = null) {
     detail: 'Das konservative Szenario weicht derzeit nicht vom Basisszenario ab; ein eigenständiger Stresstest liegt noch nicht vor.'
   }] : [];
   const conservativeGate = conservative
-    ? governanceDecision.status === 'auflage'
-      ? 'auflage'
-      : governanceDecision.status === 'robust'
-        ? 'tragfaehig'
-        : 'nicht_tragfaehig'
+    ? scenarioComparison.identicalBasisConservative && basis.sector === 'strom'
+      ? 'stresstest_ausstehend'
+      : governanceDecision.status === 'auflage'
+        ? 'auflage'
+        : governanceDecision.status === 'robust'
+          ? 'tragfaehig'
+          : 'nicht_tragfaehig'
     : 'nicht_geprueft';
   return {
     ...basis,

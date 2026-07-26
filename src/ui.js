@@ -3227,7 +3227,10 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
 	        ['Folgejahr-EOG ' + fmtTeur(metrics.recurringRegulatoryEog, 1), ''],
 	        ['Einmalig J1 ' + fmtTeur(metrics.yearOneOneOff, 1), metrics.yearOneOneOff ? 'warn' : ''],
 	        [`${metricLabel} indikativ ` + irrText, decision.cls],
-	        ['konservativ ' + (metrics.conservative ? (Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-') : '-'), metrics.conservativeGate === 'tragfaehig' ? 'good' : metrics.conservativeGate === 'auflage' ? 'warn' : 'bad']
+	        [metrics.conservativeGate === 'stresstest_ausstehend'
+          ? 'konservativ: Stresstest offen'
+          : 'konservativ ' + (metrics.conservative ? (Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-') : '-'),
+        metrics.conservativeGate === 'tragfaehig' ? 'good' : metrics.conservativeGate === 'auflage' || metrics.conservativeGate === 'stresstest_ausstehend' ? 'warn' : 'bad']
 	      ];
 	      document.getElementById('managementPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
 	      document.getElementById('verdictWhyList').innerHTML = [
