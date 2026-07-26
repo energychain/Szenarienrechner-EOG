@@ -1185,6 +1185,105 @@
       margin-top: 10px;
     }
 
+    .waterfall-summary {
+      margin: 10px 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    .waterfall-row,
+    .tornado-row {
+      display: grid;
+      grid-template-columns: minmax(170px, 1fr) minmax(220px, 3fr) minmax(90px, auto);
+      gap: 10px;
+      align-items: center;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+
+    .waterfall-track,
+    .tornado-track {
+      height: 18px;
+      border-radius: 999px;
+      background: #eef3f7;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .waterfall-bar {
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .waterfall-row.negative .waterfall-bar {
+      background: var(--bad);
+    }
+
+    .waterfall-value,
+    .tornado-values {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+
+    .tornado-track {
+      display: grid;
+      grid-template-columns: 1fr 2px 1fr;
+      background: #f8fafc;
+    }
+
+    .tornado-half {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .tornado-half.left {
+      justify-content: flex-end;
+    }
+
+    .tornado-zero {
+      background: var(--muted);
+      opacity: .55;
+    }
+
+    .tornado-bar {
+      display: block;
+      height: 100%;
+      min-width: 2px;
+    }
+
+    .tornado-bar.low { background: #c78a22; }
+    .tornado-bar.high { background: var(--accent); }
+
+    .drilldown-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .drilldown-step {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .drilldown-step span {
+      display: block;
+      margin: 6px 0;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .drilldown-step small {
+      color: var(--muted);
+    }
+
     .helper-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(220px, 1fr));

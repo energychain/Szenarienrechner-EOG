@@ -10,10 +10,13 @@ import {
   calcMeasure,
   calcPortfolio,
   defaultEffectLags,
+  measureDrilldownFor,
   impactAssumptionsFor,
   irr,
   npv,
   params,
+  portfolioSensitivityTornadoFor,
+  portfolioWaterfallFor,
   portfolioDecisionMetrics,
   regulatoryParameterSet,
   qImpactHelper,
@@ -341,6 +344,52 @@ describe('calcMeasure depreciation scenarios', () => {
     expect(result.rows[0].hgbDepreciation).toBeCloseTo(50, 4);
     expect(result.rows[0].bridge).toBeCloseTo(50, 4);
     expect(result.rows.reduce((sum, row) => sum + row.bridge, 0)).toBeCloseTo(0, 4);
+  });
+});
+
+
+describe('explainability helpers', () => {
+  it('builds a measure drilldown from CAPEX to AfA, return, EOG and IRR/NPV', () => {
+    const p = params({ ...baseInputs, kanuEndYear: 2030, horizon: 3 });
+    const measure = baseMeasure({ cost: 200, secure: 100, life: 40, depr: 'kanuLinear', year: 2028 });
+    const drilldown = measureDrilldownFor(measure, p, 0);
+
+    expect(drilldown.measureName).toBe('Testmassnahme');
+    expect(drilldown.capexTeur).toBeCloseTo(200, 4);
+    expect(drilldown.activatedTeur).toBeCloseTo(200, 4);
+    expect(drilldown.steps.map(step => step.key)).toEqual(expect.arrayContaining([
+      'capex', 'activation', 'depreciation', 'capital_return', 'regulatory_eog', 'cashflow', 'return_metric'
+    ]));
+    expect(drilldown.rows[0]).toMatchObject({ year: 2028 });
+    expect(drilldown.rows[0].regulatoryEogEffect).toBeCloseTo(drilldown.rows[0].depreciation + drilldown.rows[0].capitalReturn, 4);
+    expect(drilldown.returnMetricLabel).toMatch(/IRR|MIRR/);
+  });
+
+  it('builds a portfolio waterfall for base EOG, measure effect and cashflow bridge', () => {
+    const p = params({ ...baseInputs, baseEog: 24570, horizon: 3 });
+    const result = calcPortfolio({ measures: [baseMeasure({ cost: 200, opexPa: 5, opexDeltaPa: 1 })] }, p);
+    const waterfall = portfolioWaterfallFor(result);
+
+    expect(waterfall.baseEogTeur).toBeCloseTo(24570, 4);
+    expect(waterfall.baseToYearOneRatioPct).toBeGreaterThan(0);
+    expect(waterfall.cashflowBridge[0].key).toBe('regulatory_eog');
+    expect(waterfall.cashflowBridge.map(item => item.key)).toEqual(['regulatory_eog', 'economic_bridge', 'indicative_cashflow']);
+    expect(waterfall.cashflowBridge[2].valueTeur).toBeCloseTo(waterfall.firstFollowYear.indicativeCashflow, 4);
+  });
+
+  it('builds low-risk tornado sensitivities without changing the base portfolio', () => {
+    const model = { measures: [baseMeasure({ cost: 200, riskAvoided: 10, life: 20 })] };
+    const p = params({ ...baseInputs, sector: 'gas', horizon: 6, kanuEndYear: 2035, financingRate: 4, discountRate: 4, returnRate: 5 });
+    const before = calcPortfolio(model, p);
+    const tornado = portfolioSensitivityTornadoFor(model, p);
+    const after = calcPortfolio(model, p);
+
+    expect(tornado.base.npv).toBeCloseTo(before.npv, 6);
+    expect(after.npv).toBeCloseTo(before.npv, 6);
+    expect(tornado.drivers.map(driver => driver.key)).toEqual(expect.arrayContaining([
+      'riskAvoided', 'returnRate', 'financingRate', 'usefulLife', 'kanuEndYear'
+    ]));
+    expect(tornado.drivers.every(driver => Number.isFinite(driver.lowDeltaNpv) && Number.isFinite(driver.highDeltaNpv))).toBe(true);
   });
 });
 
