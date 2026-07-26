@@ -125,34 +125,39 @@
   </section>
 
   <nav class="view-tabs" aria-label="Arbeitsfluss">
-    <button type="button" class="view-tab active" data-view="basis">
-      <span class="step-main"><span class="step-number">1</span>Grundlagen</span>
-      <span class="step-status" id="status-basis">Stammdaten offen</span>
-    </button>
-    <button type="button" class="view-tab" data-view="measures">
-      <span class="step-main"><span class="step-number">2</span>Maßnahmen</span>
-      <span class="step-status" id="status-measures">0 Maßnahmen aktiv</span>
-    </button>
-    <button type="button" class="view-tab" data-view="results">
-      <span class="step-main"><span class="step-number">3</span>Entscheidung</span>
-      <span class="step-status" id="status-results">Entscheidung offen</span>
-    </button>
-    <button type="button" class="view-tab" data-view="report">
-      <span class="step-main">Report</span>
-      <span class="step-status" id="status-report">noch offen</span>
-    </button>
-    <button type="button" class="view-tab" data-view="sidecar">
-      <span class="step-main">Kontext & Evidenz</span>
-      <span class="step-status" id="status-sidecar">0 Objekte</span>
-    </button>
-    <button type="button" class="view-tab" data-view="projectPlan">
-      <span class="step-main">Projektplan</span>
-      <span class="step-status" id="status-projectPlan">Plan offen</span>
-    </button>
-    <label class="switch-row compact-switch" for="expertModeToggle">
-      <input id="expertModeToggle" type="checkbox">
-      Expertenmodus
-    </label>
+    <div class="workflow-tabs" aria-label="Kernprozess">
+      <button type="button" class="view-tab active" data-view="basis">
+        <span class="step-main"><span class="step-number">1</span>Grundlagen</span>
+        <span class="step-status" id="status-basis">Stammdaten offen</span>
+      </button>
+      <button type="button" class="view-tab" data-view="measures">
+        <span class="step-main"><span class="step-number">2</span>Maßnahmen</span>
+        <span class="step-status" id="status-measures">0 Maßnahmen aktiv</span>
+      </button>
+      <button type="button" class="view-tab" data-view="results">
+        <span class="step-main"><span class="step-number">3</span>Entscheidung</span>
+        <span class="step-status" id="status-results">Entscheidung offen</span>
+      </button>
+      <button type="button" class="view-tab" data-view="report">
+        <span class="step-main">Report</span>
+        <span class="step-status" id="status-report">noch offen</span>
+      </button>
+    </div>
+    <div class="support-tabs" aria-label="Arbeitsstand und Werkzeuge">
+      <span class="support-tabs-label">Arbeitsstand</span>
+      <button type="button" class="view-tab support-tab" data-view="sidecar">
+        <span class="step-main">Kontext & Evidenz</span>
+        <span class="step-status" id="status-sidecar">0 Objekte</span>
+      </button>
+      <button type="button" class="view-tab support-tab" data-view="projectPlan">
+        <span class="step-main">Projektplan</span>
+        <span class="step-status" id="status-projectPlan">Plan offen</span>
+      </button>
+      <label class="switch-row compact-switch" for="expertModeToggle">
+        <input id="expertModeToggle" type="checkbox">
+        Expertenmodus
+      </label>
+    </div>
   </nav>
 
   <section class="sticky-kpis" aria-label="Live-Wirkung">

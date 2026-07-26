@@ -459,10 +459,32 @@
 
     .view-tabs {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
       padding: 12px 22px 0;
       background: var(--bg);
+    }
+
+    .workflow-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .support-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 2px 0;
+    }
+
+    .support-tabs-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      margin-right: 2px;
+      text-transform: uppercase;
     }
 
     .view-tabs button {
@@ -478,10 +500,32 @@
       line-height: 1.2;
     }
 
+    .view-tabs .support-tab {
+      min-height: 42px;
+      min-width: 210px;
+      flex: 0 1 260px;
+      padding: 6px 12px;
+      background: #fff;
+      border-style: dashed;
+    }
+
+    .view-tabs .support-tab .step-main {
+      font-size: 13px;
+    }
+
+    .view-tabs .support-tab .step-status {
+      font-size: 11px;
+    }
+
     .view-tabs button.active {
       border-color: var(--accent);
       background: #e9f4f7;
       color: var(--accent);
+    }
+
+    .view-tabs .support-tab.active {
+      border-style: solid;
+      background: #eef8fb;
     }
 
     .step-main {
@@ -2794,8 +2838,13 @@
       .role-selector { grid-template-columns: 1fr; }
       .process-strip { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
       .process-controls { grid-template-columns: 1fr; width: 100%; }
-      .view-tabs { grid-template-columns: 1fr 1fr; padding: 10px 12px 0; }
+      .view-tabs { padding: 10px 12px 0; }
+      .workflow-tabs { grid-template-columns: 1fr 1fr; }
+      .support-tabs { align-items: stretch; }
+      .support-tabs-label { width: 100%; }
+      .view-tabs .support-tab { flex: 1 1 100%; }
       .view-tabs button { min-height: 68px; }
+      .view-tabs .support-tab { min-height: 54px; }
       .mode-strip { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
       .sticky-kpis { position: static; grid-template-columns: 1fr 1fr; padding: 10px 12px; }
       .sticky-kpi { min-height: 58px; }
