@@ -33,6 +33,19 @@ Für Strom-Flexibilitäten enthält der Prompt zusätzlich eine feste Abgrenzung
 
 Flexibilitäts- und AGNeS-Daten werden im Prompt dedupliziert: Klassische CAPEX-Maßnahmen enthalten keine leeren Default-Felder wie `agnesRelevant=false` oder `agnesRole=offen`. Flexibilitäts-/Netzfahrplanobjekte erscheinen stattdessen in einem eigenen Abschnitt „Strom-Flexibilitätsobjekte / Netzfahrplan / AGNeS“ — auch dann, wenn sie als Kontext- oder Prüfobjekt nicht rechenwirksam sind. Wenn ein Flexibilitätsobjekt wegen fehlendem Netzfahrplan, fehlender Quantifizierung oder ungeklärter AGNeS-/Nachweislogik nicht wirkt, wird der Klärpunkt `strom_flexibility_review` ausgegeben.
 
+## Kontext & Evidenz / Sidecar im Prompt
+
+Wenn der Arbeitsstand Sidecar-Objekte enthält, erzeugt der Prompt einen eigenen Abschnitt **„Kontext & Evidenz / Sidecar“**. Diese Objekte werden nicht als Maßnahmen, CAPEX oder KPI-Beiträge dargestellt. Sie beschreiben Quellen, Datenqualität, Abhängigkeiten, Steuerungsfähigkeit oder spartenspezifischen Kontext, der eine Bewertung stützt oder blockiert.
+
+Der Prompt berücksichtigt dabei die Export- und Sensitivitätslogik der Sidecar-Objekte:
+
+- `exportStatus=excluded` wird nicht in den Prompt übernommen.
+- `exportStatus=sanitized_only` entfernt Detailzusammenfassungen und Quellenreferenzen und hält nur die entscheidungsrelevante Struktur.
+- Sidecar-Objekte bleiben als nicht KPI-wirksam gekennzeichnet, solange keine explizite Rechenwirkung definiert ist.
+- Offene Fragen werden als Arbeits-/Prüfauftrag formuliert, nicht als Beschluss- oder Freigabeaussage.
+
+Für den Prompt-Typ **„Arbeitsstand hinterfragen“** ist der Sidecar besonders relevant: Das KI-System soll prüfen, ob Datenqualität, Quellenlage, Steuerungsfähigkeit oder externe Abhängigkeiten ausreichend dokumentiert sind und welche Fragen an Regulierung, Bilanzierung, Technik, Datenmanagement oder Management zurückgespielt werden müssen.
+
 ## Nutzung
 
 1. Arbeitsstand prüfen.
