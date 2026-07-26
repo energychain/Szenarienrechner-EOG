@@ -455,11 +455,12 @@ describe('scenario and portfolio parameters', () => {
 
   it('marks the case robust only when basis and conservative scenarios both carry', () => {
     const measure = baseMeasure({ cost: 1000, qDirect: 0, eDirect: 0, riskAvoided: 0 });
-    const base = params({ ...baseInputs, returnRate: 8, financingRate: 5, discountRate: 5, horizon: 10 });
+    const base = params({ ...baseInputs, returnRate: 8, financingRate: 5, discountRate: 5, horizon: 10, qDelta: 0.002 });
     const basis = calcPortfolio({ measures: [measure] }, base);
     const conservative = calcPortfolio({ measures: [measure] }, scenarioParams(base, 'konservativ'));
     const metrics = portfolioDecisionMetrics(basis, conservative);
 
+    expect(metrics.scenarioComparison.identicalBasisConservative).toBe(false);
     expect(metrics.basis.verdictClass).toBe('good');
     expect(metrics.conservative.verdictClass).toBe('good');
     expect(metrics.governanceDecision).toMatchObject({
@@ -480,6 +481,30 @@ describe('scenario and portfolio parameters', () => {
 
     expect(metrics.scenarioComparison.identicalBasisConservative).toBe(true);
     expect(metrics.scenarioComparison.note).toContain('Basis- und Konservativ-Szenario sind identisch');
+    expect(metrics.governanceDecision).toMatchObject({
+      status: 'stresstest_offen',
+      cls: 'warn',
+      title: 'Basiscase tragfähig, Stresstest offen'
+    });
+    expect(metrics.governanceDecision.title).not.toBe('Robust tragfähig');
+    expect(metrics.conservativeGate).toBe('stresstest_ausstehend');
+    expect(metrics.interpretationWarnings.map(warning => warning.type)).toContain('conservative_case_missing');
+  });
+
+  it('does not claim robustness when no conservative scenario was checked', () => {
+    const measure = baseMeasure({ cost: 1000, qDirect: 0, eDirect: 0, riskAvoided: 0 });
+    const base = params({ ...baseInputs, returnRate: 8, financingRate: 5, discountRate: 5, horizon: 10 });
+    const basis = calcPortfolio({ measures: [measure] }, base);
+    const metrics = portfolioDecisionMetrics(basis, null);
+
+    expect(metrics.scenarioComparison.note).toContain('Konservatives Szenario nicht geprüft');
+    expect(metrics.governanceDecision).toMatchObject({
+      status: 'stresstest_offen',
+      cls: 'warn',
+      title: 'Basiscase tragfähig, Stresstest offen'
+    });
+    expect(metrics.conservativeGate).toBe('nicht_geprueft');
+    expect(metrics.governanceDecision.title).not.toBe('Robust tragfähig');
   });
 
   it('softens recommendation when gas transformation warnings are open', () => {

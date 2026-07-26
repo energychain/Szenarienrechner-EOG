@@ -60,21 +60,39 @@ function stromMeasure(id, overrides = {}) {
 
 describe('Strom robustness and plausibility checks', () => {
   it('marks identical conservative scenario as missing stress test without affecting gas', () => {
-    const p = params(stromInputs);
-    const model = { measures: [stromMeasure('s1')] };
+    const p = params({ ...stromInputs, returnRate: 8, financingRate: 5, discountRate: 5 });
+    const model = { measures: [stromMeasure('s1', {
+      cost: 1000,
+      riskAvoided: 0,
+      impactAssumptions: [{
+        id: 'proven-q',
+        area: 'qElement',
+        title: 'Belegte Q-Wirkung',
+        amount: 200,
+        confidence: 'proven',
+        governance: 'basis',
+        startYear: 2027,
+        attribution: 100
+      }]
+    })] };
     const basis = calcPortfolio(model, scenarioParams(p, 'basis'));
     const conservative = calcPortfolio(model, scenarioParams(p, 'konservativ'));
     const metrics = portfolioDecisionMetrics(basis, conservative);
 
     expect(metrics.scenarioComparison.identicalBasisConservative).toBe(true);
-    expect(metrics.interpretationWarnings.map(w => w.type)).toContain('strom_conservative_case_missing');
-    expect(metrics.governanceDecision.title).not.toBe('Robust tragfähig');
+    expect(metrics.interpretationWarnings.map(w => w.type)).toContain('conservative_case_missing');
+    expect(metrics.governanceDecision).toMatchObject({
+      status: 'stresstest_offen',
+      cls: 'warn',
+      title: 'Basiscase tragfähig, Stresstest offen'
+    });
 
     const gasP = params({ ...stromInputs, sector: 'gas' });
     const gasBasis = calcPortfolio(model, scenarioParams(gasP, 'basis'));
     const gasConservative = calcPortfolio(model, scenarioParams(gasP, 'konservativ'));
     const gasMetrics = portfolioDecisionMetrics(gasBasis, gasConservative);
-    expect(gasMetrics.interpretationWarnings.map(w => w.type)).not.toContain('strom_conservative_case_missing');
+    expect(gasMetrics.interpretationWarnings.map(w => w.type)).toContain('conservative_case_missing');
+    expect(gasMetrics.governanceDecision.title).not.toBe('Robust tragfähig');
   });
 
   it('adds Strom-specific review warnings for regulatory sensitivity, defaults, risk, useful life and no-regret overuse', () => {

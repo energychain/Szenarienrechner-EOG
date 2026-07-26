@@ -355,7 +355,7 @@ function stromReviewSection(snapshot) {
   const warnings = Array.isArray(review.warningTypes) ? review.warningTypes : [];
   return `
 ## Robustheit / Szenariologik
-${warnings.includes('strom_conservative_case_missing') ? 'Klärpunkt strom_conservative_case_missing: Konservatives Szenario nicht parametrisiert; Basiscase nicht als Robustheitsnachweis lesen.' : 'Konservatives Szenario separat prüfen.'}
+${warnings.includes('conservative_case_missing') || warnings.includes('strom_conservative_case_missing') ? 'Klärpunkt conservative_case_missing: Konservatives Szenario nicht parametrisiert; Basiscase nicht als Robustheitsnachweis lesen.' : 'Konservatives Szenario separat prüfen.'}
 
 ## Regulatorischer Sensitivitätsrahmen Strom / NEST
 ${warnings.includes('strom_regulatory_framework_review') ? 'Klärpunkt strom_regulatory_framework_review: Regulatorischer Parameterstand/Reformrahmen pruefpflichtig; NEST-/CAPEX-/OPEX-/Flexibilitätswirkungen als Sensitivität nachführen.' : 'Kein aggregierter Strom-Regulierungsreview im Snapshot.'}

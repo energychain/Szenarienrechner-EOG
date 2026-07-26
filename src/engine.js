@@ -1231,13 +1231,21 @@ function governanceDecisionFor(basis, conservative, scenarioComparison = null) {
       recommendation: 'Zurückstellen, umplanen oder mit Pflicht-, Risiko- oder Strategiegründen außerhalb der Wirtschaftlichkeitslogik entscheiden.'
     };
   }
-  if (basis.sector === 'strom' && scenarioComparison?.identicalBasisConservative) {
+  if (!conservative || scenarioComparison?.identicalBasisConservative) {
+    const reservations = decisionReservationsFor(basis, scenarioComparison).filter(
+      reservation => !reservation.includes('kein zusätzlicher Stresstest')
+    );
+    const baseRecommendation = 'Konservatives Szenario parametrisieren oder als Klärpunkt conservative_case_missing führen, bevor Robustheit behauptet wird.';
     return {
       status: 'stresstest_offen',
       cls: 'warn',
       title: 'Basiscase tragfähig, Stresstest offen',
-      text: 'Das konservative Szenario weicht derzeit nicht vom Basisszenario ab. Die ausgewiesene Tragfähigkeit ist daher als Basiscase-Ergebnis zu lesen; ein eigenständiger Stresstest liegt noch nicht vor.',
-      recommendation: 'Konservatives Szenario parametrisieren oder als Klärpunkt strom_conservative_case_missing führen, bevor Robustheit behauptet wird.'
+      text: conservative
+        ? 'Das konservative Szenario weicht derzeit nicht vom Basisszenario ab. Die ausgewiesene Tragfähigkeit ist daher als Basiscase-Ergebnis zu lesen; ein eigenständiger Stresstest liegt noch nicht vor.'
+        : 'Es wurde kein konservatives Szenario geprüft. Die ausgewiesene Tragfähigkeit ist daher als Basiscase-Ergebnis zu lesen; ein eigenständiger Stresstest liegt noch nicht vor.',
+      recommendation: reservations.length
+        ? `${baseRecommendation} Weitere Prüfvorbehalte: ${reservations.join(' ')}`
+        : baseRecommendation
     };
   }
   if (conservative && !conservative.carries) {
@@ -1294,13 +1302,13 @@ export function portfolioDecisionMetrics(result, conservativeResult = null) {
   const conservative = conservativeResult ? decisionSnapshot(conservativeResult) : null;
   const scenarioComparison = scenarioComparisonFor(basis, conservative);
   const governanceDecision = governanceDecisionFor(basis, conservative, scenarioComparison);
-  const interpretationWarnings = basis.sector === 'strom' && scenarioComparison.identicalBasisConservative ? [{
-    type: 'strom_conservative_case_missing',
+  const interpretationWarnings = scenarioComparison.identicalBasisConservative ? [{
+    type: 'conservative_case_missing',
     title: 'Konservatives Szenario nicht parametrisiert',
     detail: 'Das konservative Szenario weicht derzeit nicht vom Basisszenario ab; ein eigenständiger Stresstest liegt noch nicht vor.'
   }] : [];
   const conservativeGate = conservative
-    ? scenarioComparison.identicalBasisConservative && basis.sector === 'strom'
+    ? scenarioComparison.identicalBasisConservative
       ? 'stresstest_ausstehend'
       : governanceDecision.status === 'auflage'
         ? 'auflage'
