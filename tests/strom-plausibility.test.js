@@ -118,4 +118,75 @@ describe('Strom robustness and plausibility checks', () => {
     expect(prompt).toContain('strom_regulatory_framework_review');
     expect(prompt).toContain('risk_avoidance_evidence_missing');
   });
+
+  it('segments Strom portfolios from status fields before cost size or activity', () => {
+    const p = params(stromInputs);
+    const result = calcPortfolio({
+      measures: [
+        stromMeasure('scope-big', {
+          cost: 5000,
+          importStatus: 'strategic_scope_candidate',
+          investmentDecisionStatus: 'Scope-Kandidat / fachlich zu prüfen',
+          reportingStatus: 'strategischer Arbeitsstand',
+          orgUnit: 'Zielnetzplanung / strategische Infrastruktur'
+        }),
+        stromMeasure('core-small', {
+          cost: 50,
+          type: 'noRegret',
+          portfolioClassification: '',
+          importStatus: '',
+          investmentDecisionStatus: 'geplant',
+          reportingStatus: 'operatives Maßnahmenportfolio',
+          orgUnit: 'klassische Netzmaßnahme'
+        }),
+        stromMeasure('flex', {
+          effectType: 'flexibility',
+          flexibilityStatus: 'pruefpflichtig',
+          active: false,
+          cost: 0
+        })
+      ]
+    }, p);
+
+    expect(result.portfolioSegmentation.scopeCandidate.count).toBe(1);
+    expect(result.portfolioSegmentation.scopeCandidate.invest).toBe(5000);
+    expect(result.portfolioSegmentation.corePortfolio.count).toBe(1);
+    expect(result.portfolioSegmentation.corePortfolio.invest).toBe(50);
+    expect(result.portfolioSegmentation.flexibilityObject.count).toBe(1);
+    expect(result.portfolioSegmentation.mappingNote).toContain('importStatus');
+  });
+
+  it('marks conservative verdict as stress test pending when basis and conservative are identical', () => {
+    const model = {
+      inputs: stromInputs,
+      measures: [stromMeasure('a'), stromMeasure('b'), stromMeasure('c')]
+    };
+    const redacted = redactModelForPrompt(model, { ...defaultAiPromptOptions, roleId: 'challenge', dataScope: 'standard' });
+    expect(redacted.kpis.conservativeVerdict).toBe('Stresstest ausstehend');
+    const prompt = buildAiPrompt(model, { ...defaultAiPromptOptions, roleId: 'challenge', dataScope: 'standard' });
+    expect(prompt).toContain('Stresstest ausstehend');
+    expect(prompt).not.toContain('"conservativeVerdict": "trägt"');
+  });
+
+  it('aggregates RiskAvoided warnings and exposes useful-life review reliably in prompts', () => {
+    const measures = Array.from({ length: 12 }, (_, index) => stromMeasure(`risk-${index + 1}`, {
+      name: index === 0 ? 'Kommunikations- und Steuerungstechnik' : `Klassische Netzmaßnahme ${index + 1}`,
+      assetType: index === 0 ? '' : 'cable',
+      type: index === 0 ? 'scope_candidate' : 'noRegret',
+      life: index === 0 ? 40 : 40,
+      riskAvoided: index === 0 ? 200 : 20,
+      riskAvoidedEvidenceStatus: 'not_assessed',
+      impactAssumptions: []
+    }));
+    const model = { inputs: stromInputs, measures };
+    const redacted = redactModelForPrompt(model, { ...defaultAiPromptOptions, roleId: 'challenge', dataScope: 'standard' });
+    const prompt = buildAiPrompt(model, { ...defaultAiPromptOptions, roleId: 'challenge', dataScope: 'standard' });
+
+    expect(redacted.stromReview.riskAvoided.missingEvidenceCount).toBe(12);
+    expect(redacted.stromReview.riskAvoided.examples.length).toBeLessThanOrEqual(5);
+    expect(redacted.stromReview.warningTypes).toContain('useful_life_plausibility_review');
+    expect(prompt).toContain('RiskAvoided-Evidenz fehlt bei 12 Maßnahmen');
+    expect(prompt).toContain('useful_life_plausibility_review');
+    expect((prompt.match(/risk_avoidance_evidence_missing/g) || []).length).toBeLessThanOrEqual(4);
+  });
 });

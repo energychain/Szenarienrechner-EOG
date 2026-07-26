@@ -260,12 +260,70 @@ function segmentationForPrompt(segmentation = {}, roundAmounts = true) {
     recurringRegulatoryEogTeur: roundTeur(bucket?.recurringRegulatoryEog || 0, roundAmounts)
   });
   return {
+    mappingNote: segmentation.mappingNote || 'Segmentierung basiert auf importStatus, investmentDecisionStatus, reportingStatus, effectType und orgUnit.',
     corePortfolio: convert(segmentation.corePortfolio),
     scopeCandidate: convert(segmentation.scopeCandidate),
     optionSensitive: convert(segmentation.optionSensitive),
     contextObject: convert(segmentation.contextObject),
-    flexibilityObject: convert(segmentation.flexibilityObject)
+    flexibilityObject: convert(segmentation.flexibilityObject),
+    excluded: convert(segmentation.excluded)
   };
+}
+
+function riskAvoidedSummaryFor(warnings = []) {
+  const riskWarnings = warnings.filter(warning => String(warning.type || '').startsWith('risk_avoidance'));
+  const missing = riskWarnings.filter(warning => warning.type === 'risk_avoidance_evidence_missing');
+  const outliers = riskWarnings.filter(warning => warning.type === 'risk_avoidance_outlier_review');
+  const byMeasure = new Map();
+  riskWarnings.forEach(warning => {
+    const key = warning.measureId || warning.measure || warning.key;
+    if (!key || byMeasure.has(key)) return;
+    byMeasure.set(key, {
+      measureId: warning.measureId || '',
+      measure: warning.measure || 'Maßnahme',
+      kinds: [...new Set(riskWarnings.filter(item => (item.measureId || item.measure || item.key) === key).map(item => item.type === 'risk_avoidance_outlier_review' ? 'outlier' : 'missing_evidence'))]
+    });
+  });
+  return {
+    missingEvidenceCount: missing.length,
+    outlierCount: outliers.length,
+    examples: Array.from(byMeasure.values()).slice(0, 5),
+    caveat: riskWarnings.length
+      ? `RiskAvoided-Evidenz fehlt bei ${missing.length} Maßnahmen; RiskAvoided-Ausreißer identifiziert: ${outliers.length} Maßnahmen. Top-Beispiele sind begrenzt, vollständige Details bleiben im Modell/Reportkontext.`
+      : 'Keine aggregierten RiskAvoided-Hinweise.'
+  };
+}
+
+function compactWarningsForPrompt(warnings = []) {
+  const riskSummary = riskAvoidedSummaryFor(warnings);
+  const compacted = warnings.filter(warning => !String(warning.type || '').startsWith('risk_avoidance'));
+  if (riskSummary.missingEvidenceCount > 0) {
+    compacted.push({
+      type: 'risk_avoidance_evidence_missing',
+      area: 'RiskAvoided-Evidenz',
+      title: 'RiskAvoided-Evidenz aggregiert offen',
+      detail: riskSummary.caveat,
+      count: riskSummary.missingEvidenceCount,
+      examples: riskSummary.examples
+    });
+  }
+  if (riskSummary.outlierCount > 0) {
+    compacted.push({
+      type: 'risk_avoidance_outlier_review',
+      area: 'RiskAvoided-Evidenz',
+      title: 'RiskAvoided-Ausreißer aggregiert prüfen',
+      detail: `RiskAvoided-Ausreißer identifiziert: ${riskSummary.outlierCount} Maßnahmen. Top-Beispiele sind im aggregierten RiskAvoided-Abschnitt enthalten.`,
+      count: riskSummary.outlierCount,
+      examples: riskSummary.examples
+    });
+  }
+  return { warnings: compacted, riskSummary };
+}
+
+function conservativeVerdictText(metrics) {
+  if (metrics?.conservativeGate === 'stresstest_ausstehend' || metrics?.scenarioComparison?.identicalBasisConservative) return 'Stresstest ausstehend';
+  if (!metrics?.conservative) return 'nicht geprüft';
+  return metrics.conservative.carries ? 'trägt' : 'trägt nicht';
 }
 
 function stromReviewSection(snapshot) {
@@ -280,13 +338,15 @@ ${warnings.includes('strom_conservative_case_missing') ? 'Klärpunkt strom_conse
 ${warnings.includes('strom_regulatory_framework_review') ? 'Klärpunkt strom_regulatory_framework_review: Regulatorischer Parameterstand/Reformrahmen pruefpflichtig; NEST-/CAPEX-/OPEX-/Flexibilitätswirkungen als Sensitivität nachführen.' : 'Kein aggregierter Strom-Regulierungsreview im Snapshot.'}
 
 ## Kernportfolio vs. Scope-Kandidaten
+${snapshot.portfolioSegmentation?.mappingNote || 'Segmentierung nach Statusfeldern prüfen.'}
 ${JSON.stringify(snapshot.portfolioSegmentation || {}, null, 2)}
 
 ## Defaultannahmen und Nutzungsdauern
 ${warnings.filter(type => ['strom_default_assumptions_review', 'useful_life_plausibility_review', 'measure_specific_parameters_missing'].includes(type)).join(', ') || 'Keine aggregierten Default-/Nutzungsdauerhinweise.'}
 
 ## RiskAvoided-Evidenz
-${warnings.filter(type => String(type).startsWith('risk_avoidance')).join(', ') || 'Keine aggregierten RiskAvoided-Hinweise.'}
+${review.riskAvoided?.caveat || 'Keine aggregierten RiskAvoided-Hinweise.'}
+${review.riskAvoided?.examples?.length ? `Top-Beispiele: ${review.riskAvoided.examples.map(example => example.measure).join('; ')}` : ''}
 
 ## No-Regret-Klassifikation
 ${warnings.includes('no_regret_overuse_review') ? 'Klärpunkt no_regret_overuse_review: No-Regret-Kategorie differenzieren.' : 'Keine aggregierte No-Regret-Überdehnung im Snapshot.'}
@@ -319,12 +379,16 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
     })) : [];
   const promptFlexibilitySummary = flexibilityPromptSummary(promptFlexibilityObjects);
   const projectMaturityWarnings = params.sector === 'strom' ? projectMaturityWarningsFor(model) : [];
-  const combinedWarnings = [...(basis.warnings || []), ...(metrics.interpretationWarnings || []), ...projectMaturityWarnings, ...(promptFlexibilitySummary.klärpunkte || []).map(type => ({
+  const combinedWarningsRaw = [...(basis.warnings || []), ...(metrics.interpretationWarnings || []), ...projectMaturityWarnings, ...(promptFlexibilitySummary.klärpunkte || []).map(type => ({
     type,
     area: 'Flexibilität / Netzfahrplan',
     title: 'Flexibilitätswirkung nicht rechenwirksam',
     detail: promptFlexibilitySummary.reviewDetail
   }))];
+  const compactedPromptWarnings = params.sector === 'strom'
+    ? compactWarningsForPrompt(combinedWarningsRaw)
+    : { warnings: combinedWarningsRaw, riskSummary: riskAvoidedSummaryFor([]) };
+  const combinedWarnings = compactedPromptWarnings.warnings;
 
   return {
     context: {
@@ -355,7 +419,7 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       recurringRegulatoryEogTeurPa: roundTeur(metrics.recurringRegulatoryEog, merged.roundAmounts),
       recurringIndicativeCashflowTeurPa: roundTeur(metrics.recurringIndicativeCashflow, merged.roundAmounts),
       yearOneOneOffTeur: roundTeur(metrics.yearOneOneOff, merged.roundAmounts),
-      conservativeVerdict: metrics.conservative?.carries ? 'trägt' : 'trägt nicht',
+      conservativeVerdict: conservativeVerdictText(metrics),
       conservativeNpvTeur: roundTeur(metrics.conservative?.npv, merged.roundAmounts),
       cashflowCaveat: metrics.cashflowBasis
     },
@@ -366,7 +430,8 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
     },
     stromReview: params.sector === 'strom' ? {
       warningTypes: [...new Set(combinedWarnings.map(warning => warning.type).filter(Boolean))],
-      notes: combinedWarnings.map(warning => warning.detail || warning.title).filter(Boolean).slice(0, 12)
+      notes: combinedWarnings.map(warning => warning.detail || warning.title).filter(Boolean).slice(0, 12),
+      riskAvoided: compactedPromptWarnings.riskSummary
     } : null,
     portfolioSegmentation: params.sector === 'strom' ? segmentationForPrompt(basis.portfolioSegmentation, merged.roundAmounts) : null,
     measures,
