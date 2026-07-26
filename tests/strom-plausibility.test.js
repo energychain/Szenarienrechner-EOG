@@ -189,4 +189,29 @@ describe('Strom robustness and plausibility checks', () => {
     expect(prompt).toContain('useful_life_plausibility_review');
     expect((prompt.match(/risk_avoidance_evidence_missing/g) || []).length).toBeLessThanOrEqual(4);
   });
+
+  it('normalizes RiskAvoided note formatting in prompts for German management readability', () => {
+    const model = {
+      inputs: stromInputs,
+      measures: [stromMeasure('risk-note', {
+        note: 'Bewertung: Risiko-/Vermeidungseffekt = 100.000 TEUR/a je Maßnahmengruppe; Kostenanteil (100.0/170.0 TEUR) → 58.824 TEUR/a. Status: prüfpflichtiger Arbeitswert.',
+        riskAvoided: 58.824,
+        riskAvoidedEvidenceStatus: 'not_assessed'
+      })]
+    };
+    const prompt = buildAiPrompt(model, {
+      ...defaultAiPromptOptions,
+      roleId: 'challenge',
+      dataScope: 'detailed',
+      omitNotes: false,
+      roundAmounts: false
+    });
+
+    expect(prompt).toContain('100,000 TEUR/a');
+    expect(prompt).toContain('100,0 / 170,0 TEUR');
+    expect(prompt).toContain('58,824 TEUR/a');
+    expect(prompt).toContain('prüfpflichtiger Arbeitswert');
+    expect(prompt).not.toContain('100.000 TEUR/a');
+    expect(prompt).not.toContain('58.824 TEUR/a');
+  });
 });

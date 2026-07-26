@@ -7,6 +7,7 @@ import {
   scenarioParams
 } from './engine.js';
 import { projectPlanEffectiveTaskStates, projectPlanTaskCounts } from './project-plan.js';
+import { normalizeGermanTeurText } from './render-utils.js';
 
 export const llmContextUrl = 'https://energychain.github.io/Szenarienrechner-EOG/llm.txt';
 
@@ -121,7 +122,7 @@ function baseMeasurePromptFields(measure, index, options) {
     directQTeurPa: roundTeur(measure.qDirect, options.roundAmounts),
     directEfficiencyTeurPa: roundTeur(measure.eDirect, options.roundAmounts),
     riskAvoidedTeurPa: roundTeur(measure.riskAvoided, options.roundAmounts),
-    note: options.omitNotes ? '' : (measure.note || '')
+    note: options.omitNotes ? '' : normalizeGermanTeurText(measure.note || '')
   };
 }
 
