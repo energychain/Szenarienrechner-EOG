@@ -3368,8 +3368,24 @@ function renderSensitivityTornado() {
         `;
       }).join('')}
     </div>
+    ${sidecarFinancialSignalsHtml()}
     <p class="hint">${esc(tornado.caveat)}</p>
   `;
+}
+
+function sidecarFinancialSignalsHtml() {
+  const relevant = (sidecar.objects || []).filter(object => {
+    const impact = object.calculationImpact || 'none';
+    return impact !== 'none' || object.sensitivity === 'high' || (object.openQuestions || []).length > 0;
+  });
+  if (!relevant.length) {
+    return '<p class="hint">Sidecar-Finanzsignale: keine offenen oder sensitivitätsrelevanten Sidecar-Objekte im aktuellen Arbeitsstand.</p>';
+  }
+  const rows = relevant.slice(0, 6).map(object => {
+    const links = [...(object.linkedMeasures || []), ...(object.linkedScenarios || [])].filter(Boolean).join(', ') || 'nicht verknüpft';
+    return `<li><strong>${esc(object.title)}</strong> · Rechenwirkung ${esc(object.calculationImpact || 'none')} · Sensitivität ${esc(object.sensitivity || 'internal')} · ${esc(links)}</li>`;
+  }).join('');
+  return `<div class="waterfall-summary"><strong>Sidecar-Finanzsignale</strong><p class="hint">Sidecar-Objekte werden nicht automatisch KPI-wirksam. Für die Tornado-Einordnung zählen sie als Priorisierungshinweis, sobald calculationImpact, Sensitivität oder offene Fragen auf werttreibende Annahmen zeigen.</p><ul>${rows}</ul></div>`;
 }
 
 function renderMeasureDrilldown(measure) {
