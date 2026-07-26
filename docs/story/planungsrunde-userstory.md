@@ -121,6 +121,28 @@ Typische Nutzung in dieser Story:
 
 Damit wird die App zum wiederaufnahmefähigen Arbeitsstand: Kennzahlen, Annahmen, Report und Projektsteuerung bleiben in einer Datei verbunden.
 
+## Kontext & Evidenz: Sidecar als Arbeitsraum für Quellen, Datenqualität und Steuerungsfähigkeit
+
+Nicht jedes bewertungsrelevante Wissen ist eine Maßnahme. In einer Planungsrunde tauchen Quellen, Datenqualitätsfragen, vorgelagerte Netzthemen, Anschlussanfragen, Asset-Mapping, Steuerbarkeit, Wärmeplanung oder externe Abhängigkeiten auf. Diese Informationen dürfen nicht in die Maßnahmenliste „hineingedrückt“ werden, weil sie sonst wie CAPEX- oder EOG-wirksame Objekte wirken könnten. Sie dürfen aber auch nicht außerhalb des Arbeitsstands verschwinden.
+
+**Situation im EVU:** Während der Datenerhebung stellt sich heraus, dass eine Maßnahme von einer Lastanfrage, einem GIS-/Anlagenbuchhaltungs-Mapping, einem Netzfahrplan, einem Stilllegungsgebiet oder einer externen Quelle abhängt. Die Information ist entscheidungsrelevant, aber noch keine Investitionsmaßnahme.
+
+**Fachliche Frage:** Ist dieser Punkt eine Maßnahme oder ein Kontext-/Evidenzobjekt? Wird daraus sofort eine Rechenwirkung, oder ist es zunächst ein Prüfauftrag für Datenqualität, Quelle, Steuerungsfähigkeit oder Szenarioannahme?
+
+**App-Beitrag:** Der Bereich **„Kontext & Evidenz“** führt solche Sidecar-Objekte getrennt von der Maßnahmenliste. Jedes Objekt erhält Sparte, Objektklasse, Status, Evidenzstatus, Rechenwirkung, Sensitivität, Exportstatus, Quellenreferenzen, offene Fragen und optionale Verknüpfungen zu Maßnahmen oder Szenarien. Strom nutzt andere Einstiegskategorien als Gas: Bei Strom stehen zum Beispiel Netzkoppelung, Lastanfragen, Steuerbarkeit, Redispatch, iMSys/CLS, Netzfahrplan oder Datenqualität im Vordergrund; bei Gas eher Kunden-/Lastpfade, Stilllegung/Rückbau, Wärmeplanung, Umwidmung/Wasserstofffähigkeit, No-Regret-Kontext oder Asset-Mapping.
+
+**Ergebnis:** Der Arbeitsstand kann erklären, welche Quellen und Datenpfade eine Bewertung stützen oder blockieren, ohne die CAPEX-, OPEX-, RAB-, EOG- oder Portfolio-KPIs zu verunreinigen. Sidecar-Objekte sind standardmäßig nicht KPI-wirksam. Eine Rechenwirkung entsteht nur, wenn sie später bewusst quantifiziert, verknüpft und explizit aktiviert würde.
+
+**Beraterhinweis:** Ein Senior Consultant würde Kontextwissen nicht als Freitext am Rand stehen lassen. Er würde aber genauso verhindern, dass Datenqualitäts- oder Prozessobjekte wie Investitionsmaßnahmen aussehen. Der Sidecar schafft genau diese Zwischenebene: sichtbar, prüfbar, exportierbar und verknüpfbar — aber nicht automatisch entscheidungs- oder rechenwirksam.
+
+Typische Nutzung in dieser Story:
+
+- In der Datenerhebung wird eine Datenquelle als Sidecar-Quelle geführt, statt als Maßnahme.
+- Eine unklare Anlagenklassenzuordnung wird als Datenqualitätsobjekt mit Verantwortlichkeit dokumentiert.
+- Ein Strom-Netzfahrplan oder eine Lastanfrage wird mit relevanten Maßnahmen verknüpft, bleibt aber ohne validierte Wirkung nicht KPI-wirksam.
+- Ein Gas-Stilllegungs- oder Wärmeplanungskontext wird im Sidecar sichtbar, während konkrete Rückbau- oder Reinvestitionsmaßnahmen separat bewertet werden.
+- Management Report und KI-Prompt erhalten eine verdichtete Sidecar-Zusammenfassung, keine ungefilterte Detailablage.
+
 ## Gas-Transformationspfad: Stilllegung, Rückbau und Rückstellungen strukturieren
 
 Bei Gasnetzen reicht eine klassische Reinvestitionssicht nicht aus. Eine Maßnahme kann Weiterbetrieb sichern, eine Stilllegung vorbereiten, physischen Rückbau auslösen, im Boden belassen werden oder als H2-/Umwidmungsoption offen bleiben. Gleichzeitig entstehen bilanzielle und regulatorische Prüffragen: Rückstellungsfähigkeit, Wegfall der sogenannten Ewigkeitsvermutung, Kostenabgrenzung zwischen Stilllegung und Rückbau, KANU-/AfA-Wirkung, KAnEu-/Ist-Kosten-Behandlung und spätere Netzentgeltwirkung.

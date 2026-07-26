@@ -97,6 +97,8 @@ const aiPrompts = readFileSync('docs/ai-prompts.md', 'utf8');
 assert(aiPrompts.includes('KI-Prompt erstellen'), 'AI prompt doc must document the menu action.');
 assert(aiPrompts.includes('keine automatische Übertragung'), 'AI prompt doc must document no automatic transfer.');
 assert(aiPrompts.includes('llm.txt'), 'AI prompt doc must link the LLM context file.');
+assert(aiPrompts.includes('Kontext & Evidenz / Sidecar'), 'AI prompt doc must explain Sidecar prompt handling.');
+assert(aiPrompts.includes('exportStatus=sanitized_only'), 'AI prompt doc must explain sanitized Sidecar prompt export.');
 assert(existsSync('llm.txt') && existsSync('llms.txt'), 'LLM context files must exist at repository root.');
 
 const pilotProgram = readFileSync('docs/pilot-program.md', 'utf8');
@@ -114,6 +116,7 @@ assert(story.includes('Projektplan als Struktur-Element'), 'Story doc must expla
 assert(story.includes('Gas-Transformationspfad: Stilllegung, Rückbau und Rückstellungen strukturieren'), 'Story doc must explain the Gas transformation path.');
 assert(story.includes('Wegfall der sogenannten Ewigkeitsvermutung'), 'Story doc must mention the Gas eternity-assumption review point.');
 assert(story.includes('KI-Prompt-Export als Übersetzungsschicht'), 'Story doc must explain the AI prompt export as translation layer.');
+assert(story.includes('Kontext & Evidenz: Sidecar als Arbeitsraum'), 'Story doc must explain Kontext & Evidenz / Sidecar usage.');
 assert(story.includes('nächste fällige Aufgabe'), 'Story doc must explain project plan next-task guidance.');
 for (const id of ['kickoff', 'initialisierung', 'datenerhebung', 'massnahmenbewertung', 'technik-rueckkopplung', 'konsolidierung', 'entscheidungsvorlage', 'gremium', 'archiv']) {
   assert(story.includes(`id="${id}"`), `Story doc is missing anchor ${id}.`);
