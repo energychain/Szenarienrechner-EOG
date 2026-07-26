@@ -23,4 +23,25 @@ describe('contextual field help', () => {
       expect(allHelp).not.toContain(term);
     }
   });
+
+  it('explains Sidecar fields through inline info help', () => {
+    [
+      'sidecarTitle',
+      'sidecarDivision',
+      'sidecarType',
+      'sidecarStatus',
+      'sidecarEvidenceStatus',
+      'sidecarCalculationImpact',
+      'sidecarSensitivity',
+      'sidecarExportStatus',
+      'sidecarLinkedMeasures',
+      'sidecarOpenQuestions',
+    ].forEach(id => {
+      expect(hasFieldHelp(id)).toBe(true);
+    });
+
+    expect(fieldHelpText('sidecarCalculationImpact')).toContain('nicht KPI-wirksam');
+    expect(fieldHelpText('sidecarExportStatus')).toContain('sanitisiert');
+    expect(fieldHelpText('sidecarLinkedMeasures')).toContain('Verknüpfung');
+  });
 });
