@@ -141,6 +141,10 @@
       <span class="step-main">Report</span>
       <span class="step-status" id="status-report">noch offen</span>
     </button>
+    <button type="button" class="view-tab" data-view="sidecar">
+      <span class="step-main">Kontext & Evidenz</span>
+      <span class="step-status" id="status-sidecar">0 Objekte</span>
+    </button>
     <button type="button" class="view-tab" data-view="projectPlan">
       <span class="step-main">Projektplan</span>
       <span class="step-status" id="status-projectPlan">Plan offen</span>
@@ -723,6 +727,27 @@
         </div>
       </div>
       <div id="reportPage" class="report-page"></div>
+    </section>
+
+    <section class="panel app-view hidden" data-view-panel="sidecar" aria-label="Kontext und Evidenz">
+      <div class="section-head-row">
+        <div>
+          <h2>Kontext & Evidenz</h2>
+          <p class="hint">Sidecar-Objekte halten Evidenz, Datenqualität, Abhängigkeiten und Steuerungsfähigkeit getrennt von klassischen Maßnahmen. Sie sind standardmäßig nicht KPI-wirksam.</p>
+        </div>
+        <button type="button" id="addSidecarObject" class="primary">Sidecar-Objekt hinzufügen</button>
+      </div>
+      <div id="sidecarSummaryCards" class="summary-card-grid" aria-label="Sidecar-Zusammenfassung"></div>
+      <div class="catalog-controls">
+        <select id="sidecarDivisionFilter" aria-label="Sparte filtern">
+          <option value="all">alle Sparten</option>
+          <option value="strom">Strom</option>
+          <option value="gas">Gas</option>
+          <option value="cross_division">spartenübergreifend</option>
+        </select>
+      </div>
+      <div id="sidecarBody" class="clarification-list"></div>
+      <p class="hint warning">Rechenwirkung entsteht erst durch explizite Aktivierung und definierte Mapping-Logik. In dieser Stufe bleibt der Sidecar passiv und verändert keine EOG-/KPI-Ergebnisse.</p>
     </section>
 
     <section class="panel app-view hidden" data-view-panel="projectPlan" aria-label="Projektplan Planungsrunde">

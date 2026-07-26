@@ -90,6 +90,13 @@ import {
 } from './render-utils.js';
 import { buildAiPrompt, defaultAiPromptOptions, promptRoles } from './ai-prompt-generator.js';
 import { spreadsheetTables, tablesToCsvZip, tablesToXlsx } from './spreadsheet-export.js';
+import {
+  normalizeSidecar,
+  normalizeSidecarObject,
+  sidecarProfiles,
+  sidecarSummary,
+  sanitizeSidecarForExport
+} from './sidecar.js';
 
 const inputIds = [
   'sector', 'regulationProcedure', 'baseYear', 'baseEog', 'rab', 'returnRate', 'financingRate',
@@ -190,6 +197,9 @@ let collapsedCatalogGroups = {};
 let quickCatalogMode = '';
 let bulkImportState = null;
 let importMapping = {};
+let sidecar = normalizeSidecar();
+let selectedSidecarId = '';
+let sidecarFilterDivision = 'all';
 
 const bulkImportSteps = ['Einlesen', 'Spalten zuordnen', 'Prüfbericht'];
 const importFields = [
@@ -1806,6 +1816,8 @@ function currentModelData() {
     process: structuredClone(processState),
     projectPlan: structuredClone(projectPlan),
     activeProjectTaskId,
+    sidecar: normalizeSidecar(sidecar),
+    selectedSidecarId,
     strategy: structuredClone(strategy),
     committee: structuredClone(committee),
     importMapping: structuredClone(importMapping),
@@ -1849,6 +1861,8 @@ function legacyModelFromState(state) {
     process: state.process || defaultProcessState(),
     projectPlan: state.projectPlan,
     activeProjectTaskId: state.activeProjectTaskId || '',
+    sidecar: state.sidecar || {},
+    selectedSidecarId: state.selectedSidecarId || '',
     strategy: state.strategy || defaultStrategy(),
     committee: state.committee || defaultCommittee(),
     importMapping: state.importMapping || {},
@@ -1905,7 +1919,7 @@ function applyModelState(state) {
     ? model.selectedId
     : measures[0]?.id;
   scenario = ['basis', 'konservativ', 'wert'].includes(model.scenario) ? model.scenario : 'basis';
-  activeView = ['basis', 'measures', 'results', 'report', 'projectPlan', 'expertWork'].includes(model.activeView) ? model.activeView : activeView;
+  activeView = ['basis', 'measures', 'results', 'report', 'projectPlan', 'expertWork', 'sidecar'].includes(model.activeView) ? model.activeView : activeView;
   reportMode = ['management', 'committee'].includes(model.reportMode) ? model.reportMode : 'management';
   meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(model.meetingFocus) ? model.meetingFocus : 'management';
   meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
@@ -1914,6 +1928,8 @@ function applyModelState(state) {
   processState = normalizeProcessState(model.process);
   projectPlan = normalizeProjectPlan(model.projectPlan, Number(model.inputs?.baseYear || el.baseYear.value || 2027));
   activeProjectTaskId = findProjectPlanTask(projectPlan, model.activeProjectTaskId)?.task.id || '';
+  sidecar = normalizeSidecar(model.sidecar);
+  selectedSidecarId = sidecar.objects.some(object => object.id === model.selectedSidecarId) ? model.selectedSidecarId : (sidecar.objects[0]?.id || '');
   strategy = normalizeStrategy(model.strategy);
   committee = normalizeCommittee(model.committee);
   importMapping = model.importMapping && typeof model.importMapping === 'object' ? structuredClone(model.importMapping) : {};
@@ -4632,6 +4648,116 @@ function renderScenarios() {
   document.getElementById('scenarioBody').innerHTML = rows.join('');
 }
 
+function sidecarTypeLabel(object) {
+  const profile = sidecarProfiles[object.division];
+  return profile?.categoryLabels?.[object.type] || object.type;
+}
+
+function newSidecarObjectTemplate() {
+  const division = el.sector?.value === 'strom' ? 'strom' : 'gas';
+  const type = division === 'strom' ? 'data_quality' : 'gas_load_path';
+  return normalizeSidecarObject({
+    id: 'ctx_' + Date.now().toString(36),
+    type,
+    division,
+    title: division === 'strom' ? 'Neuer Strom-Kontext' : 'Neuer Gas-Kontext',
+    status: 'pruefpflichtig',
+    evidenceStatus: 'missing',
+    calculationImpact: 'none',
+    sensitivity: 'internal',
+    exportStatus: 'sanitized_only'
+  }, sidecar.objects.length);
+}
+
+function addSidecarObject() {
+  const object = newSidecarObjectTemplate();
+  sidecar = normalizeSidecar({ ...sidecar, objects: [...sidecar.objects, object] });
+  selectedSidecarId = object.id;
+  renderAll();
+  setStorageStatus('Sidecar-Objekt wurde hinzugefügt.');
+}
+
+function updateSidecarObject(id, patchFields = {}, rerender = true) {
+  sidecar = normalizeSidecar({
+    ...sidecar,
+    objects: sidecar.objects.map(object => object.id === id ? normalizeSidecarObject({ ...object, ...patchFields }) : object)
+  });
+  if (rerender) renderAll();
+  else saveToBrowser(true);
+}
+
+function renderSidecar() {
+  sidecar = normalizeSidecar(sidecar);
+  const summary = sidecarSummary(sidecar);
+  const status = document.getElementById('status-sidecar');
+  if (status) status.textContent = `${summary.total} Objekte · ${summary.openQuestions} Prüfpunkte`;
+  const cards = document.getElementById('sidecarSummaryCards');
+  if (cards) {
+    cards.innerHTML = `
+      <div class="summary-card"><strong>${summary.total}</strong><span>Sidecar-Objekte</span></div>
+      <div class="summary-card"><strong>${summary.openQuestions}</strong><span>offene Prüfpunkte</span></div>
+      <div class="summary-card"><strong>${summary.dataQualityOpen}</strong><span>Datenqualität offen</span></div>
+      <div class="summary-card"><strong>${summary.exportRestricted}</strong><span>Export eingeschränkt</span></div>
+    `;
+  }
+  const filter = document.getElementById('sidecarDivisionFilter');
+  if (filter && filter.value !== sidecarFilterDivision) filter.value = sidecarFilterDivision;
+  const body = document.getElementById('sidecarBody');
+  if (!body) return;
+  const objects = sidecar.objects.filter(object => sidecarFilterDivision === 'all' || object.division === sidecarFilterDivision);
+  body.innerHTML = objects.length ? objects.map(object => `
+    <article class="clarification-card ${object.id === selectedSidecarId ? 'active' : ''}" data-sidecar-card="${esc(object.id)}">
+      <div class="section-head-row">
+        <div>
+          <p class="eyebrow">${esc(object.division)} · ${esc(sidecarTypeLabel(object))}</p>
+          <h3>${esc(object.title)}</h3>
+          <p>${esc(object.summary || 'Noch keine Kurzbeschreibung hinterlegt.')}</p>
+        </div>
+        <div class="pill-row compact">
+          <span class="pill">${esc(object.status)}</span>
+          <span class="pill">Evidenz: ${esc(object.evidenceStatus)}</span>
+          <span class="pill">Rechenwirkung: ${esc(object.calculationImpact)}</span>
+          <span class="pill">Export: ${esc(object.exportStatus)}</span>
+        </div>
+      </div>
+      <details ${object.id === selectedSidecarId ? 'open' : ''}>
+        <summary>Bearbeiten / Verknüpfen</summary>
+        <div class="grid2">
+          <div><label>Titel<input data-sidecar-field="title" data-sidecar-id="${esc(object.id)}" value="${esc(object.title)}"></label></div>
+          <div><label>Sparte<select data-sidecar-field="division" data-sidecar-id="${esc(object.id)}"><option value="strom" ${object.division === 'strom' ? 'selected' : ''}>Strom</option><option value="gas" ${object.division === 'gas' ? 'selected' : ''}>Gas</option><option value="cross_division" ${object.division === 'cross_division' ? 'selected' : ''}>spartenübergreifend</option></select></label></div>
+          <div><label>Typ<input data-sidecar-field="type" data-sidecar-id="${esc(object.id)}" value="${esc(object.type)}"></label></div>
+          <div><label>Status<select data-sidecar-field="status" data-sidecar-id="${esc(object.id)}"><option value="context" ${object.status === 'context' ? 'selected' : ''}>Kontext</option><option value="pruefpflichtig" ${object.status === 'pruefpflichtig' ? 'selected' : ''}>prüfpflichtig</option><option value="quantified" ${object.status === 'quantified' ? 'selected' : ''}>quantifiziert</option><option value="active" ${object.status === 'active' ? 'selected' : ''}>aktiv</option><option value="archived" ${object.status === 'archived' ? 'selected' : ''}>archiviert</option></select></label></div>
+          <div><label>Evidenzstatus<select data-sidecar-field="evidenceStatus" data-sidecar-id="${esc(object.id)}"><option value="missing" ${object.evidenceStatus === 'missing' ? 'selected' : ''}>fehlt</option><option value="stated" ${object.evidenceStatus === 'stated' ? 'selected' : ''}>benannt</option><option value="source_available" ${object.evidenceStatus === 'source_available' ? 'selected' : ''}>Quelle verfügbar</option><option value="validated" ${object.evidenceStatus === 'validated' ? 'selected' : ''}>validiert</option><option value="conflicting" ${object.evidenceStatus === 'conflicting' ? 'selected' : ''}>widersprüchlich</option><option value="stale" ${object.evidenceStatus === 'stale' ? 'selected' : ''}>veraltet</option></select></label></div>
+          <div><label>Rechenwirkung<select data-sidecar-field="calculationImpact" data-sidecar-id="${esc(object.id)}"><option value="none" ${object.calculationImpact === 'none' ? 'selected' : ''}>keine</option><option value="indirect" ${object.calculationImpact === 'indirect' ? 'selected' : ''}>indirekt</option><option value="scenario_driver" ${object.calculationImpact === 'scenario_driver' ? 'selected' : ''}>Szenariotreiber</option><option value="quantified" ${object.calculationImpact === 'quantified' ? 'selected' : ''}>quantifiziert</option><option value="active" ${object.calculationImpact === 'active' ? 'selected' : ''}>aktiv</option></select></label></div>
+          <div><label>Sensitivität<select data-sidecar-field="sensitivity" data-sidecar-id="${esc(object.id)}"><option value="public" ${object.sensitivity === 'public' ? 'selected' : ''}>öffentlich</option><option value="internal" ${object.sensitivity === 'internal' ? 'selected' : ''}>intern</option><option value="private" ${object.sensitivity === 'private' ? 'selected' : ''}>privat</option><option value="confidential" ${object.sensitivity === 'confidential' ? 'selected' : ''}>vertraulich</option></select></label></div>
+          <div><label>Exportstatus<select data-sidecar-field="exportStatus" data-sidecar-id="${esc(object.id)}"><option value="allowed" ${object.exportStatus === 'allowed' ? 'selected' : ''}>erlaubt</option><option value="sanitized_only" ${object.exportStatus === 'sanitized_only' ? 'selected' : ''}>nur sanitisiert</option><option value="excluded" ${object.exportStatus === 'excluded' ? 'selected' : ''}>ausgeschlossen</option></select></label></div>
+          <div class="wide-field"><label>Kurzbeschreibung<textarea data-sidecar-field="summary" data-sidecar-id="${esc(object.id)}" rows="2">${esc(object.summary)}</textarea></label></div>
+          <div class="wide-field"><label>Verknüpfte Maßnahmen-IDs<input data-sidecar-field="linkedMeasures" data-sidecar-id="${esc(object.id)}" value="${esc(object.linkedMeasures.join(', '))}"></label></div>
+          <div class="wide-field"><label>Offene Prüfpunkte<input data-sidecar-field="openQuestions" data-sidecar-id="${esc(object.id)}" value="${esc(object.openQuestions.join('; '))}"></label></div>
+        </div>
+      </details>
+    </article>
+  `).join('') : '<div class="empty-state"><strong>Noch keine Sidecar-Objekte.</strong><small>Kontext- und Evidenzwissen kann hier getrennt von Maßnahmen erfasst werden.</small></div>';
+}
+
+function sidecarReportSummaryHtml() {
+  const exportSidecar = sanitizeSidecarForExport(sidecar, 'sanitized_external');
+  const summary = sidecarSummary(exportSidecar);
+  const open = exportSidecar.objects.filter(object => object.openQuestions.length || ['missing', 'conflicting', 'stale'].includes(object.evidenceStatus));
+  return `
+    <section class="report-section">
+      <h2>Kontext & Evidenz</h2>
+      <p class="hint">Sidecar-Objekte sind Kontext-, Evidenz- und Datenqualitätsobjekte. Sie sind nicht als klassische Maßnahmen zu lesen und gehen nicht in CAPEX-/EOG-/KPI-Summen ein.</p>
+      <div class="report-summary">
+        <div class="report-box"><strong>Evidenzlage</strong><p>${summary.total} Objekte, davon ${summary.byEvidenceStatus.validated || 0} validiert und ${summary.byEvidenceStatus.missing || 0} ohne Evidenz.</p></div>
+        <div class="report-box"><strong>Datenqualität</strong><p>${summary.dataQualityOpen} offene Datenqualitätsobjekte; ${summary.openQuestions} offene Prüfpunkte.</p></div>
+        <div class="report-box"><strong>Rechenwirkung</strong><p>${summary.calculationImpact.none || 0} ohne Rechenwirkung, ${summary.calculationImpact.indirect || 0} indirekt, ${summary.calculationImpact.scenario_driver || 0} Szenariotreiber, ${summary.calculationImpact.active || 0} aktiv markiert.</p></div>
+      </div>
+      ${open.length ? `<ul>${open.slice(0, 6).map(object => `<li>${esc(object.division)} · ${esc(sidecarTypeLabel(object))}: ${esc(object.title)} — Arbeits-/Prüfauftrag offen</li>`).join('')}</ul>` : '<p class="hint">Keine offenen Sidecar-Prüfpunkte im sanitisierten Exportprofil.</p>'}
+    </section>
+  `;
+}
+
 function renderReportMode() {
   document.querySelectorAll('.report-mode').forEach(button => {
     button.classList.toggle('active', button.dataset.reportMode === reportMode);
@@ -5153,6 +5279,8 @@ function renderReport(result, first, spread, decision, metrics) {
       </div>
     </section>
 
+    ${sidecarReportSummaryHtml()}
+
     <section class="report-section">
       <h2>Regulatorische Wirkannahmen</h2>
       <p class="hint">Diese Datenpunkte holen VNB-spezifisches Wissen ab. Sie fließen je nach Vertrauen und Governance-Status in Basis-, konservatives oder Wert-Szenario ein.</p>
@@ -5291,6 +5419,7 @@ function renderAll(persist = true) {
   renderPortfolio();
   renderProcessUx();
   renderProjectPlan();
+  renderSidecar();
   renderChangeSinceSeen();
   renderMaturityAndClarifications();
   renderReportMode();
@@ -5496,6 +5625,31 @@ document.getElementById('projectPlanBody').addEventListener('click', event => {
   if (!button) return;
   event.preventDefault();
   openProjectTask(button.dataset.projectJump);
+});
+document.getElementById('addSidecarObject')?.addEventListener('click', addSidecarObject);
+document.getElementById('sidecarDivisionFilter')?.addEventListener('change', event => {
+  sidecarFilterDivision = event.target.value;
+  renderSidecar();
+});
+document.getElementById('sidecarBody')?.addEventListener('focusin', event => {
+  const id = event.target.dataset.sidecarId || event.target.closest('[data-sidecar-card]')?.dataset.sidecarCard;
+  if (id) selectedSidecarId = id;
+});
+document.getElementById('sidecarBody')?.addEventListener('input', event => {
+  const field = event.target.dataset.sidecarField;
+  const id = event.target.dataset.sidecarId;
+  if (!field || !id) return;
+  const value = ['linkedMeasures', 'linkedScenarios', 'sourceRefs'].includes(field)
+    ? parseTags(event.target.value)
+    : field === 'openQuestions'
+      ? String(event.target.value || '').split(';').map(item => item.trim()).filter(Boolean)
+      : event.target.value;
+  updateSidecarObject(id, { [field]: value }, false);
+});
+document.getElementById('sidecarBody')?.addEventListener('change', event => {
+  const field = event.target.dataset.sidecarField;
+  const id = event.target.dataset.sidecarId;
+  if (field && id) updateSidecarObject(id, { [field]: event.target.value });
 });
 enhanceHelpLabels();
 loadRole();
