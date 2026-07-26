@@ -25,6 +25,7 @@ Ein Projektstand kann enthalten:
 - Historienereignisse,
 - Prozessstatus mit kurzer Arbeitsstandnotiz und nächstem Abstimmungsschritt,
 - Projektplan der Planungsrunde mit Meilensteinen, Aufgaben, Rollen, Fristen und Deep-Links,
+- Sidecar-Kontext für Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit und offene Prüfpunkte,
 - Aktualitäts-/Release-Kontext (`lastReleaseCheck`) und Build-/Ruleset-Provenienz,
 - Report- und Gremienvorlagenzustand.
 
@@ -37,6 +38,44 @@ Aktueller Modellstand (`version: 8`) führt zusätzlich fachlich freigegebene De
 - Strom-Flexibilitätsfelder wie `flexibilityStatus`, `networkScheduleStatus`, `networkConstraintRef`, `avoidedCapexTeur`, `deferredCapexTeur`, `flexOpexPaTeur`, `agnesRelevant`, `agnesRole` und `agnesIntegrationStatus` dokumentieren OPEX-gegen-CAPEX-Substitutionen. Ohne validierten Netzfahrplan und quantifizierte Werte bleibt die Wirkung nicht rechenwirksam.
 
 Die fachlich freigegebene Vorbelegung für neue Modelle lautet `capexLagYears = 0`, `opexLagYears = 3`, `qeLagYears = 2`. Diese Werte sind prüfpflichtige Startannahmen; importierte Altmodelle können sie überschreiben oder bei Migration die aktuellen Defaults übernehmen.
+
+## Sidecar: Kontext & Evidenz
+
+`model.sidecar` ist optional. Fehlt der Block in älteren JSON-Dateien, interpretiert die App ihn als leeren Sidecar:
+
+```json
+{
+  "version": "1.0",
+  "objects": [],
+  "sources": [],
+  "links": [],
+  "summary": {}
+}
+```
+
+Sidecar-Objekte sind keine klassischen Maßnahmen. Sie dokumentieren Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit, Transformationspfade oder offene Prüfpunkte. Sie gehen nicht automatisch in CAPEX, OPEX, RAB, Q-Komponente, EOG-Wirkung oder Portfolio-KPIs ein. `calculationImpact = none` und `indirect` sind nie KPI-wirksam; eine Wirkung entsteht erst durch explizite Aktivierung und definierte Mapping-Logik.
+
+Mindestfelder je Objekt:
+
+```json
+{
+  "id": "ctx_unique_id",
+  "type": "data_quality",
+  "division": "strom",
+  "title": "Kurzbezeichnung",
+  "status": "context",
+  "evidenceStatus": "missing",
+  "calculationImpact": "none",
+  "linkedMeasures": [],
+  "linkedScenarios": [],
+  "sourceRefs": [],
+  "openQuestions": [],
+  "sensitivity": "internal",
+  "exportStatus": "sanitized_only"
+}
+```
+
+Für externe oder KI-nahe Exporte werden Sidecar-Daten verdichtet bzw. sanitisiert: Objekte mit `exportStatus = excluded` werden ausgelassen, `sanitized_only` entfernt sensible Zusammenfassungen und Quellenreferenzen. Der vollständige interne JSON-Export bleibt als Arbeitsstand möglich.
 
 ## Minimaler Projektumschlag
 

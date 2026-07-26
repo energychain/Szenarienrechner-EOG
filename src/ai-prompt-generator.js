@@ -8,6 +8,7 @@ import {
 } from './engine.js';
 import { projectPlanEffectiveTaskStates, projectPlanTaskCounts } from './project-plan.js';
 import { normalizeGermanTeurText } from './render-utils.js';
+import { normalizeSidecar, sanitizeSidecarForExport, sidecarSummary } from './sidecar.js';
 
 export const llmContextUrl = 'https://energychain.github.io/Szenarienrechner-EOG/llm.txt';
 
@@ -271,6 +272,27 @@ function segmentationForPrompt(segmentation = {}, roundAmounts = true) {
   };
 }
 
+function sidecarForPrompt(model, profile = 'sanitized_external') {
+  const sanitized = sanitizeSidecarForExport(normalizeSidecar(model?.sidecar), profile);
+  return {
+    summary: sidecarSummary(sanitized),
+    objects: sanitized.objects.slice(0, 12).map(object => ({
+      id: object.id,
+      type: object.type,
+      division: object.division,
+      title: object.title,
+      status: object.status,
+      evidenceStatus: object.evidenceStatus,
+      calculationImpact: object.calculationImpact,
+      summary: object.summary,
+      linkedMeasures: object.linkedMeasures,
+      openQuestions: object.openQuestions,
+      exportStatus: object.exportStatus
+    })),
+    caveat: 'Sidecar-Objekte sind standardmäßig nicht KPI-wirksam. Sie beschreiben Kontext, Evidenz, Datenqualität und Steuerungsfähigkeit; Rechenwirkung entsteht nur durch explizite Aktivierung und definierte Mapping-Logik.'
+  };
+}
+
 function riskAvoidedSummaryFor(warnings = []) {
   const riskWarnings = warnings.filter(warning => String(warning.type || '').startsWith('risk_avoidance'));
   const missing = riskWarnings.filter(warning => warning.type === 'risk_avoidance_evidence_missing');
@@ -435,6 +457,7 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       riskAvoided: compactedPromptWarnings.riskSummary
     } : null,
     portfolioSegmentation: params.sector === 'strom' ? segmentationForPrompt(basis.portfolioSegmentation, merged.roundAmounts) : null,
+    sidecar: sidecarForPrompt(model, 'sanitized_external'),
     measures,
     flexibilityObjects: promptFlexibilityObjects,
     projectPlan: merged.includeProjectPlan ? summarizeProjectPlan(model?.projectPlan) : null
@@ -461,6 +484,17 @@ ${summary.caveat || ''}
 ${summary.klärpunkte?.length ? `Klärpunkt: ${summary.klärpunkte.join(', ')}. ${summary.reviewDetail || ''}` : ''}
 
 ${lines.join('\n')}
+`;
+}
+
+function sidecarPromptSection(snapshot) {
+  const sidecar = snapshot.sidecar || { summary: { total: 0 }, objects: [] };
+  if (!sidecar.summary?.total) return '';
+  return `
+## Kontext & Evidenz / Sidecar
+${sidecar.caveat}
+Aggregat: ${sidecar.summary.total} Objekte; offene Prüfpunkte ${sidecar.summary.openQuestions || 0}; Datenqualität offen ${sidecar.summary.dataQualityOpen || 0}; exporteingeschränkt ${sidecar.summary.exportRestricted || 0}.
+${sidecar.objects.map(object => `- ${object.division} · ${object.type}: ${object.title}; Evidenz ${object.evidenceStatus}; Rechenwirkung ${object.calculationImpact}; Status ${object.status}; ${object.summary || ''}`).join('\n')}
 `;
 }
 
@@ -503,6 +537,7 @@ Datenumfang: ${dataScopeHint(merged.dataScope)}
 Redaktion: Maßnahmennamen ${merged.anonymizeMeasures ? 'anonymisiert' : 'original'}, Beträge ${merged.roundAmounts ? 'gerundet' : 'nicht gerundet'}, Notizen ${merged.omitNotes ? 'ausgelassen' : 'enthalten'}.
 ${stromReviewSection(snapshot)}
 ${flexibilityPromptSection(snapshot)}
+${sidecarPromptSection(snapshot)}
 ## Planungsdaten als JSON
 \`\`\`json
 ${JSON.stringify(snapshot, null, 2)}
