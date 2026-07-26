@@ -26,6 +26,14 @@ describe('static homepage', () => {
     expect(homepage).toContain('§14d-Netzausbauplan');
   });
 
+  it('presents Kontext & Evidenz / Sidecar as a current feature on the homepage', () => {
+    expect(homepage).toContain('Kontext & Evidenz');
+    expect(homepage).toContain('Sidecar-Schicht');
+    expect(homepage).toContain('Datenqualität, Quellen, Steuerungsfähigkeit');
+    expect(homepage).toContain('nicht KPI-wirksam');
+    expect(homepage).toContain('docs/handbook/regulierte-finanzplanung-vnb.html#kontext-evidenz-sidecar-neben-der-maßnahmenliste');
+  });
+
   it('shows visual workflow proofs from real app screenshots', () => {
     expect(homepage).toContain('So arbeitet die App in der Praxis');
     expect(homepage).toContain('Workflow-Beweise');

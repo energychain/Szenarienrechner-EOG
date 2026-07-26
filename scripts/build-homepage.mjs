@@ -359,6 +359,7 @@ export function renderHomepage() {
           <div class="feature"><span class="check">✓</span><div><strong>Governance-Ampel</strong><br>Robust tragfähig, tragfähig mit Auflage, nicht tragfähig oder nicht entscheidungsreif — inklusive konservativem Urteil.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>EOG-/Cashflow-Brücke</strong><br>Regulatorische EOG-Wirkung, wirtschaftliche Überleitung, laufende Effekte und Einmaleffekte getrennt.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Herleitungshelfer</strong><br>Q-Wirkung, Risiko-Erwartungswert, CAPEX/OPEX-Split, Nutzungsdauer/AfA und Finanzierungsspread.</div></div>
+          <div class="feature"><span class="check">✓</span><div><strong>Kontext & Evidenz</strong><br>Sidecar-Schicht für Datenqualität, Quellen, Steuerungsfähigkeit und Abhängigkeiten — sichtbar im Report, aber standardmäßig nicht KPI-wirksam.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Projektplan</strong><br>Meilensteine, Rollen-Swimlanes, Abhängigkeiten, eigene Aufgaben, nächste fällige Aufgabe je Rolle.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Monitoring-/§14d-Vorbereitung</strong><br>Externe Maßnahmen-ID, Netzebene, Region, Status, Genehmigungsstand, Kapazitätswirkung und Alternativenprüfung für Reporting-Profile.</div></div>
         </div>
@@ -403,6 +404,7 @@ export function renderHomepage() {
     <div class="grid">
       <article class="card"><h3>30-Minuten-Selbsttest</h3><p>Demodaten laden, Projektplan ansehen, Entscheidungsampel lesen, XLSX exportieren und die Offline-HTML mit Daten speichern.</p><p>${link('docs/pilot-program.html', 'Pilotprogramm ansehen')}</p></article>
       <article class="card"><h3>Planungsrunde vorbereiten</h3><p>Rollen, Klärpunkte, Datenquellen, Aufgaben, Fälligkeiten und Beschlussartefakte werden im Arbeitsstand dokumentiert.</p><p>${link('docs/project-plan.html', 'Projektplan verstehen')}</p></article>
+      <article class="card"><h3>Kontext & Evidenz nutzen</h3><p>Sidecar-Objekte halten Datenqualität, Quellen, Steuerungsfähigkeit und offene Abhängigkeiten neben der Maßnahmenliste fest, ohne sie automatisch KPI-wirksam zu machen.</p><p>${link('docs/handbook/regulierte-finanzplanung-vnb.html#kontext-evidenz-sidecar-neben-der-maßnahmenliste', 'Sidecar-Methodik lesen')}</p></article>
       <article class="card"><h3>Gremium erklären</h3><p>Management-Report, Gremienvorlage und KI-Prompt-Export übersetzen technische und regulatorische Details in Beschlusslogik.</p><p>${link('story/planungsrunde-userstory.html', 'User-Story lesen')}</p></article>
     </div>
   </section>

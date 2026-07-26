@@ -64,7 +64,17 @@ export const fieldHelp = {
   committeeAudience: 'Adressat der Vorlage. Kommunal übersetzt stärker in Wirkung für Bürger; Vorstand zeigt wirtschaftliche Kennzahlen und Bereichsbeiträge direkter.',
   committeeMeetingDate: 'Sitzungsdatum fuer die Gremienvorlage. Leer lassen, wenn noch kein Termin feststeht.',
   committeeProposalText: 'Optionaler Beschlussvorschlag in Alltagssprache. Wenn leer, formuliert die Vorlage einen neutralen Vorschlag.',
-  mNote: 'Arbeitsnotiz für Meeting, Klärpunkte oder Governance-Auflagen. Die Notiz wird gespeichert, in der Übersicht markiert und im Report ausgewiesen.'
+  mNote: 'Arbeitsnotiz für Meeting, Klärpunkte oder Governance-Auflagen. Die Notiz wird gespeichert, in der Übersicht markiert und im Report ausgewiesen.',
+  sidecarTitle: 'Kurzbezeichnung des Kontext- oder Evidenzobjekts. Nutze Sidecar für Wissen, das Maßnahmen bewertet oder begründet, aber selbst keine klassische Investitionsmaßnahme ist.',
+  sidecarDivision: 'Sparte des Sidecar-Objekts. Strom nutzt Begriffe wie Netzkoppelung, Lastanfrage, Steuerbarkeit oder Flexibilität; Gas nutzt Transformations-, Kundenpfad-, Stilllegungs- oder Umwidmungskontexte.',
+  sidecarType: 'Objektklasse des Kontextwissens, zum Beispiel Datenqualität, Asset-Mapping, Lastpfad, Netzfahrplan oder externe Abhängigkeit. Die Klasse strukturiert die Prüfung, löst aber keine Rechnung aus.',
+  sidecarStatus: 'Arbeitsstatus des Sidecar-Objekts. Kontext und prüfpflichtig bedeuten: sichtbar für Governance und Report, aber nicht als entschiedene Maßnahme lesen.',
+  sidecarEvidenceStatus: 'Belastbarkeit der Quelle: fehlt, benannt, Quelle verfügbar, validiert, widersprüchlich oder veraltet. Damit bleibt sichtbar, ob der Report auf belastbaren Daten oder noch auf Arbeitsannahmen steht.',
+  sidecarCalculationImpact: 'Rechenwirkung des Kontextobjekts. None, indirect, scenario_driver und quantified sind nicht KPI-wirksam; active ist nur eine Markierung und benötigt zusätzlich eine explizit implementierte Mapping-Logik, bevor Werte in EOG, RAB, CAPEX, OPEX oder Cashflow eingehen.',
+  sidecarSensitivity: 'Sensitivität des Kontextobjekts. Öffentlich, intern, privat oder vertraulich steuert, wie vorsichtig Inhalte in Report, Prompt und Export behandelt werden sollen.',
+  sidecarExportStatus: 'Exportregel des Sidecar-Objekts. Erlaubt kann vollständig erscheinen, sanitized_only wird sanitisiert und gekürzt, excluded wird aus externen Übergaben ausgelassen.',
+  sidecarLinkedMeasures: 'Verknüpfung zu Maßnahmen-IDs. So bleibt erkennbar, welche Maßnahme durch eine Quelle, Datenqualitätsfrage oder Abhängigkeit gestützt wird, ohne das Sidecar-Objekt in die Maßnahmenliste zu verschieben.',
+  sidecarOpenQuestions: 'Offene Arbeits- und Prüfpunkte, getrennt mit Semikolon. Sie erscheinen verdichtet im Management Report und helfen, die nächste Befassung vorzubereiten.'
 };
 
 export function hasFieldHelp(id) {

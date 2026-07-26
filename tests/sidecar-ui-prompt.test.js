@@ -25,6 +25,15 @@ describe('sidecar UI and prompt integration', () => {
     expect(uiJs).toContain('normalizeSidecar');
   });
 
+  test('sidecar editor fields expose contextual info help affordances', () => {
+    expect(uiJs).toContain('data-help-id="sidecarTitle"');
+    expect(uiJs).toContain('data-help-id="sidecarEvidenceStatus"');
+    expect(uiJs).toContain('data-help-id="sidecarCalculationImpact"');
+    expect(uiJs).toContain('data-help-id="sidecarExportStatus"');
+    expect(uiJs).toContain('data-help-id="sidecarLinkedMeasures"');
+    expect(uiJs).toContain('querySelectorAll(\'label[for], label[data-help-id]\')');
+  });
+
   test('prompt exports sidecar as aggregated context, not KPI measure', () => {
     const sidecar = {
       objects: [{
