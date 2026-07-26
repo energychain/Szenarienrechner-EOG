@@ -22,7 +22,8 @@ import {
   regulatoryPeriodFor,
   riskExpectedValue,
   riskHelper,
-  scenarioParams as engineScenarioParams
+  scenarioParams as engineScenarioParams,
+  workstandReliabilityFor
 } from './engine.js';
 import {
   appendHistoryEvents,
@@ -3309,6 +3310,27 @@ function renderEogCashflowBridge(result, metrics) {
   document.getElementById('cashflowBridgeCaveat').textContent = 'Diese Überleitung erklärt, warum IRR/NPV nicht die EOG selbst bewerten: Die regulatorische Erlösobergrenze wird als Annahme in eine wirtschaftliche Cashflow-Sicht übersetzt; Mengen-, Zeitverzugs- und Wälzungsrisiken bleiben zu prüfen.';
 }
 
+function reliabilityCardHtml(item) {
+  return `
+    <article class="summary-card ${item.severity === 'warn' ? 'warn' : 'good'}">
+      <div class="label">${esc(item.label)}</div>
+      <div class="value">${esc(item.value)}</div>
+      <p>${esc(item.detail)}</p>
+    </article>
+  `;
+}
+
+function renderWorkstandReliability(result) {
+  const cards = document.getElementById('workstandReliabilityCards');
+  if (!cards) return;
+  const reliability = workstandReliabilityFor(currentModelData(), result);
+  cards.innerHTML = reliability.items.map(reliabilityCardHtml).join('');
+  const caveat = document.getElementById('workstandReliabilityCaveat');
+  if (caveat) {
+    caveat.textContent = `${reliability.title}: ${reliability.verdict}. ${reliability.caveat}`;
+  }
+}
+
 function waterfallBarHtml(item, maxAbs) {
   const width = Math.max(2, Math.abs(item.valueTeur) / maxAbs * 100);
   const cls = item.valueTeur < 0 ? 'negative' : 'positive';
@@ -5495,6 +5517,7 @@ function renderPortfolio() {
 	      renderStickyKpis(result, first, decision, metrics);
 	      renderManagementSummary(result, first, spread, decision, metrics);
 	      renderEogCashflowBridge(result, metrics);
+      renderWorkstandReliability(result);
       renderPortfolioWaterfall(result);
       renderSensitivityTornado();
       renderEogDecomposition(result);

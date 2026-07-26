@@ -1178,6 +1178,86 @@ function stromPortfolioPlausibilityWarningsFor(activeMeasures = [], p = {}, resu
   return warnings;
 }
 
+function hasMeasureTargetAssignment(measure = {}) {
+  return Array.isArray(measure.objectiveIds) && measure.objectiveIds.filter(Boolean).length > 0;
+}
+
+function isNoRegretType(measure = {}) {
+  return ['noRegret', 'no_regret_working_assumption', 'no_regret_confirmed'].includes(measure.type);
+}
+
+function isOpenClassification(measure = {}) {
+  const classification = String(measure.portfolioClassification || measure.investmentDecisionStatus || measure.reportingStatus || '').toLowerCase();
+  return !classification || /offen|prüf|pruef|arbeitsstand|geplant|candidate|kandidat/.test(classification);
+}
+
+function sidecarReliabilitySummary(sidecar = {}) {
+  const objects = Array.isArray(sidecar.objects) ? sidecar.objects : [];
+  const weakEvidence = objects.filter(object => ['missing', 'stated', 'conflicting', 'stale'].includes(object.evidenceStatus || 'missing')).length;
+  const openQuestions = objects.reduce((sum, object) => sum + (Array.isArray(object.openQuestions) ? object.openQuestions.length : 0), 0);
+  const dataQualityOpen = objects.filter(object => object.type === 'data_quality' && object.status !== 'archived' && object.evidenceStatus !== 'validated').length;
+  return { total: objects.length, weakEvidence, openQuestions, dataQualityOpen };
+}
+
+export function workstandReliabilityFor(model = {}, result = null) {
+  const activeMeasures = Array.isArray(result?.activeMeasures)
+    ? result.activeMeasures
+    : (Array.isArray(model?.measures) ? model.measures.filter(measure => measure.active) : []);
+  const classicMeasures = activeMeasures.filter(measure => !(result?.p && isStromFlexibilityMeasure(measure, result.p)));
+  const riskMeasures = classicMeasures.filter(measure => finiteNumber(measure.riskAvoided) > 0);
+  const riskMissingEvidence = riskMeasures.filter(measure => !hasRiskEvidence(measure));
+  const withoutTargets = activeMeasures.filter(measure => !hasMeasureTargetAssignment(measure));
+  const noRegretMeasures = classicMeasures.filter(isNoRegretType);
+  const noRegretOpen = noRegretMeasures.filter(isOpenClassification);
+  const sidecar = sidecarReliabilitySummary(model.sidecar || {});
+  const items = [];
+
+  if (riskMeasures.length) items.push({
+    key: 'risk-evidence',
+    label: 'RiskAvoided-Werte unbelegt',
+    value: `${riskMissingEvidence.length} von ${riskMeasures.length}`,
+    severity: riskMissingEvidence.length ? 'warn' : 'good',
+    detail: 'Risikowerte bleiben prüfpflichtige Arbeitswerte, bis Evidenzstatus oder Wirkungskette dokumentiert sind.'
+  });
+  if (activeMeasures.length) items.push({
+    key: 'target-mapping',
+    label: 'Maßnahmen ohne Ziel-Zuordnung',
+    value: `${withoutTargets.length} von ${activeMeasures.length}`,
+    severity: withoutTargets.length ? 'warn' : 'good',
+    detail: 'Ziel-Zuordnung macht sichtbar, worauf Budget und Maßnahmen einzahlen.'
+  });
+  if (classicMeasures.length) items.push({
+    key: 'no-regret-default',
+    label: 'No-Regret-Typisierung',
+    value: `${noRegretMeasures.length} von ${classicMeasures.length}`,
+    severity: noRegretMeasures.length / Math.max(1, classicMeasures.length) >= 0.8 || noRegretOpen.length ? 'warn' : 'good',
+    detail: `${noRegretOpen.length} No-Regret-Einstufung(en) sind noch Arbeits-/Prüfannahmen oder nicht differenziert.`
+  });
+  items.push({
+    key: 'sidecar-evidence',
+    label: 'Sidecar-/Evidenzlage',
+    value: sidecar.total ? `${sidecar.weakEvidence} von ${sidecar.total}` : '0 Objekte',
+    severity: sidecar.weakEvidence || sidecar.openQuestions || sidecar.dataQualityOpen ? 'warn' : 'good',
+    detail: sidecar.total
+      ? `${sidecar.openQuestions} offene Sidecar-Prüffrage(n), ${sidecar.dataQualityOpen} Datenqualitätsobjekt(e) offen.`
+      : 'Noch keine Kontext-/Evidenzobjekte erfasst.'
+  });
+
+  const warnCount = items.filter(item => item.severity === 'warn').length;
+  return {
+    title: 'Belastbarkeit des Arbeitsstands',
+    verdict: warnCount ? 'prüfpflichtig' : 'belastbar dokumentiert',
+    caveat: warnCount
+      ? 'Diese Kachel operationalisiert Nicht-Aussagen: positive KPIs bleiben als Arbeitsstand zu lesen, solange Evidenz, Zielbezug, Typisierung oder Sidecar-Prüfpunkte offen sind.'
+      : 'Keine aggregierten Belastbarkeitswarnungen in den geprüften Feldern.',
+    riskAvoided: { totalWithValue: riskMeasures.length, missingEvidence: riskMissingEvidence.length },
+    targetMapping: { totalActive: activeMeasures.length, withoutTargets: withoutTargets.length },
+    noRegret: { noRegretCount: noRegretMeasures.length, activeClassicCount: classicMeasures.length, openClassification: noRegretOpen.length },
+    sidecar,
+    items
+  };
+}
+
 export function calcPortfolio(model, p) {
   const measures = Array.isArray(model?.measures) ? model.measures : [];
   const activeMeasures = measures.filter(measure => measure.active);
