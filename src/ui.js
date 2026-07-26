@@ -11,9 +11,12 @@ import {
   gasTransformationHelper,
   gasTransformationInputForMeasure,
   impactAssumptionsFor,
+  measureDrilldownFor,
   params as engineParams,
   portfolioDecisionMetrics,
   portfolioEffectFor,
+  portfolioSensitivityTornadoFor,
+  portfolioWaterfallFor,
   qImpactHelper,
   regulatoryParameterSet,
   regulatoryPeriodFor,
@@ -3306,6 +3309,96 @@ function renderEogCashflowBridge(result, metrics) {
   document.getElementById('cashflowBridgeCaveat').textContent = 'Diese Überleitung erklärt, warum IRR/NPV nicht die EOG selbst bewerten: Die regulatorische Erlösobergrenze wird als Annahme in eine wirtschaftliche Cashflow-Sicht übersetzt; Mengen-, Zeitverzugs- und Wälzungsrisiken bleiben zu prüfen.';
 }
 
+function waterfallBarHtml(item, maxAbs) {
+  const width = Math.max(2, Math.abs(item.valueTeur) / maxAbs * 100);
+  const cls = item.valueTeur < 0 ? 'negative' : 'positive';
+  return `
+    <div class="waterfall-row ${cls}">
+      <div class="waterfall-label">${esc(item.label)}</div>
+      <div class="waterfall-track"><div class="waterfall-bar" style="width:${width}%"></div></div>
+      <div class="waterfall-value">${fmtTeur(item.valueTeur, 1)}</div>
+    </div>
+  `;
+}
+
+function renderPortfolioWaterfall(result) {
+  const target = document.getElementById('portfolioWaterfall');
+  if (!target) return;
+  const waterfall = portfolioWaterfallFor(result);
+  const items = [...waterfall.baseEogWaterfall, ...waterfall.cashflowBridge];
+  const maxAbs = Math.max(1, ...items.map(item => Math.abs(item.valueTeur)));
+  target.innerHTML = `
+    <div class="waterfall-summary">
+      <strong>Basis-EOG → Maßnahmenwirkung:</strong>
+      ${fmtTeur(waterfall.baseEogTeur, 1)} Basis-EOG plus ${fmtTeur(waterfall.yearOne.regulatoryEogEffect, 1)} Startjahr-Wirkung
+      (${fmtPct(waterfall.baseToYearOneRatioPct, 2)} der Basis-EOG).
+      <br><strong>EOG → wirtschaftliche Brücke → Cashflow:</strong>
+      ${fmtTeur(waterfall.firstFollowYear.regulatoryEogEffect, 1)} + ${fmtTeur(waterfall.firstFollowYear.economicBridge, 1)} = ${fmtTeur(waterfall.firstFollowYear.indicativeCashflow, 1)}.
+    </div>
+    <div class="waterfall-bars">
+      ${items.map(item => waterfallBarHtml(item, maxAbs)).join('')}
+    </div>
+  `;
+}
+
+function renderSensitivityTornado() {
+  const target = document.getElementById('sensitivityTornado');
+  if (!target) return;
+  const p = currentScenarioParams(scenario);
+  const tornado = portfolioSensitivityTornadoFor(portfolioModel(), p);
+  const maxAbs = Math.max(1, ...tornado.drivers.flatMap(driver => [Math.abs(driver.lowDeltaNpv), Math.abs(driver.highDeltaNpv)]));
+  target.innerHTML = `
+    <div class="waterfall-summary">
+      Basis: ${tornado.base.rateMetricLabel} ${Number.isFinite(tornado.base.irr) ? fmtPct(tornado.base.irr * 100, 1) : '-'} · Kapitalwert ${fmtTeur(tornado.base.npv, 1)}. RiskAvoided ±25 %, Nutzungsdauer ±20 % und Zinssätze/KANU-Horizont werden nur als Arbeitsvarianten gerechnet.
+    </div>
+    <div class="tornado-bars">
+      ${tornado.drivers.map(driver => {
+        const lowWidth = Math.abs(driver.lowDeltaNpv) / maxAbs * 50;
+        const highWidth = Math.abs(driver.highDeltaNpv) / maxAbs * 50;
+        return `
+          <div class="tornado-row">
+            <div class="tornado-label">${esc(driver.label)}</div>
+            <div class="tornado-track" aria-label="${esc(driver.label)}">
+              <div class="tornado-half left"><span class="tornado-bar low" style="width:${lowWidth}%"></span></div>
+              <div class="tornado-zero"></div>
+              <div class="tornado-half right"><span class="tornado-bar high" style="width:${highWidth}%"></span></div>
+            </div>
+            <div class="tornado-values">${fmtTeur(driver.lowDeltaNpv, 1)} / ${fmtTeur(driver.highDeltaNpv, 1)}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <p class="hint">${esc(tornado.caveat)}</p>
+  `;
+}
+
+function renderMeasureDrilldown(measure) {
+  const target = document.getElementById('measureDrilldown');
+  if (!target || !measure) return;
+  const p = currentParams();
+  const drilldown = measureDrilldownFor(measure, p, portfolioEffectFor(measure, p));
+  target.innerHTML = `
+    <div class="waterfall-summary"><strong>${esc(drilldown.measureName)}</strong>: CAPEX → AfA/KANU → Verzinsung → EOG → Cashflow. Aktivierte Basis ${fmtTeur(drilldown.activatedTeur, 1)} von ${fmtTeur(drilldown.capexTeur, 1)}; ${drilldown.returnMetricLabel} ${Number.isFinite(drilldown.returnMetricValue) ? fmtPct(drilldown.returnMetricValue * 100, 1) : '-'}; Kapitalwert ${fmtTeur(drilldown.npvTeur, 1)}.</div>
+    <div class="drilldown-steps">
+      ${drilldown.steps.map(step => `
+        <div class="drilldown-step">
+          <strong>${esc(step.label)}</strong>
+          <span>${step.valuePct != null ? fmtPct(step.valuePct, 1) : fmtTeur(step.valueTeur || 0, 1)}</span>
+          <small>${esc(step.note)}</small>
+        </div>
+      `).join('')}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Jahr</th><th>AfA/KANU</th><th>Verzinsung</th><th>Q/E</th><th>Risiko</th><th>EOG</th><th>Brücke</th><th>Cashflow</th></tr></thead>
+        <tbody>${drilldown.rows.map(row => `
+          <tr><td>${row.year}</td><td>${fmtTeur(row.depreciation, 1)}</td><td>${fmtTeur(row.capitalReturn, 1)}</td><td>${fmtTeur(row.qAndE, 1)}</td><td>${fmtTeur(row.risk, 1)}</td><td>${fmtTeur(row.regulatoryEogEffect, 1)}</td><td>${fmtTeur(row.economicBridge, 1)}</td><td>${fmtTeur(row.indicativeCashflow, 1)}</td></tr>
+        `).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
 function recurringDecompositionRow(result) {
   return result.yearly.slice(1).find(row => Math.abs(row.reinvestDecommission || 0) < 0.000001)
     || result.yearly[1]
@@ -4481,6 +4574,7 @@ function renderDetail() {
       renderGasTransformationLayer(measure);
       renderFlexibilityLayer(measure);
       renderHelperCalculators(measure);
+      renderMeasureDrilldown(measure);
       renderImpactAssumptions(measure);
       const timeline = document.getElementById('lifecycleTimeline');
       if (timeline) timeline.innerHTML = lifecycleTimelineHtml(measure, p);
@@ -5385,6 +5479,8 @@ function renderPortfolio() {
 	      renderStickyKpis(result, first, decision, metrics);
 	      renderManagementSummary(result, first, spread, decision, metrics);
 	      renderEogCashflowBridge(result, metrics);
+      renderPortfolioWaterfall(result);
+      renderSensitivityTornado();
       renderEogDecomposition(result);
 	      renderMeetingFocus(result, first, spread, metrics);
 

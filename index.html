@@ -560,6 +560,26 @@
         <p id="cashflowBridgeCaveat" class="hint bridge-caveat">-</p>
       </section>
 
+      <section id="portfolioWaterfallPanel" class="panel" aria-label="Größenordnung einordnen">
+        <div class="section-head-row">
+          <div>
+            <h2>Größenordnung einordnen</h2>
+            <p class="hint">Wasserfall: Basis-EOG → Maßnahmenwirkung und EOG → wirtschaftliche Brücke → Cashflow. So wird sichtbar, ob über Zehntelprozent oder echte Ergebnishebel gesprochen wird.</p>
+          </div>
+        </div>
+        <div id="portfolioWaterfall" class="waterfall-view"></div>
+      </section>
+
+      <section id="sensitivityTornadoPanel" class="panel" aria-label="Sensitivitäts-/Treiberansicht">
+        <div class="section-head-row">
+          <div>
+            <h2>Sensitivitäts-/Treiberansicht</h2>
+            <p class="hint">Tornado-Arbeitsvarianten für Strom und Gas. Die Varianten verändern das Modell nicht und ersetzen kein konservatives Szenario.</p>
+          </div>
+        </div>
+        <div id="sensitivityTornado" class="tornado-view"></div>
+      </section>
+
       <section id="eogDecompositionPanel" class="panel" aria-label="EOG-Zerlegung">
         <div class="section-head-row">
           <div>
@@ -1249,6 +1269,11 @@
           <textarea id="mNote" placeholder="z.B. No-Regret noch nicht bestätigt&#10;Unklar, ob Tiefbau im geplanten Jahr stattfinden kann"></textarea>
           <p class="hint">Notizen werden mit dem Modell gespeichert, im Maßnahmenkatalog markiert und im Report als offene Punkte ausgewiesen.</p>
         </div>
+        <details id="measureDrilldownPanel" class="panel-details" open>
+          <summary>Wie wird aus dieser Maßnahme diese Zahl?</summary>
+          <p class="hint">CAPEX → AfA/KANU → Verzinsung → EOG → Cashflow und Beitrag zu IRR/NPV für die aktuell ausgewählte Maßnahme.</p>
+          <div id="measureDrilldown" class="measure-drilldown"></div>
+        </details>
       </div>
       <div class="dialog-foot">
         <button type="button" id="measureEditClose">Schließen</button>

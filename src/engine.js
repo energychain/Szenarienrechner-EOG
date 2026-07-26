@@ -870,6 +870,158 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
   };
 }
 
+export function measureDrilldownFor(measure, p, portfolioEffectPa = portfolioEffectFor(measure, p)) {
+  const result = calcMeasure(measure, p, portfolioEffectPa);
+  const firstRow = result.rows[0] || {};
+  const followRow = result.rows[1] || firstRow || {};
+  const active = expectedActivated(measure);
+  const returnLabel = result.rateMetricLabel || result.returnMetric?.label || 'IRR';
+  return {
+    measureId: measure.id || '',
+    measureName: measure.name || 'Maßnahme',
+    capexTeur: finiteNumber(measure.cost),
+    activatedTeur: result.activated,
+    activeSharePct: active.share * 100,
+    startYear: Math.round(finiteNumber(measure.year, p.baseYear)),
+    depreciationMode: p.sector === 'strom' ? 'linear' : (measure.depr || 'normal'),
+    usefulLifeYears: finiteNumber(measure.life),
+    hgbLifeYears: finiteNumber(measure.hgbLife, measure.life),
+    returnMetricLabel: returnLabel,
+    returnMetricValue: result.irr,
+    npvTeur: result.npv,
+    steps: [
+      { key: 'capex', label: 'CAPEX', valueTeur: finiteNumber(measure.cost), note: 'Ausgangsinvestition der Maßnahme.' },
+      { key: 'activation', label: 'Aktivierte Basis', valueTeur: result.activated, note: `Aktivierungsanteil ${Math.round(active.share * 1000) / 10} % aus sicherem und erwarteten unsicheren Anteil.` },
+      { key: 'depreciation', label: 'AfA/KANU regulatorisch', valueTeur: firstRow.depreciation || 0, note: `Startjahr ${firstRow.year || p.baseYear}; Modus ${p.sector === 'strom' ? 'linear' : (measure.depr || 'normal')}.` },
+      { key: 'capital_return', label: 'Verzinsung', valueTeur: firstRow.capitalReturn || 0, note: 'Kalkulatorische Verzinsung auf durchschnittlich gebundene Kapitalbasis.' },
+      { key: 'regulatory_eog', label: 'regulatorische EOG-Wirkung', valueTeur: firstRow.regulatoryEogEffect || 0, note: 'Summe aus AfA/KANU, Verzinsung, Reinvest-Asset, Q/E, Risiko und Einmal-OPEX.' },
+      { key: 'cashflow', label: 'indikative Cashflow-Basis', valueTeur: firstRow.indicativeCashflow || 0, note: 'Regulatorische EOG-Wirkung plus wirtschaftliche OPEX-/Rückbau-/Reinvest-Brücke.' },
+      { key: 'return_metric', label: returnLabel, valuePct: Number.isFinite(result.irr) ? result.irr * 100 : null, valueTeur: result.npv, note: `${returnLabel} und Kapitalwert nutzen die indikative Cashflow-Basis; kein garantierter EOG-Cashflow.` }
+    ],
+    rows: [firstRow, followRow].filter(Boolean).map(row => ({
+      year: row.year,
+      depreciation: row.depreciation || 0,
+      capitalReturn: row.capitalReturn || 0,
+      reinvestAssetEffect: row.reinvestAssetEffect || 0,
+      qAndE: row.qAndE || 0,
+      risk: row.risk || 0,
+      firstYearOpex: row.firstYearOpex || 0,
+      regulatoryEogEffect: row.regulatoryEogEffect || 0,
+      economicBridge: (row.economicOpex || 0) + (row.reinvestDecommission || 0),
+      indicativeCashflow: row.indicativeCashflow || 0
+    }))
+  };
+}
+
+export function portfolioWaterfallFor(result) {
+  const first = result.yearly?.[0] || {};
+  const follow = result.yearly?.[1] || first || {};
+  const baseEog = result.p?.baseEog || 0;
+  const yearOneEog = first.regulatoryEogEffect || 0;
+  const followEog = follow.regulatoryEogEffect || 0;
+  const economicBridge = (follow.economicOpex || 0) + (follow.reinvestDecommission || 0);
+  const ratio = baseEog ? yearOneEog / baseEog * 100 : 0;
+  return {
+    baseEogTeur: baseEog,
+    baseToYearOneRatioPct: ratio,
+    startYear: first.year || result.p?.baseYear,
+    followYear: follow.year || ((first.year || result.p?.baseYear || 0) + 1),
+    yearOne: {
+      regulatoryEogEffect: yearOneEog,
+      indicativeCashflow: first.indicativeCashflow || 0,
+      economicBridge: (first.economicOpex || 0) + (first.reinvestDecommission || 0)
+    },
+    firstFollowYear: {
+      regulatoryEogEffect: followEog,
+      indicativeCashflow: follow.indicativeCashflow || 0,
+      economicBridge
+    },
+    baseEogWaterfall: [
+      { key: 'base_eog', label: 'Basis-EOG', valueTeur: baseEog, cumulativeTeur: baseEog },
+      { key: 'measure_effect', label: 'Maßnahmenwirkung Startjahr', valueTeur: yearOneEog, cumulativeTeur: baseEog + yearOneEog }
+    ],
+    cashflowBridge: [
+      { key: 'regulatory_eog', label: 'EOG-Wirkung erstes Folgejahr', valueTeur: followEog },
+      { key: 'economic_bridge', label: 'wirtschaftliche Brücke', valueTeur: economicBridge },
+      { key: 'indicative_cashflow', label: 'indikative Cashflow-Basis', valueTeur: follow.indicativeCashflow || 0 }
+    ]
+  };
+}
+
+function cloneForSensitivity(value) {
+  if (typeof structuredClone === 'function') return structuredClone(value);
+  return JSON.parse(JSON.stringify(value));
+}
+
+function scaleMeasureField(model, field, factor) {
+  const copy = cloneForSensitivity(model);
+  copy.measures = (copy.measures || []).map(measure => ({
+    ...measure,
+    [field]: Math.max(0, finiteNumber(measure[field]) * factor)
+  }));
+  return copy;
+}
+
+function scaleLife(model, factor) {
+  const copy = cloneForSensitivity(model);
+  copy.measures = (copy.measures || []).map(measure => ({
+    ...measure,
+    life: Math.max(1, Math.round(finiteNumber(measure.life, 1) * factor)),
+    hgbLife: Math.max(1, Math.round(finiteNumber(measure.hgbLife, measure.life || 1) * factor))
+  }));
+  return copy;
+}
+
+export function portfolioSensitivityTornadoFor(model, p) {
+  const base = calcPortfolio(model, p);
+  const metricFor = (variantModel, variantParams) => {
+    const result = calcPortfolio(variantModel || model, variantParams || p);
+    return { npv: result.npv, irr: result.irr, deltaNpv: result.npv - base.npv, deltaIrr: result.irr - base.irr };
+  };
+  const drivers = [
+    {
+      key: 'riskAvoided',
+      label: 'RiskAvoided ±25 %',
+      low: metricFor(scaleMeasureField(model, 'riskAvoided', 0.75), p),
+      high: metricFor(scaleMeasureField(model, 'riskAvoided', 1.25), p)
+    },
+    {
+      key: 'returnRate',
+      label: 'Regulatorische Verzinsung ±1 pp',
+      low: metricFor(model, { ...p, returnRate: Math.max(0, p.returnRate - 0.01) }),
+      high: metricFor(model, { ...p, returnRate: p.returnRate + 0.01 })
+    },
+    {
+      key: 'financingRate',
+      label: 'FK-Zins ±1 pp',
+      low: metricFor(model, { ...p, financingRate: Math.max(0, p.financingRate - 0.01) }),
+      high: metricFor(model, { ...p, financingRate: p.financingRate + 0.01 })
+    },
+    {
+      key: 'usefulLife',
+      label: 'Nutzungsdauer ±20 %',
+      low: metricFor(scaleLife(model, 0.8), p),
+      high: metricFor(scaleLife(model, 1.2), p)
+    },
+    {
+      key: 'kanuEndYear',
+      label: p.sector === 'gas' ? 'KANU-Endjahr ±5 Jahre' : 'Transformations-/Horizontjahr ±5 Jahre',
+      low: metricFor(model, { ...p, kanuEndYear: p.kanuEndYear - 5 }),
+      high: metricFor(model, { ...p, kanuEndYear: p.kanuEndYear + 5 })
+    }
+  ].map(driver => ({
+    ...driver,
+    lowDeltaNpv: driver.low.deltaNpv,
+    highDeltaNpv: driver.high.deltaNpv,
+    swingTeur: Math.abs(driver.high.deltaNpv - driver.low.deltaNpv)
+  })).sort((a, b) => b.swingTeur - a.swingTeur);
+  return {
+    base: { npv: base.npv, irr: base.irr, rateMetricLabel: base.rateMetricLabel || 'IRR' },
+    drivers,
+    caveat: 'Sensitivitäten sind rechnerische Arbeitsvarianten. Sie ersetzen keine fachliche Parametrisierung des konservativen Szenarios.'
+  };
+}
+
 export function portfolioEffectFor(measure, p) {
   const globalEffect = p.baseEog * (p.qDelta + p.eDelta) * p.attribution;
   return globalEffect * clamp(finiteNumber(measure.portfolioShare), 0, 100) / 100;
