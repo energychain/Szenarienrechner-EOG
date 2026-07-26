@@ -1678,6 +1678,27 @@
       padding: 0 14px 14px;
     }
 
+    details.inline-disclosure {
+      margin-top: 12px;
+      background: #fbfdff;
+      box-shadow: none;
+    }
+
+    details.inline-disclosure > summary {
+      color: var(--accent);
+    }
+
+    details.inline-disclosure.has-open-items > summary::after {
+      content: ' · Meeting-/Prüfliste erst bei Bedarf öffnen';
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 12px;
+    }
+
+    .meeting-focus-panel {
+      border-left: 4px solid var(--accent);
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;

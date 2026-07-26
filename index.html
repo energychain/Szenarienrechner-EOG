@@ -514,15 +514,35 @@
         </div>
       </section>
 
-      <section class="panel" aria-label="Was hat sich geändert">
-        <h2>Was hat sich geändert?</h2>
-        <div id="changeSinceSeen" class="event-summary"></div>
+      <section class="panel meeting-focus-panel" aria-label="Meeting-Fokus">
+        <div class="section-head-row">
+          <div>
+            <h2>Meeting-Fokus</h2>
+            <p class="hint">Direkter Einstieg für Befassung und Arbeitsrunde: Kurzentscheidung, Technik, VNB, Controlling oder Finanzierung.</p>
+          </div>
+        </div>
+        <div class="focus-tabs" aria-label="Gesprächsansicht">
+          <button type="button" class="focus-tab active" data-focus="management">Kurzentscheidung</button>
+          <button type="button" class="focus-tab" data-focus="technik">Technik</button>
+          <button type="button" class="focus-tab" data-focus="vnb">Kaufmännisch / VNB</button>
+          <button type="button" class="focus-tab" data-focus="controlling">Konzern-Controlling</button>
+          <button type="button" class="focus-tab" data-focus="finanzierung">Finanzierung</button>
+        </div>
+        <div id="meetingFocusBody" class="meeting-grid"></div>
       </section>
 
-      <section class="panel" aria-label="Entscheidungsreife und Klärpunkte">
-        <h2>Entscheidungsreife und Klärpunkte</h2>
+      <section class="panel" aria-label="Arbeitsstand und Klärpunkte">
+        <div class="section-head-row">
+          <div>
+            <h2>Arbeitsstand und Klärpunkte</h2>
+            <p class="hint">Die lange Klärpunktliste ist standardmäßig eingeklappt, damit Kennzahlen und Meeting-Einstieg sichtbar bleiben.</p>
+          </div>
+        </div>
         <div id="maturityPanel" class="maturity-panel"></div>
-        <div id="clarificationList" class="clarification-list"></div>
+        <details id="clarificationDisclosure" class="panel-details inline-disclosure clarification-disclosure">
+          <summary id="clarificationDisclosureSummary">Klärpunktliste anzeigen</summary>
+          <div id="clarificationList" class="clarification-list" tabindex="-1"></div>
+        </details>
       </section>
 
       <section class="panel" aria-label="Kernkennzahlen">
@@ -649,16 +669,9 @@
         </div>
       </section>
 
-      <section class="panel" aria-label="Meeting-Fokus">
-        <h2>Meeting-Fokus</h2>
-        <div class="focus-tabs" aria-label="Gesprächsansicht">
-          <button type="button" class="focus-tab active" data-focus="management">Kurzentscheidung</button>
-          <button type="button" class="focus-tab" data-focus="technik">Technik</button>
-          <button type="button" class="focus-tab" data-focus="vnb">Kaufmännisch / VNB</button>
-          <button type="button" class="focus-tab" data-focus="controlling">Konzern-Controlling</button>
-          <button type="button" class="focus-tab" data-focus="finanzierung">Finanzierung</button>
-        </div>
-        <div id="meetingFocusBody" class="meeting-grid"></div>
+      <section class="panel" aria-label="Was hat sich geändert">
+        <h2>Was hat sich geändert?</h2>
+        <div id="changeSinceSeen" class="event-summary"></div>
       </section>
 
       <details class="panel-details">

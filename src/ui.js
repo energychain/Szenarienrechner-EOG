@@ -1419,8 +1419,19 @@ function renderMaturityAndClarifications() {
     `;
   }
   const listNode = document.getElementById('clarificationList');
+  const disclosure = document.getElementById('clarificationDisclosure');
+  const disclosureSummary = document.getElementById('clarificationDisclosureSummary');
   if (!listNode) return;
   const items = clarificationItems();
+  const openItems = items.filter(item => item.status !== 'closed');
+  if (disclosureSummary) {
+    disclosureSummary.textContent = openItems.length
+      ? `Alle ${openItems.length} offenen Klärpunkte anzeigen`
+      : 'Klärpunktliste anzeigen';
+  }
+  if (disclosure) {
+    disclosure.classList.toggle('has-open-items', openItems.length > 0);
+  }
   listNode.innerHTML = items.length
     ? items.map(item => `
       <article class="clarification-item ${item.status === 'closed' ? 'closed' : ''}">
@@ -3720,7 +3731,9 @@ function openClarificationList() {
   document.body.classList.remove('show-start');
   setView('results');
   requestAnimationFrame(() => {
-    const target = document.getElementById('clarificationList') || document.getElementById('maturityPanel');
+    const disclosure = document.getElementById('clarificationDisclosure');
+    if (disclosure) disclosure.open = true;
+    const target = disclosure || document.getElementById('maturityPanel') || document.getElementById('clarificationList');
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     target?.focus?.({ preventScroll: true });
   });
