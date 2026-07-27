@@ -1121,6 +1121,39 @@
       color: var(--muted);
     }
 
+    .clarification-audit-summary {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fbfc;
+      margin-bottom: 14px;
+    }
+
+    .clarification-audit-banner {
+      padding: 12px 14px;
+      border: 1px solid #d4b15f;
+      border-radius: 12px;
+      background: #fff8e6;
+      color: var(--ink);
+      margin-bottom: 14px;
+    }
+
+    .clarification-audit-banner span,
+    .clarification-audit-banner p {
+      display: block;
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .form-error {
+      min-height: 18px;
+      margin: 6px 0 0;
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
     .pill-row {
       display: flex;
       flex-wrap: wrap;

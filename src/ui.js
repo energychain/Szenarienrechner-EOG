@@ -188,6 +188,8 @@ let strategy = defaultStrategy();
 let committee = defaultCommittee();
 let currentRole = 'owner';
 let clarificationStatus = {};
+let pendingClarificationAudit = null;
+let measureEditClarificationContext = null;
 let lastReleaseCheck = null;
 let releaseCheckInProgress = false;
 let pendingImportReview = null;
@@ -935,7 +937,7 @@ function renderExpertWorkList() {
         </div>
         <div class="row-actions">
           <button type="button" data-action="openWorkItem" data-measure-id="${esc(item.measureId || '')}">Öffnen</button>
-          ${item.type === 'clarification' ? `<button type="button" data-action="toggleClarification" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Wieder öffnen' : 'Klären'}</button>` : ''}
+          ${item.type === 'clarification' ? `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit ansehen' : 'Klären'}</button>` : ''}
         </div>
       </article>
     `).join('')
@@ -964,6 +966,8 @@ function clarificationItems() {
   const impactItems = reviewRequiredImpacts(true).map(item => ({
     key: `impact:${item.measure.id}:${item.id}`,
     type: 'impact',
+    measureId: item.measure.id,
+    impactId: item.id,
     area: impactAreaLabel(item.area),
     targetPhase: 'massnahmenbewertung',
     title: item.title,
@@ -975,6 +979,7 @@ function clarificationItems() {
     .map(measure => ({
       key: `note:${measure.id}`,
       type: 'note',
+      measureId: measure.id,
       area: 'Maßnahme',
       targetPhase: 'konsolidierung',
       title: 'Maßnahmennotiz klären',
@@ -987,6 +992,7 @@ function clarificationItems() {
     .map(warning => ({
       key: warning.key,
       type: warning.type,
+      measureId: warning.measureId || measures.find(measure => measure.name === warning.measure)?.id || '',
       area: warning.area,
       targetPhase: warning.targetPhase,
       title: warning.title,
@@ -1440,7 +1446,10 @@ function renderMaturityAndClarifications() {
           <div class="clarification-meta">${esc(item.area)} · Zielphase ${esc(phaseLabel(item.targetPhase))} · ${item.status === 'closed' ? 'geklärt' : 'offen'}</div>
           <p class="hint">${esc(item.detail)}</p>
         </div>
-        <button type="button" data-action="toggleClarification" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Wieder öffnen' : 'Klären'}</button>
+        <div class="row-actions">
+          ${item.measureId ? `<button type="button" data-action="openClarificationMeasure" data-measure-id="${esc(item.measureId)}">Datenstelle</button>` : ''}
+          <button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit ansehen' : 'Klären'}</button>
+        </div>
       </article>
     `).join('')
     : '<p class="hint">Keine Klärpunkte aus aktiven Wirkannahmen oder Maßnahmennotizen.</p>';
@@ -1573,17 +1582,135 @@ function setPlanningResumeField(field, value) {
   renderAll();
 }
 
-function toggleClarification(key) {
-  const current = clarificationStatus[key]?.status || 'open';
+function findClarificationItem(key) {
+  return clarificationItems().find(item => item.key === key) || null;
+}
+
+function renderClarificationAuditModal() {
+  if (!pendingClarificationAudit) return;
+  const item = pendingClarificationAudit.item;
+  const status = clarificationStatus[item.key] || {};
+  const body = document.getElementById('clarificationAuditBody');
+  const note = document.getElementById('clarificationAuditNote');
+  const error = document.getElementById('clarificationAuditError');
+  const openMeasure = document.getElementById('clarificationAuditOpenMeasure');
+  if (body) {
+    body.innerHTML = `
+      <p><strong>${esc(item.measure)}: ${esc(item.title)}</strong></p>
+      <p class="clarification-meta">${esc(item.area)} · Zielphase ${esc(phaseLabel(item.targetPhase))} · ${item.status === 'closed' ? 'geklärt' : 'offen'}</p>
+      <p>${esc(item.detail)}</p>
+      ${status.note ? `<p class="hint"><strong>Letzte Klärnotiz:</strong> ${esc(status.note)} · ${esc(status.author || 'unbekannt')} · ${status.timestamp ? esc(new Date(status.timestamp).toLocaleString('de-DE')) : '-'}</p>` : ''}
+    `;
+  }
+  if (note) {
+    note.value = status.note || '';
+    note.setAttribute('aria-invalid', 'false');
+  }
+  if (error) error.textContent = '';
+  if (openMeasure) {
+    openMeasure.disabled = !item.measureId;
+    openMeasure.dataset.measureId = item.measureId || '';
+  }
+}
+
+function openClarificationAudit(key) {
+  const item = findClarificationItem(key);
+  if (!item) return;
+  pendingClarificationAudit = { key, item };
+  renderClarificationAuditModal();
+  document.getElementById('clarificationAuditModal')?.classList.remove('hidden');
+}
+
+function closeClarificationAudit() {
+  pendingClarificationAudit = null;
+  document.getElementById('clarificationAuditModal')?.classList.add('hidden');
+}
+
+function clarificationAuditNoteOrError() {
+  const noteNode = document.getElementById('clarificationAuditNote');
+  const error = document.getElementById('clarificationAuditError');
+  const note = String(noteNode?.value || '').trim();
+  if (!note) {
+    if (noteNode) noteNode.setAttribute('aria-invalid', 'true');
+    if (error) error.textContent = 'Klärnotiz ist erforderlich, damit die Änderung später auditierbar bleibt.';
+    return '';
+  }
+  if (noteNode) noteNode.setAttribute('aria-invalid', 'false');
+  if (error) error.textContent = '';
+  return note;
+}
+
+function appendClarificationAuditEvent(item, note, timestamp, author) {
+  history = appendHistoryEvents(history, [{
+    type: 'clarificationAuditCompleted',
+    subject: { scope: 'clarifications', clarificationKey: item.key, measureId: item.measureId || null, impactId: item.impactId || null },
+    field: 'clarificationStatus',
+    oldValue: clarificationStatus[item.key] || null,
+    newValue: { status: 'closed', note, timestamp, author, measureId: item.measureId || '', title: item.title },
+    note
+  }], author, () => timestamp);
+}
+
+function saveClarificationAudit() {
+  if (!pendingClarificationAudit) return false;
+  const note = clarificationAuditNoteOrError();
+  if (!note) return false;
+  const item = pendingClarificationAudit.item;
+  const author = ensureAuthor();
+  const timestamp = new Date().toISOString();
+  appendClarificationAuditEvent(item, note, timestamp, author);
   clarificationStatus = {
     ...clarificationStatus,
-    [key]: {
-      status: current === 'closed' ? 'open' : 'closed',
-      author: ensureAuthor(),
-      timestamp: new Date().toISOString()
+    [item.key]: {
+      status: 'closed',
+      note: note,
+      author: author,
+      timestamp: timestamp,
+      measureId: pendingClarificationAudit.item.measureId || '',
+      title: item.title
     }
   };
+  measureEditClarificationContext = null;
+  previousModelForHistory = currentModelData();
+  closeClarificationAudit();
   renderAll();
+  setStorageStatus('Klärung mit Notiz und Zeitstempel gespeichert.');
+  return true;
+}
+
+function openClarificationMeasureFromAudit() {
+  if (!pendingClarificationAudit?.item?.measureId) return;
+  const note = clarificationAuditNoteOrError();
+  if (!note) return;
+  const item = pendingClarificationAudit.item;
+  const author = ensureAuthor();
+  const timestamp = new Date().toISOString();
+  clarificationStatus = {
+    ...clarificationStatus,
+    [item.key]: {
+      ...(clarificationStatus[item.key] || {}),
+      status: 'in_review',
+      note: note,
+      author: author,
+      timestamp: timestamp,
+      measureId: pendingClarificationAudit.item.measureId || '',
+      title: item.title
+    }
+  };
+  measureEditClarificationContext = { key: item.key, title: item.title, note, timestamp, author };
+  selectedId = item.measureId;
+  closeClarificationAudit();
+  setView('measures');
+  renderAll();
+  openMeasureEditModal();
+}
+
+function openClarificationMeasure(measureId) {
+  if (!measureId) return;
+  selectedId = measureId;
+  setView('measures');
+  renderAll();
+  openMeasureEditModal();
 }
 
 function setStorageStatus(text) {
@@ -4557,6 +4684,22 @@ function removeImpactAssumption(id) {
   renderAll();
 }
 
+function renderMeasureClarificationAuditBanner(measure) {
+  const banner = document.getElementById('measureClarificationAuditBanner');
+  if (!banner) return;
+  if (!measureEditClarificationContext || measure?.id !== selectedId) {
+    banner.classList.add('hidden');
+    banner.innerHTML = '';
+    return;
+  }
+  banner.classList.remove('hidden');
+  banner.innerHTML = `
+    <strong>Klärung mit Audit-Notiz aktiv</strong>
+    <span>${esc(measureEditClarificationContext.title)} · ${esc(measureEditClarificationContext.author)} · ${esc(new Date(measureEditClarificationContext.timestamp).toLocaleString('de-DE'))}</span>
+    <p>${esc(measureEditClarificationContext.note)}</p>
+  `;
+}
+
 function renderDetail() {
   const measure = selectedMeasure();
 	      if (!measure) {
@@ -4573,6 +4716,7 @@ function renderDetail() {
         renderImpactAssumptions({ impactAssumptions: [] });
         renderHelperCalculators({ cost: 0, secure: 0, uncertain: 0, probability: 0, opexRecognition: 0, impactAssumptions: [] });
         updateMeasureStepper();
+        renderMeasureClarificationAuditBanner(null);
         const timeline = document.getElementById('lifecycleTimeline');
         if (timeline) timeline.innerHTML = '';
 	        return;
@@ -4665,6 +4809,7 @@ function renderDetail() {
       renderHelperCalculators(measure);
       renderMeasureDrilldown(measure);
       renderImpactAssumptions(measure);
+      renderMeasureClarificationAuditBanner(measure);
       updateMeasureStepper();
       const timeline = document.getElementById('lifecycleTimeline');
       if (timeline) timeline.innerHTML = lifecycleTimelineHtml(measure, p);
@@ -5899,9 +6044,13 @@ document.getElementById('meetingFocusBody').addEventListener('click', event => {
 });
 
 document.getElementById('clarificationList').addEventListener('click', event => {
-  const button = event.target.closest('[data-action="toggleClarification"]');
-  if (!button) return;
-  toggleClarification(button.dataset.clarificationKey);
+  const auditButton = event.target.closest('[data-action="openClarificationAudit"]');
+  if (auditButton) {
+    openClarificationAudit(auditButton.dataset.clarificationKey);
+    return;
+  }
+  const measureButton = event.target.closest('[data-action="openClarificationMeasure"]');
+  if (measureButton) openClarificationMeasure(measureButton.dataset.measureId);
 });
 
 document.getElementById('measureBody').addEventListener('click', event => {
@@ -6072,6 +6221,12 @@ document.getElementById('impactAssumptions').addEventListener('click', event => 
 document.getElementById('meetingTextCancel').addEventListener('click', closeMeetingTextModal);
 document.getElementById('meetingTextSave').addEventListener('click', saveMeetingTextModal);
 document.getElementById('meetingTextReset').addEventListener('click', resetMeetingTextModal);
+document.getElementById('clarificationAuditCancel').addEventListener('click', closeClarificationAudit);
+document.getElementById('clarificationAuditSave').addEventListener('click', saveClarificationAudit);
+document.getElementById('clarificationAuditOpenMeasure').addEventListener('click', openClarificationMeasureFromAudit);
+document.getElementById('clarificationAuditModal').addEventListener('click', event => {
+  if (event.target.id === 'clarificationAuditModal') closeClarificationAudit();
+});
 document.getElementById('meetingTextModal').addEventListener('click', event => {
   if (event.target.id === 'meetingTextModal') closeMeetingTextModal();
 });
@@ -6095,8 +6250,8 @@ document.getElementById('expertWorkList').addEventListener('click', event => {
     renderAll();
     openMeasureEditModal();
   }
-  const clarifyButton = event.target.closest('[data-action="toggleClarification"]');
-  if (clarifyButton) toggleClarification(clarifyButton.dataset.clarificationKey);
+  const clarifyButton = event.target.closest('[data-action="openClarificationAudit"]');
+  if (clarifyButton) openClarificationAudit(clarifyButton.dataset.clarificationKey);
 });
 document.querySelectorAll('.expert-filter').forEach(button => {
   button.addEventListener('click', () => {

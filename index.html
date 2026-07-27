@@ -970,6 +970,28 @@
     </div>
   </div>
 
+  <div id="clarificationAuditModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="clarificationAuditTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <h2 id="clarificationAuditTitle">Klärpunkt auditierbar klären</h2>
+      </div>
+      <div class="dialog-body">
+        <div id="clarificationAuditBody" class="clarification-audit-summary"></div>
+        <label for="clarificationAuditNote">Klärnotiz</label>
+        <textarea id="clarificationAuditNote" rows="5" required placeholder="Was wurde fachlich geklärt, durch wen bzw. anhand welcher Quelle? Diese Notiz wird mit Zeitstempel gespeichert."></textarea>
+        <p id="clarificationAuditError" class="form-error" role="alert"></p>
+        <p class="hint">Für eine spätere Prüfung wird die Klärung nicht per Ein-Klick geschlossen. Erst eine Notiz macht nachvollziehbar, warum der Status geändert wurde.</p>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="clarificationAuditCancel">Abbrechen</button>
+        <div class="dialog-actions">
+          <button type="button" id="clarificationAuditOpenMeasure">Datenstelle bearbeiten</button>
+          <button type="button" id="clarificationAuditSave" class="primary">Klärung speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="measureEditModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="measureEditTitle">
     <div class="dialog">
       <div class="dialog-head">
@@ -977,6 +999,7 @@
         <div class="pill-row" id="selectedPills"></div>
       </div>
       <div class="dialog-body">
+        <div id="measureClarificationAuditBanner" class="clarification-audit-banner hidden" role="status"></div>
         <div class="group">
           <h3>Grunddaten</h3>
           <div class="grid2">
