@@ -1121,6 +1121,37 @@
       color: var(--muted);
     }
 
+    .priority-badge {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 1px 7px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .priority-hoch {
+      color: var(--bad);
+      border-color: rgba(162, 58, 58, .35);
+      background: #fff4f4;
+    }
+
+    .priority-mittel {
+      color: var(--warn);
+      border-color: rgba(169, 101, 0, .35);
+      background: #fff8e6;
+    }
+
+    .priority-normal {
+      color: var(--accent);
+      border-color: rgba(0, 111, 143, .3);
+      background: #f0f8fb;
+    }
+
     .clarification-audit-summary {
       padding: 12px;
       border: 1px solid var(--line);

@@ -133,7 +133,8 @@ export function spreadsheetTables(model, options = {}) {
   ];
 
   const measureRows = [[
-    'id', 'externalId', 'name', 'active', 'orgUnit', 'type', 'tags', 'monitoringProfile', 'monitoringCategory',
+    'id', 'externalId', 'name', 'active', 'orgUnit', 'type', 'tags', 'sourceSystem', 'sourceRecordId', 'scoringRef',
+    'assetSystemRef', 'erpRef', 'riskDbRef', 'sourceStatus', 'monitoringProfile', 'monitoringCategory',
     'networkLevel', 'reportingRegion', 'reportingStatus', 'capacityImpact', 'bottleneckRef', 'permitRequired',
     'permitStatus', 'investmentDecisionStatus', 'investmentDecisionDate', 'alternativesChecked', 'flexibilityNeed',
     'year', 'costTeur', 'life', 'hgbLife',
@@ -152,6 +153,13 @@ export function spreadsheetTables(model, options = {}) {
       measure.orgUnit || '',
       measure.type || '',
       Array.isArray(measure.tags) ? measure.tags.join(', ') : '',
+      measure.sourceSystem || '',
+      measure.sourceRecordId || '',
+      measure.scoringRef || '',
+      measure.assetSystemRef || '',
+      measure.erpRef || '',
+      measure.riskDbRef || '',
+      measure.sourceStatus || '',
       monitoringProfileLabel(measure.monitoringProfile),
       measure.monitoringCategory || '',
       measure.networkLevel || '',
@@ -402,6 +410,71 @@ export function spreadsheetTables(model, options = {}) {
       monitoringQuality(measure)
     ]));
 
+  const systemReferenceRows = [[
+    'measureId', 'externalId', 'name', 'sourceSystem', 'sourceRecordId', 'scoringRef', 'assetSystemRef', 'erpRef', 'riskDbRef', 'sourceStatus', 'returnPathStatus'
+  ]];
+  measures.forEach(measure => {
+    const hasSource = text(measure.sourceSystem) && (text(measure.sourceRecordId) || externalMeasureId(measure));
+    systemReferenceRows.push([
+      measure.id || '',
+      externalMeasureId(measure),
+      measure.name || '',
+      measure.sourceSystem || '',
+      measure.sourceRecordId || '',
+      measure.scoringRef || '',
+      measure.assetSystemRef || '',
+      measure.erpRef || '',
+      measure.riskDbRef || '',
+      measure.sourceStatus || '',
+      hasSource ? 'rueckspielweg_benannt' : 'rueckspielweg_offen'
+    ]);
+  });
+
+  const riskMappingRows = [[
+    'measureId', 'externalId', 'name', 'riskAvoidedTeurPa', 'riskDbRef', 'riskEvidenceStatus', 'riskOwnerRole', 'riskAssessmentStatus', 'impactRiskAssumptions', 'mappingStatus'
+  ]];
+  measures.filter(measure => Number(measure.riskAvoided || 0) > 0 || text(measure.riskDbRef)).forEach(measure => {
+    const riskImpacts = impactAssumptionsFor(measure).filter(impact => impact.area === 'risk');
+    const hasMapping = text(measure.riskDbRef) || text(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus) || riskImpacts.some(impact => impact.evidence || impact.chain || impact.riskImpact);
+    riskMappingRows.push([
+      measure.id || '',
+      externalMeasureId(measure),
+      measure.name || '',
+      round(measure.riskAvoided || 0, 2),
+      measure.riskDbRef || '',
+      measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '',
+      measure.riskOwnerRole || '',
+      measure.riskAssessmentStatus || '',
+      riskImpacts.map(impact => `${impact.title}: ${round(impact.amount, 2)} TEUR/a`).join(' | '),
+      hasMapping ? 'mapping_benannt' : 'mapping_offen'
+    ]);
+  });
+
+  function clarificationPriority(area, title, detail, type) {
+    const value = [area, title, detail, type].filter(Boolean).join(' ').toLowerCase();
+    if (/risiko|risk|q-element|q\/e|eog|rab|aktivier|cashflow|kapitalwert|irr|verzinsung|kanu/.test(value)) return ['hoch', 'Rechen-/Steuerungswirkung'];
+    if (/quelle|evidenz|system|daten|mapping|sidecar|wirkannahme|doppelzähl/.test(value)) return ['mittel', 'Evidenz / Datenqualität'];
+    return ['normal', 'Dokumentation / Prozess'];
+  }
+  const prioritizedClarificationRows = [[
+    'priority', 'driver', 'type', 'area', 'measureId', 'measureName', 'title', 'detail', 'suggestedAction'
+  ]];
+  warningRows.slice(1).forEach(row => {
+    const [type, area, measureId, measureName, title, detail] = row;
+    const [priority, driver] = clarificationPriority(area, title, detail, type);
+    prioritizedClarificationRows.push([
+      priority,
+      driver,
+      type,
+      area,
+      measureId,
+      measureName,
+      title,
+      detail,
+      'Datenstelle prüfen, Klärnotiz erfassen und Rückspielweg zum Quellsystem dokumentieren.'
+    ]);
+  });
+
   const provenanceRows = [
     ['Feld', 'Wert'],
     ['Export erstellt am', new Date().toISOString()],
@@ -421,6 +494,9 @@ export function spreadsheetTables(model, options = {}) {
     { name: 'Jahreswerte', rows: yearlyRows },
     { name: 'Projektplan', rows: projectRows },
     { name: 'Klaerpunkte', rows: warningRows },
+    { name: 'Klaerpunkte_Priorisiert', rows: prioritizedClarificationRows },
+    { name: 'Systemreferenzen', rows: systemReferenceRows },
+    { name: 'Risiko_Mapping', rows: riskMappingRows },
     { name: 'Monitoring_Massnahmen', rows: monitoringMeasureRows },
     { name: 'Monitoring_Aggregat', rows: monitoringAggregateRows },
     { name: 'QReg_Netzleistung', rows: qregRows },

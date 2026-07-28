@@ -1108,8 +1108,26 @@ export function portfolioSegmentationFor(results = [], p = {}, allMeasures = [])
 }
 
 function hasRiskEvidence(measure = {}) {
-  const status = measure.riskAvoidedEvidenceStatus || '';
-  return ['documented', 'estimated'].includes(status) || (Array.isArray(measure.impactAssumptions) && measure.impactAssumptions.some(impact => impact.area === 'risk' && (impact.evidence || impact.evidenceType !== 'open')));
+  const status = measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '';
+  return ['documented', 'estimated', 'benannt', 'source_available', 'validated'].includes(status) || (Array.isArray(measure.impactAssumptions) && measure.impactAssumptions.some(impact => impact.area === 'risk' && (impact.evidence || impact.evidenceType !== 'open')));
+}
+
+function hasSystemReference(measure = {}) {
+  return Boolean(
+    String(measure.sourceSystem || '').trim()
+    && (String(measure.sourceRecordId || '').trim() || String(measure.externalId || '').trim())
+  );
+}
+
+function hasRiskMapping(measure = {}) {
+  if (finiteNumber(measure.riskAvoided) <= 0) return true;
+  const status = String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '').trim();
+  const meaningfulStatus = status && !['missing', 'not_assessed', 'open', 'offen'].includes(status);
+  return Boolean(
+    String(measure.riskDbRef || '').trim()
+    || meaningfulStatus
+    || Array.isArray(measure.impactAssumptions) && measure.impactAssumptions.some(impact => impact.area === 'risk' && (impact.evidence || impact.chain || impact.riskImpact))
+  );
 }
 
 function usefulLifeRangeFor(assetType = '') {
@@ -1210,7 +1228,24 @@ export function workstandReliabilityFor(model = {}, result = null) {
   const noRegretMeasures = classicMeasures.filter(isNoRegretType);
   const noRegretOpen = noRegretMeasures.filter(isOpenClassification);
   const sidecar = sidecarReliabilitySummary(model.sidecar || {});
+  const systemReferenceIncomplete = activeMeasures.filter(measure => !hasSystemReference(measure));
+  const riskMappingIncomplete = riskMeasures.filter(measure => !hasRiskMapping(measure));
   const items = [];
+
+  if (activeMeasures.length) items.push({
+    key: 'system-references',
+    label: 'Systemreferenzen je Maßnahme',
+    value: `${systemReferenceIncomplete.length} von ${activeMeasures.length}`,
+    severity: systemReferenceIncomplete.length ? 'warn' : 'good',
+    detail: 'Für Rückspielweg und Audit sollten Quellsystem plus Datensatz-/PSP-/Objektreferenz benannt sein.'
+  });
+  if (riskMeasures.length) items.push({
+    key: 'risk-mapping',
+    label: 'Risiko-Mapping',
+    value: `${riskMappingIncomplete.length} von ${riskMeasures.length}`,
+    severity: riskMappingIncomplete.length ? 'warn' : 'good',
+    detail: 'Risikowerte mit Datenbankbezug, Evidenzstatus, Verantwortung oder strukturierter Wirkungskette verbinden.'
+  });
 
   if (riskMeasures.length) items.push({
     key: 'risk-evidence',
@@ -1250,6 +1285,8 @@ export function workstandReliabilityFor(model = {}, result = null) {
     caveat: warnCount
       ? 'Diese Kachel operationalisiert Nicht-Aussagen: positive KPIs bleiben als Arbeitsstand zu lesen, solange Evidenz, Zielbezug, Typisierung oder Sidecar-Prüfpunkte offen sind.'
       : 'Keine aggregierten Belastbarkeitswarnungen in den geprüften Feldern.',
+    systemReferences: { totalActive: activeMeasures.length, incomplete: systemReferenceIncomplete.length },
+    riskMapping: { riskMeasures: riskMeasures.length, incomplete: riskMappingIncomplete.length },
     riskAvoided: { totalWithValue: riskMeasures.length, missingEvidence: riskMissingEvidence.length },
     targetMapping: { totalActive: activeMeasures.length, withoutTargets: withoutTargets.length },
     noRegret: { noRegretCount: noRegretMeasures.length, activeClassicCount: classicMeasures.length, openClassification: noRegretOpen.length },

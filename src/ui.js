@@ -128,6 +128,8 @@ const detailIds = [
   'mMonitoringProfile', 'mMonitoringCategory', 'mNetworkLevel', 'mReportingRegion', 'mReportingStatus',
   'mCapacityImpact', 'mBottleneckRef', 'mPermitRequired', 'mPermitStatus', 'mInvestmentDecisionStatus',
   'mInvestmentDecisionDate', 'mAlternativesChecked', 'mFlexibilityNeed',
+  'mSourceSystem', 'mSourceRecordId', 'mScoringRef', 'mAssetSystemRef', 'mErpRef', 'mRiskDbRef',
+  'mSourceStatus', 'mRiskEvidenceStatus', 'mRiskOwnerRole', 'mRiskAssessmentStatus',
   'mProbability', 'mOpexRecognition', 'mLife', 'mDepr', 'mQDirect',
   'mEDirect', 'mRiskAvoided', 'mPortfolioShare', 'mOpexPa',
   'mOpexDeltaPa', 'mReinvestCost', 'mReinvestMode', 'mReinvestLife', 'mDecommissionCost', 'mHgbLife',
@@ -237,7 +239,17 @@ const importFields = [
   ['investmentDecisionStatus', 'Investitionsentscheidung'],
   ['investmentDecisionDate', 'Entscheidungsdatum'],
   ['alternativesChecked', 'Alternativenprüfung'],
-  ['flexibilityNeed', 'Flexibilitäts-/SDL-Bedarf']
+  ['flexibilityNeed', 'Flexibilitäts-/SDL-Bedarf'],
+  ['sourceSystem', 'Quellsystem'],
+  ['sourceRecordId', 'Quell-Datensatz / Zeile'],
+  ['scoringRef', 'Scoring-Referenz'],
+  ['assetSystemRef', 'Asset-System-Referenz'],
+  ['erpRef', 'ERP-/Anlagenbuchhaltung-Referenz'],
+  ['riskDbRef', 'Risikodatenbank-Referenz'],
+  ['sourceStatus', 'Quellenstatus'],
+  ['riskEvidenceStatus', 'Risiko-Evidenzstatus'],
+  ['riskOwnerRole', 'Risikoverantwortung'],
+  ['riskAssessmentStatus', 'Risiko-Bewertungsstatus']
 ];
 const importHeaderSynonyms = {
   externalId: ['psp', 'psp-element', 'projektnr', 'projektnummer', 'projekt-id', 'id', 'sap'],
@@ -267,7 +279,17 @@ const importHeaderSynonyms = {
   investmentDecisionStatus: ['investitionsentscheidung', 'beschlussstatus', 'entscheidung status'],
   investmentDecisionDate: ['entscheidungsdatum', 'beschlussdatum'],
   alternativesChecked: ['alternativenprüfung', 'alternativenpruefung', 'alternativen'],
-  flexibilityNeed: ['flexibilitätsbedarf', 'flexibilitaetsbedarf', 'systemdienstleistung', 'sdl']
+  flexibilityNeed: ['flexibilitätsbedarf', 'flexibilitaetsbedarf', 'systemdienstleistung', 'sdl'],
+  sourceSystem: ['quellsystem', 'source system', 'sourceSystem'],
+  sourceRecordId: ['quelldatensatz', 'quell-datensatz', 'source record', 'zeile', 'blatt zeile'],
+  scoringRef: ['scoring referenz', 'scoringref', 'scoring-id', 'scoring id'],
+  assetSystemRef: ['asset referenz', 'asset-system', 'asset id', 'gis id', 'lids'],
+  erpRef: ['erp referenz', 'anlagenbuchhaltung', 'sap ref', 'sap id'],
+  riskDbRef: ['risikodatenbank', 'risiko id', 'riskdb', 'risk id'],
+  sourceStatus: ['quellenstatus', 'source status'],
+  riskEvidenceStatus: ['risiko evidenz', 'risiko-evidenzstatus', 'risk evidence'],
+  riskOwnerRole: ['risikoverantwortung', 'risk owner', 'verantwortung risiko'],
+  riskAssessmentStatus: ['risiko bewertungsstatus', 'bewertungsstatus risiko', 'risk status']
 };
 
 const impactAreaLabels = {
@@ -728,6 +750,16 @@ function normalizeMeasureForUi(measure, index = 0) {
     tags: parseTags(measure.tags),
     hgbLife: Number(measure.hgbLife) || Number(measure.life) || 1,
     importStatus: String(measure.importStatus || ''),
+    sourceSystem: String(measure.sourceSystem || ''),
+    sourceRecordId: String(measure.sourceRecordId || ''),
+    scoringRef: String(measure.scoringRef || ''),
+    assetSystemRef: String(measure.assetSystemRef || ''),
+    erpRef: String(measure.erpRef || ''),
+    riskDbRef: String(measure.riskDbRef || ''),
+    sourceStatus: String(measure.sourceStatus || ''),
+    riskEvidenceStatus: String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || ''),
+    riskOwnerRole: String(measure.riskOwnerRole || ''),
+    riskAssessmentStatus: String(measure.riskAssessmentStatus || ''),
     objectiveIds: Array.isArray(measure.objectiveIds) ? measure.objectiveIds.map(String) : [],
     templateId: String(measure.templateId || ''),
     templateVersion: String(measure.templateVersion || ''),
@@ -932,7 +964,7 @@ function renderExpertWorkList() {
       <article class="clarification-item ${item.status === 'closed' ? 'closed' : ''}">
         <div>
           <strong>${esc(item.measure)}: ${esc(item.title)}</strong>
-          <div class="clarification-meta">${esc(item.area)} · ${item.type === 'impact' ? 'Wirkannahme prüfen' : 'Klärpunkt'}</div>
+          <div class="clarification-meta">${esc(item.area)} · ${item.type === 'impact' ? 'Wirkannahme prüfen' : 'Klärpunkt'} · <span class="priority-badge priority-${esc(item.priority?.label || 'normal')}">Priorität ${esc(item.priority?.label || 'normal')}</span></div>
           <p class="hint">${esc(item.detail)}</p>
         </div>
         <div class="row-actions">
@@ -960,6 +992,17 @@ function scenarioVerdictSignature() {
 
 function clarificationKey(item) {
   return item.key;
+}
+
+function clarificationPriorityFor(item = {}) {
+  const text = [item.area, item.title, item.detail, item.type].filter(Boolean).join(' ').toLowerCase();
+  if (/risiko|risk|q-element|q\/e|eog|rab|aktivier|cashflow|kapitalwert|irr|verzinsung|kanu/.test(text)) {
+    return { level: 1, label: 'hoch', driver: 'Rechen-/Steuerungswirkung' };
+  }
+  if (/quelle|evidenz|system|daten|mapping|sidecar|wirkannahme|doppelzähl/.test(text)) {
+    return { level: 2, label: 'mittel', driver: 'Evidenz / Datenqualität' };
+  }
+  return { level: 3, label: 'normal', driver: 'Dokumentation / Prozess' };
 }
 
 function clarificationItems() {
@@ -999,10 +1042,16 @@ function clarificationItems() {
       measure: warning.measure,
       detail: warning.detail || 'mögliche Doppelzählung prüfen.'
     }));
-  return [...impactItems, ...warningItems, ...noteItems].map(item => ({
-    ...item,
-    status: clarificationStatus[clarificationKey(item)]?.status || 'open'
-  }));
+  return [...impactItems, ...warningItems, ...noteItems]
+    .map(item => {
+      const priority = clarificationPriorityFor(item);
+      return {
+        ...item,
+        priority,
+        status: clarificationStatus[clarificationKey(item)]?.status || 'open'
+      };
+    })
+    .sort((a, b) => a.priority.level - b.priority.level || String(a.measure || '').localeCompare(String(b.measure || ''), 'de'));
 }
 
 function maturityScore() {
@@ -1443,7 +1492,7 @@ function renderMaturityAndClarifications() {
       <article class="clarification-item ${item.status === 'closed' ? 'closed' : ''}">
         <div>
           <strong>${esc(item.measure)}: ${esc(item.title)}</strong>
-          <div class="clarification-meta">${esc(item.area)} · Zielphase ${esc(phaseLabel(item.targetPhase))} · ${item.status === 'closed' ? 'geklärt' : 'offen'}</div>
+          <div class="clarification-meta">${esc(item.area)} · Zielphase ${esc(phaseLabel(item.targetPhase))} · <span class="priority-badge priority-${esc(item.priority?.label || 'normal')}">Priorität ${esc(item.priority?.label || 'normal')} · ${esc(item.priority?.driver || 'Prüfung')}</span> · ${item.status === 'closed' ? 'geklärt' : 'offen'}</div>
           <p class="hint">${esc(item.detail)}</p>
         </div>
         <div class="row-actions">
@@ -4738,6 +4787,16 @@ function renderDetail() {
   el.mInvestmentDecisionDate.value = measure.investmentDecisionDate || '';
   el.mAlternativesChecked.value = measure.alternativesChecked || '';
   el.mFlexibilityNeed.value = measure.flexibilityNeed || '';
+  el.mSourceSystem.value = measure.sourceSystem || '';
+  el.mSourceRecordId.value = measure.sourceRecordId || '';
+  el.mScoringRef.value = measure.scoringRef || '';
+  el.mAssetSystemRef.value = measure.assetSystemRef || '';
+  el.mErpRef.value = measure.erpRef || '';
+  el.mRiskDbRef.value = measure.riskDbRef || '';
+  el.mSourceStatus.value = measure.sourceStatus || '';
+  el.mRiskEvidenceStatus.value = measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '';
+  el.mRiskOwnerRole.value = measure.riskOwnerRole || '';
+  el.mRiskAssessmentStatus.value = measure.riskAssessmentStatus || '';
   el.mType.value = measure.type;
   el.mEffectType.value = measure.effectType || 'classic';
   el.mFlexibilityUseCase.value = measure.flexibilityUseCase || 'netzfahrplan';
@@ -5381,6 +5440,25 @@ function committeeReportHtml(result, first, spread, metrics = portfolioDecisionM
   `;
 }
 
+function systemIntegrationReportHtml(result) {
+  const active = result.activeMeasures || [];
+  const missingSources = active.filter(measure => !(String(measure.sourceSystem || '').trim() && (String(measure.sourceRecordId || '').trim() || String(measure.externalId || '').trim())));
+  const riskMeasures = active.filter(measure => Number(measure.riskAvoided || 0) > 0);
+  const incompleteRisk = riskMeasures.filter(measure => !(String(measure.riskDbRef || '').trim() || String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '').trim()));
+  const linkedBack = active.length - missingSources.length;
+  return `
+    <section class="report-section">
+      <h2>Arbeitsakte und Systemrückspielweg</h2>
+      <p class="hint">Arbeitsakte ersetzt kein führendes System: ERP, Asset-System, Scoringliste, Risikodatenbank und Investitionsmanagement bleiben Quellen bzw. Rückspielziele. Der Rechner bündelt Annahmen, Wirkung und Prüfstatus für Befassung und Export.</p>
+      <div class="report-summary">
+        <div class="report-box"><strong>Systemreferenzen</strong><p>${linkedBack} von ${active.length} aktiven Maßnahmen mit Quellsystem und Datensatz-/PSP-Bezug.</p></div>
+        <div class="report-box"><strong>Risiko-Mapping</strong><p>${riskMeasures.length - incompleteRisk.length} von ${riskMeasures.length} Risikowerten mit Datenbank-/Evidenzbezug.</p></div>
+        <div class="report-box"><strong>Nutzungsmodus</strong><p>Sidecar zu bestehenden Systemen / Import-Export-Brücke; keine Vollintegration und keine führende Stammdatenhaltung.</p></div>
+      </div>
+    </section>
+  `;
+}
+
 function renderReport(result, first, spread, decision, metrics) {
   const report = document.getElementById('reportPage');
   if (!report) return;
@@ -5448,13 +5526,15 @@ function renderReport(result, first, spread, decision, metrics) {
   const clarifications = clarificationItems();
   const clarificationRows = clarifications.map(item => `
     <tr>
+      <td>${esc(item.priority?.label || 'normal')}</td>
+      <td>${esc(item.priority?.driver || 'Prüfung')}</td>
       <td>${esc(item.measure)}</td>
       <td>${esc(item.title)}</td>
       <td>${esc(item.area)}</td>
       <td>${esc(phaseLabel(item.targetPhase))}</td>
       <td>${item.status === 'closed' ? 'geklärt' : 'offen'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="5">Keine Klärpunkte dokumentiert.</td></tr>';
+  `).join('') || '<tr><td colspan="7">Keine Klärpunkte dokumentiert.</td></tr>';
   const snapshotRows = (history.snapshots || []).map(snapshot => `
     <tr>
       <td>${esc(snapshot.label)}</td>
@@ -5612,6 +5692,8 @@ function renderReport(result, first, spread, decision, metrics) {
 
     ${sidecarReportSummaryHtml()}
 
+    ${systemIntegrationReportHtml(result)}
+
     <section class="report-section">
       <h2>Regulatorische Wirkannahmen</h2>
       <p class="hint">Diese Datenpunkte holen VNB-spezifisches Wissen ab. Sie fließen je nach Vertrauen und Governance-Status in Basis-, konservatives oder Wert-Szenario ein.</p>
@@ -5634,7 +5716,7 @@ function renderReport(result, first, spread, decision, metrics) {
       ${phaseStepperHtml()}
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Maßnahme</th><th>Klärpunkt</th><th>Bereich</th><th>Zielphase</th><th>Status</th></tr></thead>
+          <thead><tr><th>Priorität</th><th>Treiber</th><th>Maßnahme</th><th>Klärpunkt</th><th>Bereich</th><th>Zielphase</th><th>Status</th></tr></thead>
           <tbody>${clarificationRows}</tbody>
         </table>
       </div>
@@ -5784,7 +5866,17 @@ function updateSelectedFromDetail() {
 	        investmentDecisionDate: el.mInvestmentDecisionDate.value,
 	        alternativesChecked: el.mAlternativesChecked.value.trim(),
 	        flexibilityNeed: el.mFlexibilityNeed.value.trim(),
-        effectType: el.mEffectType.value === 'flexibility' ? 'flexibility' : 'classic',
+	        sourceSystem: el.mSourceSystem.value.trim(),
+	        sourceRecordId: el.mSourceRecordId.value.trim(),
+	        scoringRef: el.mScoringRef.value.trim(),
+	        assetSystemRef: el.mAssetSystemRef.value.trim(),
+	        erpRef: el.mErpRef.value.trim(),
+	        riskDbRef: el.mRiskDbRef.value.trim(),
+	        sourceStatus: el.mSourceStatus.value,
+	        riskEvidenceStatus: el.mRiskEvidenceStatus.value,
+	        riskOwnerRole: el.mRiskOwnerRole.value.trim(),
+	        riskAssessmentStatus: el.mRiskAssessmentStatus.value.trim(),
+	        effectType: el.mEffectType.value === 'flexibility' ? 'flexibility' : 'classic',
         flexibilityUseCase: el.mFlexibilityUseCase.value,
         flexibilityStatus: el.mFlexibilityStatus.value,
         regulatoryTreatment: el.mRegulatoryTreatment.value,

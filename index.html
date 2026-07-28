@@ -1155,6 +1155,28 @@
             </div>
           </div>
         </div>
+        <div class="group system-reference-group">
+          <h3>Systemreferenzen / Rückspielweg</h3>
+          <p class="hint">Optionale Integrationsfelder: Die Arbeitsakte ersetzt kein führendes System, sondern zeigt, aus welcher Quelle ein Wert stammt und wohin eine Korrektur zurückgespielt werden muss.</p>
+          <div class="grid2">
+            <div><label for="mSourceSystem">Quellsystem</label><input id="mSourceSystem" type="text" placeholder="z.B. Scoringliste, ERP, Asset-System"></div>
+            <div><label for="mSourceRecordId">Datensatz / Zeile</label><input id="mSourceRecordId" type="text" placeholder="z.B. Blatt/Zeile, Record-ID"></div>
+            <div><label for="mScoringRef">Scoring-Referenz</label><input id="mScoringRef" type="text" placeholder="Scoring-ID oder Listenversion"></div>
+            <div><label for="mAssetSystemRef">Asset-System-Referenz</label><input id="mAssetSystemRef" type="text" placeholder="Asset-/LIDS-/GIS-ID"></div>
+            <div><label for="mErpRef">ERP-/Anlagenbuchhaltung-Referenz</label><input id="mErpRef" type="text" placeholder="SAP/PSP/Anlagen-Nr."></div>
+            <div><label for="mRiskDbRef">Risikodatenbank-Referenz</label><input id="mRiskDbRef" type="text" placeholder="Risiko-ID oder Registereintrag"></div>
+            <div><label for="mSourceStatus">Quellenstatus</label><select id="mSourceStatus"><option value="">offen</option><option value="benannt">benannt</option><option value="source_available">Quelle verfügbar</option><option value="validated">validiert</option><option value="conflicting">widersprüchlich</option></select></div>
+          </div>
+        </div>
+        <div class="group risk-mapping-group">
+          <h3>Risiko-Mapping / Datenbankbezug</h3>
+          <p class="hint">Der Risikowert bleibt eine rechnerische Arbeitsannahme. Hier wird dokumentiert, ob Schadenshöhe, Eintrittswahrscheinlichkeit, Verantwortung und Datenbankbezug auditierbar sind.</p>
+          <div class="grid2">
+            <div><label for="mRiskEvidenceStatus">Risiko-Evidenzstatus</label><select id="mRiskEvidenceStatus"><option value="">offen</option><option value="missing">fehlt</option><option value="benannt">benannt</option><option value="source_available">Quelle verfügbar</option><option value="validated">validiert</option><option value="conflicting">widersprüchlich</option></select></div>
+            <div><label for="mRiskOwnerRole">Risikoverantwortung</label><input id="mRiskOwnerRole" type="text" placeholder="z.B. Technik, Controlling, Risikomanagement"></div>
+            <div><label for="mRiskAssessmentStatus">Bewertungsstatus</label><input id="mRiskAssessmentStatus" type="text" placeholder="offen, prüfpflichtig, validiert"></div>
+          </div>
+        </div>
         <div id="stromFlexibilityLayer" class="group strom-only">
           <h3>Flexibilität / Netzfahrplan</h3>
           <p class="hint warning">Strom-spezifische Objektklasse für Flexibilitäten, Netzfahrplan, vermiedene oder verschobene CAPEX und AGNeS-/Steuerungsbezug. Flexibilität wird nicht automatisch als klassische Netz-CAPEX interpretiert.</p>
