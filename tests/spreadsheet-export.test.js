@@ -69,6 +69,9 @@ describe('spreadsheet exports', () => {
       'Jahreswerte',
       'Projektplan',
       'Klaerpunkte',
+      'Klaerpunkte_Priorisiert',
+      'Systemreferenzen',
+      'Risiko_Mapping',
       'Monitoring_Massnahmen',
       'Monitoring_Aggregat',
       'QReg_Netzleistung',
@@ -103,7 +106,7 @@ describe('spreadsheet exports', () => {
     expect(xlsxText).toContain('Massnahmen');
     const measuresSheetXml = zipEntryText(xlsx, 'xl/worksheets/sheet2.xml');
     const sharedStringsXml = zipEntryText(xlsx, 'xl/sharedStrings.xml');
-    expect(measuresSheetXml).toContain('dimension ref="A1:AS6"');
+    expect(measuresSheetXml).toContain('dimension ref="A1:AZ6"');
     expect(measuresSheetXml).toContain('<row r="2"');
     expect(measuresSheetXml).toContain(' t="s"');
     expect(sharedStringsXml).toContain('SAP-PSP-NA-2027-001');
