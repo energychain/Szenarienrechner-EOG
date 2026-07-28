@@ -12,15 +12,15 @@ describe('demo data loading UX', () => {
     expect(ui).toContain('hasStoredModelState()');
     expect(ui).toContain('Der aktuell im Browser gespeicherte Arbeitsstand wird dadurch überschrieben');
     expect(ui).toContain('Demodaten wurden nicht geladen; vorhandener Arbeitsstand bleibt erhalten.');
-    expect(ui).toContain("startDemo').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'basis' })");
-    expect(ui).toContain("loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'basis' })");
+    expect(ui).toContain("startDemo').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'akte' })");
+    expect(ui).toContain("loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'akte' })");
     expect(ui).toContain("loadDemoFromModal').addEventListener('click'");
   });
 
   it('opens demo data at the start of the planning workflow instead of the decision view', () => {
     expect(ui).toContain("activeView = targetView");
     expect(ui).toContain("phase: 'initialisierung'");
-    expect(ui).toContain('Auf der Grundlagenansicht Startwerte, Quellen und Rollen prüfen');
+    expect(ui).toContain('Arbeitsstand im Akten-Cockpit verstehen');
     expect(ui).not.toContain("activeView = 'results';");
     expect(html).toContain('öffnet den Start der Planungsrunde');
   });

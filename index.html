@@ -124,30 +124,42 @@
     </div>
   </section>
 
-  <nav class="view-tabs" aria-label="Arbeitsfluss">
-    <div class="workflow-tabs" aria-label="Kernprozess">
-      <button type="button" class="view-tab active" data-view="basis">
-        <span class="step-main"><span class="step-number">1</span>Grundlagen</span>
-        <span class="step-status" id="status-basis">Stammdaten offen</span>
+  <nav class="view-tabs akte-nav" aria-label="Akte-Arbeitsfluss">
+    <div class="workflow-tabs" aria-label="Hauptpfad der Akte">
+      <button type="button" class="view-tab active theme-orientation" data-view="akte">
+        <span class="step-main"><span class="step-number">1</span>Akte</span>
+        <span class="step-status" id="status-akte">Cockpit</span>
       </button>
-      <button type="button" class="view-tab" data-view="measures">
-        <span class="step-main"><span class="step-number">2</span>Maßnahmen</span>
+      <button type="button" class="view-tab theme-edit" data-view="measures">
+        <span class="step-main"><span class="step-number">2</span>Bearbeiten</span>
         <span class="step-status" id="status-measures">0 Maßnahmen aktiv</span>
       </button>
-      <button type="button" class="view-tab" data-view="results">
-        <span class="step-main"><span class="step-number">3</span>Entscheidung</span>
-        <span class="step-status" id="status-results">Entscheidung offen</span>
+      <button type="button" class="view-tab theme-evidence" data-view="sidecar">
+        <span class="step-main"><span class="step-number">3</span>Evidenz & Systeme</span>
+        <span class="step-status" id="status-sidecar">0 Objekte</span>
       </button>
-      <button type="button" class="view-tab" data-view="report">
-        <span class="step-main">Report</span>
-        <span class="step-status" id="status-report">noch offen</span>
+      <button type="button" class="view-tab theme-clarify" data-view="expertWork">
+        <span class="step-main"><span class="step-number">4</span>Prüfen & Klären</span>
+        <span class="step-status" id="status-expertWork">Aufgaben</span>
+      </button>
+      <button type="button" class="view-tab theme-present" data-view="presentation">
+        <span class="step-main"><span class="step-number">5</span>Präsentation</span>
+        <span class="step-status" id="status-presentation">Meeting</span>
+      </button>
+      <button type="button" class="view-tab theme-export" data-view="report">
+        <span class="step-main"><span class="step-number">6</span>Export</span>
+        <span class="step-status" id="status-report">Report</span>
       </button>
     </div>
-    <div class="support-tabs" aria-label="Arbeitsstand und Werkzeuge">
-      <span class="support-tabs-label">Arbeitsstand</span>
-      <button type="button" class="view-tab support-tab" data-view="sidecar">
-        <span class="step-main">Kontext & Evidenz</span>
-        <span class="step-status" id="status-sidecar">0 Objekte</span>
+    <div class="support-tabs" aria-label="Werkzeuge und Detailpflege">
+      <span class="support-tabs-label">Werkzeuge</span>
+      <button type="button" class="view-tab support-tab" data-view="basis">
+        <span class="step-main">Grundlagen</span>
+        <span class="step-status" id="status-basis">Stammdaten offen</span>
+      </button>
+      <button type="button" class="view-tab support-tab" data-view="results">
+        <span class="step-main">Entscheidung im Detail</span>
+        <span class="step-status" id="status-results">Entscheidung offen</span>
       </button>
       <button type="button" class="view-tab support-tab" data-view="projectPlan">
         <span class="step-main">Projektplan</span>
@@ -189,7 +201,34 @@
   </section>
 
   <main>
-    <section class="panel app-view" data-view-panel="basis" aria-label="Basisdaten und Szenario">
+    <section class="panel app-view akte-cockpit" data-view-panel="akte" aria-label="Akten-Cockpit">
+      <div class="akte-hero">
+        <div>
+          <p class="eyebrow">Digitale Akte</p>
+          <h2 id="akteTitle">Arbeitsstand verstehen, prüfen, präsentieren.</h2>
+          <p id="akteSubtitle">Die Akte bündelt Daten, Maßnahmen, Evidenz, Governance-Logik, Klärungen und Übergabeformate.</p>
+        </div>
+        <div class="akte-hero-actions">
+          <button type="button" class="primary" data-jump-view="presentation">Präsentation zeigen</button>
+          <button type="button" data-jump-view="expertWork">Top-Klärungen prüfen</button>
+          <button type="button" data-jump-view="measures">Maßnahmen bearbeiten</button>
+        </div>
+      </div>
+      <div class="akte-workspace">
+        <section class="akte-card theme-orientation" id="akteDecisionCard" aria-label="Entscheidungslage"></section>
+        <section class="akte-card theme-clarify" id="akteClarificationsCard" aria-label="Top-Klärungen"></section>
+        <section class="akte-card theme-evidence" id="akteEvidenceCard" aria-label="Evidenz und Systeme"></section>
+        <section class="akte-card theme-edit" id="akteReliabilityCard" aria-label="Belastbarkeit"></section>
+        <section class="akte-card wide theme-present" id="akteFlowDiagram" aria-label="Governance-Ablauf"></section>
+        <section class="akte-card" id="akteNextStepCard" aria-label="Nächster Schritt"></section>
+      </div>
+      <div class="akte-lower-grid">
+        <section class="akte-card akte-kanban-preview" id="akteKanbanPreview" aria-label="Klärpunkt-Kanban"></section>
+        <section class="akte-card akte-presentation-preview" id="aktePresentationPreview" aria-label="Präsentationsvorschau"></section>
+      </div>
+    </section>
+
+    <section class="panel app-view hidden" data-view-panel="basis" aria-label="Basisdaten und Szenario">
       <div id="basisSummaryCards" class="summary-card-grid" aria-label="Grundlagen-Zusammenfassung"></div>
 
       <div class="group basis-edit-section">
@@ -767,6 +806,24 @@
         Der Rechner ersetzt nicht die Entscheidung. Er macht aber die Abhängigkeiten sichtbar: Basisdaten, Maßnahmen, regulatorische Logik, Finanzierung, Portfolioeffekte und Attribution werden konsistent in einem Modell gerechnet.
       </div>
     </div>
+
+    <section class="panel app-view hidden presentation-view" data-view-panel="presentation" aria-label="Präsentationsmodus">
+      <div class="presentation-shell">
+        <div class="presentation-toolbar">
+          <div>
+            <p class="eyebrow">Präsentation aus der Akte</p>
+            <h2>Meeting-Ansicht</h2>
+          </div>
+          <div class="presentation-actions">
+            <button type="button" id="presentationPrev">Zurück</button>
+            <span id="presentationCounter" class="pill">1 / 7</span>
+            <button type="button" id="presentationNext" class="primary">Weiter</button>
+            <button type="button" data-jump-view="akte">Zur Akte</button>
+          </div>
+        </div>
+        <div id="presentationDeck" class="presentation-deck" aria-live="polite"></div>
+      </div>
+    </section>
 
     <section class="panel app-view hidden" data-view-panel="report" aria-label="Management-Report">
       <div class="report-actions">

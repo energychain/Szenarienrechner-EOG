@@ -123,7 +123,7 @@ const el = Object.fromEntries([...inputIds, ...detailIds, ...committeeIds].map(i
 let measures = structuredClone(initialMeasures);
 let selectedId = measures[0]?.id;
 let scenario = 'basis';
-let activeView = 'basis';
+let activeView = 'akte';
 let reportMode = 'management';
 let meetingFocus = 'management';
 let meetingTextOverrides = {};
@@ -1821,7 +1821,7 @@ function applyModelState(state) {
     ? model.selectedId
     : measures[0]?.id;
   scenario = ['basis', 'konservativ', 'wert'].includes(model.scenario) ? model.scenario : 'basis';
-  activeView = ['basis', 'measures', 'results', 'report', 'projectPlan', 'expertWork', 'sidecar'].includes(model.activeView) ? model.activeView : activeView;
+  activeView = ['akte', 'basis', 'measures', 'results', 'report', 'projectPlan', 'expertWork', 'sidecar', 'presentation'].includes(model.activeView) ? model.activeView : activeView;
   reportMode = ['management', 'committee'].includes(model.reportMode) ? model.reportMode : 'management';
   meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(model.meetingFocus) ? model.meetingFocus : 'management';
   meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
@@ -2511,7 +2511,7 @@ function applyDemoModel(options = {}) {
     phase: 'initialisierung',
     resume: {
       statusNote: 'Demodaten geladen: Der Beispielstand ist als synthetische Planungsrunde verfügbar.',
-      nextStep: 'Auf der Grundlagenansicht Startwerte, Quellen und Rollen prüfen; danach Maßnahmen und Entscheidungssicht öffnen.',
+      nextStep: 'Arbeitsstand im Akten-Cockpit verstehen; danach Maßnahmen und Entscheidungssicht öffnen.',
       owner: 'Modellverantwortung',
       dueDate: '2027-01-20'
     }
@@ -3437,6 +3437,147 @@ function renderMeetingFocus(result, first, spread, metrics = portfolioDecisionMe
   document.getElementById('meetingFocusBody').innerHTML = rows[meetingFocus].join('');
 }
 
+
+function akteActionButton(label, view, extra = '') {
+  return `<button type="button" ${extra} data-jump-view="${esc(view)}">${esc(label)}</button>`;
+}
+
+function kanbanCountHtml(openItems) {
+  const high = openItems.filter(item => item.priority?.label === 'hoch').length;
+  const medium = openItems.filter(item => item.priority?.label === 'mittel').length;
+  const normal = Math.max(0, openItems.length - high - medium);
+  return `
+    <div class="kanban-mini">
+      <div><strong>${high}</strong><span>hoch</span></div>
+      <div><strong>${medium}</strong><span>mittel</span></div>
+      <div><strong>${normal}</strong><span>normal</span></div>
+      <div><strong>${openItems.length}</strong><span>gesamt</span></div>
+    </div>
+  `;
+}
+
+function renderAkteCockpit(result, first, decision, metrics) {
+  const title = document.getElementById('akteTitle');
+  if (!title) return;
+  const maturity = maturityScore();
+  const openItems = maturity.openClarifications;
+  const topItems = openItems.slice(0, 5);
+  const reliability = workstandReliabilityFor(currentModelData(), result);
+  const sidecarStats = sidecarSummary(normalizeSidecar(sidecar));
+  const nextTask = projectPlanNextReadyTask(projectPlan);
+  const sector = el.sector.value === 'gas' ? 'Gas' : 'Strom';
+  title.textContent = `${sector}-Akte · ${phaseLabel(processState.phase)}`;
+  document.getElementById('akteSubtitle').textContent = `${result.activeMeasures.length} aktive Maßnahmen · ${maturity.score} % Entscheidungsreife · ${openItems.length} offene Klärpunkte.`;
+  document.getElementById('akteDecisionCard').innerHTML = `
+    <div class="card-kicker">Entscheidungslage</div>
+    <h3>${esc(decision.title)}</h3>
+    <p>${esc(decision.text)}</p>
+    <div class="metric-strip">
+      <span><strong>${fmtTeur(metrics.recurringRegulatoryEog, 1)}</strong>EOG Folgejahr</span>
+      <span><strong>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</strong>IRR indikativ</span>
+      <span><strong>${fmtTeur(result.npv, 1)}</strong>Kapitalwert</span>
+    </div>
+    <div class="card-actions">${akteActionButton('Details prüfen', 'results', 'class="primary"')} ${akteActionButton('Präsentieren', 'presentation')}</div>
+  `;
+  document.getElementById('akteClarificationsCard').innerHTML = `
+    <div class="card-kicker">Prüfen & Klären</div>
+    <h3>${openItems.length ? `${openItems.length} offene Klärpunkte` : 'Keine offenen Klärpunkte'}</h3>
+    ${kanbanCountHtml(openItems)}
+    <ol class="top-list">${topItems.map(item => `<li><span class="priority-badge priority-${esc(item.priority?.label || 'normal')}">${esc(item.priority?.label || 'normal')}</span><button type="button" data-clarification-jump="${esc(item.key)}">${esc(item.measure)} · ${esc(item.title)}</button></li>`).join('') || '<li>Keine Klärung blockiert die Akte.</li>'}</ol>
+    <div class="card-actions">${akteActionButton('Kanban öffnen', 'expertWork', 'class="primary"')}</div>
+  `;
+  document.getElementById('akteEvidenceCard').innerHTML = `
+    <div class="card-kicker">Evidenz & Systeme</div>
+    <h3>${sidecarStats.total || 0} Sidecar-Objekte · Rückspielweg sichtbar</h3>
+    <div class="status-chips">
+      <span class="chip violet">${sidecarStats.withoutCalculationImpact || 0} ohne Rechenwirkung</span>
+      <span class="chip amber">${sidecarStats.openBridgeLogic || 0} offene Brückenlogik</span>
+      <span class="chip teal">${sidecarStats.activated || 0} aktiviert markiert</span>
+    </div>
+    <p>Quellen, Datenqualität, Systemreferenzen und wirtschaftliche Brücken werden getrennt von Maßnahmen geführt.</p>
+    <div class="card-actions">${akteActionButton('Evidenz prüfen', 'sidecar', 'class="primary"')}</div>
+  `;
+  document.getElementById('akteReliabilityCard').innerHTML = `
+    <div class="card-kicker">Belastbarkeit</div>
+    <h3>${esc(reliability.verdict)}</h3>
+    <p>${esc(reliability.caveat)}</p>
+    <div class="reliability-mini">${reliability.items.slice(0, 4).map(item => `<span class="${item.severity === 'warn' ? 'amber' : 'green'}"><strong>${esc(item.value)}</strong>${esc(item.label)}</span>`).join('')}</div>
+    <div class="card-actions">${akteActionButton('Arbeitsstand prüfen', 'results')}</div>
+  `;
+  document.getElementById('akteFlowDiagram').innerHTML = `
+    <div class="card-kicker">Governance-Logik</div>
+    <h3>Von Daten zur Befassung</h3>
+    <div class="governance-flow" aria-label="Governance-Ablauf">
+      <div><strong>Daten</strong><span>Stammdaten · Systeme</span></div>
+      <div><strong>Maßnahmen</strong><span>Kosten · Timing</span></div>
+      <div><strong>Evidenz</strong><span>Sidecar · Quellen</span></div>
+      <div><strong>Klärung</strong><span>Notiz · Audit</span></div>
+      <div><strong>Entscheidung</strong><span>Report · Präsentation</span></div>
+    </div>
+  `;
+  document.getElementById('akteNextStepCard').innerHTML = `
+    <div class="card-kicker">Nächster sinnvoller Schritt</div>
+    <h3>${esc(processState.resume?.nextStep || nextTask?.task?.title || 'Arbeitsstand schärfen')}</h3>
+    <p>${nextTask?.task ? `${esc(nextTask.task.ownerRole)} · Ergebnis: ${esc(nextTask.task.resultArtifact || 'Arbeitsvermerk')}` : 'Noch kein nächster Schritt festgelegt.'}</p>
+    <div class="card-actions">${akteActionButton('Projektplan öffnen', 'projectPlan')} ${akteActionButton('Export vorbereiten', 'report')}</div>
+  `;
+  document.getElementById('akteKanbanPreview').innerHTML = `
+    <div class="card-kicker">Klärpunkt-Kanban</div>
+    <h3>Bekanntes Arbeitsmuster statt langer Liste</h3>
+    <div class="kanban-board mini-board">
+      <div><strong>Offen</strong>${topItems.slice(0, 3).map(item => `<span>${esc(item.title)}</span>`).join('') || '<span>leer</span>'}</div>
+      <div><strong>In Prüfung</strong><span>per Klärnotiz auditierbar</span></div>
+      <div><strong>Geklärt</strong><span>Zeitstempel + Notiz</span></div>
+    </div>
+  `;
+  document.getElementById('aktePresentationPreview').innerHTML = `
+    <div class="card-kicker">Meeting-Modus</div>
+    <h3>Präsentieren und zurück bearbeiten</h3>
+    <p>Folien zeigen Arbeitsstand, Entscheidung, Wasserfall, Klärungen und nächsten Prüfauftrag. Jede Folie kann zurück zur passenden Bearbeitung springen.</p>
+    <div class="card-actions">${akteActionButton('Präsentation starten', 'presentation', 'class="primary"')}</div>
+  `;
+}
+
+let presentationSlideIndex = 0;
+
+function presentationSlides(result, first, decision, metrics) {
+  const maturity = maturityScore();
+  const openItems = maturity.openClarifications;
+  const reliability = workstandReliabilityFor(currentModelData(), result);
+  const waterfall = portfolioWaterfallFor(result);
+  return [
+    { title: 'Diese Akte', eyebrow: 'Arbeitsstand', view: 'akte', body: `${el.sector.value === 'gas' ? 'Gas' : 'Strom'} · ${phaseLabel(processState.phase)} · ${result.activeMeasures.length} aktive Maßnahmen`, visual: maturityRingHtml(maturity.score, maturity.blockers, 120) },
+    { title: decision.title, eyebrow: 'Entscheidungslage', view: 'results', body: decision.text, visual: `<div class="metric-strip large"><span><strong>${fmtTeur(metrics.recurringRegulatoryEog, 1)}</strong>EOG</span><span><strong>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</strong>IRR</span><span><strong>${fmtTeur(result.npv, 1)}</strong>NPV</span></div>` },
+    { title: 'EOG ≠ Cashflow', eyebrow: 'Überleitung', view: 'results', body: `${fmtTeur(waterfall.firstFollowYear.regulatoryEogEffect, 1)} regulatorische EOG plus ${fmtTeur(waterfall.firstFollowYear.economicBridge, 1)} wirtschaftliche Brücke.`, visual: `<div class="presentation-flow"><span>Basis-EOG</span><span>→</span><span>Maßnahmen</span><span>→</span><span>Cashflow-Brücke</span></div>` },
+    { title: `${openItems.length} offene Klärpunkte`, eyebrow: 'Prüfauftrag', view: 'expertWork', body: openItems.slice(0, 4).map(item => `${item.priority?.label || 'normal'}: ${item.measure} · ${item.title}`).join(' | ') || 'Keine offenen Klärpunkte.', visual: kanbanCountHtml(openItems) },
+    { title: 'Belastbarkeit des Arbeitsstands', eyebrow: 'Governance', view: 'results', body: `${reliability.verdict}. ${reliability.caveat}`, visual: `<div class="reliability-mini large">${reliability.items.slice(0, 4).map(item => `<span class="${item.severity === 'warn' ? 'amber' : 'green'}"><strong>${esc(item.value)}</strong>${esc(item.label)}</span>`).join('')}</div>` },
+    { title: 'Evidenz & Systeme', eyebrow: 'Sidecar', view: 'sidecar', body: 'Sidecar-Objekte, Systemreferenzen und Brückenlogik bleiben sichtbar, aber ohne automatische KPI-Wirkung.', visual: `<div class="presentation-flow violet"><span>Quelle</span><span>→</span><span>Evidenz</span><span>→</span><span>Brücke</span><span>→</span><span>Prüfung</span></div>` },
+    { title: 'Nächster Schritt', eyebrow: 'Befassung', view: 'projectPlan', body: processState.resume?.nextStep || projectPlanNextReadyTask(projectPlan)?.task?.title || 'Nächsten Prüfauftrag festlegen.', visual: `<div class="meeting-closeout">Arbeitsstand sichern · Report/Export erzeugen · nächste Befassung vorbereiten</div>` }
+  ];
+}
+
+function renderPresentation(result, first, decision, metrics) {
+  const deck = document.getElementById('presentationDeck');
+  if (!deck) return;
+  const slides = presentationSlides(result, first, decision, metrics);
+  presentationSlideIndex = Math.max(0, Math.min(presentationSlideIndex, slides.length - 1));
+  const slide = slides[presentationSlideIndex];
+  const counter = document.getElementById('presentationCounter');
+  if (counter) counter.textContent = `${presentationSlideIndex + 1} / ${slides.length}`;
+  deck.innerHTML = `
+    <article class="presentation-slide theme-${esc(slide.view)}">
+      <p class="eyebrow">${esc(slide.eyebrow)}</p>
+      <h3>${esc(slide.title)}</h3>
+      <div class="presentation-visual">${slide.visual}</div>
+      <p>${esc(slide.body)}</p>
+      <div class="card-actions">
+        <button type="button" class="primary" data-jump-view="${esc(slide.view)}">In Bearbeitung öffnen</button>
+        <button type="button" data-jump-view="presentation">Zur Präsentation zurück</button>
+      </div>
+    </article>
+  `;
+}
+
 function renderMeasures() {
   const p = currentParams();
   syncCatalogControls();
@@ -4161,9 +4302,25 @@ function updateFlowStatus() {
     decisionReady ? 'entscheidungsfähig' : 'Entscheidung offen',
     decisionReady ? 'done' : 'open'
   );
+  const maturity = maturityScore();
+  setStepStatus(
+    'status-akte',
+    `${maturity.score} % Reife`,
+    maturity.blockers ? 'warn' : 'done'
+  );
+  setStepStatus(
+    'status-expertWork',
+    maturity.blockers ? `${maturity.blockers} offen` : 'alles geklärt',
+    maturity.blockers ? 'warn' : 'done'
+  );
+  setStepStatus(
+    'status-presentation',
+    decisionReady ? 'bereit' : 'Arbeitsstand',
+    decisionReady ? 'done' : 'open'
+  );
   setStepStatus(
     'status-report',
-    decisionReady ? 'Report bereit' : 'noch offen',
+    decisionReady ? 'Export bereit' : 'noch offen',
     decisionReady ? 'done' : 'open'
   );
 }
@@ -5568,6 +5725,8 @@ function renderPortfolio() {
       renderSensitivityTornado();
       renderEogDecomposition(result);
 	      renderMeetingFocus(result, first, spread, metrics);
+      renderAkteCockpit(result, first, decision, metrics);
+      renderPresentation(result, first, decision, metrics);
 
   renderChart(result.yearly);
   renderYears(result);
@@ -5866,6 +6025,29 @@ loadRole();
 applyRole(currentRole, false);
 loadExpertMode();
 setExpertMode(expertMode, false);
+
+document.addEventListener('click', event => {
+  const jump = event.target.closest('[data-jump-view]');
+  if (!jump) return;
+  document.body.classList.remove('show-start');
+  setView(jump.dataset.jumpView);
+  renderAll();
+});
+
+document.addEventListener('click', event => {
+  const target = event.target.closest('[data-clarification-jump]');
+  if (!target) return;
+  openClarificationAudit(target.dataset.clarificationJump);
+});
+
+document.getElementById('presentationPrev')?.addEventListener('click', () => {
+  presentationSlideIndex = Math.max(0, presentationSlideIndex - 1);
+  renderPortfolio();
+});
+document.getElementById('presentationNext')?.addEventListener('click', () => {
+  presentationSlideIndex += 1;
+  renderPortfolio();
+});
 
 document.querySelectorAll('.view-tab').forEach(button => {
   button.addEventListener('click', () => setView(button.dataset.view));
@@ -6170,7 +6352,7 @@ document.getElementById('exportSpreadsheetCsvZip').addEventListener('click', exp
 document.getElementById('expertModeToggle').addEventListener('change', event => {
   setExpertMode(event.target.checked);
 });
-document.getElementById('startDemo').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'basis' }));
+document.getElementById('startDemo').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'akte' }));
 document.getElementById('startWizard').addEventListener('click', () => {
   hideStartScreen();
   setView(roleProfiles[currentRole]?.view || 'basis');
@@ -6190,7 +6372,7 @@ document.getElementById('printReportFromView').addEventListener('click', () => {
   window.print();
 });
 document.getElementById('importModel').addEventListener('click', openLoadModal);
-document.getElementById('loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'basis' }));
+document.getElementById('loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'akte' }));
 document.getElementById('checkReleaseAwareness').addEventListener('click', checkReleaseAwareness);
 document.getElementById('openAiPromptGenerator').addEventListener('click', openAiPromptGenerator);
 document.getElementById('openSupportIssue').addEventListener('click', openSupportIssue);
@@ -6219,7 +6401,7 @@ document.getElementById('loadBasisWizard').addEventListener('click', () => {
 });
 document.getElementById('loadDemoFromModal').addEventListener('click', () => {
   closeLoadModal();
-  applyDemoModel({ confirmOverwrite: true, targetView: 'basis' });
+  applyDemoModel({ confirmOverwrite: true, targetView: 'akte' });
 });
 document.getElementById('loadCancel').addEventListener('click', closeLoadModal);
 document.getElementById('loadModal').addEventListener('click', event => {
