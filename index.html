@@ -13,6 +13,7 @@
   <header>
     <div class="header-inner">
       <div class="header-copy">
+        <p class="product-kicker">Digitale Akte</p>
         <h1 title="Portfolio-App für regulierte Sparten: Basisdaten der Sparte, geplante Maßnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.">Szenario-Rechner regulierte Sparten</h1>
         <div class="header-context" aria-label="Rolle und Prozessphase">
           <details class="compact-popover role-popover">
@@ -52,17 +53,18 @@
             </div>
           </details>
           <span id="readonlyPill" class="readonly-pill hidden">Lesemodus</span>
+          <button type="button" id="clarificationCounter" class="context-chip context-link" aria-label="Klärpunktliste öffnen"></button>
         </div>
       </div>
       <div class="header-actions" aria-label="Globale Modellaktionen">
         <div class="global-actions">
           <button type="button" id="importModel" class="primary">Daten laden</button>
-          <button type="button" id="exportModel">Daten herunterladen</button>
           <button type="button" id="exportSelfContainedHtml">HTML mit Daten speichern</button>
-          <button type="button" id="printReport">Report drucken</button>
           <details class="action-menu">
             <summary>Mehr</summary>
             <div class="action-menu-list">
+              <button type="button" id="exportModel">Daten herunterladen</button>
+              <button type="button" id="printReport">Report drucken</button>
               <button type="button" id="openHelp">Hilfe</button>
               <a id="openStory" class="menu-link" href="story/planungsrunde-userstory.html" target="_blank" rel="noopener">Userstory</a>
               <a id="openEcosystem" class="menu-link" href="docs/index.html" target="_blank" rel="noopener">Methodik & Vorlagen</a>
@@ -80,19 +82,21 @@
         </div>
         <input id="importFile" class="hidden-file" type="file" accept="application/json,.json">
         <div id="storageStatus" class="status-line"></div>
-        <button type="button" id="clarificationCounter" class="status-line status-link" aria-label="Klärpunktliste öffnen"></button>
       </div>
     </div>
   </header>
 
-  <section id="processNotice" class="process-notice" aria-label="Prozesshinweis">
-    <div>
+  <details id="processNotice" class="process-notice compact-process-notice" aria-label="Arbeitsstand-Kontext">
+    <summary>
+      <span class="process-summary-label">Arbeitsstand</span>
       <strong id="processBanner">KW - Maßnahmenbewertung.</strong>
+    </summary>
+    <div class="process-notice-body">
       <span>Der Prozessstand wird im Modell-JSON mitgeführt.</span>
       <a id="storyContextLink" class="story-context-link" href="story/planungsrunde-userstory.html" target="_blank" rel="noopener">Story zur Phase öffnen</a>
     </div>
     <button type="button" id="dismissProcessNotice" aria-label="Prozesshinweis ausblenden">×</button>
-  </section>
+  </details>
 
   <section id="startScreen" class="start-screen hidden" aria-label="Geführter Einstieg">
     <div class="start-copy">
@@ -124,35 +128,36 @@
     </div>
   </section>
 
-  <nav class="view-tabs akte-nav" aria-label="Akte-Arbeitsfluss">
+  <nav class="view-tabs akte-nav compact-akte-nav" aria-label="Akte-Arbeitsfluss">
     <div class="workflow-tabs" aria-label="Hauptpfad der Akte">
       <button type="button" class="view-tab active theme-orientation" data-view="akte">
-        <span class="step-main"><span class="step-number">1</span>Akte</span>
+        <span class="step-main">Akte</span>
         <span class="step-status" id="status-akte">Cockpit</span>
       </button>
       <button type="button" class="view-tab theme-edit" data-view="measures">
-        <span class="step-main"><span class="step-number">2</span>Bearbeiten</span>
+        <span class="step-main">Bearbeiten</span>
         <span class="step-status" id="status-measures">0 Maßnahmen aktiv</span>
       </button>
       <button type="button" class="view-tab theme-evidence" data-view="sidecar">
-        <span class="step-main"><span class="step-number">3</span>Evidenz & Systeme</span>
+        <span class="step-main">Evidenz & Systeme</span>
         <span class="step-status" id="status-sidecar">0 Objekte</span>
       </button>
       <button type="button" class="view-tab theme-clarify" data-view="expertWork">
-        <span class="step-main"><span class="step-number">4</span>Prüfen & Klären</span>
+        <span class="step-main">Prüfen & Klären</span>
         <span class="step-status" id="status-expertWork">Aufgaben</span>
       </button>
       <button type="button" class="view-tab theme-present" data-view="presentation">
-        <span class="step-main"><span class="step-number">5</span>Präsentation</span>
+        <span class="step-main">Präsentation</span>
         <span class="step-status" id="status-presentation">Meeting</span>
       </button>
       <button type="button" class="view-tab theme-export" data-view="report">
-        <span class="step-main"><span class="step-number">6</span>Export</span>
+        <span class="step-main">Export</span>
         <span class="step-status" id="status-report">Report</span>
       </button>
     </div>
-    <div class="support-tabs" aria-label="Werkzeuge und Detailpflege">
-      <span class="support-tabs-label">Werkzeuge</span>
+    <details class="support-tabs" aria-label="Werkzeuge und Detailpflege">
+      <summary class="support-tabs-label">Detailwerkzeuge</summary>
+      <div class="support-tabs-body">
       <button type="button" class="view-tab support-tab" data-view="basis">
         <span class="step-main">Grundlagen</span>
         <span class="step-status" id="status-basis">Stammdaten offen</span>
@@ -169,7 +174,8 @@
         <input id="expertModeToggle" type="checkbox">
         Expertenmodus
       </label>
-    </div>
+      </div>
+    </details>
   </nav>
 
   <section class="sticky-kpis" aria-label="Live-Wirkung">

@@ -28,6 +28,7 @@ await page.getByRole('button', { name: /Demodaten ansehen/ }).click();
 await page.getByRole('heading', { name: /Gas-Akte|Strom-Akte/ }).waitFor({ timeout: 10000 });
 await page.locator('[data-view="presentation"]').first().click();
 await page.getByText('Meeting-Ansicht').waitFor({ timeout: 10000 });
+await page.locator('.support-tabs').evaluate(menu => menu.setAttribute('open', ''));
 await page.locator('[data-view="projectPlan"]').first().click();
 await page.getByText('Nächste fällige Aufgabe je Rolle').waitFor({ timeout: 10000 });
 const fileInputsHidden = await page.locator('input[type="file"]').evaluateAll(inputs => inputs.every(input => {
