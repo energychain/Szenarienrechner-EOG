@@ -72,6 +72,7 @@ describe('spreadsheet exports', () => {
       'Klaerpunkte_Priorisiert',
       'Systemreferenzen',
       'Risiko_Mapping',
+      'Sidecar_Brueckenlogik',
       'Monitoring_Massnahmen',
       'Monitoring_Aggregat',
       'QReg_Netzleistung',
@@ -83,6 +84,7 @@ describe('spreadsheet exports', () => {
     expect(tables.find(table => table.name === 'Monitoring_Massnahmen')?.rows.flat()).toContain('SAP-PSP-NA-2027-001');
     expect(tables.find(table => table.name === 'Monitoring_Aggregat')?.rows.flat()).toContain('Neubau/Ausbau/Erweiterung');
     expect(tables.find(table => table.name === 'Netzausbauplan_14d')?.rows[0]).not.toContain('id');
+    expect(tables.find(table => table.name === 'Sidecar_Brueckenlogik')?.rows[0]).toContain('sidecarType');
     expect(tables.find(table => table.name === 'Projektplan')?.rows.length).toBeGreaterThan(60);
     expect(tables.find(table => table.name === 'Provenienz')?.rows.flat()).toContain(regulatoryParameterSet.id);
   });

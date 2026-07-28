@@ -279,17 +279,20 @@ function sidecarForPrompt(model, profile = 'sanitized_external') {
     objects: sanitized.objects.slice(0, 12).map(object => ({
       id: object.id,
       type: object.type,
+      sidecarType: object.sidecarType,
       division: object.division,
       title: object.title,
       status: object.status,
+      activationStatus: object.activationStatus,
       evidenceStatus: object.evidenceStatus,
       calculationImpact: object.calculationImpact,
+      bridgeLogic: object.bridgeLogic,
       summary: object.summary,
       linkedMeasures: object.linkedMeasures,
       openQuestions: object.openQuestions,
       exportStatus: object.exportStatus
     })),
-    caveat: 'Sidecar-Objekte sind standardmäßig nicht KPI-wirksam. Sie beschreiben Kontext, Evidenz, Datenqualität und Steuerungsfähigkeit; Rechenwirkung entsteht nur durch explizite Aktivierung und definierte Mapping-Logik.'
+    caveat: 'Sidecar-Objekte sind standardmäßig nicht KPI-wirksam. Sidecar sichtbar, Brückenlogik prüfpflichtig, keine automatische KPI-Wirkung. Sidecar-Objekte beschreiben Kontext, Evidenz, Datenqualität, Sensitivitäten oder wirtschaftliche Wirkbeziehungen; Rechenwirkung entsteht nur durch explizite Aktivierung und definierte Mapping-Logik.'
   };
 }
 
@@ -493,8 +496,9 @@ function sidecarPromptSection(snapshot) {
   return `
 ## Kontext & Evidenz / Sidecar
 ${sidecar.caveat}
-Aggregat: ${sidecar.summary.total} Objekte; offene Prüfpunkte ${sidecar.summary.openQuestions || 0}; Datenqualität offen ${sidecar.summary.dataQualityOpen || 0}; exporteingeschränkt ${sidecar.summary.exportRestricted || 0}.
-${sidecar.objects.map(object => `- ${object.division} · ${object.type}: ${object.title}; Evidenz ${object.evidenceStatus}; Rechenwirkung ${object.calculationImpact}; Status ${object.status}; ${object.summary || ''}`).join('\n')}
+Aggregat: ${sidecar.summary.total} Objekte; offene Prüfpunkte ${sidecar.summary.openQuestions || 0}; offene Brückenlogik ${sidecar.summary.openBridgeLogic || 0}; quantifiziert, aber nicht aktiviert ${sidecar.summary.quantifiedNotActivated || 0}; aktiviert markiert ${sidecar.summary.activated || 0}; exporteingeschränkt ${sidecar.summary.exportRestricted || 0}.
+Brückenlogik: Wirkbeziehungen sind Arbeits-/Prüfobjekte und haben keine automatische KPI-Wirkung.
+${sidecar.objects.map(object => `- ${object.division} · ${object.sidecarType || 'context'} · ${object.type}: ${object.title}; Evidenz ${object.evidenceStatus}; Rechenwirkung ${object.calculationImpact}; Aktivierung ${object.activationStatus || 'not_activated'}; Brückenlogik ${object.bridgeLogic?.economicRelation || 'none'} / ${object.bridgeLogic?.quantificationStatus || 'not_applicable'}; ${object.summary || ''}`).join('\n')}
 `;
 }
 

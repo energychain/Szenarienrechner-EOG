@@ -53,7 +53,7 @@ Die fachlich freigegebene Vorbelegung für neue Modelle lautet `capexLagYears = 
 }
 ```
 
-Sidecar-Objekte sind keine klassischen Maßnahmen. Sie dokumentieren Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit, Transformationspfade oder offene Prüfpunkte. Sie gehen nicht automatisch in CAPEX, OPEX, RAB, Q-Komponente, EOG-Wirkung oder Portfolio-KPIs ein. `calculationImpact = none` und `indirect` sind nie KPI-wirksam; eine Wirkung entsteht erst durch explizite Aktivierung und definierte Mapping-Logik.
+Sidecar-Objekte sind keine klassischen Maßnahmen. Sie dokumentieren Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit, Transformationspfade oder offene Prüfpunkte. Sie können zusätzlich eine Brückenlogik tragen, wenn aus Kontext eine wirtschaftliche Wirkbeziehung oder Sensitivität werden könnte. Leitprinzip: Sidecar sichtbar, Brückenlogik prüfpflichtig, keine automatische KPI-Wirkung. Sie gehen nicht automatisch in CAPEX, OPEX, RAB, Q-Komponente, EOG-Wirkung oder Portfolio-KPIs ein. `calculationImpact = none`, `scenario_only` und `indirect` sind nicht KPI-wirksam; `active` bleibt ohne explizit implementierte und fachlich freigegebene Mapping-Logik ebenfalls nur ein Audit-/Governance-Status.
 
 Mindestfelder je Objekt:
 
@@ -64,8 +64,23 @@ Mindestfelder je Objekt:
   "division": "strom",
   "title": "Kurzbezeichnung",
   "status": "context",
+  "sidecarType": "context",
+  "activationStatus": "not_activated",
   "evidenceStatus": "missing",
   "calculationImpact": "none",
+  "bridgeLogic": {
+    "description": "",
+    "economicRelation": "none",
+    "direction": "none",
+    "quantificationStatus": "not_applicable",
+    "quantificationMethod": "",
+    "amount": "",
+    "amountUnit": "",
+    "timeHorizon": "",
+    "sourceRefs": [],
+    "assumptions": [],
+    "openQuestions": []
+  },
   "linkedMeasures": [],
   "linkedScenarios": [],
   "sourceRefs": [],
