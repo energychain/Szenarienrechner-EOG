@@ -22,9 +22,24 @@ describe('incremental UI modularization', () => {
       './release-awareness.js',
       './story-navigation.js',
       './render-utils.js',
-      './export-utils.js'
+      './export-utils.js',
+      './ui-config.js'
     ]) {
       expect(ui).toContain(`from '${modulePath}'`);
     }
+  });
+
+  it('keeps static UI schema and catalog templates outside the stateful UI module', () => {
+    const ui = read('src/ui.js');
+    const config = read('src/ui-config.js');
+
+    expect(config).toContain('export const inputIds');
+    expect(config).toContain('export const detailIds');
+    expect(config).toContain('export const importFields');
+    expect(config).toContain('export const measureTemplates');
+    expect(ui).not.toMatch(/^const inputIds =/m);
+    expect(ui).not.toMatch(/^const detailIds =/m);
+    expect(ui).not.toMatch(/^const importFields =/m);
+    expect(ui).not.toMatch(/^const measureTemplates =/m);
   });
 });
