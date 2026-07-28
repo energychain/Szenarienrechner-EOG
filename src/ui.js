@@ -1035,9 +1035,13 @@ function renderProcessUx() {
   }
   const banner = document.getElementById('processBanner');
   if (banner) {
-    banner.textContent = shouldShowPlanningResume(resume)
+    const maturity = maturityScore();
+    const compactStatus = `Stand: ${phase} · ${maturity.score} % Entscheidungsreife · ${openCount} Klärpunkte offen`;
+    const fullStatus = shouldShowPlanningResume(resume)
       ? `${resumeSummary.headline}. ${resumeSummary.status} ${resumeSummary.next}. ${resumeSummary.risks}.`
       : `KW ${isoWeek(new Date())} - ${phase}. ${reviewCount} Wirkannahmen prüfpflichtig, ${openCount} Klärpunkte offen${target ? `, Zieltermin Entscheidungsvorlage: ${formatDateShort(target)}` : ''}.`;
+    banner.textContent = compactStatus;
+    banner.title = fullStatus;
   }
   const phasePill = document.getElementById('phasePillLabel');
   if (phasePill) phasePill.textContent = target ? `${phase} · Ziel ${formatDateShort(target)}` : phase;

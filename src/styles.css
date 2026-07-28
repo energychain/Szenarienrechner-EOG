@@ -3109,38 +3109,216 @@ body {
 }
 
 header {
-  padding: 10px 18px 8px;
+  padding: 8px 18px 7px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
   position: relative;
-  z-index: 20;
+  z-index: 50;
 }
 
-header h1::before {
-  content: "Akte · ";
+.product-kicker {
+  margin: 0 0 2px;
   color: var(--akte-blue);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.header-inner {
+  grid-template-columns: minmax(360px, 1fr) auto;
+  align-items: center;
+}
+
+.header-context {
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.context-chip,
+.compact-popover summary,
+.readonly-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid rgba(100, 112, 125, .20);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .78);
+  color: #40505f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.context-link {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.context-link:hover,
+.context-link:focus-visible {
+  border-color: rgba(169, 101, 0, .36);
+  color: var(--warn);
+  background: rgba(255, 248, 230, .86);
+}
+
+.global-actions {
+  gap: 6px;
+}
+
+.global-actions button,
+.action-menu summary {
+  min-height: 30px;
+}
+
+.header-actions #storageStatus {
+  position: fixed;
+  right: 18px;
+  bottom: 16px;
+  z-index: 60;
+  max-width: min(520px, calc(100vw - 36px));
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(100, 112, 125, .20);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .12);
+  color: var(--muted);
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-actions #storageStatus:empty {
+  display: none;
 }
 
 .process-notice {
-  margin: 8px 18px 0;
-  border-radius: 14px;
+  margin: 6px 18px 0;
+  border-radius: 12px;
+}
+
+.compact-process-notice {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  max-width: none;
+  padding: 0;
+  border-color: rgba(100, 112, 125, .16);
+  background: rgba(255, 255, 255, .66);
+  box-shadow: none;
+}
+
+.compact-process-notice summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.compact-process-notice summary::-webkit-details-marker {
+  display: none;
+}
+
+.compact-process-notice summary::after {
+  content: "Details";
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.compact-process-notice[open] summary::after {
+  content: "Einklappen";
+}
+
+.process-summary-label {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(29, 78, 216, .08);
+  color: var(--akte-blue);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.compact-process-notice strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #40505f;
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.process-notice-body {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 10px 9px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.compact-process-notice:not([open]) .process-notice-body {
+  display: none;
+}
+
+.compact-process-notice > button {
+  margin-right: 7px;
 }
 
 .view-tabs.akte-nav {
-  margin: 8px 18px 0;
-  padding: 8px;
-  border-radius: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  position: relative;
+  z-index: 30;
+  margin: 6px 18px 0;
+  padding: 6px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, .78);
   box-shadow: 0 12px 35px rgba(15, 23, 42, .08);
   backdrop-filter: blur(10px);
 }
 
 .workflow-tabs {
-  gap: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .view-tab {
-  border-radius: 14px;
+  border-radius: 12px;
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.compact-akte-nav .view-tab {
+  min-height: 44px;
+  padding: 7px 10px;
+  gap: 2px;
+  justify-content: center;
+}
+
+.compact-akte-nav .step-main {
+  font-size: 13px;
+}
+
+.compact-akte-nav .step-status {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .view-tab:hover,
@@ -3160,11 +3338,59 @@ header h1::before {
 .theme-export { --theme: #475569; }
 
 .view-tab[class*="theme-"] {
-  border-top: 4px solid var(--theme);
+  border-top: 3px solid var(--theme);
+}
+
+.support-tabs {
+  display: block;
+  position: relative;
+  padding: 0;
+}
+
+.support-tabs-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(100, 112, 125, .18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .82);
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.support-tabs-label::-webkit-details-marker {
+  display: none;
+}
+
+.support-tabs-body {
+  position: absolute;
+  right: 0;
+  z-index: 35;
+  min-width: min(760px, calc(100vw - 48px));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, .16);
+}
+
+.support-tabs:not([open]) .support-tabs-body {
+  display: none;
+}
+
+.view-tabs .support-tab {
+  min-height: 38px;
+  flex-basis: 220px;
 }
 
 main {
-  height: calc(100vh - 245px);
+  height: calc(100vh - 158px);
   min-height: 520px;
   overflow: hidden;
   padding: 14px 18px 18px;
