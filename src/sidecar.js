@@ -8,7 +8,12 @@ const sidecarTypes = new Set([
 const divisions = new Set(['strom', 'gas', 'waerme', 'wasser', 'cross_division']);
 const statuses = new Set(['context', 'pruefpflichtig', 'quantified', 'active', 'archived']);
 const evidenceStatuses = new Set(['missing', 'stated', 'source_available', 'validated', 'conflicting', 'stale']);
-const calculationImpacts = new Set(['none', 'indirect', 'scenario_driver', 'quantified', 'active']);
+const sidecarSemanticTypes = new Set(['context', 'sensitivity', 'effect_assumption', 'economic_bridge', 'system_reference']);
+const activationStatuses = new Set(['not_activated', 'candidate', 'ready_for_activation', 'activated', 'rejected']);
+const calculationImpacts = new Set(['none', 'scenario_only', 'indirect', 'active']);
+const economicRelations = new Set(['none', 'opex_effect', 'capex_dependency', 'revenue_effect', 'risk_effect', 'timing_effect', 'avoided_cost']);
+const bridgeDirections = new Set(['none', 'positive', 'negative', 'mixed', 'unclear']);
+const quantificationStatuses = new Set(['not_applicable', 'open', 'described', 'working_value', 'validated']);
 const sensitivities = new Set(['public', 'internal', 'private', 'confidential']);
 const exportStatuses = new Set(['allowed', 'sanitized_only', 'excluded']);
 
@@ -61,6 +66,40 @@ function enumValue(value, allowed, fallback) {
   return allowed.has(value) ? value : fallback;
 }
 
+function calculationImpactValue(value) {
+  if (value === 'scenario_driver' || value === 'quantified') return 'scenario_only';
+  return enumValue(value, calculationImpacts, 'none');
+}
+
+export function normalizeBridgeLogic(bridgeLogic = {}) {
+  const input = /** @type {any} */ (bridgeLogic && typeof bridgeLogic === 'object' ? bridgeLogic : {});
+  return {
+    description: text(input.description),
+    economicRelation: enumValue(input.economicRelation, economicRelations, 'none'),
+    direction: enumValue(input.direction, bridgeDirections, 'none'),
+    quantificationStatus: enumValue(input.quantificationStatus, quantificationStatuses, 'not_applicable'),
+    quantificationMethod: text(input.quantificationMethod),
+    amount: Number.isFinite(Number(input.amount)) ? Number(input.amount) : '',
+    amountUnit: text(input.amountUnit),
+    timeHorizon: text(input.timeHorizon),
+    sourceRefs: list(input.sourceRefs),
+    assumptions: list(input.assumptions),
+    openQuestions: list(input.openQuestions)
+  };
+}
+
+function hasOpenBridgeLogic(object) {
+  if (!['effect_assumption', 'economic_bridge'].includes(object.sidecarType)) return false;
+  if (object.calculationImpact === 'none') return false;
+  const bridge = object.bridgeLogic || normalizeBridgeLogic();
+  return bridge.economicRelation === 'none' || ['not_applicable', 'open', 'described'].includes(bridge.quantificationStatus);
+}
+
+function isQuantifiedButNotActivated(object) {
+  const status = object.bridgeLogic?.quantificationStatus;
+  return ['working_value', 'validated'].includes(status) && object.activationStatus !== 'activated';
+}
+
 export function defaultSidecar() {
   return { version: '1.0', objects: [], sources: [], links: [], summary: {} };
 }
@@ -91,8 +130,11 @@ export function normalizeSidecarObject(object = {}, index = 0) {
     title: text(object.title, `Kontextobjekt ${index + 1}`),
     summary: text(object.summary),
     status: enumValue(object.status, statuses, 'context'),
+    sidecarType: enumValue(object.sidecarType, sidecarSemanticTypes, 'context'),
+    activationStatus: enumValue(object.activationStatus, activationStatuses, 'not_activated'),
     evidenceStatus: enumValue(object.evidenceStatus, evidenceStatuses, 'missing'),
-    calculationImpact: enumValue(object.calculationImpact, calculationImpacts, 'none'),
+    calculationImpact: calculationImpactValue(object.calculationImpact),
+    bridgeLogic: normalizeBridgeLogic(object.bridgeLogic),
     linkedMeasures: list(object.linkedMeasures),
     linkedScenarios: list(object.linkedScenarios),
     sourceRefs: list(object.sourceRefs),
@@ -126,21 +168,31 @@ export function sidecarSummary(sidecarInput = {}) {
     sources: sidecar.sources.length,
     byDivision: {},
     byType: {},
+    bySidecarType: {},
     byEvidenceStatus: {},
     byStatus: {},
     calculationImpact: {},
     openQuestions: 0,
     dataQualityOpen: 0,
+    withoutCalculationImpact: 0,
+    openBridgeLogic: 0,
+    quantifiedNotActivated: 0,
+    activated: 0,
     sensitiveObjects: 0,
     exportRestricted: 0
   };
   sidecar.objects.forEach(object => {
     increment(summary.byDivision, object.division);
     increment(summary.byType, object.type);
+    increment(summary.bySidecarType, object.sidecarType);
     increment(summary.byEvidenceStatus, object.evidenceStatus);
     increment(summary.byStatus, object.status);
     increment(summary.calculationImpact, object.calculationImpact);
-    summary.openQuestions += object.openQuestions.length;
+    summary.openQuestions += object.openQuestions.length + (object.bridgeLogic?.openQuestions?.length || 0);
+    if (object.calculationImpact === 'none') summary.withoutCalculationImpact += 1;
+    if (hasOpenBridgeLogic(object)) summary.openBridgeLogic += 1;
+    if (isQuantifiedButNotActivated(object)) summary.quantifiedNotActivated += 1;
+    if (object.activationStatus === 'activated') summary.activated += 1;
     if (object.type === 'data_quality' && object.status !== 'archived' && object.evidenceStatus !== 'validated') summary.dataQualityOpen += 1;
     if (object.sensitivity === 'private' || object.sensitivity === 'confidential') summary.sensitiveObjects += 1;
     if (object.exportStatus !== 'allowed') summary.exportRestricted += 1;
@@ -149,11 +201,18 @@ export function sidecarSummary(sidecarInput = {}) {
 }
 
 function sanitizeObject(object) {
+  const sanitized = object.exportStatus === 'sanitized_only';
   return {
     ...object,
-    summary: object.exportStatus === 'sanitized_only' ? 'Details sanitisiert; interne Quelle im vollständigen Arbeitsstand prüfen.' : object.summary,
-    sourceRefs: object.exportStatus === 'sanitized_only' ? [] : object.sourceRefs,
-    openQuestions: object.openQuestions.map(question => object.exportStatus === 'sanitized_only' ? 'Prüffrage sanitisiert' : question)
+    summary: sanitized ? 'Details sanitisiert; interne Quelle im vollständigen Arbeitsstand prüfen.' : object.summary,
+    sourceRefs: sanitized ? [] : object.sourceRefs,
+    openQuestions: object.openQuestions.map(question => sanitized ? 'Prüffrage sanitisiert' : question),
+    bridgeLogic: {
+      ...object.bridgeLogic,
+      sourceRefs: sanitized ? [] : object.bridgeLogic.sourceRefs,
+      assumptions: object.bridgeLogic.assumptions.map(item => sanitized ? 'Annahme sanitisiert' : item),
+      openQuestions: object.bridgeLogic.openQuestions.map(item => sanitized ? 'Brücken-Prüffrage sanitisiert' : item)
+    }
   };
 }
 

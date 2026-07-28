@@ -39,7 +39,7 @@ describe('sidecar data model', () => {
     const summary = sidecarSummary(normalizeSidecar({
       objects: [
         { id: 'a', type: 'data_quality', division: 'strom', title: 'Mapping offen', evidenceStatus: 'missing', calculationImpact: 'none', openQuestions: ['Mapping nachführen'] },
-        { id: 'b', type: 'gas_load_path', division: 'gas', title: 'Lastpfad', evidenceStatus: 'validated', calculationImpact: 'scenario_driver', openQuestions: [] },
+        { id: 'b', type: 'gas_load_path', division: 'gas', title: 'Lastpfad', evidenceStatus: 'validated', calculationImpact: 'scenario_only', openQuestions: [] },
         { id: 'c', type: 'controllability', division: 'strom', title: 'Steuerbarkeit', evidenceStatus: 'source_available', calculationImpact: 'indirect', openQuestions: ['Teststatus offen'] },
       ],
     }));
@@ -50,7 +50,7 @@ describe('sidecar data model', () => {
     expect(summary.openQuestions).toBe(2);
     expect(summary.dataQualityOpen).toBe(1);
     expect(summary.calculationImpact.none).toBe(1);
-    expect(summary.calculationImpact.scenario_driver).toBe(1);
+    expect(summary.calculationImpact.scenario_only).toBe(1);
   });
 
   test('sanitized export removes sensitive summaries and excluded objects', () => {

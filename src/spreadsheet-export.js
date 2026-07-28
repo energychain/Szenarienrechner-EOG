@@ -6,6 +6,7 @@ import {
   scenarioParams as engineScenarioParams
 } from './engine.js';
 import { projectPlanEffectiveTaskStates, projectPlanMilestoneDate, projectPlanRoles } from './project-plan.js';
+import { normalizeSidecar, sidecarSummary } from './sidecar.js';
 
 const scenarioLabels = {
   basis: 'Basis',
@@ -475,6 +476,36 @@ export function spreadsheetTables(model, options = {}) {
     ]);
   });
 
+  const normalizedSidecar = normalizeSidecar(model?.sidecar);
+  const sidecarBridgeSummary = sidecarSummary(normalizedSidecar);
+  const sidecarRows = [[
+    'id', 'title', 'division', 'category', 'sidecarType', 'linkedMeasures', 'calculationImpact', 'activationStatus',
+    'economicRelation', 'quantificationStatus', 'amount', 'amountUnit', 'timeHorizon', 'openQuestions', 'nextStatus'
+  ]];
+  normalizedSidecar.objects.forEach(object => {
+    const bridge = object.bridgeLogic || {};
+    const relationOpen = object.calculationImpact !== 'none'
+      && ['effect_assumption', 'economic_bridge'].includes(object.sidecarType)
+      && (bridge.economicRelation === 'none' || ['not_applicable', 'open', 'described'].includes(bridge.quantificationStatus));
+    sidecarRows.push([
+      object.id,
+      object.title,
+      object.division,
+      object.type,
+      object.sidecarType,
+      object.linkedMeasures.join(', '),
+      object.calculationImpact,
+      object.activationStatus,
+      bridge.economicRelation || 'none',
+      bridge.quantificationStatus || 'not_applicable',
+      bridge.amount,
+      bridge.amountUnit || '',
+      bridge.timeHorizon || '',
+      [...object.openQuestions, ...(bridge.openQuestions || [])].join(' | '),
+      relationOpen ? 'brueckenlogik_pruefen' : object.activationStatus === 'activated' ? 'aktivierung_auditieren' : 'dokumentiert'
+    ]);
+  });
+
   const provenanceRows = [
     ['Feld', 'Wert'],
     ['Export erstellt am', new Date().toISOString()],
@@ -484,6 +515,11 @@ export function spreadsheetTables(model, options = {}) {
     ['Ruleset-Konfidenz', ruleset.confidence || ''],
     ['Ruleset-Quelle', ruleset.sourceRef || ''],
     ['Letzter Aktualitätscheck', model?.lastReleaseCheck?.checkedAt || 'nicht geprüft'],
+    ['Sidecars gesamt', sidecarBridgeSummary.total],
+    ['Sidecars ohne Rechenwirkung', sidecarBridgeSummary.withoutCalculationImpact],
+    ['Sidecars offene Brückenlogik', sidecarBridgeSummary.openBridgeLogic],
+    ['Sidecars quantifiziert aber nicht aktiviert', sidecarBridgeSummary.quantifiedNotActivated],
+    ['Sidecars aktiviert markiert', sidecarBridgeSummary.activated],
     ['Datenschutz', 'Tabellenexport wird lokal im Browser erzeugt; kein Upload, kein Backend, kein Netzzugriff.']
   ];
 
@@ -497,6 +533,7 @@ export function spreadsheetTables(model, options = {}) {
     { name: 'Klaerpunkte_Priorisiert', rows: prioritizedClarificationRows },
     { name: 'Systemreferenzen', rows: systemReferenceRows },
     { name: 'Risiko_Mapping', rows: riskMappingRows },
+    { name: 'Sidecar_Brueckenlogik', rows: sidecarRows },
     { name: 'Monitoring_Massnahmen', rows: monitoringMeasureRows },
     { name: 'Monitoring_Aggregat', rows: monitoringAggregateRows },
     { name: 'QReg_Netzleistung', rows: qregRows },
