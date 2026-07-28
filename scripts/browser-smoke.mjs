@@ -25,7 +25,10 @@ page.on('dialog', dialog => dialog.accept());
 await page.goto(pathToFileURL(artifact).href, { waitUntil: 'domcontentloaded' });
 await page.getByText('Szenario-Rechner regulierte Sparten').waitFor({ timeout: 10000 });
 await page.getByRole('button', { name: /Demodaten ansehen/ }).click();
-await page.getByRole('button', { name: /Projektplan/ }).click();
+await page.getByRole('heading', { name: /Gas-Akte|Strom-Akte/ }).waitFor({ timeout: 10000 });
+await page.locator('[data-view="presentation"]').first().click();
+await page.getByText('Meeting-Ansicht').waitFor({ timeout: 10000 });
+await page.locator('[data-view="projectPlan"]').first().click();
 await page.getByText('Nächste fällige Aufgabe je Rolle').waitFor({ timeout: 10000 });
 const fileInputsHidden = await page.locator('input[type="file"]').evaluateAll(inputs => inputs.every(input => {
   const style = window.getComputedStyle(input);

@@ -48,10 +48,10 @@ export const processPhases = [
 ];
 
 export const roleProfiles = {
-  owner: { label: 'Modellverantwortung', view: 'basis', focus: 'management', expert: true },
+  owner: { label: 'Modellverantwortung', view: 'akte', focus: 'management', expert: true },
   expert: { label: 'Fachexpertise', view: 'expertWork', focus: 'technik', expert: false },
-  management: { label: 'Management', view: 'results', focus: 'management', expert: false },
-  audit: { label: 'Audit', view: 'report', focus: 'controlling', expert: true }
+  management: { label: 'Management', view: 'akte', focus: 'management', expert: false },
+  audit: { label: 'Audit', view: 'presentation', focus: 'controlling', expert: true }
 };
 export const defaultObjectives = [
   { id: 'obj_supply', label: 'Versorgungssicherheit', note: '' },

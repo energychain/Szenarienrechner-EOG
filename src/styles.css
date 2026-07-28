@@ -3087,3 +3087,392 @@
         justify-content: flex-start;
       }
     }
+
+/* Akte UX redesign ------------------------------------------------------- */
+:root {
+  --akte-blue: #1d4ed8;
+  --akte-green: #138a5b;
+  --akte-amber: #b7791f;
+  --akte-red: #b42318;
+  --akte-violet: #6d4aff;
+  --akte-teal: #007c89;
+  --akte-surface: rgba(255, 255, 255, .86);
+}
+
+body {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(29, 78, 216, .10), transparent 28%),
+    radial-gradient(circle at 86% 10%, rgba(109, 74, 255, .10), transparent 32%),
+    linear-gradient(135deg, #f6f8fb 0%, #eef4f7 100%);
+}
+
+header {
+  padding: 10px 18px 8px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+  position: relative;
+  z-index: 20;
+}
+
+header h1::before {
+  content: "Akte · ";
+  color: var(--akte-blue);
+}
+
+.process-notice {
+  margin: 8px 18px 0;
+  border-radius: 14px;
+}
+
+.view-tabs.akte-nav {
+  margin: 8px 18px 0;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .78);
+  box-shadow: 0 12px 35px rgba(15, 23, 42, .08);
+  backdrop-filter: blur(10px);
+}
+
+.workflow-tabs {
+  gap: 8px;
+}
+
+.view-tab {
+  border-radius: 14px;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.view-tab:hover,
+.view-tab:focus-visible {
+  transform: translateY(-1px);
+}
+
+.view-tab.active {
+  box-shadow: 0 14px 28px rgba(15, 23, 42, .12);
+}
+
+.theme-orientation { --theme: var(--akte-blue); }
+.theme-edit { --theme: var(--akte-green); }
+.theme-evidence { --theme: var(--akte-violet); }
+.theme-clarify { --theme: var(--akte-amber); }
+.theme-present { --theme: var(--akte-teal); }
+.theme-export { --theme: #475569; }
+
+.view-tab[class*="theme-"] {
+  border-top: 4px solid var(--theme);
+}
+
+main {
+  height: calc(100vh - 245px);
+  min-height: 520px;
+  overflow: hidden;
+  padding: 14px 18px 18px;
+  display: block;
+}
+
+.app-view.hidden {
+  display: none !important;
+}
+
+.app-view:not(.hidden) {
+  display: grid;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-view:not(.hidden):not(.akte-cockpit):not(.presentation-view) {
+  overflow: auto;
+  align-content: start;
+  animation: viewIn .18s ease-out;
+}
+
+@keyframes viewIn {
+  from { opacity: .75; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.akte-cockpit {
+  grid-template-rows: auto 1fr minmax(150px, .58fr);
+  gap: 12px;
+  animation: viewIn .18s ease-out;
+}
+
+.akte-hero,
+.presentation-toolbar {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(29, 78, 216, .16);
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(255,255,255,.94), rgba(236, 245, 255, .88));
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .08);
+}
+
+.akte-hero h2,
+.presentation-toolbar h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 38px);
+  letter-spacing: -.03em;
+}
+
+.akte-hero p {
+  max-width: 900px;
+}
+
+.akte-hero-actions,
+.presentation-actions,
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.akte-workspace,
+.akte-lower-grid {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+}
+
+.akte-workspace {
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  grid-template-rows: minmax(190px, 1fr) minmax(160px, .84fr);
+}
+
+.akte-lower-grid {
+  grid-template-columns: 1.15fr .85fr;
+}
+
+.akte-card {
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 20px;
+  background: var(--akte-surface);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, .07);
+  position: relative;
+}
+
+.akte-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--theme, #94a3b8);
+}
+
+.akte-card.wide {
+  grid-column: span 3;
+}
+
+.card-kicker,
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--theme, var(--accent));
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.akte-card h3,
+.presentation-slide h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  letter-spacing: -.02em;
+}
+
+.akte-card p {
+  margin: 0 0 10px;
+  color: #425466;
+}
+
+.metric-strip,
+.status-chips,
+.reliability-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.metric-strip span,
+.reliability-mini span,
+.chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 92px;
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, .92);
+  color: #475569;
+  font-size: 12px;
+}
+
+.metric-strip strong,
+.reliability-mini strong {
+  color: #0f172a;
+  font-size: 17px;
+}
+
+.metric-strip.large span,
+.reliability-mini.large span {
+  min-width: 150px;
+  padding: 15px;
+}
+
+.chip.violet { border-color: rgba(109, 74, 255, .25); background: rgba(109, 74, 255, .08); }
+.chip.amber, .amber { border-color: rgba(183, 121, 31, .28); background: rgba(255, 247, 237, .95); color: #92400e; }
+.chip.teal { border-color: rgba(0, 124, 137, .25); background: rgba(236, 253, 245, .9); }
+.green { border-color: rgba(19, 138, 91, .28); background: rgba(240, 253, 244, .95); color: #166534; }
+
+.top-list {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+  padding-left: 18px;
+  max-height: 116px;
+  overflow: auto;
+}
+
+.top-list button {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  text-align: left;
+  font-weight: 700;
+}
+
+.kanban-mini,
+.kanban-board.mini-board,
+.governance-flow,
+.presentation-flow {
+  display: grid;
+  gap: 8px;
+}
+
+.kanban-mini {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.kanban-mini div,
+.kanban-board.mini-board div,
+.governance-flow div,
+.presentation-flow span,
+.meeting-closeout {
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, .94);
+  border: 1px solid rgba(148, 163, 184, .22);
+}
+
+.kanban-mini strong {
+  display: block;
+  font-size: 22px;
+}
+
+.kanban-mini span,
+.governance-flow span,
+.kanban-board.mini-board span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.governance-flow {
+  grid-template-columns: repeat(5, 1fr);
+  align-items: stretch;
+}
+
+.governance-flow div {
+  border-top: 4px solid var(--theme, var(--akte-blue));
+}
+
+.kanban-board.mini-board {
+  grid-template-columns: repeat(3, 1fr);
+  height: calc(100% - 44px);
+}
+
+.presentation-view {
+  grid-template-rows: 1fr;
+}
+
+.presentation-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+
+.presentation-deck {
+  min-height: 0;
+}
+
+.presentation-slide {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 14px;
+  padding: clamp(28px, 5vw, 64px);
+  border-radius: 26px;
+  border: 1px solid rgba(0, 124, 137, .22);
+  background:
+    radial-gradient(circle at 90% 10%, rgba(0, 124, 137, .14), transparent 30%),
+    linear-gradient(135deg, #ffffff, #f8fbff);
+  box-shadow: 0 20px 48px rgba(15, 23, 42, .12);
+}
+
+.presentation-slide h3 {
+  font-size: clamp(34px, 5vw, 64px);
+  max-width: 1100px;
+}
+
+.presentation-slide p:not(.eyebrow) {
+  max-width: 1100px;
+  color: #334155;
+  font-size: clamp(18px, 2vw, 28px);
+}
+
+.presentation-visual {
+  align-self: center;
+  display: grid;
+  place-items: center start;
+  min-height: 150px;
+}
+
+.presentation-flow {
+  grid-auto-flow: column;
+  align-items: center;
+  font-size: clamp(18px, 2vw, 30px);
+}
+
+.presentation-flow.violet span {
+  border-color: rgba(109, 74, 255, .25);
+  background: rgba(109, 74, 255, .08);
+}
+
+@media (max-width: 1180px) {
+  body { overflow: auto; }
+  main { height: auto; min-height: 0; overflow: visible; }
+  .app-view:not(.hidden) { height: auto; overflow: visible; }
+  .akte-workspace,
+  .akte-lower-grid,
+  .governance-flow,
+  .kanban-board.mini-board {
+    grid-template-columns: 1fr;
+  }
+  .akte-card.wide { grid-column: auto; }
+  .akte-hero,
+  .presentation-toolbar { grid-template-columns: 1fr; }
+  .akte-hero-actions,
+  .presentation-actions { justify-content: flex-start; }
+}
