@@ -641,6 +641,34 @@ function impactWorkArea(impact) {
   return 'controlling';
 }
 
+function workItemColumn(item) {
+  if (item.status === 'closed') return 'closed';
+  const label = item.priority?.label || 'normal';
+  if (label === 'hoch') return 'high';
+  if (label === 'mittel') return 'evidence';
+  return 'normal';
+}
+
+function renderWorkItemCard(item) {
+  const priority = item.priority?.label || 'normal';
+  const detail = String(item.detail || '').trim();
+  return `
+    <article class="work-kanban-card ${item.status === 'closed' ? 'closed' : ''}" data-work-item="${esc(item.key)}">
+      <div class="work-card-topline">
+        <span class="priority-badge priority-${esc(priority)}">${esc(priority)}</span>
+        <span>${esc(item.area)}</span>
+      </div>
+      <strong>${esc(item.title)}</strong>
+      <p>${esc(item.measure)}</p>
+      ${detail ? `<small title="${esc(detail)}">${esc(detail)}</small>` : ''}
+      <div class="row-actions compact-actions">
+        <button type="button" data-action="openWorkItem" data-measure-id="${esc(item.measureId || '')}">Datenstelle</button>
+        ${item.type === 'clarification' ? `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit' : 'Klären'}</button>` : ''}
+      </div>
+    </article>
+  `;
+}
+
 function renderExpertWorkList() {
   const node = document.getElementById('expertWorkList');
   if (!node) return;
@@ -651,6 +679,8 @@ function renderExpertWorkList() {
     measure: item.measure.name,
     area: impactWorkArea(item),
     detail: `${impactAreaLabel(item.area)} · ${confidenceLabels[item.confidence]} · ${impactGovernanceLabel(item.governance)}${item.note ? ' · ' + item.note : ''}`,
+    priority: clarificationPriorityFor({ area: item.area, title: item.title, detail: item.note, type: 'impact' }),
+    status: 'open',
     type: 'impact'
   }));
   const clarificationWork = clarificationItems().map(item => ({
@@ -660,21 +690,34 @@ function renderExpertWorkList() {
   }));
   const items = [...impactItems, ...clarificationWork]
     .filter(item => expertFilter === 'all' || item.area === expertFilter);
-  node.innerHTML = items.length
-    ? items.map(item => `
-      <article class="clarification-item ${item.status === 'closed' ? 'closed' : ''}">
-        <div>
-          <strong>${esc(item.measure)}: ${esc(item.title)}</strong>
-          <div class="clarification-meta">${esc(item.area)} · ${item.type === 'impact' ? 'Wirkannahme prüfen' : 'Klärpunkt'} · <span class="priority-badge priority-${esc(item.priority?.label || 'normal')}">Priorität ${esc(item.priority?.label || 'normal')}</span></div>
-          <p class="hint">${esc(item.detail)}</p>
-        </div>
-        <div class="row-actions">
-          <button type="button" data-action="openWorkItem" data-measure-id="${esc(item.measureId || '')}">Öffnen</button>
-          ${item.type === 'clarification' ? `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit ansehen' : 'Klären'}</button>` : ''}
-        </div>
-      </article>
-    `).join('')
-    : '<div class="empty-state"><div class="empty-icon">✓</div><strong>Alles geklärt</strong><p>Für den gewählten Bereich liegen keine offenen prüfpflichtigen Punkte vor.</p></div>';
+  if (!items.length) {
+    node.innerHTML = '<div class="empty-state"><div class="empty-icon">✓</div><strong>Alles geklärt</strong><p>Für den gewählten Bereich liegen keine offenen prüfpflichtigen Punkte vor.</p></div>';
+    return;
+  }
+  const columns = [
+    { key: 'high', title: 'Hohe Steuerungswirkung', hint: 'zuerst im Meeting klären' },
+    { key: 'evidence', title: 'Evidenz / Systeme', hint: 'Quelle oder Rückspielweg prüfen' },
+    { key: 'normal', title: 'Dokumentation', hint: 'Notiz, Phase oder Prozess schärfen' },
+    { key: 'closed', title: 'Geklärt', hint: 'auditierbar geschlossen' }
+  ];
+  const grouped = columns.reduce((acc, column) => ({ ...acc, [column.key]: [] }), {});
+  items.forEach(item => grouped[workItemColumn(item)].push(item));
+  node.innerHTML = `
+    <div class="work-kanban-board" aria-label="Klärpunkt-Kanban">
+      ${columns.map(column => `
+        <section class="work-kanban-column ${column.key}" aria-label="${esc(column.title)}">
+          <div class="work-kanban-column-head">
+            <strong>${esc(column.title)}</strong>
+            <span>${grouped[column.key].length}</span>
+            <small>${esc(column.hint)}</small>
+          </div>
+          <div class="work-kanban-column-body">
+            ${grouped[column.key].length ? grouped[column.key].map(renderWorkItemCard).join('') : '<p class="hint empty-column">Keine Punkte</p>'}
+          </div>
+        </section>
+      `).join('')}
+    </div>
+  `;
 }
 
 function impactCounts(measure) {
@@ -3561,13 +3604,15 @@ function renderPresentation(result, first, decision, metrics) {
   if (counter) counter.textContent = `${presentationSlideIndex + 1} / ${slides.length}`;
   deck.innerHTML = `
     <article class="presentation-slide theme-${esc(slide.view)}">
-      <p class="eyebrow">${esc(slide.eyebrow)}</p>
-      <h3>${esc(slide.title)}</h3>
-      <div class="presentation-visual">${slide.visual}</div>
-      <p>${esc(slide.body)}</p>
-      <div class="card-actions">
+      <div class="presentation-slide-content">
+        <p class="eyebrow">${esc(slide.eyebrow)}</p>
+        <h3>${esc(slide.title)}</h3>
+        <div class="presentation-visual">${slide.visual}</div>
+        <p class="presentation-body">${esc(slide.body)}</p>
+      </div>
+      <div class="card-actions presentation-slide-actions">
         <button type="button" class="primary" data-jump-view="${esc(slide.view)}">In Bearbeitung öffnen</button>
-        <button type="button" data-jump-view="presentation">Zur Präsentation zurück</button>
+        <button type="button" data-jump-view="presentation">Zurück zur Folie</button>
       </div>
     </article>
   `;

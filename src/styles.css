@@ -3991,6 +3991,206 @@ body[data-view="akte"] main {
   margin: 0;
 }
 
+body[data-view="presentation"] {
+  overflow: hidden;
+}
+
+body[data-view="presentation"] .compact-process-notice,
+body[data-view="presentation"] .compact-akte-nav,
+body[data-view="presentation"] .sticky-kpis,
+body[data-view="presentation"] footer {
+  display: none !important;
+}
+
+body[data-view="presentation"] main {
+  height: calc(100vh - 88px);
+  padding: 14px;
+  overflow: hidden;
+}
+
+body[data-view="presentation"] .presentation-view.panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-view="presentation"] .presentation-shell {
+  height: 100%;
+  min-height: 0;
+  padding: 18px;
+  border: 1px solid rgba(0, 124, 137, .18);
+  border-radius: 28px;
+  background: rgba(248, 251, 255, .96);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, .18);
+}
+
+body[data-view="presentation"] .presentation-toolbar {
+  padding: 12px 14px;
+  border-radius: 18px;
+  box-shadow: none;
+}
+
+body[data-view="presentation"] .presentation-toolbar h2 {
+  font-size: clamp(22px, 2.2vw, 34px);
+}
+
+.presentation-slide-content {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(120px, 1fr) auto;
+  gap: clamp(8px, 1.4vh, 16px);
+}
+
+.presentation-slide-actions {
+  align-self: end;
+}
+
+.presentation-slide .presentation-body {
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+body[data-view="presentation"] .presentation-slide {
+  min-height: 0;
+  padding: clamp(22px, 4vw, 52px);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+body[data-view="presentation"] .presentation-slide h3 {
+  font-size: clamp(30px, 4vw, 56px);
+  -webkit-line-clamp: 2;
+}
+
+body[data-view="presentation"] .presentation-visual {
+  min-height: 0;
+}
+
+body[data-view="presentation"] .presentation-flow {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(120px, auto);
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.work-kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(210px, 1fr));
+  gap: 14px;
+  min-height: 0;
+  height: 100%;
+}
+
+[data-view-panel="expertWork"] {
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden !important;
+}
+
+#expertWorkList {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.work-kanban-column {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 18px;
+  background: rgba(248, 250, 252, .82);
+  overflow: hidden;
+}
+
+.work-kanban-column.high { border-top: 5px solid var(--akte-amber); }
+.work-kanban-column.evidence { border-top: 5px solid var(--akte-violet); }
+.work-kanban-column.normal { border-top: 5px solid var(--akte-blue); }
+.work-kanban-column.closed { border-top: 5px solid var(--akte-green); }
+
+.work-kanban-column-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: start;
+  padding: 13px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, .18);
+  background: rgba(255, 255, 255, .86);
+}
+
+.work-kanban-column-head span {
+  min-width: 28px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .06);
+  text-align: center;
+  font-weight: 900;
+}
+
+.work-kanban-column-head small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+
+.work-kanban-column-body {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px;
+  overflow: auto;
+}
+
+.work-kanban-card {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+}
+
+.work-card-topline,
+.compact-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.work-card-topline span:last-child,
+.work-kanban-card small,
+.work-kanban-card p {
+  color: var(--muted);
+}
+
+.work-kanban-card p,
+.work-kanban-card small {
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.work-kanban-card strong {
+  line-height: 1.25;
+}
+
+.work-kanban-card.closed {
+  opacity: .72;
+}
+
+.empty-column {
+  margin: 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .72);
+}
+
 @media (max-height: 700px) and (min-width: 1181px) {
   body[data-view="akte"] main {
     height: calc(100vh - 194px);
@@ -4044,7 +4244,8 @@ body[data-view="akte"] main {
   .akte-workspace,
   .akte-lower-grid,
   .governance-flow,
-  .kanban-board.mini-board {
+  .kanban-board.mini-board,
+  .work-kanban-board {
     grid-template-columns: 1fr;
   }
   .akte-card.wide { grid-column: auto; }
