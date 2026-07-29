@@ -44,6 +44,13 @@ describe('story HTML rendering', () => {
     expect(story).toContain('VNB-Portfolios');
     expect(story).toContain('Öffentliche Quellen zum Weiterlesen');
     expect(story).toContain('Projektplan als Struktur-Element');
+    expect(story).toContain('Aktueller Arbeitsmodus: Akte, Bearbeiten, Evidenz, Klärung, Präsentation, Export');
+    expect(story).toContain('Prüfen & Klären: Kanban und Befassungs-Workbench');
+    expect(story).toContain('Konservativer Stresstest: Parameter statt Scheinsensitivität');
+    expect(story).toContain('Befassungsnotiz speichern');
+    expect(story).toContain('Klärpunkt abschließen');
+    expect(story).toContain('Stresstest-Parameter');
+    expect(story).toContain('Evidenz & Systeme: Sidecar als Arbeitsraum');
     expect(story).toContain('Gas-Transformationspfad: Stilllegung, Rückbau und Rückstellungen strukturieren');
     expect(story).toContain('Wegfall der sogenannten Ewigkeitsvermutung');
     expect(story).toContain('keine automatische Rückstellungs-, Rückbaupflicht- oder Anerkennungsentscheidung');

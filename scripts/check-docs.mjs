@@ -116,7 +116,9 @@ assert(story.includes('Projektplan als Struktur-Element'), 'Story doc must expla
 assert(story.includes('Gas-Transformationspfad: Stilllegung, Rückbau und Rückstellungen strukturieren'), 'Story doc must explain the Gas transformation path.');
 assert(story.includes('Wegfall der sogenannten Ewigkeitsvermutung'), 'Story doc must mention the Gas eternity-assumption review point.');
 assert(story.includes('KI-Prompt-Export als Übersetzungsschicht'), 'Story doc must explain the AI prompt export as translation layer.');
-assert(story.includes('Kontext & Evidenz: Sidecar als Arbeitsraum'), 'Story doc must explain Kontext & Evidenz / Sidecar usage.');
+assert(story.includes('Evidenz & Systeme: Sidecar als Arbeitsraum'), 'Story doc must explain Evidenz & Systeme / Sidecar usage.');
+assert(story.includes('Prüfen & Klären: Kanban und Befassungs-Workbench'), 'Story doc must explain the current clarification workbench.');
+assert(story.includes('Konservativer Stresstest: Parameter statt Scheinsensitivität'), 'Story doc must explain stress-test parameters.');
 assert(story.includes('nächste fällige Aufgabe'), 'Story doc must explain project plan next-task guidance.');
 for (const id of ['kickoff', 'initialisierung', 'datenerhebung', 'massnahmenbewertung', 'technik-rueckkopplung', 'konsolidierung', 'entscheidungsvorlage', 'gremium', 'archiv']) {
   assert(story.includes(`id="${id}"`), `Story doc is missing anchor ${id}.`);

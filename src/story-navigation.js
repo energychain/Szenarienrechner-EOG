@@ -63,36 +63,36 @@ export const storyMilestones = [
   },
   {
     id: 'entscheidungsvorlage',
-    label: 'Entscheidungsvorlage',
+    label: 'Befassungsvorlage',
     phase: 'entscheidungsvorlage',
     view: 'report',
     focus: 'management',
     anchor: 'entscheidungsvorlage',
     shouldLoadDemo: true,
     reportMode: 'management',
-    note: 'Management-Report mit Arbeitsstand und nächstem Schritt.'
+    note: 'Management-Report mit Arbeitsstand, Klärpunkten und nächstem Schritt.'
   },
   {
     id: 'gremium',
-    label: 'Gremienvorlage',
+    label: 'Präsentation / Befassung',
     phase: 'entscheidungsvorlage',
     view: 'report',
     focus: 'management',
     anchor: 'gremium',
     shouldLoadDemo: true,
     reportMode: 'committee',
-    note: 'Einseiter für Gremium oder Vorstand.'
+    note: 'Einseiter und Präsentationspfad für Management oder Befassungskreis.'
   },
   {
     id: 'archiv',
-    label: 'Beschluss / Archiv',
+    label: 'Archiv / Re-Entry',
     phase: 'archiv',
     view: 'report',
     focus: 'management',
     anchor: 'archiv',
     shouldLoadDemo: true,
     reportMode: 'committee',
-    note: 'Re-Entry nach Beschluss und Archivierung des Entscheidungsstands.'
+    note: 'Re-Entry nach Befassung und Archivierung des Arbeitsstands.'
   }
 ];
 
