@@ -2348,19 +2348,30 @@
 
     .phase-stepper {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(48px, 1fr));
       gap: 6px;
-      min-width: 420px;
+      width: 100%;
+      min-width: 0;
       margin-bottom: 10px;
     }
 
     .phase-stepper span {
       display: grid;
       gap: 4px;
+      min-width: 0;
       justify-items: center;
       color: var(--muted);
       font-size: 10px;
       text-align: center;
+    }
+
+    .phase-stepper b {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .phase-stepper i {
