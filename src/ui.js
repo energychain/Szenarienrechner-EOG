@@ -1327,7 +1327,7 @@ function renderMaturityAndClarifications() {
           <p class="hint">${esc(item.detail)}</p>
         </div>
         <div class="row-actions">
-          ${item.measureId ? `<button type="button" class="primary" data-action="openClarificationMeasure" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId)}">Daten & Notiz bearbeiten</button>` : `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit ansehen' : 'Klärung speichern'}</button>`}
+          ${item.measureId ? `<button type="button" class="primary" data-action="openClarificationMeasure" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId)}">Daten & Befassung bearbeiten</button>` : `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Befassungen ansehen' : 'Befassung dokumentieren'}</button>`}
         </div>
       </article>
     `).join('')
@@ -1526,15 +1526,51 @@ function clarificationAuditNoteOrError() {
   return note;
 }
 
-function appendClarificationAuditEvent(item, note, timestamp, author) {
+function appendClarificationAuditEvent(item, note, timestamp, author, type = 'clarificationAuditCompleted', status = 'closed') {
   history = appendHistoryEvents(history, [{
-    type: 'clarificationAuditCompleted',
+    type,
     subject: { scope: 'clarifications', clarificationKey: item.key, measureId: item.measureId || null, impactId: item.impactId || null },
     field: 'clarificationStatus',
     oldValue: clarificationStatus[item.key] || null,
-    newValue: { status: 'closed', note, timestamp, author, measureId: item.measureId || '', title: item.title },
+    newValue: { status, note, timestamp, author, measureId: item.measureId || '', title: item.title },
     note
   }], author, () => timestamp);
+}
+
+function clarificationBefassungen(status = {}) {
+  if (Array.isArray(status.befassungen)) return status.befassungen;
+  if (!status.note) return [];
+  return [{
+    note: status.note,
+    author: status.author || '',
+    timestamp: status.timestamp || '',
+    outcome: status.status === 'closed' ? 'abgeschlossen' : 'Zwischenstand'
+  }];
+}
+
+function nextClarificationBefassungen(status = {}, entry = null) {
+  const existing = clarificationBefassungen(status);
+  return entry ? [...existing, entry] : existing;
+}
+
+function clarificationBefassungHistoryHtml(status = {}) {
+  const entries = clarificationBefassungen(status);
+  if (!entries.length) {
+    return '<div class="clarification-befassung-history empty"><strong>Bisherige Befassungen</strong><p class="hint">Noch keine Befassung dokumentiert. Die aktuelle Notiz startet leer.</p></div>';
+  }
+  return `
+    <div class="clarification-befassung-history">
+      <strong>Bisherige Befassungen</strong>
+      <ol>
+        ${entries.slice().reverse().map(entry => `
+          <li>
+            <span>${esc(entry.timestamp ? new Date(entry.timestamp).toLocaleString('de-DE') : '-')} · ${esc(entry.author || 'unbekannt')} · ${esc(entry.outcome || 'Befassung')}</span>
+            <p>${esc(entry.note || '')}</p>
+          </li>
+        `).join('')}
+      </ol>
+    </div>
+  `;
 }
 
 function saveClarificationAudit() {
@@ -1627,40 +1663,84 @@ function openClarificationMeasure(measureId, key = '') {
   openMeasureEditModal();
 }
 
-function saveMeasureClarificationFromWorkbench() {
-  if (!measureEditClarificationContext?.key) return false;
-  const item = findClarificationItem(measureEditClarificationContext.key) || measureEditClarificationContext;
+function workbenchClarificationNoteOrError() {
   const noteNode = document.getElementById('measureClarificationNote');
   const error = document.getElementById('measureClarificationError');
   const note = String(noteNode?.value || '').trim();
   if (!note) {
     if (noteNode) noteNode.setAttribute('aria-invalid', 'true');
-    if (error) error.textContent = 'Bitte kurz dokumentieren, was an Daten/Annahme geklärt oder geändert wurde.';
-    return false;
+    if (error) error.textContent = 'Bitte kurz dokumentieren, was in dieser Befassung geprüft, geändert oder offen gelassen wurde.';
+    return '';
   }
   if (noteNode) noteNode.setAttribute('aria-invalid', 'false');
   if (error) error.textContent = '';
+  return note;
+}
+
+function saveMeasureClarificationProgressFromWorkbench() {
+  if (!measureEditClarificationContext?.key) return false;
+  const item = findClarificationItem(measureEditClarificationContext.key) || measureEditClarificationContext;
+  const note = workbenchClarificationNoteOrError();
+  if (!note) return false;
   updateSelectedFromDetail();
   const author = ensureAuthor();
   const timestamp = new Date().toISOString();
+  const previousStatus = clarificationStatus[item.key] || {};
+  appendClarificationAuditEvent(item, note, timestamp, author, 'clarificationBefassungSaved', 'in_review');
+  const taskId = ensureClarificationProjectTask(item, 'in_progress', note);
+  const entry = { note, author, timestamp, outcome: 'Zwischenstand' };
+  clarificationStatus = {
+    ...clarificationStatus,
+    [item.key]: {
+      ...previousStatus,
+      status: 'in_review',
+      draftNote: '',
+      note: previousStatus.note || '',
+      author,
+      timestamp,
+      measureId: item.measureId || selectedId || '',
+      title: item.title,
+      projectTaskId: taskId,
+      befassungen: nextClarificationBefassungen(previousStatus, entry)
+    }
+  };
+  measureEditClarificationContext = { ...measureEditClarificationContext, note: '', timestamp, author, projectTaskId: taskId };
+  previousModelForHistory = currentModelData();
+  renderAll();
+  setStorageStatus('Befassungsnotiz gespeichert; der Klärpunkt bleibt offen/in Bearbeitung.');
+  return true;
+}
+
+function saveMeasureClarificationFromWorkbench() {
+  if (!measureEditClarificationContext?.key) return false;
+  const item = findClarificationItem(measureEditClarificationContext.key) || measureEditClarificationContext;
+  const note = workbenchClarificationNoteOrError();
+  if (!note) return false;
+  updateSelectedFromDetail();
+  const author = ensureAuthor();
+  const timestamp = new Date().toISOString();
+  const previousStatus = clarificationStatus[item.key] || {};
   appendClarificationAuditEvent(item, note, timestamp, author);
   const taskId = ensureClarificationProjectTask(item, 'done', note);
+  const entry = { note, author, timestamp, outcome: 'abgeschlossen' };
   clarificationStatus = {
     ...clarificationStatus,
     [item.key]: {
       status: 'closed',
       note,
+      draftNote: '',
       author,
       timestamp,
       measureId: item.measureId || selectedId || '',
       title: item.title,
-      projectTaskId: taskId
+      projectTaskId: taskId,
+      befassungen: nextClarificationBefassungen(previousStatus, entry)
     }
   };
-  measureEditClarificationContext = { ...measureEditClarificationContext, note, timestamp, author, projectTaskId: taskId };
+  measureEditClarificationContext = { ...measureEditClarificationContext, note: '', timestamp, author, projectTaskId: taskId };
   previousModelForHistory = currentModelData();
   renderAll();
-  setStorageStatus('Datenänderung und Klärnotiz wurden gemeinsam gespeichert; Projektplan-Aufgabe ist erledigt.');
+  setStorageStatus('Klärpunkt abgeschlossen; Datenänderung, Befassungsnotiz und Projektplan-Aufgabe sind gespeichert.');
   return true;
 }
 
@@ -2893,9 +2973,20 @@ function updateMeasureStepper() {
   const position = document.getElementById('measureEditPosition');
   const prev = document.getElementById('measureEditPrev');
   const next = document.getElementById('measureEditNext');
-  if (position) position.textContent = index >= 0 ? `${index + 1} von ${list.length} im aktuellen Filter` : `${list.length} im aktuellen Filter`;
-  if (prev) prev.disabled = index <= 0;
-  if (next) next.disabled = index < 0 || index >= list.length - 1;
+  const clarificationMode = Boolean(measureEditClarificationContext?.key);
+  if (position) position.textContent = index >= 0
+    ? `${index + 1} von ${list.length} ${clarificationMode ? 'Klärfällen' : 'im aktuellen Filter'}`
+    : `${list.length} ${clarificationMode ? 'Klärfälle' : 'im aktuellen Filter'}`;
+  if (prev) {
+    prev.disabled = index <= 0;
+    prev.textContent = clarificationMode ? 'Vorheriger Klärfall' : 'Vorherige Maßnahme';
+  }
+  if (next) {
+    next.disabled = index < 0 || index >= list.length - 1;
+    next.textContent = clarificationMode ? 'Nächster Klärfall' : 'Nächste Maßnahme';
+  }
+  const close = document.getElementById('measureEditClose');
+  if (close) close.textContent = clarificationMode ? 'Zurück zu Prüfen & Klären' : 'Schließen';
 }
 
 function navigateMeasureInCatalog(delta) {
@@ -4979,17 +5070,22 @@ function renderMeasureClarificationAuditBanner(measure) {
         <h4>1 · Daten bearbeiten</h4>
         <p>${esc(target.task)}</p>
         <button type="button" class="link-button" id="measureClarificationFocusField">Zum Feld: ${esc(target.label)}</button>
+        <p class="hint">Das Datenfeld ist die sachliche Grundlage der Klärung; die Befassungsnotiz dokumentiert den Arbeitsschritt.</p>
       </section>
       <section>
-        <h4>2 · Audit-Notiz</h4>
-        <label for="measureClarificationNote">Klärnotiz</label>
-        <textarea id="measureClarificationNote" rows="3" placeholder="Was wurde geändert oder fachlich bestätigt? Quelle/Fachbereich kurz benennen.">${esc(status.note || '')}</textarea>
+        <h4>2 · Aktuelle Befassung</h4>
+        <label for="measureClarificationNote">Neue Befassungsnotiz</label>
+        <textarea id="measureClarificationNote" rows="3" placeholder="Was wurde in dieser Befassung geprüft, geändert oder offen gelassen? Quelle/Rolle kurz benennen.">${esc(status.draftNote || '')}</textarea>
         <p id="measureClarificationError" class="form-error" role="alert"></p>
       </section>
     </div>
-    <div class="clarification-workbench-foot">
-      <p>${esc(item.detail || 'Klärpunkt aus der Arbeitsliste; Daten und Notiz werden gemeinsam auditierbar gespeichert.')}</p>
-      <button type="button" id="measureClarificationSave" class="primary">Datenänderung & Klärung speichern</button>
+    ${clarificationBefassungHistoryHtml(status)}
+    <div class="clarification-workbench-foot clarification-workbench-actions">
+      <p>${esc(item.detail || 'Klärpunkt aus der Arbeitsliste; Daten und Befassung werden gemeinsam auditierbar gespeichert.')}</p>
+      <div class="dialog-actions">
+        <button type="button" id="measureClarificationSaveProgress">Befassungsnotiz speichern</button>
+        <button type="button" id="measureClarificationSave" class="primary">Klärpunkt abschließen</button>
+      </div>
     </div>
   `;
 }
@@ -6694,6 +6790,7 @@ document.getElementById('measureEditPrev').addEventListener('click', () => navig
 document.getElementById('measureEditNext').addEventListener('click', () => navigateMeasureInCatalog(1));
 document.getElementById('measureEditModal').addEventListener('click', event => {
   if (event.target.id === 'measureEditModal') closeMeasureEditModal();
+  if (event.target.closest('#measureClarificationSaveProgress')) saveMeasureClarificationProgressFromWorkbench();
   if (event.target.closest('#measureClarificationSave')) saveMeasureClarificationFromWorkbench();
   if (event.target.closest('#measureClarificationFocusField')) focusActiveClarificationTarget();
 });

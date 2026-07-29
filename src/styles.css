@@ -1224,6 +1224,49 @@
       max-width: 65ch;
     }
 
+    .clarification-workbench-actions {
+      align-items: center;
+    }
+
+    .clarification-befassung-history {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(148, 163, 184, .28);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .clarification-befassung-history strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .clarification-befassung-history ol {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding-left: 20px;
+      max-height: 128px;
+      overflow: auto;
+    }
+
+    .clarification-befassung-history li {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(241, 245, 249, .82);
+    }
+
+    .clarification-befassung-history span {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .clarification-befassung-history p {
+      margin: 0;
+    }
+
     .field-focus-target {
       outline: 3px solid rgba(0, 111, 143, .28);
       outline-offset: 4px;
