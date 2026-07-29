@@ -866,34 +866,41 @@
       <div id="reportPage" class="report-page"></div>
     </section>
 
-    <section class="panel app-view hidden" data-view-panel="sidecar" aria-label="Kontext und Evidenz">
-      <div class="section-head-row">
+    <section class="panel app-view hidden sidecar-workspace" data-view-panel="sidecar" aria-label="Kontext und Evidenz">
+      <div class="section-head-row sidecar-hero">
         <div>
+          <p class="eyebrow">Evidenz & Systeme</p>
           <h2>Kontext & Evidenz</h2>
-          <p class="hint">Sidecar-Objekte halten Evidenz, Datenqualität, Abhängigkeiten und Steuerungsfähigkeit getrennt von klassischen Maßnahmen. Sie sind standardmäßig nicht KPI-wirksam.</p>
+          <p class="hint">Sidecar-Objekte werden verdichtet geführt: erst Überblick und Filter, Details erst nach Klick. Sie bleiben standardmäßig nicht KPI-wirksam.</p>
         </div>
         <button type="button" id="addSidecarObject" class="primary">Sidecar-Objekt hinzufügen</button>
       </div>
-      <div id="sidecarSummaryCards" class="summary-card-grid" aria-label="Sidecar-Zusammenfassung"></div>
-      <div class="catalog-controls">
-        <select id="sidecarDivisionFilter" aria-label="Sparte filtern">
-          <option value="all">alle Sparten</option>
-          <option value="strom">Strom</option>
-          <option value="gas">Gas</option>
-          <option value="cross_division">spartenübergreifend</option>
-        </select>
-        <select id="sidecarModeFilter" aria-label="Sidecar-Arbeitsmodus filtern">
-          <option value="all">alle Sidecars</option>
-          <option value="context">Kontext</option>
-          <option value="sensitivity">Sensitivitäten</option>
-          <option value="open_bridge_logic">offene Brückenlogik</option>
-          <option value="quantified_effect">quantifizierte Wirkung</option>
-          <option value="activated">aktivierte Sidecars</option>
-          <option value="no_calculation">ohne Rechenwirkung</option>
-        </select>
+      <div id="sidecarSummaryCards" class="summary-card-grid sidecar-summary-grid" aria-label="Sidecar-Zusammenfassung"></div>
+      <div class="sidecar-toolbar" aria-label="Sidecar Filter">
+        <div>
+          <strong>Arbeitsliste eingrenzen</strong>
+          <small>nach Sparte, Rechenwirkung und offener Brückenlogik</small>
+        </div>
+        <div class="sidecar-filter-controls">
+          <select id="sidecarDivisionFilter" aria-label="Sparte filtern">
+            <option value="all">alle Sparten</option>
+            <option value="strom">Strom</option>
+            <option value="gas">Gas</option>
+            <option value="cross_division">spartenübergreifend</option>
+          </select>
+          <select id="sidecarModeFilter" aria-label="Sidecar-Arbeitsmodus filtern">
+            <option value="all">alle Sidecars</option>
+            <option value="context">Kontext</option>
+            <option value="sensitivity">Sensitivitäten</option>
+            <option value="open_bridge_logic">offene Brückenlogik</option>
+            <option value="quantified_effect">quantifizierte Wirkung</option>
+            <option value="activated">aktivierte Sidecars</option>
+            <option value="no_calculation">ohne Rechenwirkung</option>
+          </select>
+        </div>
       </div>
-      <div id="sidecarBody" class="clarification-list"></div>
-      <p class="hint warning">Rechenwirkung entsteht erst durch explizite Aktivierung und definierte Mapping-Logik. In dieser Stufe bleibt der Sidecar passiv und verändert keine EOG-/KPI-Ergebnisse.</p>
+      <div id="sidecarBody" class="sidecar-card-list"></div>
+      <p class="hint warning sidecar-footer-note">Rechenwirkung entsteht erst durch explizite Aktivierung und definierte Mapping-Logik. In dieser Stufe bleibt der Sidecar passiv und verändert keine EOG-/KPI-Ergebnisse.</p>
     </section>
 
     <section class="panel app-view hidden" data-view-panel="projectPlan" aria-label="Projektplan Planungsrunde">

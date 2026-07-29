@@ -4973,6 +4973,42 @@ function sidecarNextAuditAction(object) {
   return 'Aktivierung und Mapping-Logik auditieren; KPI-Wirkung bleibt ohne Mapping neutral.';
 }
 
+function sidecarCardTone(object) {
+  if (object.activationStatus === 'activated' || object.calculationImpact === 'active') return 'active';
+  if (sidecarHasOpenBridgeLogic(object) || ['missing', 'conflicting', 'stale'].includes(object.evidenceStatus)) return 'warn';
+  if (object.evidenceStatus === 'validated') return 'good';
+  if (object.sidecarType === 'system_reference') return 'system';
+  if (object.sidecarType === 'sensitivity') return 'sensitivity';
+  return 'context';
+}
+
+function sidecarTypeInitial(object) {
+  if (object.sidecarType === 'economic_bridge') return 'B';
+  if (object.sidecarType === 'effect_assumption') return 'W';
+  if (object.sidecarType === 'system_reference') return 'S';
+  if (object.sidecarType === 'sensitivity') return 'T';
+  return 'K';
+}
+
+function sidecarImpactLabel(object) {
+  if (object.calculationImpact === 'active') return 'aktiv markiert';
+  if (object.calculationImpact === 'scenario_only') return 'nur Szenario';
+  if (object.calculationImpact === 'indirect') return 'indirekter Bezug';
+  return 'keine Rechenwirkung';
+}
+
+function sidecarEvidenceLabel(object) {
+  const labels = {
+    missing: 'Evidenz fehlt',
+    stated: 'Evidenz benannt',
+    source_available: 'Quelle verfügbar',
+    validated: 'validiert',
+    conflicting: 'widersprüchlich',
+    stale: 'veraltet'
+  };
+  return labels[object.evidenceStatus] || object.evidenceStatus;
+}
+
 function renderSidecar() {
   sidecar = normalizeSidecar(sidecar);
   const summary = sidecarSummary(sidecar);
@@ -4998,27 +5034,27 @@ function renderSidecar() {
     .filter(object => sidecarFilterDivision === 'all' || object.division === sidecarFilterDivision)
     .filter(sidecarMatchesModeFilter);
   body.innerHTML = objects.length ? objects.map(object => `
-    <article class="clarification-card ${object.id === selectedSidecarId ? 'active' : ''}" data-sidecar-card="${esc(object.id)}">
-      <div class="section-head-row">
-        <div>
+    <article class="sidecar-object-card sidecar-tone-${esc(sidecarCardTone(object))} ${object.id === selectedSidecarId ? 'active' : ''}" data-sidecar-card="${esc(object.id)}">
+      <div class="sidecar-card-main">
+        <div class="sidecar-card-marker" aria-hidden="true">${esc(sidecarTypeInitial(object))}</div>
+        <div class="sidecar-card-copy">
           <p class="eyebrow">${esc(object.division)} · ${esc(sidecarTypeLabel(object))}</p>
           <h3>${esc(object.title)}</h3>
-          <p>${esc(object.summary || 'Noch keine Kurzbeschreibung hinterlegt.')}</p>
+          <p class="sidecar-card-summary">${esc(object.summary || 'Kurzbeschreibung fehlt noch.')}</p>
+          <div class="sidecar-card-warning">
+            <strong>${esc(sidecarBridgeWarning(object))}</strong>
+            <span>Nächste Prüfaktion: ${esc(sidecarNextAuditAction(object))}</span>
+          </div>
         </div>
-        <div class="pill-row compact">
-          <span class="pill">${esc(object.status)}</span>
-          <span class="pill">Sidecar-Typ: ${esc(object.sidecarType)}</span>
-          <span class="pill">Evidenz: ${esc(object.evidenceStatus)}</span>
-          <span class="pill">Rechenwirkung: ${esc(object.calculationImpact)}</span>
-          <span class="pill">Aktivierung: ${esc(object.activationStatus)}</span>
-          <span class="pill">Quantifizierung: ${esc(object.bridgeLogic?.quantificationStatus || 'not_applicable')}</span>
-          <span class="pill">Export: ${esc(object.exportStatus)}</span>
+        <div class="sidecar-card-status" aria-label="Sidecar-Status">
+          <span class="sidecar-status-chip">${esc(sidecarTypeLabel(object))}</span>
+          <span class="sidecar-status-chip">${esc(sidecarImpactLabel(object))}</span>
+          <span class="sidecar-status-chip">${esc(sidecarEvidenceLabel(object))}</span>
         </div>
       </div>
-      <div class="note warning sidecar-bridge-warning"><strong>${esc(sidecarBridgeWarning(object))}</strong><br><span>Nächste Prüfaktion: ${esc(sidecarNextAuditAction(object))}</span></div>
-      <details ${object.id === selectedSidecarId ? 'open' : ''}>
-        <summary>Bearbeiten / Verknüpfen</summary>
-        <div class="grid2">
+      <details class="sidecar-editor-disclosure" ${object.id === selectedSidecarId ? 'open' : ''}>
+        <summary class="sidecar-edit-action"><span>Bearbeiten & verknüpfen</span><small>Felder, Maßnahmenbezug und Brückenlogik öffnen</small></summary>
+        <div class="grid2 sidecar-editor-grid">
           <div><label data-help-id="sidecarTitle">Titel<input data-sidecar-field="title" data-sidecar-id="${esc(object.id)}" value="${esc(object.title)}"></label></div>
           <div><label data-help-id="sidecarDivision">Sparte<select data-sidecar-field="division" data-sidecar-id="${esc(object.id)}"><option value="strom" ${object.division === 'strom' ? 'selected' : ''}>Strom</option><option value="gas" ${object.division === 'gas' ? 'selected' : ''}>Gas</option><option value="cross_division" ${object.division === 'cross_division' ? 'selected' : ''}>spartenübergreifend</option></select></label></div>
           <div><label data-help-id="sidecarType">Typ<input data-sidecar-field="type" data-sidecar-id="${esc(object.id)}" value="${esc(object.type)}"></label></div>
