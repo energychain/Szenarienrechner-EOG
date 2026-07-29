@@ -108,7 +108,7 @@ describe('spreadsheet exports', () => {
     expect(xlsxText).toContain('Massnahmen');
     const measuresSheetXml = zipEntryText(xlsx, 'xl/worksheets/sheet2.xml');
     const sharedStringsXml = zipEntryText(xlsx, 'xl/sharedStrings.xml');
-    expect(measuresSheetXml).toContain('dimension ref="A1:AZ6"');
+    expect(measuresSheetXml).toContain(`dimension ref="A1:AZ${demoMeasures.length + 1}"`);
     expect(measuresSheetXml).toContain('<row r="2"');
     expect(measuresSheetXml).toContain(' t="s"');
     expect(sharedStringsXml).toContain('SAP-PSP-NA-2027-001');

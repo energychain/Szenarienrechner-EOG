@@ -10,7 +10,9 @@ Szenarienrechner-EOG ist ein Public-OSS-Projekt. Das Projekt darf keine realen N
 
 ## Decision
 
-Alle Demodaten, Namen, Szenarien, Evidenztexte und Gremienbeispiele muessen synthetische Demodaten sein. Sie duerfen nicht wie reale interne Projektartefakte wirken und sollen neutrale Begriffe verwenden, z.B. `Beispielnetz`, `Demogebiet Alpha` oder `synthetische Störungsanalyse`.
+Alle Demodaten, Namen, Szenarien, Evidenztexte und Befassungsbeispiele muessen synthetische Demodaten sein. Sie duerfen nicht wie reale interne Projektartefakte wirken und sollen neutrale Begriffe verwenden, z.B. `Beispielnetz`, `Demogebiet Alpha` oder `synthetische Störungsanalyse`.
+
+Die Demo-Fixtures sollen zugleich den aktuellen Produktstand erklaeren. Deshalb muessen sie bewusst Beispiele fuer die heutigen Arbeitsmuster enthalten: Systemreferenzen/Rueckspielweg, Sidecar-/Evidenzobjekte, offene Datenqualitaet, wirtschaftliche Ueberleitung ohne KPI-Automatik, Stresstest-Parameter, Kanban-Klaerfaelle und Befassungsnotizen.
 
 Neue Beitraege muessen in PR-Beschreibung und Tests bestaetigen, dass keine realen Netzbetreiber- oder internen Referenzen eingefuehrt wurden.
 
