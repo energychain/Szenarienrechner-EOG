@@ -16,14 +16,14 @@ export const promptRoles = [
   {
     id: 'committee',
     title: 'Aufsichtsrat / Stadtrat / Gremium',
-    task: 'Erkläre die Planung für ein kommunales Gremium. Trenne Entscheidung, Annahmen, Risiken, offene Punkte und Auflagen. Vermeide technische Detailtiefe und mache deutlich, dass EOG-Wirkung nicht gleich Cashflow ist.',
-    output: ['Kurzfazit', 'Was soll beschlossen werden?', 'Wesentliche finanzielle Wirkungen', 'Prüfpflichtige Annahmen', 'Empfohlene Auflagen', 'Fragen, die ein Gremium stellen sollte']
+    task: 'Erkläre die Planung für eine kommunale Befassung. Trenne Einordnung, Annahmen, Risiken, offene Punkte und Auflagen. Vermeide technische Detailtiefe und mache deutlich, dass EOG-Wirkung nicht gleich Cashflow ist.',
+    output: ['Kurzfazit', 'Worum geht die Befassung?', 'Wesentliche finanzielle Wirkungen', 'Prüfpflichtige Annahmen', 'Empfohlene Auflagen', 'Fragen, die ein Gremium stellen sollte']
   },
   {
     id: 'management',
     title: 'Geschäftsführung / Management',
-    task: 'Bewerte die Entscheidungsreife. Zeige Basis vs. konservativ, Risiken, Abhängigkeiten und nächste Management-Entscheidungen.',
-    output: ['Entscheidungsvorschlag', 'Ampelinterpretation', 'Top-3-Werttreiber', 'Top-3-Risiken', 'Offene Klärpunkte', 'Empfohlene nächste Schritte']
+    task: 'Bewerte die Befassungsreife. Zeige Basis vs. konservativ, Risiken, Abhängigkeiten und nächste Management-Befassungen.',
+    output: ['Arbeitsstand-Einordnung', 'Ampelinterpretation', 'Top-3-Werttreiber', 'Top-3-Risiken', 'Offene Klärpunkte', 'Empfohlene nächste Schritte']
   },
   {
     id: 'controlling',
@@ -47,13 +47,13 @@ export const promptRoles = [
     id: 'accounting',
     title: 'Anlagenbuchhaltung / Bilanzierung',
     task: 'Prüfe Aktivierbarkeit, Nutzungsdauer, HGB-vs.-regulatorische Sicht, Reinvestition und CAPEX/OPEX-Abgrenzung.',
-    output: ['Aktivierungsfragen', 'Nutzungsdauer-/AfA-Sicht', 'HGB/regulatorische Abweichungen', 'Reinvestitionslogik', 'Klärpunkte vor Freigabe']
+    output: ['Aktivierungsfragen', 'Nutzungsdauer-/AfA-Sicht', 'HGB/regulatorische Abweichungen', 'Reinvestitionslogik', 'Klärpunkte vor Befassung']
   },
   {
     id: 'projectControl',
     title: 'Projektsteuerung / PMO',
-    task: 'Analysiere den Projektplan. Welche Aufgaben sind blockiert, welche Rollen müssen handeln, welche nächsten Schritte sind kritisch, welche Klärpunkte gefährden die Gremienreife?',
-    output: ['nächste Schritte', 'Blockierte Aufgaben', 'Rollen mit Handlungsbedarf', 'Termin-/Gate-Risiken', 'Vorbereitung der Gremienreife']
+    task: 'Analysiere den Projektplan. Welche Aufgaben sind blockiert, welche Rollen müssen handeln, welche nächsten Schritte sind kritisch, welche Klärpunkte gefährden die nächste Befassung?',
+    output: ['nächste Schritte', 'Blockierte Aufgaben', 'Rollen mit Handlungsbedarf', 'Termin-/Gate-Risiken', 'Vorbereitung der nächsten Befassung']
   },
   {
     id: 'challenge',
@@ -90,6 +90,16 @@ function pct(value) {
 
 function roleFor(id) {
   return promptRoles.find(role => role.id === id) || promptRoles[0];
+}
+
+function neutralGovernanceWording(value = '') {
+  return String(value || '')
+    .replace(/Beschluss/g, 'Befassung')
+    .replace(/beschluss/g, 'befassung')
+    .replace(/Freigabe/g, 'Befassung')
+    .replace(/freigabe/g, 'befassung')
+    .replace(/Gremienreife/g, 'Befassungsreife')
+    .replace(/gremienreife/g, 'befassungsreife');
 }
 
 function allMeasures(model) {
@@ -214,7 +224,7 @@ function summarizeProjectPlan(plan) {
       const item = {
         id: task.id,
         milestone: milestone.title,
-        title: task.title,
+        title: neutralGovernanceWording(task.title),
         ownerRole: task.ownerRole,
         status: task.status || 'open',
         effectiveState: state?.blocked ? 'blocked' : 'ready',
@@ -352,6 +362,188 @@ function conservativeVerdictText(metrics) {
   return metrics.conservative.carries ? 'trägt' : 'trägt nicht';
 }
 
+function pctFromRatio(value) {
+  return Number.isFinite(value) ? Number((value * 100).toFixed(2)) : null;
+}
+
+function stressTestForPrompt(baseParams, conservativeParams, metrics) {
+  const stress = baseParams.conservativeStress || {};
+  return {
+    status: metrics?.conservativeGate || 'nicht_geprueft',
+    note: metrics?.scenarioComparison?.note || '',
+    basisVsConservativeIdentical: Boolean(metrics?.scenarioComparison?.identicalBasisConservative),
+    parameters: {
+      attributionCapPct: pctFromRatio(Number.isFinite(stress.attributionCap) ? stress.attributionCap : conservativeParams.attribution),
+      qFactorPct: pctFromRatio(Number.isFinite(stress.qFactor) ? stress.qFactor : 0.5),
+      eFactorPct: pctFromRatio(Number.isFinite(stress.eFactor) ? stress.eFactor : 0.5),
+      discountRateFloorPct: pctFromRatio(Number.isFinite(stress.discountRateFloor) ? stress.discountRateFloor : baseParams.financingRate),
+      assumptionMode: stress.assumptionMode || conservativeParams.assumptionMode || 'approvedOnly'
+    },
+    basis: {
+      attributionPct: pctFromRatio(baseParams.attribution),
+      qDeltaPct: pctFromRatio(baseParams.qDelta),
+      eDeltaPct: pctFromRatio(baseParams.eDelta),
+      discountRatePct: pctFromRatio(baseParams.discountRate),
+      assumptionMode: baseParams.assumptionMode || 'basis'
+    },
+    conservative: {
+      attributionPct: pctFromRatio(conservativeParams.attribution),
+      qDeltaPct: pctFromRatio(conservativeParams.qDelta),
+      eDeltaPct: pctFromRatio(conservativeParams.eDelta),
+      discountRatePct: pctFromRatio(conservativeParams.discountRate),
+      assumptionMode: conservativeParams.assumptionMode || 'approvedOnly'
+    }
+  };
+}
+
+function textPresent(value) {
+  return Boolean(String(value ?? '').trim());
+}
+
+function hasSystemReference(measure = {}) {
+  return textPresent(measure.sourceSystem) && (textPresent(measure.sourceRecordId) || textPresent(measure.assetSystemRef) || textPresent(measure.erpRef));
+}
+
+function hasRiskEvidence(measure = {}) {
+  return ['source_available', 'validated'].includes(String(measure.riskEvidenceStatus || ''))
+    || textPresent(measure.riskDbRef)
+    || textPresent(measure.scoringRef)
+    || textPresent(measure.sourceSystem);
+}
+
+function weakPromptEvidenceStatus(status = '') {
+  return ['missing', 'stated', 'conflicting', 'stale'].includes(String(status || 'missing'));
+}
+
+function sidecarPromptWorkItems(model = {}) {
+  return normalizeSidecar(model.sidecar).objects
+    .filter(object => object.status !== 'archived')
+    .map(object => {
+      const reasons = [];
+      if (object.openQuestions?.length) reasons.push(`${object.openQuestions.length} offene Prüffrage(n)`);
+      if (object.bridgeLogic?.openQuestions?.length) reasons.push(`${object.bridgeLogic.openQuestions.length} offene Überleitungsfrage(n)`);
+      if (weakPromptEvidenceStatus(object.evidenceStatus)) reasons.push(`Evidenzstatus ${object.evidenceStatus}`);
+      if (object.type === 'data_quality' && object.evidenceStatus !== 'validated') reasons.push('Datenqualitätsobjekt nicht validiert');
+      if (['effect_assumption', 'economic_bridge'].includes(object.sidecarType)
+        && object.calculationImpact !== 'none'
+        && (object.bridgeLogic?.economicRelation === 'none' || ['not_applicable', 'open', 'described'].includes(object.bridgeLogic?.quantificationStatus))) {
+        reasons.push('wirtschaftliche Überleitungslogik offen');
+      }
+      if (String(object.reviewStatus || '').match(/not_reviewed|needs_update|open|offen/i)) reasons.push('Reviewstatus offen');
+      if (!reasons.length) return null;
+      return {
+        key: `sidecar:${object.id}`,
+        column: 'evidence',
+        type: 'sidecar',
+        title: 'Evidenz-/Sidecar-Prüfpunkt klären',
+        subject: object.title,
+        detail: reasons.join(' · '),
+        target: 'Evidenz & Systeme'
+      };
+    })
+    .filter(Boolean);
+}
+
+function measurePromptSubject(measure = {}, index = 0, options = {}) {
+  if (options.anonymizeMeasures || options.dataScope === 'summary') return `Maßnahme ${index + 1}`;
+  return measure.name || measure.id || `Maßnahme ${index + 1}`;
+}
+
+function measurePromptWorkItems(model = {}, options = {}) {
+  return activeMeasures(model).flatMap((measure, index) => {
+    const items = [];
+    const id = measure.id || measure.name || 'measure';
+    const subject = measurePromptSubject(measure, index, options);
+    if (!hasSystemReference(measure)) {
+      items.push({
+        key: `system-reference:${id}`,
+        column: 'evidence',
+        type: 'system_reference',
+        title: 'Systemreferenz / Rückspielweg ergänzen',
+        subject,
+        detail: 'Quellsystem und Datensatz-/PSP-/Objektreferenz fehlen oder sind nicht vollständig dokumentiert.',
+        target: 'Maßnahmenmodal · Quellsystem / Datensatz'
+      });
+    }
+    if (finiteNumber(measure.riskAvoided, 0) > 0 && !hasRiskEvidence(measure)) {
+      items.push({
+        key: `risk-evidence:${id}`,
+        column: 'evidence',
+        type: 'risk_evidence',
+        title: 'Störungs-/Risikowirkung belegen',
+        subject,
+        detail: 'Die Maßnahme trägt einen Risiko-/Störungswert, aber Evidenzstatus, Wirkungskette oder Quelle sind noch nicht belastbar dokumentiert.',
+        target: 'Maßnahmenmodal · Risiko-Evidenzstatus'
+      });
+    }
+    if (!(Array.isArray(measure.objectiveIds) && measure.objectiveIds.length)) {
+      items.push({
+        key: `target-mapping:${id}`,
+        column: 'documentation',
+        type: 'target_mapping',
+        title: 'Ziel-Zuordnung dokumentieren',
+        subject,
+        detail: 'Die Maßnahme ist noch keinem Aktenziel zugeordnet; Entscheidungs- und Dokumentationsbezug bleiben offen.',
+        target: 'Maßnahmenmodal · Trägt bei zu'
+      });
+    }
+    if (!textPresent(measure.note)) {
+      items.push({
+        key: `measure-documentation:${id}`,
+        column: 'documentation',
+        type: 'measure_documentation',
+        title: 'Maßnahmendokumentation ergänzen',
+        subject,
+        detail: 'Fachliche Maßnahmennotiz fehlt; Anlass, Quelle oder Begründung sollten dokumentiert werden.',
+        target: 'Maßnahmenmodal · Notiz zur Maßnahme'
+      });
+    }
+    return items;
+  });
+}
+
+function governanceWorkbenchForPrompt(model = {}, warnings = [], options = {}) {
+  const warningItems = warnings
+    .filter(warning => warning.type === 'possible_double_counting' || warning.type === 'conservative_case_missing')
+    .map(warning => ({
+      key: warning.key || warning.type,
+      column: warning.type === 'conservative_case_missing' ? 'high' : 'evidence',
+      type: warning.type,
+      title: warning.title || 'Prüfpunkt',
+      subject: warning.measure || warning.area || 'Arbeitsstand',
+      detail: warning.detail || '',
+      target: warning.type === 'conservative_case_missing' ? 'Grundlagen · Stresstest-Parameter' : 'Prüfen & Klären'
+    }));
+  const items = [...warningItems, ...measurePromptWorkItems(model, options), ...sidecarPromptWorkItems(model)];
+  const clarificationStatus = model?.clarificationStatus || {};
+  const byStatus = items.reduce((acc, item) => {
+    const status = clarificationStatus[item.key]?.status || 'open';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+  const byColumn = items.reduce((acc, item) => {
+    acc[item.column] = (acc[item.column] || 0) + 1;
+    return acc;
+  }, { high: 0, evidence: 0, documentation: 0 });
+  const befassungen = Object.entries(clarificationStatus)
+    .map(([key, status]) => ({
+      key,
+      status: status?.status || 'open',
+      notes: Array.isArray(status?.notes) ? status.notes.length : 0,
+      latestTimestamp: Array.isArray(status?.notes) && status.notes.length ? status.notes[status.notes.length - 1].timestamp || '' : status?.timestamp || ''
+    }))
+    .filter(item => item.status !== 'closed' || item.notes > 0)
+    .slice(0, 12);
+  return {
+    total: items.length,
+    byColumn,
+    byStatus,
+    sampleItems: items.slice(0, 12),
+    befassungen,
+    caveat: 'Kanban-Karten entstehen deterministisch aus Wirkannahmen/Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Prüffragen. Befassungen dokumentieren Zwischenstände; Abschluss nur bei hinreichend geklärtem Punkt.'
+  };
+}
+
 function stromReviewSection(snapshot) {
   if (snapshot.planning?.sector !== 'strom') return '';
   const review = snapshot.stromReview || {};
@@ -386,8 +578,10 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
   const merged = { ...defaultAiPromptOptions, ...options };
   const inputs = model?.inputs || {};
   const params = engineParams(inputs);
-  const basis = calcPortfolio({ measures: activeMeasures(model) }, scenarioParams(params, 'basis'));
-  const conservative = calcPortfolio({ measures: activeMeasures(model) }, scenarioParams(params, 'konservativ'));
+  const basisParams = scenarioParams(params, 'basis');
+  const conservativeParams = scenarioParams(params, 'konservativ');
+  const basis = calcPortfolio({ measures: activeMeasures(model) }, basisParams);
+  const conservative = calcPortfolio({ measures: activeMeasures(model) }, conservativeParams);
   const metrics = portfolioDecisionMetrics(basis, conservative);
   const includeMeasures = merged.dataScope !== 'summary';
   const includeDetailedMeasures = merged.dataScope === 'detailed';
@@ -415,6 +609,8 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
     ? compactWarningsForPrompt(combinedWarningsRaw)
     : { warnings: combinedWarningsRaw, riskSummary: riskAvoidedSummaryFor([]) };
   const combinedWarnings = compactedPromptWarnings.warnings;
+  const governanceWorkbench = governanceWorkbenchForPrompt(model, combinedWarnings, merged);
+  const stressTest = stressTestForPrompt(params, conservativeParams, metrics);
 
   return {
     context: {
@@ -450,6 +646,8 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       cashflowCaveat: metrics.cashflowBasis
     },
     warnings: combinedWarnings,
+    stressTest,
+    governanceWorkbench,
     flexibility: {
       ...promptFlexibilitySummary,
       ...(basis.flexibilitySummary || {})
@@ -502,6 +700,35 @@ ${sidecar.objects.map(object => `- ${object.division} · ${object.sidecarType ||
 `;
 }
 
+function stressTestPromptSection(snapshot) {
+  const stress = snapshot.stressTest || {};
+  const params = stress.parameters || {};
+  return `
+## Konservativer Stresstest / Stresstest-Parameter
+Status: ${stress.status || 'nicht_geprueft'}.
+${stress.note || ''}
+Parameter: Attributionsdeckel ${params.attributionCapPct ?? 'n/a'} %, Q-Faktor ${params.qFactorPct ?? 'n/a'} %, E-/Effizienz-Faktor ${params.eFactorPct ?? 'n/a'} %, Mindest-Diskontsatz ${params.discountRateFloorPct ?? 'n/a'} %, Wirkannahmen ${params.assumptionMode || 'approvedOnly'}.
+Basiswerte: Attribution ${stress.basis?.attributionPct ?? 'n/a'} %, Q ${stress.basis?.qDeltaPct ?? 'n/a'} %, E ${stress.basis?.eDeltaPct ?? 'n/a'} %, Diskontsatz ${stress.basis?.discountRatePct ?? 'n/a'} %.
+Konservativ: Attribution ${stress.conservative?.attributionPct ?? 'n/a'} %, Q ${stress.conservative?.qDeltaPct ?? 'n/a'} %, E ${stress.conservative?.eDeltaPct ?? 'n/a'} %, Diskontsatz ${stress.conservative?.discountRatePct ?? 'n/a'} %.
+Wenn Basis und Konservativ identisch bleiben, ist dies kein Robustheitsnachweis; Parameter schärfen und Ergebnis als Befassung dokumentieren.
+`;
+}
+
+function governanceWorkbenchPromptSection(snapshot) {
+  const workbench = snapshot.governanceWorkbench || { total: 0, sampleItems: [], byColumn: {} };
+  if (!workbench.total) return '';
+  const items = workbench.sampleItems || [];
+  const befassungen = workbench.befassungen || [];
+  return `
+## Prüfen & Klären / Befassungs-Workbench
+${workbench.caveat || ''}
+Aggregat: ${workbench.total} Klärfall-Karten; Hohe Steuerungswirkung ${workbench.byColumn?.high || 0}; Evidenz / Systeme ${workbench.byColumn?.evidence || 0}; Dokumentation ${workbench.byColumn?.documentation || 0}.
+Beispiele:
+${items.map(item => `- ${item.title}: ${item.subject}; Ziel ${item.target}; ${item.detail}`).join('\n')}
+${befassungen.length ? `Bisherige Befassungen / Statusauszug:\n${befassungen.map(item => `- ${item.key}: ${item.status}; Notizen ${item.notes}; zuletzt ${item.latestTimestamp || 'n/a'}`).join('\n')}` : 'Keine Befassungsnotizen im exportierten Auszug.'}
+`;
+}
+
 export function buildAiPrompt(model, options = defaultAiPromptOptions, context = {}) {
   const merged = { ...defaultAiPromptOptions, ...options };
   const role = roleFor(merged.roleId);
@@ -525,11 +752,11 @@ ${outputFormat}
 
 ## Wichtige Interpretationsregeln
 - EOG-Wirkung ist nicht gleich Cashflow. IRR/MIRR und Kapitalwert beruhen auf einer indikativen Cashflow-Sicht.
-- Basis vs. konservativ ist entscheidend: Wenn der Basiscase trägt, der konservative Case aber kippt, ist das keine robuste Freigabe, sondern eine Entscheidung mit Auflage.
+- Basis vs. konservativ ist entscheidend: Wenn der Basiscase trägt, der konservative Case aber kippt oder nicht parametrisiert ist, ist das kein robuster Arbeitsstand, sondern ein offener Stresstest mit Befassungsbedarf.
 - Prüfpflichtige Annahmen, Q/E-Wirkungen, Risikoannahmen und Attribution nicht als bestätigte Fakten darstellen.
 - Flexibilitätsobjekte sind nicht als klassische CAPEX-Maßnahmen zu interpretieren. Sie bilden mögliche OPEX-gegen-CAPEX-Substitutionen ab; ohne validierten Netzfahrplan, quantifizierte vermiedene/verschobene CAPEX und jährliche Flex-OPEX keine automatische Ergebniswirkung. AGNeS-Relevanz ist als eigener Prüfpunkt zu führen.
 - Keine regulatorische, steuerliche oder rechtliche Anerkennungszusage formulieren.
-- Klärpunkte und Auflagen sichtbar machen, statt sie durch glatte Formulierungen zu verdecken.
+- Klärpunkte, Befassungen und Auflagen sichtbar machen, statt sie durch glatte Formulierungen zu verdecken.
 
 ## Provenienz
 Build-Commit: ${snapshot.context.buildCommit}
@@ -540,6 +767,8 @@ Quelle/Stand: ${snapshot.context.rulesetSourceRef}
 Datenumfang: ${dataScopeHint(merged.dataScope)}
 Redaktion: Maßnahmennamen ${merged.anonymizeMeasures ? 'anonymisiert' : 'original'}, Beträge ${merged.roundAmounts ? 'gerundet' : 'nicht gerundet'}, Notizen ${merged.omitNotes ? 'ausgelassen' : 'enthalten'}.
 ${stromReviewSection(snapshot)}
+${stressTestPromptSection(snapshot)}
+${governanceWorkbenchPromptSection(snapshot)}
 ${flexibilityPromptSection(snapshot)}
 ${sidecarPromptSection(snapshot)}
 ## Planungsdaten als JSON

@@ -4,7 +4,7 @@ Die App enthält einen lokalen Prompt-Export für unternehmenseigene KI-Systeme.
 
 ## Zweck
 
-Viele EVU-Rollen brauchen eine Übersetzung derselben Planung in unterschiedliche Sprache: Gremien brauchen Beschlussfähigkeit, Controlling braucht Budget- und Cashflow-Sicht, Regulierungsmanagement braucht Prüfpfade und Asset Management braucht eine nachvollziehbare Wirkungskette. Der Prompt-Export erzeugt dafür rollenspezifische Arbeitsaufträge.
+Viele EVU-Rollen brauchen eine Übersetzung derselben Planung in unterschiedliche Sprache: Gremien brauchen Befassungsfähigkeit, Controlling braucht Budget- und Cashflow-Sicht, Regulierungsmanagement braucht Prüfpfade und Asset Management braucht eine nachvollziehbare Wirkungskette. Der Prompt-Export erzeugt dafür rollenspezifische Arbeitsaufträge.
 
 ## Rollen im ersten Release
 
@@ -28,6 +28,12 @@ Der Prompt enthält einen Verweis auf die öffentliche Kontextdatei:
 https://energychain.github.io/Szenarienrechner-EOG/llm.txt
 
 Wenn ein Unternehmens-LLM diese URL nicht abrufen kann, enthält der Prompt trotzdem die wichtigsten Interpretationsregeln: EOG ist nicht Cashflow, Basis vs. konservativ bleibt sichtbar, prüfpflichtige Annahmen sind keine bestätigten Fakten und es gibt keine regulatorische Anerkennungszusage.
+
+Der Prompt enthält inzwischen zusätzlich die expliziten Stresstest-Parameter des konservativen Szenarios: Attributionsdeckel, Q-Faktor, E-/Effizienz-Faktor, Mindest-Diskontsatz und Wirkannahmen-Modus. Wenn Basis und Konservativ identisch sind, soll das KI-System dies als offenen Stresstest mit Befassungsbedarf lesen, nicht als Robustheitsnachweis.
+
+## Prüfen & Klären / Befassungs-Workbench
+
+Der Prompt-Export übernimmt einen aggregierten Auszug der aktuellen Klärfall-Logik. Kanban-Karten entstehen deterministisch aus Wirkannahmen/Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Prüffragen. Die Auswertung nennt die Verteilung auf „Hohe Steuerungswirkung“, „Evidenz / Systeme“ und „Dokumentation“, zeigt exemplarische Klärfälle mit Bearbeitungsziel und führt vorhandene Befassungsnotizen als Statusauszug. Befassungsnotizen sind Zwischenstände; ein Klärpunkt gilt erst nach explizitem Abschluss als erledigt.
 
 Für Strom-Flexibilitäten enthält der Prompt zusätzlich eine feste Abgrenzung: Flexibilitätsobjekte, Netzfahrpläne, Speicher-/Laststeuerung und AGNeS-Bezüge sind nicht automatisch klassische Netz-CAPEX. Sie beschreiben mögliche OPEX-gegen-CAPEX-Substitutionen. Eine rechnerische Wirkung soll erst interpretiert werden, wenn Netzfahrplan, vermiedene oder verschobene CAPEX, jährliche Flex-OPEX und Steuerungs-/Nachweislogik belastbar dokumentiert sind.
 

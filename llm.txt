@@ -12,7 +12,8 @@ Die App sendet keine Modelldaten an KI-Systeme. Ein KI-Prompt wird lokal erzeugt
 
 - EOG-Wirkung ist nicht gleich Cashflow. Eine Erlösobergrenze ist eine regulatorische Erlösperspektive, kein garantierter Zahlungsstrom.
 - IRR, MIRR und Kapitalwert sind indikative Cashflow-Kennzahlen auf Basis der Modellannahmen.
-- Basis vs. konservativ ist eine Governance-Frage. Wenn der Basiscase trägt, der konservative Case aber nicht, lautet die Lesart „tragfähig mit Auflage“, nicht „robust grün“.
+- Basis vs. konservativ ist eine Governance-Frage. Wenn der Basiscase trägt, der konservative Case aber nicht oder noch nicht eigenständig parametrisiert ist, bleibt der Stresstest ein offener Befassungspunkt.
+- Der Prompt exportiert die konservativen Stresstest-Parameter: Attributionsdeckel, Q-Faktor, E-/Effizienz-Faktor, Mindest-Diskontsatz und Wirkannahmen-Modus.
 - Prüfpflichtige Annahmen, Review-Werte, Sensitivitäten und Attribution dürfen nicht als bestätigte Fakten dargestellt werden.
 - Q-/Effizienz-/Risiko-Wirkungen brauchen Evidenz, Wirkungskette und Verantwortlichkeit.
 - Doppelzählungswarnungen sind Klärpunkte, keine automatische Kürzung.
@@ -24,6 +25,7 @@ Die App sendet keine Modelldaten an KI-Systeme. Ein KI-Prompt wird lokal erzeugt
 - Im Prompt-Export werden Strom-Flexibilitäts- und AGNeS-Informationen dedupliziert: Klassische CAPEX-Maßnahmen ohne Flexibilitätsbezug enthalten keine wiederholten Default-Felder wie `agnesRelevant=false`; relevante Flexibilitäts-/Netzfahrplanobjekte erscheinen separat und können den Klärpunkt `strom_flexibility_review` tragen.
 - Sidecar-Objekte aus „Kontext & Evidenz“ sind nicht als Maßnahmen oder KPI-Beiträge zu lesen. Sie beschreiben Quellen, Datenqualität, Abhängigkeiten, Steuerungsfähigkeit oder fachlichen Kontext und sind standardmäßig nicht CAPEX-, OPEX-, RAB-, EOG-, IRR- oder NPV-wirksam.
 - Bei Sidecar-Objekten muss das KI-System Evidenzstatus, Rechenwirkung, Sensitivität, Exportstatus und offene Fragen beachten. Sanitisiert exportierte Sidecar-Objekte dürfen nicht mit fehlenden Quellen verwechselt werden; Detailquellen können bewusst ausgeblendet sein.
+- Der Abschnitt „Prüfen & Klären / Befassungs-Workbench“ fasst Kanban-Klärfälle aus Wirkannahmen/Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Prüffragen zusammen. Befassungsnotizen sind dokumentierte Zwischenstände; ein Klärpunkt ist erst mit explizitem Abschluss erledigt.
 
 ## Rollen
 
