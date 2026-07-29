@@ -17,4 +17,21 @@ describe('workstand reliability UI', () => {
     expect(engine).toContain('No-Regret-Typisierung');
     expect(engine).toContain('Sidecar-/Evidenzlage');
   });
+
+  it('renders reliability counters as actionable progress cards', () => {
+    expect(ui).toContain('reliabilityProgressHtml');
+    expect(ui).toContain('data-workstand-action');
+    expect(ui).toContain('openReliabilityWorkItem');
+    expect(ui).toContain('measureEditNavigationIds');
+    expect(ui).toContain('pendingMeasureFocusTarget');
+    expect(ui).toContain('Rückspielweg bearbeiten');
+    expect(ui).toContain('Risiko-Mapping bearbeiten');
+    expect(ui).toContain('Ziel-Zuordnung bearbeiten');
+  });
+
+  it('links scenario comparison back to scenario input fields', () => {
+    expect(ui).toContain('Szenarioannahmen werden unter Grundlagen');
+    expect(ui).toContain('Szenarioannahmen bearbeiten');
+    expect(ui).toContain('data-jump-view="basis"');
+  });
 });

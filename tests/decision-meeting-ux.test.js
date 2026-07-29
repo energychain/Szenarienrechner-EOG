@@ -26,7 +26,7 @@ describe('decision view meeting and clarification UX', () => {
   it('renders the clarification list behind an explicit disclosure by default', () => {
     expect(html).toContain('id="clarificationDisclosure"');
     expect(html).toContain('id="clarificationDisclosureSummary"');
-    expect(html).toContain('Die lange Klärpunktliste ist standardmäßig eingeklappt');
+    expect(html).not.toContain('Die lange Klärpunktliste ist standardmäßig eingeklappt');
     expect(css).toContain('details.inline-disclosure');
     expect(ui).toContain('Alle ${openItems.length} offenen Klärpunkte anzeigen');
   });

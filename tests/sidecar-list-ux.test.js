@@ -20,7 +20,7 @@ describe('sidecar evidence list usability', () => {
     expect(uiJs).toContain('sidecar-status-chip');
     expect(uiJs).toContain('Bearbeiten/Verknüpfen');
     expect(uiJs).not.toContain('Bearbeiten / Verknüpfen');
-    expect(uiJs).not.toContain('Felder, Maßnahmenbezug und Brückenlogik öffnen</small>');
+    expect(uiJs).not.toContain('Felder, Maßnahmenbezug und Überleitungslogik öffnen</small>');
   });
 
   test('sidecar CSS visually differentiates object types and keeps details disclosed on click', () => {

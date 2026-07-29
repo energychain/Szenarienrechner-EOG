@@ -32,7 +32,7 @@ Ein Projektstand kann enthalten:
 Aktueller Modellstand (`version: 8`) führt zusätzlich fachlich freigegebene Default-Konventionen für Wirkungsverzüge und Reinvestitionsfelder mit:
 
 - `model.inputs.capexLagYears`, `model.inputs.opexLagYears`, `model.inputs.qeLagYears`: optionale Verzugsannahmen in Jahren. Fehlt ein Feld in alten Exporten, greift die aktuelle fachliche Vorbelegung 0/3/2, sofern der Import nicht bewusst andere Werte setzt.
-- `measure.reinvestMode`: `oneOff` (Default, fachlich freigegebener vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Brücke) oder `assetAddition` (neuer Anlagenzugang mit eigener AfA-/Verzinsungskette).
+- `measure.reinvestMode`: `oneOff` (Default, fachlich freigegebener vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Überleitung) oder `assetAddition` (neuer Anlagenzugang mit eigener AfA-/Verzinsungskette).
 - `measure.reinvestLife`: Nutzungsdauer des optionalen Reinvestitions-Anlagenzugangs; fehlt der Wert, wird die normale Maßnahmennutzungsdauer genutzt.
 - `measure.effectType`: `classic` oder `flexibility`. `flexibility` ist Strom-spezifisch und führt Flexibilität/Netzfahrplan als eigene Objektklasse, nicht als klassische CAPEX-Maßnahme.
 - Strom-Flexibilitätsfelder wie `flexibilityStatus`, `networkScheduleStatus`, `networkConstraintRef`, `avoidedCapexTeur`, `deferredCapexTeur`, `flexOpexPaTeur`, `agnesRelevant`, `agnesRole` und `agnesIntegrationStatus` dokumentieren OPEX-gegen-CAPEX-Substitutionen. Ohne validierten Netzfahrplan und quantifizierte Werte bleibt die Wirkung nicht rechenwirksam.
@@ -53,7 +53,7 @@ Die fachlich freigegebene Vorbelegung für neue Modelle lautet `capexLagYears = 
 }
 ```
 
-Sidecar-Objekte sind keine klassischen Maßnahmen. Sie dokumentieren Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit, Transformationspfade oder offene Prüfpunkte. Sie können zusätzlich eine Brückenlogik tragen, wenn aus Kontext eine wirtschaftliche Wirkbeziehung oder Sensitivität werden könnte. Leitprinzip: Sidecar sichtbar, Brückenlogik prüfpflichtig, keine automatische KPI-Wirkung. Sie gehen nicht automatisch in CAPEX, OPEX, RAB, Q-Komponente, EOG-Wirkung oder Portfolio-KPIs ein. `calculationImpact = none`, `scenario_only` und `indirect` sind nicht KPI-wirksam; `active` bleibt ohne explizit implementierte und fachlich freigegebene Mapping-Logik ebenfalls nur ein Audit-/Governance-Status.
+Sidecar-Objekte sind keine klassischen Maßnahmen. Sie dokumentieren Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit, Transformationspfade oder offene Prüfpunkte. Sie können zusätzlich eine Überleitungslogik tragen, wenn aus Kontext eine wirtschaftliche Wirkbeziehung oder Sensitivität werden könnte. Leitprinzip: Sidecar sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung. Sie gehen nicht automatisch in CAPEX, OPEX, RAB, Q-Komponente, EOG-Wirkung oder Portfolio-KPIs ein. `calculationImpact = none`, `scenario_only` und `indirect` sind nicht KPI-wirksam; `active` bleibt ohne explizit implementierte und fachlich freigegebene Mapping-Logik ebenfalls nur ein Audit-/Governance-Status.
 
 Mindestfelder je Objekt:
 

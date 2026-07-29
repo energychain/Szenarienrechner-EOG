@@ -21,7 +21,7 @@ describe('explainability UI', () => {
     expect(ui).toContain('renderPortfolioWaterfall');
     expect(ui).toContain('portfolioWaterfallFor');
     expect(ui).toContain('Basis-EOG → Maßnahmenwirkung');
-    expect(ui).toContain('EOG → wirtschaftliche Brücke → Cashflow');
+    expect(ui).toContain('EOG → wirtschaftliche Überleitung → Cashflow');
   });
 
   it('adds a tornado sensitivity view for both Strom and Gas without changing scenarios', () => {
