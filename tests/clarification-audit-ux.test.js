@@ -14,13 +14,16 @@ describe('clarification audit UX', () => {
     expect(ui).toContain('Klärnotiz ist erforderlich');
   });
 
-  it('adds a dedicated audit modal with required note and data-jump action', () => {
+  it('shows data editing and audit note together inside the measure modal', () => {
     expect(html).toContain('id="clarificationAuditModal"');
     expect(html).toContain('id="clarificationAuditNote"');
     expect(html).toContain('required');
-    expect(html).toContain('id="clarificationAuditOpenMeasure"');
-    expect(html).toContain('Datenstelle bearbeiten');
+    expect(html).not.toContain('id="clarificationAuditOpenMeasure"');
+    expect(ui).toContain('measureClarificationNote');
+    expect(ui).toContain('Datenänderung & Klärung speichern');
+    expect(ui).toContain('Projektplan: ${projectTask');
     expect(css).toContain('.clarification-audit-banner');
+    expect(css).toContain('.clarification-workbench-grid');
   });
 
   it('stores clarification status with note, timestamp, author and measure reference', () => {

@@ -154,6 +154,7 @@ let pendingClarificationAudit = null;
 let measureEditClarificationContext = null;
 let measureEditReturnView = '';
 let measureEditNavigationIds = [];
+let measureEditNavigationClarificationKeys = [];
 let pendingMeasureFocusTarget = '';
 let pendingMeasureFocusLabel = '';
 let lastReleaseCheck = null;
@@ -665,10 +666,72 @@ function workItemColumn(item) {
   return 'normal';
 }
 
+function projectTaskIdForClarification(key = '') {
+  return `user-clarification-${String(key).replace(/[^a-zA-Z0-9_-]+/g, '-').slice(0, 80)}`;
+}
+
+function projectMilestoneForClarification(item = {}) {
+  const target = item.targetPhase || 'massnahmenbewertung';
+  if (target === 'konsolidierung') return 'm5';
+  if (target === 'entscheidungsvorlage') return 'm6';
+  if (target === 'datenerhebung') return 'm2';
+  return item.type === 'impact' ? 'm4' : 'm3';
+}
+
+function projectTaskForClarification(item = {}) {
+  return findProjectPlanTask(projectPlan, projectTaskIdForClarification(item.key));
+}
+
+function clarificationTargetFor(item = {}) {
+  if (item.type === 'note') {
+    return { fieldId: 'mNote', label: 'Notiz zur Maßnahme', task: 'fachliche Maßnahmennotiz prüfen oder ergänzen' };
+  }
+  if (item.type === 'impact') {
+    return { fieldId: 'impactAssumptions', label: 'Wirkannahmen / Evidenz', task: 'Wirkannahme, Evidenz und Governance-Status prüfen' };
+  }
+  if (/doppelzähl/i.test(`${item.type} ${item.title} ${item.detail}`)) {
+    return { fieldId: 'mPortfolioShare', label: 'Portfolioanteil / Doppelzählung', task: 'Portfolioanteil und mögliche Doppelzählung prüfen' };
+  }
+  if (/risiko|risk/i.test(`${item.area} ${item.title} ${item.detail}`)) {
+    return { fieldId: 'mRiskEvidenceStatus', label: 'Risiko-Mapping / Evidenzstatus', task: 'Risiko-Mapping und Evidenzstatus prüfen' };
+  }
+  return { fieldId: 'mNote', label: 'Bearbeitungsnotiz', task: 'Datenstelle prüfen und Klärnotiz erfassen' };
+}
+
+function ensureClarificationProjectTask(item, status = 'in_progress', note = '') {
+  if (!item?.key) return '';
+  const taskId = projectTaskIdForClarification(item.key);
+  const existing = findProjectPlanTask(projectPlan, taskId);
+  const target = clarificationTargetFor(item);
+  const patch = {
+    status,
+    note: note || item.detail || '',
+    title: `Klärung: ${item.title}`,
+    ownerRole: target.fieldId === 'mNote' ? 'assetmanagement' : 'regulierungsmanagement',
+    targetView: 'measures',
+    deepLinkKey: item.targetPhase || 'massnahmenbewertung',
+    evidenceRequired: 'beleg',
+    resultArtifact: `${target.label} für ${item.measure || 'Maßnahme'} geprüft; Audit-Notiz gespeichert`,
+    origin: `Klärpunkt-Kanban · ${item.key}`
+  };
+  if (existing) {
+    updateProjectTask(taskId, patch, false);
+    return taskId;
+  }
+  projectPlan = addUserProjectPlanTask(projectPlan, projectMilestoneForClarification(item), {
+    id: taskId,
+    dueOffsetDays: 0,
+    ...patch
+  });
+  return taskId;
+}
+
 function renderWorkItemCard(item) {
   const priority = item.priority?.label || 'normal';
   const detail = String(item.detail || '').trim();
+  const target = clarificationTargetFor(item);
   const actionLabel = item.status === 'closed' ? 'Audit ansehen' : item.measureId ? 'Bearbeiten' : 'Prüfen';
+  const projectTask = projectTaskForClarification(item);
   return `
     <article class="work-kanban-card ${item.status === 'closed' ? 'closed' : ''}" data-work-item="${esc(item.key)}">
       <div class="work-card-topline">
@@ -678,10 +741,12 @@ function renderWorkItemCard(item) {
       <strong>${esc(item.title)}</strong>
       <p>${esc(item.measure)}</p>
       ${detail ? `<small title="${esc(detail)}">${esc(detail)}</small>` : ''}
-      <div class="work-card-guidance">Nächster Schritt: Ursache bearbeiten, danach Klärnotiz speichern.</div>
+      <div class="work-card-guidance">
+        <span>Aufgabe: ${esc(target.task)}</span>
+        <span>${projectTask ? `Projektplan: ${esc(projectPlanStatusLabels[projectTask.task.status] || projectTask.task.status)}` : 'wird beim Bearbeiten im Projektplan gespiegelt'}</span>
+      </div>
       <div class="row-actions compact-actions">
         <button type="button" class="primary" data-action="openWorkItem" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId || '')}">${actionLabel}</button>
-        ${item.type === 'clarification' ? `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit' : 'Klärung speichern'}</button>` : ''}
       </div>
     </article>
   `;
@@ -1262,8 +1327,7 @@ function renderMaturityAndClarifications() {
           <p class="hint">${esc(item.detail)}</p>
         </div>
         <div class="row-actions">
-          ${item.measureId ? `<button type="button" data-action="openClarificationMeasure" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId)}">Datenstelle bearbeiten</button>` : ''}
-          <button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit ansehen' : 'Klären'}</button>
+          ${item.measureId ? `<button type="button" class="primary" data-action="openClarificationMeasure" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId)}">Daten & Notiz bearbeiten</button>` : `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit ansehen' : 'Klärung speichern'}</button>`}
         </div>
       </article>
     `).join('')
@@ -1481,6 +1545,7 @@ function saveClarificationAudit() {
   const author = ensureAuthor();
   const timestamp = new Date().toISOString();
   appendClarificationAuditEvent(item, note, timestamp, author);
+  const taskId = ensureClarificationProjectTask(item, 'done', note);
   clarificationStatus = {
     ...clarificationStatus,
     [item.key]: {
@@ -1489,7 +1554,8 @@ function saveClarificationAudit() {
       author: author,
       timestamp: timestamp,
       measureId: pendingClarificationAudit.item.measureId || '',
-      title: item.title
+      title: item.title,
+      projectTaskId: taskId
     }
   };
   measureEditClarificationContext = null;
@@ -1533,6 +1599,7 @@ function openClarificationMeasure(measureId, key = '') {
   if (item) {
     const author = ensureAuthor();
     const timestamp = new Date().toISOString();
+    const taskId = ensureClarificationProjectTask(item, clarificationStatus[item.key]?.status === 'closed' ? 'closed' : 'in_progress', clarificationStatus[item.key]?.note || item.detail || '');
     clarificationStatus = {
       ...clarificationStatus,
       [item.key]: {
@@ -1541,16 +1608,68 @@ function openClarificationMeasure(measureId, key = '') {
         author,
         timestamp,
         measureId: item.measureId || '',
-        title: item.title
+        title: item.title,
+        projectTaskId: taskId
       }
     };
-    measureEditClarificationContext = { key: item.key, title: item.title, note: 'Klärpunkt wird bearbeitet; Abschlussnotiz folgt beim Speichern der Klärung.', timestamp, author };
+    const target = clarificationTargetFor(item);
+    const workflowItems = clarificationItems().filter(entry => entry.measureId && entry.status !== 'closed' && (expertFilter === 'all' || (entry.area === item.area || item.area === entry.area)));
+    measureEditNavigationClarificationKeys = workflowItems.map(entry => entry.key);
+    measureEditNavigationIds = workflowItems.map(entry => entry.measureId).filter(Boolean);
+    measureEditClarificationContext = { key: item.key, title: item.title, note: clarificationStatus[item.key]?.note || '', timestamp, author, projectTaskId: taskId };
     measureEditReturnView = 'expertWork';
+    pendingMeasureFocusTarget = target.fieldId;
+    pendingMeasureFocusLabel = target.label;
   }
   selectedId = measureId;
   setView('measures');
   renderAll();
   openMeasureEditModal();
+}
+
+function saveMeasureClarificationFromWorkbench() {
+  if (!measureEditClarificationContext?.key) return false;
+  const item = findClarificationItem(measureEditClarificationContext.key) || measureEditClarificationContext;
+  const noteNode = document.getElementById('measureClarificationNote');
+  const error = document.getElementById('measureClarificationError');
+  const note = String(noteNode?.value || '').trim();
+  if (!note) {
+    if (noteNode) noteNode.setAttribute('aria-invalid', 'true');
+    if (error) error.textContent = 'Bitte kurz dokumentieren, was an Daten/Annahme geklärt oder geändert wurde.';
+    return false;
+  }
+  if (noteNode) noteNode.setAttribute('aria-invalid', 'false');
+  if (error) error.textContent = '';
+  updateSelectedFromDetail();
+  const author = ensureAuthor();
+  const timestamp = new Date().toISOString();
+  appendClarificationAuditEvent(item, note, timestamp, author);
+  const taskId = ensureClarificationProjectTask(item, 'done', note);
+  clarificationStatus = {
+    ...clarificationStatus,
+    [item.key]: {
+      status: 'closed',
+      note,
+      author,
+      timestamp,
+      measureId: item.measureId || selectedId || '',
+      title: item.title,
+      projectTaskId: taskId
+    }
+  };
+  measureEditClarificationContext = { ...measureEditClarificationContext, note, timestamp, author, projectTaskId: taskId };
+  previousModelForHistory = currentModelData();
+  renderAll();
+  setStorageStatus('Datenänderung und Klärnotiz wurden gemeinsam gespeichert; Projektplan-Aufgabe ist erledigt.');
+  return true;
+}
+
+function focusActiveClarificationTarget() {
+  const item = measureEditClarificationContext?.key ? findClarificationItem(measureEditClarificationContext.key) : null;
+  const target = clarificationTargetFor(item || {});
+  pendingMeasureFocusTarget = target.fieldId;
+  pendingMeasureFocusLabel = target.label;
+  focusPendingMeasureField();
 }
 
 function setStorageStatus(text) {
@@ -2740,6 +2859,34 @@ function catalogNavigationList() {
   return filteredMeasures(p);
 }
 
+function syncClarificationContextForSelectedMeasure() {
+  if (!measureEditNavigationClarificationKeys.length || !measureEditClarificationContext) return;
+  const nextItem = measureEditNavigationClarificationKeys
+    .map(key => findClarificationItem(key))
+    .find(item => item?.measureId === selectedId);
+  if (!nextItem) return;
+  const status = clarificationStatus[nextItem.key] || {};
+  const author = ensureAuthor();
+  const timestamp = new Date().toISOString();
+  const taskId = ensureClarificationProjectTask(nextItem, status.status === 'closed' ? 'closed' : 'in_progress', status.note || nextItem.detail || '');
+  const target = clarificationTargetFor(nextItem);
+  clarificationStatus = {
+    ...clarificationStatus,
+    [nextItem.key]: {
+      ...status,
+      status: status.status === 'closed' ? 'closed' : 'in_review',
+      author,
+      timestamp,
+      measureId: nextItem.measureId || '',
+      title: nextItem.title,
+      projectTaskId: taskId
+    }
+  };
+  measureEditClarificationContext = { key: nextItem.key, title: nextItem.title, note: status.note || '', timestamp, author, projectTaskId: taskId };
+  pendingMeasureFocusTarget = target.fieldId;
+  pendingMeasureFocusLabel = target.label;
+}
+
 function updateMeasureStepper() {
   const list = catalogNavigationList();
   const index = list.findIndex(item => item.id === selectedId);
@@ -2757,6 +2904,7 @@ function navigateMeasureInCatalog(delta) {
   const next = list[index + delta];
   if (!next) return;
   selectedId = next.id;
+  syncClarificationContextForSelectedMeasure();
   renderAll();
   renderDetail();
 }
@@ -2775,6 +2923,7 @@ function closeMeasureEditModal() {
     measureEditReturnView = '';
     measureEditClarificationContext = null;
     measureEditNavigationIds = [];
+    measureEditNavigationClarificationKeys = [];
     pendingMeasureFocusTarget = '';
     pendingMeasureFocusLabel = '';
     setView(targetView);
@@ -4809,11 +4958,39 @@ function renderMeasureClarificationAuditBanner(measure) {
     banner.innerHTML = '';
     return;
   }
+  const context = measureEditClarificationContext;
+  const item = findClarificationItem(context.key) || { title: context.title, detail: '', measure: measure?.name || '' };
+  const status = clarificationStatus[context.key] || {};
+  const target = clarificationTargetFor(item);
+  const projectTask = projectTaskForClarification(item);
+  const timestamp = context.timestamp ? new Date(context.timestamp).toLocaleString('de-DE') : '-';
   banner.classList.remove('hidden');
   banner.innerHTML = `
-    <strong>Klärung mit Audit-Notiz aktiv</strong>
-    <span>${esc(measureEditClarificationContext.title)} · ${esc(measureEditClarificationContext.author)} · ${esc(new Date(measureEditClarificationContext.timestamp).toLocaleString('de-DE'))}</span>
-    <p>${esc(measureEditClarificationContext.note)}</p>
+    <div class="clarification-workbench-head">
+      <div>
+        <p class="eyebrow">Aktiver Klärpunkt · ${esc(status.status === 'closed' ? 'geklärt' : 'in Bearbeitung')}</p>
+        <strong>${esc(context.title)}</strong>
+        <span>${esc(item.measure || measure?.name || '')} · ${esc(context.author || 'unbekannt')} · ${esc(timestamp)}</span>
+      </div>
+      <span class="pill warn">Projektplan: ${projectTask ? esc(projectPlanStatusLabels[projectTask.task.status] || projectTask.task.status) : 'in Arbeit'}</span>
+    </div>
+    <div class="clarification-workbench-grid">
+      <section>
+        <h4>1 · Daten bearbeiten</h4>
+        <p>${esc(target.task)}</p>
+        <button type="button" class="link-button" id="measureClarificationFocusField">Zum Feld: ${esc(target.label)}</button>
+      </section>
+      <section>
+        <h4>2 · Audit-Notiz</h4>
+        <label for="measureClarificationNote">Klärnotiz</label>
+        <textarea id="measureClarificationNote" rows="3" placeholder="Was wurde geändert oder fachlich bestätigt? Quelle/Fachbereich kurz benennen.">${esc(status.note || '')}</textarea>
+        <p id="measureClarificationError" class="form-error" role="alert"></p>
+      </section>
+    </div>
+    <div class="clarification-workbench-foot">
+      <p>${esc(item.detail || 'Klärpunkt aus der Arbeitsliste; Daten und Notiz werden gemeinsam auditierbar gespeichert.')}</p>
+      <button type="button" id="measureClarificationSave" class="primary">Datenänderung & Klärung speichern</button>
+    </div>
   `;
 }
 
@@ -6517,6 +6694,8 @@ document.getElementById('measureEditPrev').addEventListener('click', () => navig
 document.getElementById('measureEditNext').addEventListener('click', () => navigateMeasureInCatalog(1));
 document.getElementById('measureEditModal').addEventListener('click', event => {
   if (event.target.id === 'measureEditModal') closeMeasureEditModal();
+  if (event.target.closest('#measureClarificationSave')) saveMeasureClarificationFromWorkbench();
+  if (event.target.closest('#measureClarificationFocusField')) focusActiveClarificationTarget();
 });
 document.getElementById('addImpactAssumption').addEventListener('click', addImpactAssumption);
 document.getElementById('impactAssumptions').addEventListener('change', event => {
@@ -6554,7 +6733,7 @@ document.getElementById('meetingTextSave').addEventListener('click', saveMeeting
 document.getElementById('meetingTextReset').addEventListener('click', resetMeetingTextModal);
 document.getElementById('clarificationAuditCancel').addEventListener('click', closeClarificationAudit);
 document.getElementById('clarificationAuditSave').addEventListener('click', saveClarificationAudit);
-document.getElementById('clarificationAuditOpenMeasure').addEventListener('click', openClarificationMeasureFromAudit);
+document.getElementById('clarificationAuditOpenMeasure')?.addEventListener('click', openClarificationMeasureFromAudit);
 document.getElementById('clarificationAuditModal').addEventListener('click', event => {
   if (event.target.id === 'clarificationAuditModal') closeClarificationAudit();
 });

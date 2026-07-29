@@ -1161,12 +1161,13 @@
     }
 
     .clarification-audit-banner {
-      padding: 12px 14px;
-      border: 1px solid #d4b15f;
-      border-radius: 12px;
-      background: #fff8e6;
+      padding: 14px;
+      border: 1px solid rgba(169, 101, 0, .28);
+      border-radius: 16px;
+      background: linear-gradient(135deg, #fff8e6, #ffffff 72%);
       color: var(--ink);
       margin-bottom: 14px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, .07);
     }
 
     .clarification-audit-banner span,
@@ -1175,6 +1176,60 @@
       margin: 4px 0 0;
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .clarification-workbench-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .clarification-workbench-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, .9fr) minmax(280px, 1.1fr);
+      gap: 12px;
+    }
+
+    .clarification-workbench-grid section {
+      padding: 12px;
+      border: 1px solid rgba(148, 163, 184, .25);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .78);
+    }
+
+    .clarification-workbench-grid h4,
+    .clarification-workbench-grid p {
+      margin: 0 0 8px;
+    }
+
+    .clarification-workbench-grid textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    .clarification-workbench-foot {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(148, 163, 184, .22);
+    }
+
+    .clarification-workbench-foot p {
+      margin: 0;
+      max-width: 65ch;
+    }
+
+    .field-focus-target {
+      outline: 3px solid rgba(0, 111, 143, .28);
+      outline-offset: 4px;
+      border-radius: 12px;
+      background: rgba(0, 111, 143, .05);
+      transition: outline-color .18s ease, background .18s ease;
     }
 
     .form-error {
@@ -2948,7 +3003,7 @@
       .app-footer { padding: 0 12px 16px; }
       .footer-inner { align-items: flex-start; flex-direction: column; }
       .footer-meta { justify-content: flex-start; }
-      .grid2, .kpis, .summary-hero, .meeting-grid, .report-head, .report-summary, .period-summary, .helper-grid, .project-plan-summary { grid-template-columns: 1fr; }
+      .grid2, .kpis, .summary-hero, .meeting-grid, .report-head, .report-summary, .period-summary, .helper-grid, .project-plan-summary, .clarification-workbench-grid { grid-template-columns: 1fr; }
       .project-plan-milestone header, .project-task { grid-template-columns: 1fr; display: grid; }
       .bridge-grid { grid-template-columns: 1fr; }
       .bridge-operator { transform: rotate(90deg); }
@@ -4379,12 +4434,18 @@ body[data-view="measures"] [data-view-panel="measures"] > .table-wrap {
 }
 
 .work-card-guidance {
+  display: grid;
+  gap: 4px;
   padding: 7px 9px;
   border-radius: 10px;
   background: rgba(0, 124, 137, .08);
   color: #075985;
   font-size: 12px;
   font-weight: 800;
+}
+.work-card-guidance span:last-child {
+  color: var(--muted);
+  font-weight: 700;
 }
 .work-kanban-card .compact-actions .primary {
   flex: 1 1 auto;
