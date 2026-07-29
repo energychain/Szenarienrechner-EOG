@@ -80,7 +80,7 @@ import {
   supportPackage
 } from './release-awareness.js';
 import { imprintSections } from './trust-content.js';
-import { demoMeasures, initialMeasures } from './demo-data.js';
+import { demoClarificationStatus, demoMeasures, demoSidecar, initialMeasures } from './demo-data.js';
 import { downloadBlob, exportStamp, htmlWithEmbeddedModelState } from './export-utils.js';
 import {
   esc,
@@ -2919,21 +2919,28 @@ function applyDemoModel(options = {}) {
   el.kanuEndYear.value = '2045';
   el.degressiveRate.value = '10';
   el.taxFactor.value = '0';
-  el.portfolioAttribution.value = '25';
+  el.portfolioAttribution.value = '35';
   el.capexLagYears.value = String(defaultEffectLags.capex);
   el.opexLagYears.value = String(defaultEffectLags.opex);
   el.qeLagYears.value = String(defaultEffectLags.qe);
   el.qDelta.value = '0.6';
   el.eDelta.value = '0.2';
+  el.conservativeAttributionCap.value = '30';
+  el.conservativeQFactor.value = '50';
+  el.conservativeEFactor.value = '60';
+  el.conservativeDiscountRate.value = '6.5';
+  el.conservativeAssumptionMode.value = 'reviewOnly';
   measures = structuredClone(demoMeasures);
+  sidecar = normalizeSidecar(structuredClone(demoSidecar));
+  selectedSidecarId = sidecar.objects[0]?.id || '';
   strategy = normalizeStrategy({
-    sampReference: 'Synthetisches AMP-Fragment Stromverteilung, Budgetrunde 2027, Bezug SAMP Kapitel Versorgungssicherheit',
+    sampReference: 'Synthetische Akte für eine regulierte Sparten-Planungsrunde 2027: Strommaßnahmen, Gas-Transformationskontext, Sidecar-Evidenz, Systemreferenzen, Stresstest-Parameter und Befassungs-/Klärlogik bewusst als Demo-Arbeitsstand angelegt.',
     objectives: defaultObjectives
   });
   committee = normalizeCommittee({
-    body: 'Werksausschuss',
+    body: 'Befassungskreis Regulierte Sparten',
     meetingDate: '',
-    proposalText: 'Der Werksausschuss nimmt die Investitionsbewertung zur Kenntnis und beauftragt die Verwaltung, die offenen Annahmen vor der Budgetfreigabe zu klären.'
+    proposalText: 'Die Befassung ordnet den synthetischen Arbeitsstand ein und hält fest, welche Evidenz-, Dokumentations- und Stresstestpunkte vor einer belastbaren Einordnung weiter zu klären sind.'
   });
   selectedId = measures[0]?.id;
   scenario = 'basis';
@@ -2943,12 +2950,12 @@ function applyDemoModel(options = {}) {
     phase: 'initialisierung',
     resume: {
       statusNote: 'Demodaten geladen: Der Beispielstand ist als synthetische Planungsrunde verfügbar.',
-      nextStep: 'Arbeitsstand im Akten-Cockpit verstehen; danach Maßnahmen und Entscheidungssicht öffnen.',
+      nextStep: 'Arbeitsstand im Akten-Cockpit verstehen; danach Maßnahmen, Evidenz & Systeme sowie Prüfen & Klären öffnen.',
       owner: 'Modellverantwortung',
       dueDate: '2027-01-20'
     }
   });
-  clarificationStatus = {};
+  clarificationStatus = structuredClone(demoClarificationStatus);
   meetingTextOverrides = {};
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === scenario));
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
