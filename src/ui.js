@@ -660,6 +660,7 @@ function impactWorkArea(impact) {
 
 function workItemColumn(item) {
   if (item.status === 'closed') return 'closed';
+  if (['high', 'evidence', 'normal'].includes(item.column)) return item.column;
   const label = item.priority?.label || 'normal';
   if (label === 'hoch') return 'high';
   if (label === 'mittel') return 'evidence';
@@ -683,6 +684,21 @@ function projectTaskForClarification(item = {}) {
 }
 
 function clarificationTargetFor(item = {}) {
+  if (item.type === 'sidecar') {
+    return { fieldId: 'sidecarOpenQuestions', label: 'Sidecar-Prüfpunkt', task: 'Evidenzobjekt, offene Prüffrage oder Überleitungslogik prüfen' };
+  }
+  if (item.type === 'system_reference') {
+    return { fieldId: 'mSourceSystem', label: 'Quellsystem / Datensatz', task: 'Rückspielweg und Systemreferenz ergänzen' };
+  }
+  if (item.type === 'risk_evidence') {
+    return { fieldId: 'mRiskEvidenceStatus', label: 'Risiko-Evidenzstatus', task: 'Störungs-/Risikowirkung fachlich belegen oder offen markieren' };
+  }
+  if (item.type === 'target_mapping') {
+    return { fieldId: 'measureObjectives', label: 'Trägt bei zu', task: 'Ziel-Zuordnung und Dokumentationsbezug der Maßnahme ergänzen' };
+  }
+  if (item.type === 'measure_documentation') {
+    return { fieldId: 'mNote', label: 'Notiz zur Maßnahme', task: 'fehlende Maßnahmendokumentation ergänzen' };
+  }
   if (item.type === 'note') {
     return { fieldId: 'mNote', label: 'Notiz zur Maßnahme', task: 'fachliche Maßnahmennotiz prüfen oder ergänzen' };
   }
@@ -708,7 +724,7 @@ function ensureClarificationProjectTask(item, status = 'in_progress', note = '')
     note: note || item.detail || '',
     title: `Klärung: ${item.title}`,
     ownerRole: target.fieldId === 'mNote' ? 'assetmanagement' : 'regulierungsmanagement',
-    targetView: 'measures',
+    targetView: item.type === 'sidecar' ? 'sidecar' : 'measures',
     deepLinkKey: item.targetPhase || 'massnahmenbewertung',
     evidenceRequired: 'beleg',
     resultArtifact: `${target.label} für ${item.measure || 'Maßnahme'} geprüft; Audit-Notiz gespeichert`,
@@ -730,7 +746,7 @@ function renderWorkItemCard(item) {
   const priority = item.priority?.label || 'normal';
   const detail = String(item.detail || '').trim();
   const target = clarificationTargetFor(item);
-  const actionLabel = item.status === 'closed' ? 'Audit ansehen' : item.measureId ? 'Bearbeiten' : 'Prüfen';
+  const actionLabel = item.status === 'closed' ? 'Audit ansehen' : item.measureId ? 'Bearbeiten' : item.sidecarId ? 'Evidenz öffnen' : 'Prüfen';
   const projectTask = projectTaskForClarification(item);
   return `
     <article class="work-kanban-card ${item.status === 'closed' ? 'closed' : ''}" data-work-item="${esc(item.key)}">
@@ -740,7 +756,7 @@ function renderWorkItemCard(item) {
       </div>
       <strong>${esc(item.title)}</strong>
       <div class="row-actions compact-actions work-card-primary-action">
-        <button type="button" class="primary" data-action="openWorkItem" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId || '')}">${actionLabel}</button>
+        <button type="button" class="primary" data-action="openWorkItem" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId || '')}" data-sidecar-id="${esc(item.sidecarId || '')}">${actionLabel}</button>
       </div>
       <p>${esc(item.measure)}</p>
       ${detail ? `<small title="${esc(detail)}">${esc(detail)}</small>` : ''}
@@ -767,10 +783,104 @@ function expertWorkItems() {
   }));
   const clarificationWork = clarificationItems().map(item => ({
     ...item,
-    area: item.area === 'Risiko' || item.area === 'Q-Element' ? 'technik' : item.area === 'Portfolio' || item.area === 'Kostenbasis' ? 'vnb' : 'controlling',
+    area: item.area === 'Risiko' || item.area === 'Q-Element' ? 'technik' : item.area === 'Portfolio' || item.area === 'Kostenbasis' ? 'vnb' : item.area === 'Evidenz' || item.area === 'Sidecar' ? 'vnb' : 'controlling',
     type: item.type || 'clarification'
   }));
   return [...impactItems, ...clarificationWork];
+}
+
+function textPresent(value) {
+  return Boolean(String(value ?? '').trim());
+}
+
+function weakEvidenceStatus(status = '') {
+  return ['missing', 'stated', 'conflicting', 'stale'].includes(String(status || 'missing'));
+}
+
+function measureEvidenceItems() {
+  const active = measures.filter(measure => measure.active);
+  const items = [];
+  active.forEach(measure => {
+    if (!measureHasSystemReference(measure)) {
+      items.push({
+        key: `system-reference:${measure.id}`,
+        type: 'system_reference',
+        measureId: measure.id,
+        area: 'Evidenz',
+        column: 'evidence',
+        targetPhase: 'konsolidierung',
+        title: 'Systemreferenz / Rückspielweg ergänzen',
+        measure: measure.name,
+        detail: 'Quellsystem und Datensatz-/PSP-/Objektreferenz fehlen oder sind nicht vollständig dokumentiert.'
+      });
+    }
+    if (Number(measure.riskAvoided || 0) > 0 && !measureHasRiskEvidence(measure)) {
+      items.push({
+        key: `risk-evidence:${measure.id}`,
+        type: 'risk_evidence',
+        measureId: measure.id,
+        area: 'Evidenz',
+        column: 'evidence',
+        targetPhase: 'massnahmenbewertung',
+        title: 'Störungs-/Risikowirkung belegen',
+        measure: measure.name,
+        detail: 'Die Maßnahme trägt einen Risiko-/Störungswert, aber Evidenzstatus, Wirkungskette oder Quelle sind noch nicht belastbar dokumentiert.'
+      });
+    }
+    if (!(measure.objectiveIds || []).length) {
+      items.push({
+        key: `target-mapping:${measure.id}`,
+        type: 'target_mapping',
+        measureId: measure.id,
+        area: 'Dokumentation',
+        column: 'normal',
+        targetPhase: 'entscheidungsvorlage',
+        title: 'Ziel-Zuordnung dokumentieren',
+        measure: measure.name,
+        detail: 'Die Maßnahme ist noch keinem Aktenziel zugeordnet; dadurch bleibt der Entscheidungs- und Dokumentationsbezug unklar.'
+      });
+    }
+    if (!textPresent(measure.note)) {
+      items.push({
+        key: `measure-documentation:${measure.id}`,
+        type: 'measure_documentation',
+        measureId: measure.id,
+        area: 'Dokumentation',
+        column: 'normal',
+        targetPhase: 'konsolidierung',
+        title: 'Maßnahmendokumentation ergänzen',
+        measure: measure.name,
+        detail: 'Fachliche Maßnahmennotiz fehlt; Anlass, Quelle oder Begründung sollten dokumentiert werden.'
+      });
+    }
+  });
+  return items;
+}
+
+function sidecarClarificationItems() {
+  return (sidecar.objects || [])
+    .filter(object => object.status !== 'archived')
+    .map(object => {
+      const reasons = [];
+      if (object.openQuestions?.length) reasons.push(`${object.openQuestions.length} offene Prüffrage(n)`);
+      if (weakEvidenceStatus(object.evidenceStatus)) reasons.push(`Evidenzstatus: ${sidecarEvidenceLabel(object)}`);
+      if (object.type === 'data_quality' && object.evidenceStatus !== 'validated') reasons.push('Datenqualitätsobjekt nicht validiert');
+      if (sidecarHasOpenBridgeLogic(object)) reasons.push('wirtschaftliche Überleitungslogik offen');
+      if (String(object.reviewStatus || '').match(/not_reviewed|needs_update|open|offen/i)) reasons.push('Reviewstatus offen');
+      if (!reasons.length) return null;
+      return {
+        key: `sidecar:${object.id}`,
+        type: 'sidecar',
+        sidecarId: object.id,
+        area: 'Sidecar',
+        column: 'evidence',
+        targetPhase: 'konsolidierung',
+        title: 'Evidenz-/Sidecar-Prüfpunkt klären',
+        measure: object.title,
+        detail: reasons.join(' · ')
+      };
+    })
+    .filter(Boolean);
 }
 
 function renderExpertWorkList() {
@@ -874,7 +984,7 @@ function clarificationItems() {
       measure: warning.measure,
       detail: warning.detail || 'mögliche Doppelzählung prüfen.'
     }));
-  return [...impactItems, ...warningItems, ...noteItems]
+  return [...impactItems, ...warningItems, ...noteItems, ...measureEvidenceItems(), ...sidecarClarificationItems()]
     .map(item => {
       const priority = clarificationPriorityFor(item);
       return {
@@ -1634,6 +1744,32 @@ function openClarificationMeasureFromAudit() {
   setView('measures');
   renderAll();
   openMeasureEditModal();
+}
+
+function openSidecarWorkItem(sidecarId, key = '') {
+  if (!sidecarId) return;
+  const item = key ? findClarificationItem(key) : null;
+  if (item) {
+    const note = clarificationStatus[item.key]?.note || item.detail || '';
+    const taskId = ensureClarificationProjectTask(item, clarificationStatus[item.key]?.status === 'closed' ? 'closed' : 'in_progress', note);
+    clarificationStatus = {
+      ...clarificationStatus,
+      [item.key]: {
+        ...(clarificationStatus[item.key] || {}),
+        status: clarificationStatus[item.key]?.status === 'closed' ? 'closed' : 'in_review',
+        author: ensureAuthor(),
+        timestamp: new Date().toISOString(),
+        sidecarId,
+        title: item.title,
+        projectTaskId: taskId
+      }
+    };
+  }
+  selectedSidecarId = sidecarId;
+  sidecarModeFilter = 'open_questions';
+  setView('sidecar');
+  renderAll();
+  document.querySelector(`[data-sidecar-card="${CSS.escape(sidecarId)}"] summary`)?.focus?.();
 }
 
 function openClarificationMeasure(measureId, key = '') {
@@ -6866,6 +7002,14 @@ document.getElementById('expertWorkList').addEventListener('click', event => {
   const openButton = event.target.closest('[data-action="openWorkItem"]');
   if (openButton?.dataset.measureId) {
     openClarificationMeasure(openButton.dataset.measureId, openButton.dataset.clarificationKey || '');
+    return;
+  }
+  if (openButton?.dataset.sidecarId) {
+    openSidecarWorkItem(openButton.dataset.sidecarId, openButton.dataset.clarificationKey || '');
+    return;
+  }
+  if (openButton?.dataset.clarificationKey) {
+    openClarificationAudit(openButton.dataset.clarificationKey);
     return;
   }
   const clarifyButton = event.target.closest('[data-action="openClarificationAudit"]');
