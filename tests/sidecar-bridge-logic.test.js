@@ -151,7 +151,7 @@ describe('sidecar bridge logic', () => {
     expect(snapshot.sidecar.objects[0].bridgeLogic).toMatchObject({ economicRelation: 'avoided_cost', quantificationStatus: 'working_value' });
 
     const prompt = buildAiPrompt(modelWithSidecar(sidecar), promptOptions);
-    expect(prompt).toContain('Brückenlogik');
+    expect(prompt).toContain('Überleitungslogik');
     expect(prompt).toContain('Wärmewende-Rückbauwirkung');
     expect(prompt).toContain('keine automatische KPI-Wirkung');
   });

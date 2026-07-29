@@ -517,7 +517,7 @@ export function spreadsheetTables(model, options = {}) {
     ['Letzter Aktualitätscheck', model?.lastReleaseCheck?.checkedAt || 'nicht geprüft'],
     ['Sidecars gesamt', sidecarBridgeSummary.total],
     ['Sidecars ohne Rechenwirkung', sidecarBridgeSummary.withoutCalculationImpact],
-    ['Sidecars offene Brückenlogik', sidecarBridgeSummary.openBridgeLogic],
+    ['Sidecars offene Überleitungslogik', sidecarBridgeSummary.openBridgeLogic],
     ['Sidecars quantifiziert aber nicht aktiviert', sidecarBridgeSummary.quantifiedNotActivated],
     ['Sidecars aktiviert markiert', sidecarBridgeSummary.activated],
     ['Datenschutz', 'Tabellenexport wird lokal im Browser erzeugt; kein Upload, kein Backend, kein Netzzugriff.']
@@ -533,7 +533,7 @@ export function spreadsheetTables(model, options = {}) {
     { name: 'Klaerpunkte_Priorisiert', rows: prioritizedClarificationRows },
     { name: 'Systemreferenzen', rows: systemReferenceRows },
     { name: 'Risiko_Mapping', rows: riskMappingRows },
-    { name: 'Sidecar_Brueckenlogik', rows: sidecarRows },
+    { name: 'Sidecar_Ueberleitungslogik', rows: sidecarRows },
     { name: 'Monitoring_Massnahmen', rows: monitoringMeasureRows },
     { name: 'Monitoring_Aggregat', rows: monitoringAggregateRows },
     { name: 'QReg_Netzleistung', rows: qregRows },

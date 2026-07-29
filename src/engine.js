@@ -942,7 +942,7 @@ export function portfolioWaterfallFor(result) {
     ],
     cashflowBridge: [
       { key: 'regulatory_eog', label: 'EOG-Wirkung erstes Folgejahr', valueTeur: followEog },
-      { key: 'economic_bridge', label: 'wirtschaftliche Brücke', valueTeur: economicBridge },
+      { key: 'economic_bridge', label: 'wirtschaftliche Überleitung', valueTeur: economicBridge },
       { key: 'indicative_cashflow', label: 'indikative Cashflow-Basis', valueTeur: follow.indicativeCashflow || 0 }
     ]
   };

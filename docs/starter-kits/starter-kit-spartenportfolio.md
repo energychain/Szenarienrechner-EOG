@@ -32,7 +32,7 @@ Am Ende des Workshops liegt vor:
 1. Projektplan öffnen und nicht zutreffende Template-Schritte überspringen.
 2. Eigene Aufgaben für EVU-spezifische Freigabeschleifen ergänzen.
 3. Maßnahmen nach Strom/Gas und Zielbeitrag taggen.
-4. EOG-Zerlegung und Cashflow-Brücke je Entscheidung prüfen.
+4. EOG-Zerlegung und Cashflow-Überleitung je Entscheidung prüfen.
 5. „Nächste fällige Aufgabe je Rolle“ nutzen, um Fachbereiche nicht parallel mit unklaren Anforderungen zu belasten.
 6. Arbeitsstand als selbsttragende HTML mit Daten speichern und an die Runde verteilen.
 

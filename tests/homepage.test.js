@@ -18,7 +18,7 @@ describe('static homepage', () => {
   it('separates fachliche and technical features', () => {
     expect(homepage).toContain('Fachliche Features');
     expect(homepage).toContain('Governance-Ampel');
-    expect(homepage).toContain('EOG-/Cashflow-Brücke');
+    expect(homepage).toContain('EOG-/Cashflow-Überleitung');
     expect(homepage).toContain('Technische Features');
     expect(homepage).toContain('Offline-first Single-File');
     expect(homepage).toContain('Excel-freundliche Exporte');

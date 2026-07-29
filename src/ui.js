@@ -153,6 +153,9 @@ let clarificationStatus = {};
 let pendingClarificationAudit = null;
 let measureEditClarificationContext = null;
 let measureEditReturnView = '';
+let measureEditNavigationIds = [];
+let pendingMeasureFocusTarget = '';
+let pendingMeasureFocusLabel = '';
 let lastReleaseCheck = null;
 let releaseCheckInProgress = false;
 let pendingImportReview = null;
@@ -2729,6 +2732,10 @@ function closeImprintModal() {
 }
 
 function catalogNavigationList() {
+  if (measureEditNavigationIds.length) {
+    const byId = new Map(measures.map(measure => [measure.id, measure]));
+    return measureEditNavigationIds.map(id => byId.get(id)).filter(Boolean);
+  }
   const p = currentParams();
   return filteredMeasures(p);
 }
@@ -2758,6 +2765,7 @@ function openMeasureEditModal() {
   renderDetail();
   updateMeasureStepper();
   document.getElementById('measureEditModal').classList.remove('hidden');
+  focusPendingMeasureField();
 }
 
 function closeMeasureEditModal() {
@@ -2766,6 +2774,9 @@ function closeMeasureEditModal() {
     const targetView = measureEditReturnView;
     measureEditReturnView = '';
     measureEditClarificationContext = null;
+    measureEditNavigationIds = [];
+    pendingMeasureFocusTarget = '';
+    pendingMeasureFocusLabel = '';
     setView(targetView);
     renderAll();
   }
@@ -3329,12 +3340,124 @@ function renderEogCashflowBridge(result, metrics) {
   document.getElementById('cashflowBridgeCaveat').textContent = 'Diese Überleitung erklärt, warum IRR/NPV nicht die EOG selbst bewerten: Die regulatorische Erlösobergrenze wird als Annahme in eine wirtschaftliche Cashflow-Sicht übersetzt; Mengen-, Zeitverzugs- und Wälzungsrisiken bleiben zu prüfen.';
 }
 
-function reliabilityCardHtml(item) {
+
+function activeMeasuresForReliability(result) {
+  return Array.isArray(result?.activeMeasures) ? result.activeMeasures : measures.filter(measure => measure.active);
+}
+
+function measureHasSystemReference(measure = {}) {
+  return Boolean(String(measure.sourceSystem || '').trim() && (String(measure.sourceRecordId || '').trim() || String(measure.externalId || '').trim()));
+}
+
+function measureHasRiskMapping(measure = {}) {
+  if (Number(measure.riskAvoided || 0) <= 0) return true;
+  const status = String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '').trim();
+  const meaningfulStatus = status && !['missing', 'not_assessed', 'open', 'offen'].includes(status);
+  return Boolean(String(measure.riskDbRef || '').trim() || meaningfulStatus || (measure.impactAssumptions || []).some(impact => impact.area === 'risk' && (impact.evidence || impact.chain || impact.riskImpact)));
+}
+
+function measureHasRiskEvidence(measure = {}) {
+  const status = measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '';
+  return ['documented', 'estimated', 'benannt', 'source_available', 'validated'].includes(status) || (measure.impactAssumptions || []).some(impact => impact.area === 'risk' && (impact.evidence || impact.evidenceType !== 'open'));
+}
+
+function reliabilityActionFor(item, result) {
+  const active = activeMeasuresForReliability(result);
+  const classic = active.filter(measure => measure.effectType !== 'flexibility');
+  const riskMeasures = classic.filter(measure => Number(measure.riskAvoided || 0) > 0);
+  const action = { type: 'none', label: 'Bearbeiten', ids: [], field: '', fieldLabel: '', sidecarMode: '' };
+  if (item.key === 'system-references') {
+    return { ...action, type: 'measure', label: 'Rückspielweg bearbeiten', ids: active.filter(measure => !measureHasSystemReference(measure)).map(measure => measure.id), field: 'mSourceSystem', fieldLabel: 'Quellsystem / Datensatz' };
+  }
+  if (item.key === 'risk-mapping') {
+    return { ...action, type: 'measure', label: 'Risiko-Mapping bearbeiten', ids: riskMeasures.filter(measure => !measureHasRiskMapping(measure)).map(measure => measure.id), field: 'mRiskDbRef', fieldLabel: 'Risikodatenbank / Evidenzstatus' };
+  }
+  if (item.key === 'risk-evidence') {
+    return { ...action, type: 'measure', label: 'RiskAvoided-Evidenz bearbeiten', ids: riskMeasures.filter(measure => !measureHasRiskEvidence(measure)).map(measure => measure.id), field: 'mRiskEvidenceStatus', fieldLabel: 'Risiko-Evidenzstatus' };
+  }
+  if (item.key === 'target-mapping') {
+    return { ...action, type: 'measure', label: 'Ziel-Zuordnung bearbeiten', ids: active.filter(measure => !(measure.objectiveIds || []).length).map(measure => measure.id), field: 'measureObjectives', fieldLabel: 'Trägt bei zu' };
+  }
+  if (item.key === 'no-regret-default') {
+    return { ...action, type: 'measure', label: 'Typisierung prüfen', ids: classic.filter(measure => ['noRegret', 'no_regret_working_assumption', 'no_regret_confirmed'].includes(measure.type)).map(measure => measure.id), field: 'mType', fieldLabel: 'Typ / Klassifikation' };
+  }
+  if (item.key === 'sidecar-evidence') {
+    const open = (sidecar.objects || []).filter(object => object.openQuestions?.length || ['missing', 'conflicting', 'stale'].includes(object.evidenceStatus) || (object.type === 'data_quality' && object.status !== 'archived' && object.evidenceStatus !== 'validated'));
+    return { ...action, type: 'sidecar', label: 'Evidenzobjekte anzeigen', ids: open.map(object => object.id), sidecarMode: 'open_questions' };
+  }
+  return action;
+}
+
+function reliabilityProgressHtml(item) {
+  const match = String(item.value || '').match(/(\d+)\s+von\s+(\d+)/);
+  if (!match) return `<div class="value">${esc(item.value)}</div>`;
+  const open = Number(match[1]);
+  const total = Math.max(1, Number(match[2]));
+  const done = Math.max(0, total - open);
+  const openPct = Math.min(100, Math.max(0, open / total * 100));
+  const donePct = Math.max(0, 100 - openPct);
   return `
-    <article class="summary-card ${item.severity === 'warn' ? 'warn' : 'good'}">
+    <div class="reliability-progress" aria-label="${open} offen, ${done} dokumentiert, ${total} gesamt">
+      <div class="reliability-progress-head"><strong>${open}</strong><span>offen</span><strong>${done}</strong><span>dokumentiert</span></div>
+      <div class="reliability-bars" aria-hidden="true">
+        <span class="reliability-bar-open" style="width:${openPct}%"></span>
+        <span class="reliability-bar-done" style="width:${donePct}%"></span>
+      </div>
+      <div class="reliability-progress-foot">${total} geprüft</div>
+    </div>
+  `;
+}
+
+function focusPendingMeasureField() {
+  if (!pendingMeasureFocusTarget) return;
+  window.setTimeout(() => {
+    document.querySelectorAll('.field-focus-target').forEach(node => node.classList.remove('field-focus-target'));
+    const target = document.getElementById(pendingMeasureFocusTarget);
+    if (!target) return;
+    const wrapper = target.closest('label, .wide-field, .group, div') || target;
+    wrapper.classList.add('field-focus-target');
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (typeof target.focus === 'function' && !target.matches('div')) target.focus({ preventScroll: true });
+    const banner = document.getElementById('measureClarificationAuditBanner');
+    if (banner && pendingMeasureFocusLabel) {
+      banner.classList.remove('hidden');
+      banner.insertAdjacentHTML('beforeend', `<p class="focus-hint">Bearbeitungsschwerpunkt: ${esc(pendingMeasureFocusLabel)}</p>`);
+    }
+  }, 80);
+}
+
+function openReliabilityWorkItem(key) {
+  const result = currentPortfolio();
+  const item = workstandReliabilityFor(currentModelData(), result).items.find(entry => entry.key === key);
+  if (!item) return;
+  const action = reliabilityActionFor(item, result);
+  if (action.type === 'measure' && action.ids.length) {
+    selectedId = action.ids[0];
+    measureEditNavigationIds = action.ids;
+    pendingMeasureFocusTarget = action.field;
+    pendingMeasureFocusLabel = action.fieldLabel;
+    measureEditReturnView = activeView;
+    renderAll();
+    openMeasureEditModal();
+    return;
+  }
+  if (action.type === 'sidecar') {
+    sidecarModeFilter = action.sidecarMode || 'open_questions';
+    selectedSidecarId = action.ids[0] || selectedSidecarId;
+    setView('sidecar');
+    renderAll();
+  }
+}
+
+function reliabilityCardHtml(item, result) {
+  const action = reliabilityActionFor(item, result);
+  const disabled = action.type === 'none' || !action.ids.length;
+  return `
+    <article class="summary-card reliability-card ${item.severity === 'warn' ? 'warn' : 'good'}" data-reliability-key="${esc(item.key)}">
       <div class="label">${esc(item.label)}</div>
-      <div class="value">${esc(item.value)}</div>
+      ${reliabilityProgressHtml(item)}
       <p>${esc(item.detail)}</p>
+      <button type="button" class="link-button reliability-action" data-workstand-action="${esc(item.key)}" ${disabled ? 'disabled' : ''}>${esc(disabled ? 'kein direkter Handlungsbedarf' : action.label)}</button>
     </article>
   `;
 }
@@ -3343,7 +3466,7 @@ function renderWorkstandReliability(result) {
   const cards = document.getElementById('workstandReliabilityCards');
   if (!cards) return;
   const reliability = workstandReliabilityFor(currentModelData(), result);
-  cards.innerHTML = reliability.items.map(reliabilityCardHtml).join('');
+  cards.innerHTML = reliability.items.map(item => reliabilityCardHtml(item, result)).join('');
   const caveat = document.getElementById('workstandReliabilityCaveat');
   if (caveat) {
     caveat.textContent = `${reliability.title}: ${reliability.verdict}. ${reliability.caveat}`;
@@ -3373,7 +3496,7 @@ function renderPortfolioWaterfall(result) {
       <strong>Basis-EOG → Maßnahmenwirkung:</strong>
       ${fmtTeur(waterfall.baseEogTeur, 1)} Basis-EOG plus ${fmtTeur(waterfall.yearOne.regulatoryEogEffect, 1)} Startjahr-Wirkung
       (${fmtPct(waterfall.baseToYearOneRatioPct, 2)} der Basis-EOG).
-      <br><strong>EOG → wirtschaftliche Brücke → Cashflow:</strong>
+      <br><strong>EOG → wirtschaftliche Überleitung → Cashflow:</strong>
       ${fmtTeur(waterfall.firstFollowYear.regulatoryEogEffect, 1)} + ${fmtTeur(waterfall.firstFollowYear.economicBridge, 1)} = ${fmtTeur(waterfall.firstFollowYear.indicativeCashflow, 1)}.
     </div>
     <div class="waterfall-bars">
@@ -3633,10 +3756,10 @@ function presentationSlides(result, first, decision, metrics) {
   return [
     { title: 'Diese Akte', eyebrow: 'Arbeitsstand', view: 'akte', body: `${el.sector.value === 'gas' ? 'Gas' : 'Strom'} · ${phaseLabel(processState.phase)} · ${result.activeMeasures.length} aktive Maßnahmen`, visual: maturityRingHtml(maturity.score, maturity.blockers, 120) },
     { title: decision.title, eyebrow: 'Entscheidungslage', view: 'results', body: decision.text, visual: `<div class="metric-strip large"><span><strong>${fmtTeur(metrics.recurringRegulatoryEog, 1)}</strong>EOG</span><span><strong>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</strong>IRR</span><span><strong>${fmtTeur(result.npv, 1)}</strong>NPV</span></div>` },
-    { title: 'EOG ≠ Cashflow', eyebrow: 'Überleitung', view: 'results', body: `${fmtTeur(waterfall.firstFollowYear.regulatoryEogEffect, 1)} regulatorische EOG plus ${fmtTeur(waterfall.firstFollowYear.economicBridge, 1)} wirtschaftliche Brücke.`, visual: `<div class="presentation-flow"><span>Basis-EOG</span><span>→</span><span>Maßnahmen</span><span>→</span><span>Cashflow-Brücke</span></div>` },
+    { title: 'EOG ≠ Cashflow', eyebrow: 'Überleitung', view: 'results', body: `${fmtTeur(waterfall.firstFollowYear.regulatoryEogEffect, 1)} regulatorische EOG plus ${fmtTeur(waterfall.firstFollowYear.economicBridge, 1)} wirtschaftliche Überleitung.`, visual: `<div class="presentation-flow"><span>Basis-EOG</span><span>→</span><span>Maßnahmen</span><span>→</span><span>Cashflow-Überleitung</span></div>` },
     { title: `${openItems.length} offene Klärpunkte`, eyebrow: 'Prüfauftrag', view: 'expertWork', body: openItems.slice(0, 4).map(item => `${item.priority?.label || 'normal'}: ${item.measure} · ${item.title}`).join(' | ') || 'Keine offenen Klärpunkte.', visual: kanbanCountHtml(openItems) },
     { title: 'Belastbarkeit des Arbeitsstands', eyebrow: 'Governance', view: 'results', body: `${reliability.verdict}. ${reliability.caveat}`, visual: `<div class="reliability-mini large">${reliability.items.slice(0, 4).map(item => `<span class="${item.severity === 'warn' ? 'amber' : 'green'}"><strong>${esc(item.value)}</strong>${esc(item.label)}</span>`).join('')}</div>` },
-    { title: 'Evidenz & Systeme', eyebrow: 'Sidecar', view: 'sidecar', body: 'Sidecar-Objekte, Systemreferenzen und Brückenlogik bleiben sichtbar, aber ohne automatische KPI-Wirkung.', visual: `<div class="presentation-flow violet"><span>Quelle</span><span>→</span><span>Evidenz</span><span>→</span><span>Brücke</span><span>→</span><span>Prüfung</span></div>` },
+    { title: 'Evidenz & Systeme', eyebrow: 'Sidecar', view: 'sidecar', body: 'Sidecar-Objekte, Systemreferenzen und Überleitungslogik bleibt sichtbar, aber ohne automatische KPI-Wirkung.', visual: `<div class="presentation-flow violet"><span>Quelle</span><span>→</span><span>Evidenz</span><span>→</span><span>Überleitung</span><span>→</span><span>Prüfung</span></div>` },
     { title: 'Nächster Schritt', eyebrow: 'Befassung', view: 'projectPlan', body: processState.resume?.nextStep || projectPlanNextReadyTask(projectPlan)?.task?.title || 'Nächsten Prüfauftrag festlegen.', visual: `<div class="meeting-closeout">Arbeitsstand sichern · Report/Export erzeugen · nächste Befassung vorbereiten</div>` }
   ];
 }
@@ -5046,7 +5169,7 @@ function sidecarMatchesModeFilter(object) {
 function sidecarBridgeWarning(object) {
   const bridge = object.bridgeLogic || {};
   if (['effect_assumption', 'economic_bridge'].includes(object.sidecarType) && object.calculationImpact !== 'none' && !bridge.description) {
-    return 'Sidecar sichtbar, wirtschaftliche Brücke nicht modelliert';
+    return 'Sidecar sichtbar, wirtschaftliche Überleitung nicht modelliert';
   }
   if (['effect_assumption', 'economic_bridge'].includes(object.sidecarType) && ['open', 'described', 'not_applicable'].includes(bridge.quantificationStatus)) {
     return 'Wirkbeziehung beschrieben, Quantifizierung offen';
@@ -5054,7 +5177,7 @@ function sidecarBridgeWarning(object) {
   if (object.activationStatus === 'activated' || object.calculationImpact === 'active') {
     return 'Aktivierung verändert keine Kennzahl ohne freigegebene Mapping-Logik';
   }
-  return 'Sidecar sichtbar, Brückenlogik prüfpflichtig, keine automatische KPI-Wirkung';
+  return 'Sidecar sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung';
 }
 
 function sidecarNextAuditAction(object) {
@@ -5112,7 +5235,7 @@ function renderSidecar() {
     cards.innerHTML = `
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="all"><strong>${summary.total}</strong><span>Sidecar-Objekte</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_questions"><strong>${summary.openQuestions}</strong><span>offene Prüfpunkte</span></button>
-      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_bridge_logic"><strong>${summary.openBridgeLogic}</strong><span>offene Brückenlogik</span></button>
+      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_bridge_logic"><strong>${summary.openBridgeLogic}</strong><span>offene Überleitungslogik</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="quantified_effect"><strong>${summary.quantifiedNotActivated}</strong><span>quantifiziert, aber nicht aktiviert</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="activated"><strong>${summary.activated}</strong><span>aktiviert markiert</span></button>
     `;
@@ -5151,7 +5274,7 @@ function renderSidecar() {
           <div><label data-help-id="sidecarTitle">Titel<input data-sidecar-field="title" data-sidecar-id="${esc(object.id)}" value="${esc(object.title)}"></label></div>
           <div><label data-help-id="sidecarDivision">Sparte<select data-sidecar-field="division" data-sidecar-id="${esc(object.id)}"><option value="strom" ${object.division === 'strom' ? 'selected' : ''}>Strom</option><option value="gas" ${object.division === 'gas' ? 'selected' : ''}>Gas</option><option value="cross_division" ${object.division === 'cross_division' ? 'selected' : ''}>spartenübergreifend</option></select></label></div>
           <div><label data-help-id="sidecarType">Typ<input data-sidecar-field="type" data-sidecar-id="${esc(object.id)}" value="${esc(object.type)}"></label></div>
-          <div><label data-help-id="sidecarBridgeLogic">Sidecar-Typ<select data-sidecar-field="sidecarType" data-sidecar-id="${esc(object.id)}"><option value="context" ${object.sidecarType === 'context' ? 'selected' : ''}>Kontext</option><option value="sensitivity" ${object.sidecarType === 'sensitivity' ? 'selected' : ''}>Sensitivität</option><option value="effect_assumption" ${object.sidecarType === 'effect_assumption' ? 'selected' : ''}>Wirkannahme</option><option value="economic_bridge" ${object.sidecarType === 'economic_bridge' ? 'selected' : ''}>wirtschaftliche Brücke</option><option value="system_reference" ${object.sidecarType === 'system_reference' ? 'selected' : ''}>Systemreferenz</option></select></label></div>
+          <div><label data-help-id="sidecarBridgeLogic">Sidecar-Typ<select data-sidecar-field="sidecarType" data-sidecar-id="${esc(object.id)}"><option value="context" ${object.sidecarType === 'context' ? 'selected' : ''}>Kontext</option><option value="sensitivity" ${object.sidecarType === 'sensitivity' ? 'selected' : ''}>Sensitivität</option><option value="effect_assumption" ${object.sidecarType === 'effect_assumption' ? 'selected' : ''}>Wirkannahme</option><option value="economic_bridge" ${object.sidecarType === 'economic_bridge' ? 'selected' : ''}>wirtschaftliche Überleitung</option><option value="system_reference" ${object.sidecarType === 'system_reference' ? 'selected' : ''}>Systemreferenz</option></select></label></div>
           <div><label data-help-id="sidecarStatus">Status<select data-sidecar-field="status" data-sidecar-id="${esc(object.id)}"><option value="context" ${object.status === 'context' ? 'selected' : ''}>Kontext</option><option value="pruefpflichtig" ${object.status === 'pruefpflichtig' ? 'selected' : ''}>prüfpflichtig</option><option value="quantified" ${object.status === 'quantified' ? 'selected' : ''}>quantifiziert</option><option value="active" ${object.status === 'active' ? 'selected' : ''}>aktiv</option><option value="archived" ${object.status === 'archived' ? 'selected' : ''}>archiviert</option></select></label></div>
           <div><label data-help-id="sidecarEvidenceStatus">Evidenzstatus<select data-sidecar-field="evidenceStatus" data-sidecar-id="${esc(object.id)}"><option value="missing" ${object.evidenceStatus === 'missing' ? 'selected' : ''}>fehlt</option><option value="stated" ${object.evidenceStatus === 'stated' ? 'selected' : ''}>benannt</option><option value="source_available" ${object.evidenceStatus === 'source_available' ? 'selected' : ''}>Quelle verfügbar</option><option value="validated" ${object.evidenceStatus === 'validated' ? 'selected' : ''}>validiert</option><option value="conflicting" ${object.evidenceStatus === 'conflicting' ? 'selected' : ''}>widersprüchlich</option><option value="stale" ${object.evidenceStatus === 'stale' ? 'selected' : ''}>veraltet</option></select></label></div>
           <div><label data-help-id="sidecarCalculationImpact">Rechenwirkung<select data-sidecar-field="calculationImpact" data-sidecar-id="${esc(object.id)}"><option value="none" ${object.calculationImpact === 'none' ? 'selected' : ''}>keine</option><option value="scenario_only" ${object.calculationImpact === 'scenario_only' ? 'selected' : ''}>nur Szenario</option><option value="indirect" ${object.calculationImpact === 'indirect' ? 'selected' : ''}>indirekt</option><option value="active" ${object.calculationImpact === 'active' ? 'selected' : ''}>aktiv markiert</option></select></label></div>
@@ -5161,7 +5284,7 @@ function renderSidecar() {
           <div class="wide-field"><label data-help-id="sidecarTitle">Kurzbeschreibung<textarea data-sidecar-field="summary" data-sidecar-id="${esc(object.id)}" rows="2">${esc(object.summary)}</textarea></label></div>
           <div class="wide-field"><label data-help-id="sidecarLinkedMeasures">Verknüpfte Maßnahmen-IDs<input data-sidecar-field="linkedMeasures" data-sidecar-id="${esc(object.id)}" value="${esc(object.linkedMeasures.join(', '))}"></label></div>
           <div class="wide-field"><label data-help-id="sidecarOpenQuestions">Offene Prüfpunkte<input data-sidecar-field="openQuestions" data-sidecar-id="${esc(object.id)}" value="${esc(object.openQuestions.join('; '))}"></label></div>
-          <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Brückenlogik Beschreibung<textarea data-sidecar-field="bridgeLogic.description" data-sidecar-id="${esc(object.id)}" rows="2" placeholder="Welche wirtschaftliche Beziehung ist gemeint?">${esc(object.bridgeLogic?.description || '')}</textarea></label></div>
+          <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Überleitungslogik Beschreibung<textarea data-sidecar-field="bridgeLogic.description" data-sidecar-id="${esc(object.id)}" rows="2" placeholder="Welche wirtschaftliche Beziehung ist gemeint?">${esc(object.bridgeLogic?.description || '')}</textarea></label></div>
           <div><label data-help-id="sidecarBridgeLogic">Wirkbeziehung<select data-sidecar-field="bridgeLogic.economicRelation" data-sidecar-id="${esc(object.id)}"><option value="none" ${object.bridgeLogic?.economicRelation === 'none' ? 'selected' : ''}>keine</option><option value="opex_effect" ${object.bridgeLogic?.economicRelation === 'opex_effect' ? 'selected' : ''}>OPEX-Effekt</option><option value="capex_dependency" ${object.bridgeLogic?.economicRelation === 'capex_dependency' ? 'selected' : ''}>CAPEX-Abhängigkeit</option><option value="revenue_effect" ${object.bridgeLogic?.economicRelation === 'revenue_effect' ? 'selected' : ''}>Erlöseffekt</option><option value="risk_effect" ${object.bridgeLogic?.economicRelation === 'risk_effect' ? 'selected' : ''}>Risikoeffekt</option><option value="timing_effect" ${object.bridgeLogic?.economicRelation === 'timing_effect' ? 'selected' : ''}>Timing-Effekt</option><option value="avoided_cost" ${object.bridgeLogic?.economicRelation === 'avoided_cost' ? 'selected' : ''}>vermiedene Kosten</option></select></label></div>
           <div><label data-help-id="sidecarQuantificationStatus">Quantifizierungsstatus<select data-sidecar-field="bridgeLogic.quantificationStatus" data-sidecar-id="${esc(object.id)}"><option value="not_applicable" ${object.bridgeLogic?.quantificationStatus === 'not_applicable' ? 'selected' : ''}>nicht anwendbar</option><option value="open" ${object.bridgeLogic?.quantificationStatus === 'open' ? 'selected' : ''}>offen</option><option value="described" ${object.bridgeLogic?.quantificationStatus === 'described' ? 'selected' : ''}>beschrieben</option><option value="working_value" ${object.bridgeLogic?.quantificationStatus === 'working_value' ? 'selected' : ''}>Arbeitswert</option><option value="validated" ${object.bridgeLogic?.quantificationStatus === 'validated' ? 'selected' : ''}>validiert</option></select></label></div>
           <div><label data-help-id="sidecarBridgeLogic">Richtung<select data-sidecar-field="bridgeLogic.direction" data-sidecar-id="${esc(object.id)}"><option value="none" ${object.bridgeLogic?.direction === 'none' ? 'selected' : ''}>keine</option><option value="positive" ${object.bridgeLogic?.direction === 'positive' ? 'selected' : ''}>positiv</option><option value="negative" ${object.bridgeLogic?.direction === 'negative' ? 'selected' : ''}>negativ</option><option value="mixed" ${object.bridgeLogic?.direction === 'mixed' ? 'selected' : ''}>gemischt</option><option value="unclear" ${object.bridgeLogic?.direction === 'unclear' ? 'selected' : ''}>unklar</option></select></label></div>
@@ -5184,12 +5307,12 @@ function sidecarReportSummaryHtml() {
   return `
     <section class="report-section">
       <h2>Kontext- und Wirkobjekte / Sidecars</h2>
-      <p class="hint">Sidecar-Objekte sind Kontext-, Evidenz-, Sensitivitäts- oder Wirkobjekte. Sidecar sichtbar, Brückenlogik prüfpflichtig, keine automatische KPI-Wirkung: Sie sind nicht als klassische Maßnahmen zu lesen und gehen nicht in CAPEX-/EOG-/KPI-Summen ein.</p>
+      <p class="hint">Sidecar-Objekte sind Kontext-, Evidenz-, Sensitivitäts- oder Wirkobjekte. Sidecar sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung: Sie sind nicht als klassische Maßnahmen zu lesen und gehen nicht in CAPEX-/EOG-/KPI-Summen ein.</p>
       <div class="report-summary">
         <div class="report-box"><strong>Evidenzlage</strong><p>${summary.total} Objekte, davon ${summary.byEvidenceStatus.validated || 0} validiert und ${summary.byEvidenceStatus.missing || 0} ohne Evidenz.</p></div>
         <div class="report-box"><strong>Datenqualität</strong><p>${summary.dataQualityOpen} offene Datenqualitätsobjekte; ${summary.openQuestions} offene Prüfpunkte.</p></div>
         <div class="report-box"><strong>Rechenwirkung</strong><p>${summary.withoutCalculationImpact} ohne Rechenwirkung, ${summary.calculationImpact.indirect || 0} indirekt, ${summary.calculationImpact.scenario_only || 0} nur Szenario, ${summary.calculationImpact.active || 0} aktiv markiert.</p></div>
-        <div class="report-box"><strong>Brückenlogik</strong><p>${summary.openBridgeLogic} offene Brückenlogik, ${summary.quantifiedNotActivated} quantifiziert, aber nicht aktiviert; ${summary.activated} aktiviert markiert.</p></div>
+        <div class="report-box"><strong>Überleitungslogik</strong><p>${summary.openBridgeLogic} offene Überleitungslogik, ${summary.quantifiedNotActivated} quantifiziert, aber nicht aktiviert; ${summary.activated} aktiviert markiert.</p></div>
       </div>
       ${open.length ? `<div class="report-sidecar-list">${open.slice(0, 8).map(object => `<article class="report-sidecar-item"><span>${esc(object.division)} · ${esc(object.sidecarType)} · ${esc(sidecarTypeLabel(object))}</span><strong>${esc(object.title)}</strong><p>${esc(sidecarBridgeWarning(object))}</p></article>`).join('')}</div>` : '<p class="hint">Keine offenen Sidecar-Prüfpunkte im sanitisierten Exportprofil.</p>'}
     </section>
@@ -5307,7 +5430,7 @@ function reinvestTreatmentNote(measure) {
     return `Reinvest-Logik: neuer Anlagenzugang mit eigener AfA-/Verzinsungskette über ${Math.max(1, Number(measure.reinvestLife || measure.life || 1))} Jahre.`;
   }
   return Number(measure.reinvestCost || 0) > 0
-    ? 'Reinvest-Logik: vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Brücke; keine neue Kapitalbasis.'
+    ? 'Reinvest-Logik: vereinfachter Einmalabzug in der wirtschaftlichen Cashflow-Überleitung; keine neue Kapitalbasis.'
     : 'Reinvest-Logik: keine zusätzliche Reinvestition hinterlegt.';
 }
 
@@ -5697,10 +5820,10 @@ function renderReport(result, first, spread, decision, metrics) {
 
     <section class="report-section">
       <h2>EOG-Zerlegung im Report</h2>
-      <p class="hint">Die Komponenten zeigen, welche Treiber den Startjahreswert und den ersten Folgejahreswert prägen. Spätere Jahreswerte können abweichen; die wirtschaftliche Brücke bleibt getrennt von der regulatorischen EOG-Wirkung.</p>
+      <p class="hint">Die Komponenten zeigen, welche Treiber den Startjahreswert und den ersten Folgejahreswert prägen. Spätere Jahreswerte können abweichen; die wirtschaftliche Überleitung bleibt getrennt von der regulatorischen EOG-Wirkung.</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Sicht</th><th>AfA</th><th>Verzinsung</th><th>Reinvest-Asset</th><th>Q/E</th><th>Risiko</th><th>Einmal-OPEX</th><th>regulatorische EOG</th><th>wirtschaftliche Brücke</th><th>indikativer Cashflow</th></tr></thead>
+          <thead><tr><th>Sicht</th><th>AfA</th><th>Verzinsung</th><th>Reinvest-Asset</th><th>Q/E</th><th>Risiko</th><th>Einmal-OPEX</th><th>regulatorische EOG</th><th>wirtschaftliche Überleitung</th><th>indikativer Cashflow</th></tr></thead>
           <tbody>${eogDecompositionTableHtml(result)}</tbody>
         </table>
       </div>
@@ -5708,6 +5831,8 @@ function renderReport(result, first, spread, decision, metrics) {
 
     <section class="report-section">
       <h2>Szenariovergleich</h2>
+      <p class="hint scenario-edit-hint">Szenarioannahmen werden unter Grundlagen → Bearbeiten einblenden → Szenario und Portfolio-Wirkung gepflegt. Dort werden Basis, Konservativ und Wert-Sicht gesetzt; Maßnahmenwerte bearbeitest du weiterhin in der jeweiligen Maßnahme.</p>
+      <button type="button" class="link-button" data-jump-view="basis">Szenarioannahmen bearbeiten</button>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Szenario</th><th>Attribution</th><th>Q/E + Wirkung p.a.</th><th>Jahr 1</th><th>IRR</th><th>Kapitalwert</th></tr></thead>
@@ -6101,6 +6226,12 @@ document.getElementById('projectPlanBody').addEventListener('click', event => {
   if (!button) return;
   event.preventDefault();
   openProjectTask(button.dataset.projectJump);
+});
+
+document.getElementById('workstandReliabilityCards')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-workstand-action]');
+  if (!button || button.disabled) return;
+  openReliabilityWorkItem(button.dataset.workstandAction);
 });
 document.getElementById('addSidecarObject')?.addEventListener('click', addSidecarObject);
 document.getElementById('sidecarDivisionFilter')?.addEventListener('change', event => {

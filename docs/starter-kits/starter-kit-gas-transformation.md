@@ -25,7 +25,7 @@ Am Ende des Workshops liegt vor:
 | Zustand / Schadenshistorie | Asset Management / Betrieb | technische Notwendigkeit, Risiko | Eintrittswahrscheinlichkeit und Schadenshöhe |
 | Restnutzung / Transformationsannahme | Strategie / Regulierung | Nutzungsdauer, Rückbaujahr, KANU-Kontext | keine politische Zukunftsannahme verstecken |
 | Aktivierungsfähigkeit der Reinvestition | Bilanzierung | Reinvestitionsmodus `oneOff` oder `assetAddition` | HGB-/regulatorische Behandlung prüfen |
-| Rückbaukosten | Projektleitung / Betrieb | wirtschaftliche Cashflow-Brücke | Zeitbezug und Unsicherheit dokumentieren |
+| Rückbaukosten | Projektleitung / Betrieb | wirtschaftliche Cashflow-Überleitung | Zeitbezug und Unsicherheit dokumentieren |
 | Stilllegung vs. physischer Rückbau | Technik / Recht / Projektleitung | Gas-Transformationspfad | Kostenarten und Verpflichtungsgrund nicht vermischen |
 | Wegfall der Ewigkeitsvermutung | Bilanzierung / Regulierung / Recht | Rückstellungs-Check | dauerhaften Weiterbetrieb nicht ungeprüft unterstellen |
 | Regulatorische Behandlung | Regulierungsmanagement | KAnEu-/Ist-Kosten-/Kostenpfad-Herleitung | keine Anerkennungszusage ableiten |

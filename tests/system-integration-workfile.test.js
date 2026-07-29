@@ -91,7 +91,7 @@ describe('system integration working file', () => {
 
     const tables = spreadsheetTables(model);
     const tableNames = tables.map(table => table.name);
-    expect(tableNames).toEqual(expect.arrayContaining(['Systemreferenzen', 'Risiko_Mapping', 'Klaerpunkte_Priorisiert', 'Sidecar_Brueckenlogik']));
+    expect(tableNames).toEqual(expect.arrayContaining(['Systemreferenzen', 'Risiko_Mapping', 'Klaerpunkte_Priorisiert', 'Sidecar_Ueberleitungslogik']));
     const systemRows = tables.find(table => table.name === 'Systemreferenzen').rows;
     expect(systemRows[0]).toEqual(expect.arrayContaining(['sourceSystem', 'sourceRecordId', 'scoringRef', 'assetSystemRef', 'erpRef', 'riskDbRef', 'sourceStatus']));
     expect(systemRows[1]).toEqual(expect.arrayContaining(['Scoringliste', 'Zeile 12', 'SC-12', 'ASSET-77', 'ERP-42', 'RISK-1', 'benannt']));
