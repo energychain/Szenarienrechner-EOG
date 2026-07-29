@@ -37,7 +37,10 @@ describe('Akte top navigation layout', () => {
     expect(html).toContain('<button type="button" id="exportModel">Daten herunterladen</button>');
     expect(html).toContain('<button type="button" id="printReport">Report drucken</button>');
     expect(css).toContain('.compact-process-notice:not([open]) .process-notice-body');
-    expect(css).toContain('grid-template-columns: repeat(6, minmax(0, 1fr));');
+    expect(css).toContain('grid-template-columns: repeat(6, minmax(48px, 1fr));');
+    expect(css).toContain('.phase-stepper b {');
+    expect(ui).toContain('function phaseStepperLabel');
+    expect(ui).toContain("entscheidungsvorlage: 'Vorlage'");
     expect(ui).toContain('const compactStatus = `Stand: ${phase} · ${maturity.score} % Entscheidungsreife · ${openCount} Klärpunkte offen`;');
     expect(ui).not.toContain('maturityScore()} % Entscheidungsreife');
   });

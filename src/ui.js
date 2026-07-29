@@ -285,6 +285,18 @@ function phaseLabel(phase = processState.phase) {
   return processPhases.find(([id]) => id === phase)?.[1] || 'Maßnahmenbewertung';
 }
 
+function phaseStepperLabel(phase, label = phaseLabel(phase)) {
+  const compactLabels = {
+    initialisierung: 'Start',
+    datenerhebung: 'Daten',
+    massnahmenbewertung: 'Maßnahmen',
+    konsolidierung: 'Konsolid.',
+    entscheidungsvorlage: 'Vorlage',
+    archiv: 'Archiv'
+  };
+  return compactLabels[phase] || label;
+}
+
 function loadRole() {
   try {
     const stored = localStorage.getItem(roleKey);
@@ -1093,9 +1105,9 @@ function renderProcessUx() {
   if (phasePill) phasePill.textContent = target ? `${phase} · Ziel ${formatDateShort(target)}` : phase;
   const stepper = document.getElementById('phaseStepper');
   if (stepper) {
-    stepper.innerHTML = processPhases.map(([, label], index) => `
-      <span class="${index < currentIndex ? 'done' : index === currentIndex ? 'current' : ''}" title="${esc(label)}">
-        <i></i><b>${esc(label)}</b>
+    stepper.innerHTML = processPhases.map(([id, label], index) => `
+      <span class="${index < currentIndex ? 'done' : index === currentIndex ? 'current' : ''}" title="${esc(label)}" aria-label="${esc(label)}">
+        <i></i><b>${esc(phaseStepperLabel(id, label))}</b>
       </span>
     `).join('');
   }
