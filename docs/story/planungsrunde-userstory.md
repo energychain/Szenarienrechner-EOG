@@ -1,10 +1,10 @@
 # Userstory: Finanzplanung regulierter Sparten im Verteilnetz
 
-**Untertitel:** Strukturierte Maßnahmenbewertung, Portfolio-Priorisierung und Entscheidungsdokumentation für Verteilnetzbetreiber.
+**Untertitel:** Digitale Akte für regulierte Sparten: Maßnahmen bewerten, Evidenz führen, Klärfälle bearbeiten, Stresstest dokumentieren und Befassungen vorbereiten.
 
-**Kurzfassung:** Der Szenarienrechner ist kein reiner EOG-Rechner. Er ist ein offline lauffähiger Struktur- und Entscheidungsraum für die Finanzplanung regulierter Sparten. Die App unterstützt EVUs und VNBs dabei, technische Maßnahmen, Wirtschaftsplan, HGB-/Controlling-Sicht, regulatorische Wirkung, Finanzierung, Risiken, Evidenz und Gremienfähigkeit in einem gemeinsamen Arbeitsstand zusammenzuführen.
+**Kurzfassung:** Der Szenarienrechner ist kein reiner EOG-Rechner. Er ist eine offline lauffähige digitale Akte für die Finanzplanung regulierter Sparten. Die App unterstützt EVUs und VNBs dabei, technische Maßnahmen, Wirtschaftsplan, HGB-/Controlling-Sicht, regulatorische Wirkung, Finanzierung, Risiken, Evidenz, Klärfälle, Stresstest und Befassungsreife in einem gemeinsamen Arbeitsstand zusammenzuführen.
 
-**Was diese Userstory leistet:** Sie beschreibt nicht nur Klickpfade in der App. Sie erzählt eine fiktive, aber typische Planungsrunde in einem regionalen EVU so, wie ein externer Senior Consultant sie begleiten würde: mit Rollenklärung, Datenanforderung, fachlicher Einordnung, Klärpunkten, Entscheidungslogik und einer nachvollziehbaren Vorlage für Management und Gremium.
+**Was diese Userstory leistet:** Sie beschreibt nicht nur Klickpfade in der App. Sie erzählt eine fiktive, aber typische Planungsrunde in einem regionalen EVU so, wie ein externer Senior Consultant sie begleiten würde: mit Rollenklärung, Datenanforderung, fachlicher Einordnung, Klärpunkten, Befassungsnotizen, Stresstest-Parametern und einer nachvollziehbaren Vorlage für Management und Befassungskreis.
 
 **Wichtig:** Alle Rollen, Zahlen, Namen, Orte, Screenshots, Termine und Maßnahmen sind synthetisch. Die Story enthält keine produktiven Standardwerte und keine Referenz auf reale Netzbetreiber oder interne Unterlagen. Die App ersetzt keine regulatorische, steuerliche, bilanzielle oder rechtliche Beratung.
 
@@ -12,7 +12,7 @@
 
 ## Executive Summary: Worum geht es bei der App?
 
-Viele Investitions- und Finanzplanungsrunden in regulierten Sparten starten mit technischen Bedarfen: Ersatzinvestitionen, Netzautomatisierung, Engpassbeseitigung, Digitalisierung, Netzverstärkung, Rückbau, Transformationsmaßnahmen oder Reinvestitionen. Spätestens in der Wirtschaftsplanung reicht eine technische Maßnahmenliste aber nicht mehr aus. Die Maßnahmen müssen in eine gemeinsame Entscheidungslogik übersetzt werden.
+Viele Investitions- und Finanzplanungsrunden in regulierten Sparten starten mit technischen Bedarfen: Ersatzinvestitionen, Netzautomatisierung, Engpassbeseitigung, Digitalisierung, Netzverstärkung, Rückbau, Transformationsmaßnahmen oder Reinvestitionen. Spätestens in der Wirtschaftsplanung reicht eine technische Maßnahmenliste aber nicht mehr aus. Die Maßnahmen müssen in eine gemeinsame Akten- und Befassungslogik übersetzt werden.
 
 Die App hilft dabei, aus einer Maßnahmenliste einen prüfbaren Planungsstand zu machen:
 
@@ -21,27 +21,27 @@ Die App hilft dabei, aus einer Maßnahmenliste einen prüfbaren Planungsstand zu
 - **Regulatorische Sicht:** Welche Wirkung kann in der Erlöslogik relevant sein, welche Annahmen sind nur Sensitivitäten, welche Punkte müssen geprüft werden?
 - **Finanzierungs- und Renditesicht:** Welche Kapitalbindung entsteht, wie wirken Fremdkapitalzins, Cashflows, IRR und Kapitalwert indikativ?
 - **Portfolio-Sicht:** Welche Maßnahmen konkurrieren um Budget, Personal, Kapital und Entscheidungsaufmerksamkeit?
-- **Governance-Sicht:** Welche Werte sind belegt, welche sind Annahmen, welche sind prüfpflichtig, welche Auflagen gehören in die Vorlage?
+- **Akten- und Governance-Sicht:** Welche Werte sind belegt, welche sind Annahmen, welche Punkte brauchen Evidenz, Befassung oder eine spätere Klärung?
 
-Die EOG ist dabei ein wichtiger Teil der Betrachtung, aber nicht der alleinige Zweck. Die praktische Fragestellung lautet breiter: Wie wird Finanzplanung für regulierte VNB-Sparten so strukturiert, dass Technik, Regulierung, Controlling, Bilanzierung und Management dieselbe Entscheidungsgrundlage sehen?
+Die EOG ist dabei ein wichtiger Teil der Betrachtung, aber nicht der alleinige Zweck. Die praktische Fragestellung lautet breiter: Wie wird Finanzplanung für regulierte VNB-Sparten so strukturiert, dass Technik, Regulierung, Controlling, Bilanzierung und Management denselben Arbeitsstand sehen?
 
 ## Warum das im EVU-Alltag schwierig ist
 
 In der Praxis liegen die relevanten Informationen oft verteilt vor:
 
 - Asset Management und Netzbetrieb kennen technische Notwendigkeit, Zustand, Störungen, Engpässe und Umsetzungsrisiken.
-- Controlling kennt Budgetrahmen, Wirtschaftsplan, Liquidität, Plan-/Ist-Strukturen und Investitionsfreigaben.
+- Controlling kennt Budgetrahmen, Wirtschaftsplan, Liquidität, Plan-/Ist-Strukturen und Investitionseinordnungen.
 - Regulierungsmanagement kennt Regulierungsbescheide, Erlöslogik, Verfahrensstatus, Kapitalkostenmechanik und regulatorische Grenzen.
 - Anlagenbuchhaltung und Bilanzierung kennen Aktivierbarkeit, Nutzungsdauern, Anlagenklassen, HGB-Abschreibung und Abgrenzung zu Aufwand.
-- Geschäftsführung, Aufsichtsrat, Betriebsausschuss oder andere Gremien benötigen eine verdichtete, faire Entscheidungsunterlage.
+- Geschäftsführung, Aufsichtsrat, Betriebsausschuss oder andere Befassungskreise benötigen eine verdichtete, faire Arbeitsunterlage.
 
-Ohne gemeinsame Struktur entstehen typische Reibungen: technische Maßnahmen werden kaufmännisch zu spät übersetzt, regulatorische Effekte werden zu optimistisch interpretiert, Aktivierbarkeit wird als selbstverständlich angenommen, offene Punkte verschwinden in Protokollen und nach einigen Wochen ist unklar, welcher Stand eigentlich entschieden wurde.
+Ohne gemeinsame Struktur entstehen typische Reibungen: technische Maßnahmen werden kaufmännisch zu spät übersetzt, regulatorische Effekte werden zu optimistisch interpretiert, Aktivierbarkeit wird als selbstverständlich angenommen, offene Punkte verschwinden in Protokollen und nach einigen Wochen ist unklar, welcher Arbeitsstand eigentlich beraten wurde.
 
 Die App adressiert genau diese Lücke. Sie macht aus einer losen Maßnahmenliste einen lokalen, exportierbaren und wiederaufnahmefähigen Arbeitsstand.
 
 ## Regulierter Finanzplanungsprozess in einem Satz
 
-Regulierte Finanzplanung bedeutet nicht: eine EOG-Zahl berechnen und daraus eine Entscheidung ableiten. Sie bedeutet: Investitionen und Maßnahmen so aufzubereiten, dass Budget, Kapitalbindung, Aktivierung, Abschreibung, regulatorische Einordnung, Finanzierung, Risiko, Evidenz und Entscheidungsvorlage konsistent zusammenpassen.
+Regulierte Finanzplanung bedeutet nicht: eine EOG-Zahl berechnen und daraus eine Entscheidung ableiten. Sie bedeutet: Investitionen und Maßnahmen so aufzubereiten, dass Budget, Kapitalbindung, Aktivierung, Abschreibung, regulatorische Einordnung, Finanzierung, Risiko, Evidenz und Befassungsunterlage konsistent zusammenpassen.
 
 ## Die fünf Sichten auf eine Maßnahme
 
@@ -51,13 +51,13 @@ Regulierte Finanzplanung bedeutet nicht: eine EOG-Zahl berechnen und daraus eine
 | Wirtschaftsplan-Sicht | Wann wird welches Budget benötigt? | Controlling, Spartenleitung, Projektcontrolling | Kosten, Szenario, Aktivität, Portfolioeinordnung |
 | HGB-/Bilanzierungs-Sicht | Was ist aktivierbar, welche Nutzungsdauer ist plausibel? | Anlagenbuchhaltung, Bilanzierung | aktivierbarer Anteil, Nutzungsdauer, AfA-Kontext |
 | Regulatorische Sicht | Welche Kosten und Wirkungen sind in der regulierten Sparte relevant? | Regulierungsmanagement | EOG-/Kapitalbasis-Kontext, Verfahren, Q-/Effizienz-/Risikowirkungen als Annahmen |
-| Entscheidungs-/Governance-Sicht | Was kann beschlossen werden und was bleibt Auflage? | Management, Gremium, Modellverantwortung | Evidenz, Vertrauensstufe, Klärpunkte, Prozessstatus, Report |
+| Akten-/Governance-Sicht | Was ist belastbar, was bleibt Befassungs- oder Klärbedarf? | Management, Befassungskreis, Modellverantwortung | Evidenz, Befassungsnotizen, Klärpunkte, Prozessstatus, Report |
 
 ## Prozessübersicht
 
-Technischer Bedarf → Datenanforderung → Stammdaten und Modellrahmen → Maßnahmenportfolio → Wirkannahmen und Evidenz → Szenariovergleich → Managementkonsolidierung → Gremienvorlage → Beschluss und Wiedereinstieg.
+Technischer Bedarf → Datenanforderung → Stammdaten und Modellrahmen → Maßnahmenportfolio → Evidenz & Systeme → Prüfen & Klären → Stresstest → Präsentation/Befassungsvorlage → Export und Wiedereinstieg.
 
-Die App ist entlang dieses Beratungsprozesses zu lesen. Sie ist nicht primär ein Formular, sondern ein gemeinsamer Arbeitsraum für die Frage: Was wissen wir, was nehmen wir an, was ist offen, und was kann verantwortbar entschieden werden?
+Die App ist entlang dieses Beratungsprozesses zu lesen. Sie ist nicht primär ein Formular, sondern ein gemeinsamer Arbeitsraum für die Frage: Was wissen wir, was nehmen wir an, was ist offen, und was kann verantwortbar in die nächste Befassung gehen?
 
 ## Rollen in der Story
 
@@ -68,7 +68,7 @@ Die App ist entlang dieses Beratungsprozesses zu lesen. Sie ist nicht primär ei
 | Anlagenbuchhaltung / Bilanzierung | bewertet Aktivierung, Nutzungsdauer und HGB-Sicht | aktivierbarer Anteil, AfA, Abgrenzung CAPEX/OPEX |
 | Netzbetrieb / Asset Management | bewertet technische Notwendigkeit, Zustand und Risiko | Maßnahmen, Umsetzungsjahr, technische Evidenz, Risikohinweise |
 | Controlling / Finanzierung | plausibilisiert Budget, Liquidität und Finanzierung | Kosten, FK-Zins, Kapitalwert, Wirtschaftsplananschluss |
-| Management / Gremium | entscheidet über Freigabe, Priorisierung und Auflagen | Report, Beschlussvorschlag, offene Punkte, Nachverfolgung |
+| Management / Befassungskreis | ordnet Priorisierung, Risiken und offene Punkte ein | Report, Präsentation, Befassungsnotizen, offene Punkte, Nachverfolgung |
 
 ## Welche Unterlagen typischerweise benötigt werden
 
@@ -81,7 +81,7 @@ Die App ist entlang dieses Beratungsprozesses zu lesen. Sie ist nicht primär ei
 | Mengenplanung / Jahresarbeit | indikative Entgelt- oder Kundenauswirkung | Welche Menge ist für die Betrachtung belastbar? |
 | technische Zustands- und Störungsdaten | Risiko, Notwendigkeit, Priorität | Ist eine Wirkung belegt oder nur plausibel angenommen? |
 | Finanzierungsannahmen | FK-Zins, Kapitalbindung, Renditesicht | Welche Annahme ist Unternehmensplanung, welche Sensitivität? |
-| Gremienkalender und Beschlussfristen | Timing der Vorlage | Welche offenen Punkte müssen bis wann geklärt sein? |
+| Befassungskalender und Fristen | Timing der Vorlage | Welche offenen Punkte müssen bis wann geklärt oder bewusst offen geführt sein? |
 
 ---
 
@@ -95,7 +95,7 @@ Jeder Meilenstein folgt demselben Muster:
 - **Ergebnis:** Welches Artefakt liegt danach vor?
 - **Beraterhinweis:** Worauf würde ein externer Senior Consultant achten?
 
-Die Screenshots sind Momentaufnahmen synthetischer Demodaten. Sie zeigen nicht „die richtige Zahl“, sondern eine wiedererkennbare Arbeitsweise: Kick-off, Datenanforderung, Maßnahmenkatalog, Technikrückkopplung, Managementkonsolidierung, Entscheidungsvorlage, Gremium und Re-Entry.
+Die Screenshots sind Momentaufnahmen synthetischer Demodaten. Sie zeigen nicht „die richtige Zahl“, sondern eine wiedererkennbare Arbeitsweise: Kick-off, Akte, Maßnahmenkatalog, Evidenz & Systeme, Prüfen & Klären, Stresstest, Präsentation, Befassungsvorlage und Re-Entry.
 
 ## Bidirektionale Navigation
 
@@ -107,21 +107,52 @@ Diese Story ist mit der Live-Anwendung verknüpft:
 
 ## Projektplan als Struktur-Element
 
-Die gleiche Meilensteinlogik gibt es in der App zusätzlich als **Projektplan**. Dort wird die erzählende User-Story zu einer operativen Planungsrunde: neun Meilensteine, Rollen-Swimlanes, abhakbare Aufgaben, Fälligkeiten, Abhängigkeiten und Deep-Links in die passende App-Sicht.
+Die gleiche Meilensteinlogik gibt es in der App zusätzlich als **Projektplan**. Dort wird die erzählende User-Story zu einer operativen Planungsrunde: neun Meilensteine, Rollen-Swimlanes, abhakbare Aufgaben, Fälligkeiten, Abhängigkeiten, aus Klärfällen gespiegelte Aufgaben und Deep-Links in die passende App-Sicht.
 
 Für ein EVU ist dieser Projektplan der Unterschied zwischen „wir haben gerechnet“ und „wir wissen, wer bis wann welchen Klärpunkt erledigt“. Er zeigt die nächste fällige Aufgabe insgesamt und je Rolle, sperrt abhängige Aufgaben, solange Vorgänger nicht erledigt sind, und erlaubt eigene EVU-spezifische Aufgaben. Template-Schritte, die in einer konkreten Runde nicht passen, werden nicht gelöscht, sondern bewusst als „nicht zutreffend“ übersprungen.
 
 Typische Nutzung in dieser Story:
 
-- Im Kick-off öffnet die Modellverantwortung den Projektplan und prüft Rollen, Gremientermin und erste Aufgaben.
+- Im Kick-off öffnet die Modellverantwortung den Projektplan und prüft Rollen, Befassungstermin und erste Aufgaben.
 - In Initialisierung und Datenerhebung werden Datenanforderungen, Quellen und offene Punkte als Aufgaben geführt.
-- In Maßnahmenbewertung und technischer Rückkopplung landen Aktivierbarkeit, Doppelzählungsprüfung und Wirkannahmen als verantwortete Arbeitspakete.
-- Vor Entscheidungsvorlage und Gremium zeigt der Plan, welche Freigaben, Lesehinweise und Auflagen noch fehlen.
-- Nach Beschluss reist der Projektplan im JSON-Export oder in **HTML mit Daten speichern** mit und bildet den Einstieg in die Folgerunde.
+- In Maßnahmenbewertung und technischer Rückkopplung landen Aktivierbarkeit, Doppelzählungsprüfung, Systemreferenzen und Wirkannahmen als verantwortete Arbeitspakete.
+- Vor Präsentation und Befassungsvorlage zeigt der Plan, welche Klärfälle, Befassungsnotizen, Evidenzpunkte und Lesehinweise noch fehlen.
+- Nach einer Befassung reist der Projektplan im JSON-Export oder in **HTML mit Daten speichern** mit und bildet den Einstieg in die Folgerunde.
 
-Damit wird die App zum wiederaufnahmefähigen Arbeitsstand: Kennzahlen, Annahmen, Report und Projektsteuerung bleiben in einer Datei verbunden.
+Damit wird die App zum wiederaufnahmefähigen Arbeitsstand: Kennzahlen, Annahmen, Report, Befassungen und Projektsteuerung bleiben in einer Datei verbunden.
 
-## Kontext & Evidenz: Sidecar als Arbeitsraum für Quellen, Datenqualität und Steuerungsfähigkeit
+## Aktueller Arbeitsmodus: Akte, Bearbeiten, Evidenz, Klärung, Präsentation, Export
+
+Die aktuelle Anwendung ist als digitale Akte organisiert. Der Einstieg zeigt nicht mehr möglichst viele Eingabefelder, sondern einen kompakten Arbeitsstand: Sparte, Phase, Entscheidungsreife, aktive Maßnahmen, offene Klärpunkte, Evidenzlage und nächster Schritt. Von dort führt die Navigation in die fünf operativen Arbeitsräume:
+
+- **Bearbeiten:** Stammdaten, Szenarioannahmen, Stresstest-Parameter und Maßnahmenwerte pflegen.
+- **Evidenz & Systeme:** Sidecar-Objekte, Systemreferenzen, Rückspielwege, Datenqualität und wirtschaftliche Überleitung bearbeiten.
+- **Prüfen & Klären:** deterministische Kanban-Karten aus Wirkannahmen, Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Prüffragen abarbeiten.
+- **Präsentation:** eine fokussierte Start- und Befassungsansicht mit Arbeitsstand-Score, Kontext und nächsten Klärfragen öffnen.
+- **Export:** JSON, HTML mit Daten, Tabellenexport, Report und KI-Prompt bewusst erzeugen.
+
+Der wichtigste Unterschied zur früheren Rechnerlogik: Die App zeigt nicht nur, was rechnerisch herauskommt, sondern auch, welche Evidenz, Dokumentation und Befassung noch fehlen. Ein guter Arbeitsstand ist daher nicht automatisch der Stand mit dem höchsten Kapitalwert, sondern der Stand, dessen Annahmen, Quellen, offenen Punkte und nächsten Arbeitsschritte nachvollziehbar sind.
+
+## Prüfen & Klären: Kanban und Befassungs-Workbench
+
+Offene Punkte werden nicht mehr nur als lange Liste geführt. Die App erzeugt Kanban-Karten deterministisch aus verschiedenen Ursachen:
+
+- **Hohe Steuerungswirkung:** Wirkannahmen, Gas-Transformationswarnungen, konservativer Stresstest, Nutzungsdauer-/KANU-Fragen oder Maßnahmennotizen mit hoher fachlicher Wirkung.
+- **Evidenz / Systeme:** fehlende Systemreferenzen, unklare Rückspielwege, nicht belegte Störungs-/Risikowirkung, schwache Evidenz, offene Sidecar-Prüffragen oder offene wirtschaftliche Überleitung.
+- **Dokumentation:** fehlende Akten-/Ziel-Zuordnung, fehlende Maßnahmendokumentation, nicht dokumentierte Befassung oder unklare Provenienz.
+- **Geklärt:** Punkte, die mit Befassungsnotiz nachvollziehbar abgeschlossen wurden.
+
+Wählt ein Nutzer in **Prüfen & Klären** einen Klärfall, öffnet sich eine Split-Workbench. Links bleibt die betroffene Maßnahme oder Datenstelle bearbeitbar. Rechts bleibt der aktive Klärpunkt sichtbar: Aufgabe, relevantes Feld, neue Befassungsnotiz, bisherige Befassungen, Projektplanstatus und die Aktionen **Befassungsnotiz speichern** oder **Klärpunkt abschließen**.
+
+Damit sind zwei Dinge bewusst getrennt: Die permanente Maßnahmennotiz oder das Datenfeld beschreibt den fachlichen Inhalt. Die Befassungsnotiz dokumentiert zeitpunktbezogen, was geprüft, ergänzt, vertagt oder abgeschlossen wurde. Wird nur eine Zwischenlage protokolliert, bleibt der Klärfall offen. Wird der Punkt hinreichend geklärt, wird er abgeschlossen und im Projektplan gespiegelt.
+
+## Konservativer Stresstest: Parameter statt Scheinsensitivität
+
+Die App unterscheidet ausdrücklich zwischen einem wirklich konservativen Szenario und einem nur kopierten Basisszenario. Wenn Basis und konservativ bei NPV, IRR oder EOG-Wirkung identisch oder nahezu identisch sind, erscheint **Stresstest offen**. Das bedeutet nicht, dass das Portfolio robust ist, sondern dass noch keine eigenständige Sensitivität gepflegt wurde.
+
+Die Stresstest-Workbench liegt unter **Grundlagen → Bearbeiten einblenden → Konservativer Stresstest / Stresstest-Parameter**. Dort werden Basiswert und konservativer Wert gegenübergestellt, zum Beispiel Attributionsdeckel, Q-/E-Faktor, Mindest-Diskontsatz und Umgang mit Wirkannahmen. Nach der Parametrisierung gehört das Ergebnis in die Befassung: Welche Parameter wurden geschärft, warum wurden genau diese Werte gewählt, trägt der konservative Fall weiter und welche Punkte bleiben offen?
+
+## Evidenz & Systeme: Sidecar als Arbeitsraum für Quellen, Datenqualität und Steuerungsfähigkeit
 
 Nicht jedes bewertungsrelevante Wissen ist eine Maßnahme. In einer Planungsrunde tauchen Quellen, Datenqualitätsfragen, vorgelagerte Netzthemen, Anschlussanfragen, Asset-Mapping, Steuerbarkeit, Wärmeplanung oder externe Abhängigkeiten auf. Diese Informationen dürfen nicht in die Maßnahmenliste „hineingedrückt“ werden, weil sie sonst wie CAPEX- oder EOG-wirksame Objekte wirken könnten. Sie dürfen aber auch nicht außerhalb des Arbeitsstands verschwinden.
 
@@ -129,7 +160,7 @@ Nicht jedes bewertungsrelevante Wissen ist eine Maßnahme. In einer Planungsrund
 
 **Fachliche Frage:** Ist dieser Punkt eine Maßnahme oder ein Kontext-/Evidenzobjekt? Wird daraus sofort eine Rechenwirkung, oder ist es zunächst ein Prüfauftrag für Datenqualität, Quelle, Steuerungsfähigkeit oder Szenarioannahme?
 
-**App-Beitrag:** Der Bereich **„Kontext & Evidenz“** führt solche Sidecar-Objekte getrennt von der Maßnahmenliste. Jedes Objekt erhält Sparte, Objektklasse, Status, Evidenzstatus, Rechenwirkung, Sensitivität, Exportstatus, Quellenreferenzen, offene Fragen und optionale Verknüpfungen zu Maßnahmen oder Szenarien. Strom nutzt andere Einstiegskategorien als Gas: Bei Strom stehen zum Beispiel Netzkoppelung, Lastanfragen, Steuerbarkeit, Redispatch, iMSys/CLS, Netzfahrplan oder Datenqualität im Vordergrund; bei Gas eher Kunden-/Lastpfade, Stilllegung/Rückbau, Wärmeplanung, Umwidmung/Wasserstofffähigkeit, No-Regret-Kontext oder Asset-Mapping.
+**App-Beitrag:** Der Bereich **„Evidenz & Systeme“** führt solche Sidecar-Objekte getrennt von der Maßnahmenliste. Jedes Objekt erhält Sparte, Objektklasse, Status, Evidenzstatus, Rechenwirkung, Sensitivität, Exportstatus, Quellenreferenzen, offene Fragen und optionale Verknüpfungen zu Maßnahmen oder Szenarien. Strom nutzt andere Einstiegskategorien als Gas: Bei Strom stehen zum Beispiel Netzkoppelung, Lastanfragen, Steuerbarkeit, Redispatch, iMSys/CLS, Netzfahrplan oder Datenqualität im Vordergrund; bei Gas eher Kunden-/Lastpfade, Stilllegung/Rückbau, Wärmeplanung, Umwidmung/Wasserstofffähigkeit, No-Regret-Kontext oder Asset-Mapping.
 
 **Ergebnis:** Der Arbeitsstand kann erklären, welche Quellen und Datenpfade eine Bewertung stützen oder blockieren, ohne die CAPEX-, OPEX-, RAB-, EOG- oder Portfolio-KPIs zu verunreinigen. Sidecar-Objekte sind standardmäßig nicht KPI-wirksam. Eine Rechenwirkung entsteht nur, wenn sie später bewusst quantifiziert, verknüpft und explizit aktiviert würde.
 
@@ -149,7 +180,7 @@ Bei Gasnetzen reicht eine klassische Reinvestitionssicht nicht aus. Eine Maßnah
 
 **Situation im EVU:** In einer Gas-Planungsrunde wird eine Maßnahme nicht nur als Kostenposition bewertet. Bilanzierung fragt, ob eine Verpflichtung und ein belastbarer Erfüllungszeitpunkt vorliegen. Regulierungsmanagement fragt, ob ein Kostenpfad, KAnEu-/Ist-Kosten-Behandlung oder ein noch unsicherer Ruleset-Stand betroffen ist. Asset Management fragt, ob technisch weiterbetrieben, stillgelegt, zurückgebaut oder umgewidmet werden soll.
 
-**Fachliche Frage:** Welche Herleitung ist erforderlich, bevor ein Wert in Gremienvorlage, Wirtschaftsplan oder Rückstellungsdiskussion auftauchen darf?
+**Fachliche Frage:** Welche Herleitung ist erforderlich, bevor ein Wert in Befassungsvorlage, Wirtschaftsplan oder Rückstellungsdiskussion auftauchen darf?
 
 **App-Beitrag:** Bei Sparte Gas zeigt die App im Maßnahmenformular den **Gas-Transformationspfad**. Dort werden Pfad, Objektart, Pflicht-/Anspruchsgrund, Ewigkeitsvermutung, Rückstellungs-Check, regulatorische Behandlung und Evidenz dokumentiert. Die App formuliert daraus HGB-/Rückstellungsfragen und regulatorische Prüffragen, trifft aber keine automatische Rückstellungs-, Rückbaupflicht- oder Anerkennungsentscheidung. Wenn eine lange Gas-Nutzungsdauer nach Wegfall der Ewigkeitsvermutung über den KANU-/Transformationshorizont hinausläuft, zeigt sie zusätzlich **„Nutzungsdauer-Entscheid erforderlich“** und verlangt eine bewusste fachliche Einordnung, bevor Kennzahlen unkritisch verwendet werden.
 
@@ -159,7 +190,7 @@ Bei Gasnetzen reicht eine klassische Reinvestitionssicht nicht aus. Eine Maßnah
 
 ## Aktualitätsprüfung und GitHub-Support als Vertrauensschicht
 
-Eine Planungsrunde kann mehrere Monate dauern. In dieser Zeit können sich nicht nur Kosten, Projekte oder Gremienfristen verändern, sondern auch die regulatorische Einordnung: neue Festlegungen, Konsultationsstände, Parameterstände oder Hinweise aus der Praxis. Gerade deshalb reicht es nicht, eine offline gespeicherte HTML-Datei nur als Rechenstand zu betrachten. Sie muss auch zeigen, **auf welchem App-Stand und welchem Regulierungsstand** sie beruht.
+Eine Planungsrunde kann mehrere Monate dauern. In dieser Zeit können sich nicht nur Kosten, Projekte oder Befassungsfristen verändern, sondern auch die regulatorische Einordnung: neue Festlegungen, Konsultationsstände, Parameterstände oder Hinweise aus der Praxis. Gerade deshalb reicht es nicht, eine offline gespeicherte HTML-Datei nur als Rechenstand zu betrachten. Sie muss auch zeigen, **auf welchem App-Stand und welchem Regulierungsstand** sie beruht.
 
 **Situation im EVU:** Die Modellverantwortung öffnet im Juni einen Arbeitsstand, der im Januar vorbereitet wurde. Die Datei funktioniert weiterhin offline und enthält alle Nutzdaten. Gleichzeitig stellt sich die Frage: Arbeiten wir noch mit der aktuellen App-Version? Ist der verwendete Regulierungsparameterstand noch derselbe? Gibt es einen neueren Konsultations- oder Festlegungsstand, der für die Vorlage zumindest erwähnt werden muss?
 
@@ -177,7 +208,7 @@ Die Aktion **„Aktualität prüfen“** ist bewusst kein automatischer Hintergr
 
 Typische Nutzung in dieser Story:
 
-- Vor der Entscheidungsvorlage prüft die Modellverantwortung die Aktualität des App- und Ruleset-Stands.
+- Vor der Befassungsvorlage prüft die Modellverantwortung die Aktualität des App- und Ruleset-Stands.
 - Bei einem neueren Regulierungsstand wird die Vorlage nicht automatisch geändert, sondern der Hinweis als Klärpunkt dokumentiert.
 - Bei einer fachlichen Abweichung oder vermuteten Parameteränderung wird ein GitHub-Issue mit öffentlicher Quelle vorbereitet.
 - Wenn GitHub im EVU-Netz nicht erreichbar ist, wird ein Support-Paket exportiert und intern weitergegeben.
@@ -189,7 +220,7 @@ Damit ergänzt die Aktualitätsprüfung die Offline-Fähigkeit, statt sie zu sch
 
 Viele Planungsstände scheitern nicht an fehlenden Zahlen, sondern daran, dass dieselben Zahlen für verschiedene Rollen unterschiedlich erklärt werden müssen. Ein Aufsichtsrat braucht keine Engine-Details, Controlling keine kommunalpolitische Erzählung, Regulierungsmanagement keine vereinfachte Bürgerfassung. Gleichzeitig dürfen sensible Planungsdaten nicht automatisch an einen KI-Dienst übertragen werden.
 
-**Situation im EVU:** Nach der Konsolidierung liegt ein Arbeitsstand mit KPIs, Szenarien, Projektplan, offenen Klärpunkten und Gremienlogik vor. Die Modellverantwortung möchte daraus eine verständliche Management- oder Gremienerklärung vorbereiten. Im Unternehmen ist ein eigenes KI-System freigegeben, aber die Offline-App soll selbst keine Verbindung dorthin aufbauen.
+**Situation im EVU:** Nach der Konsolidierung liegt ein Arbeitsstand mit KPIs, Szenarien, Projektplan, offenen Klärpunkten, Befassungsnotizen und Stresstest-Parametern vor. Die Modellverantwortung möchte daraus eine verständliche Management- oder Befassungserklärung vorbereiten. Im Unternehmen ist ein eigenes KI-System freigegeben, aber die Offline-App soll selbst keine Verbindung dorthin aufbauen.
 
 **Fachliche Frage:** Wie kann die App die Übersetzungsleistung einer KI nutzbar machen, ohne selbst zur Cloud-Anwendung zu werden?
 
@@ -199,12 +230,12 @@ Der Prompt enthält die relevanten Planungsdaten, die Provenienz des Builds, den
 
 **Ergebnis:** Die App sendet nichts. Der Nutzer sieht den Prompt vollständig, kann ihn redigieren, kopieren oder als `.txt` speichern und erst danach bewusst in ein intern freigegebenes KI-System einfügen. Die KI übernimmt dann die Übersetzungsrolle in der Sprache der Zielgruppe, während die Datensouveränität der Offline-App erhalten bleibt.
 
-**Beraterhinweis:** Ein guter Senior Consultant übersetzt denselben Planungsstand je nach Adressat. Der Prompt-Export standardisiert genau diese Übersetzungsvorbereitung: Für das Gremium wird aus KPI-Logik eine Beschluss- und Auflagenlogik; für Controlling wird daraus Budget-, CAPEX/OPEX- und Cashflow-Sicht; für Regulierungsmanagement werden Ruleset, Attribution, Doppelzählung und prüfpflichtige Annahmen sichtbar.
+**Beraterhinweis:** Ein guter Senior Consultant übersetzt denselben Planungsstand je nach Adressat. Der Prompt-Export standardisiert genau diese Übersetzungsvorbereitung: Für den Befassungskreis wird aus KPI-Logik eine Einordnungs- und Klärpunktlogik; für Controlling wird daraus Budget-, CAPEX/OPEX- und Cashflow-Sicht; für Regulierungsmanagement werden Ruleset, Attribution, Doppelzählung, Stresstest-Parameter und prüfpflichtige Annahmen sichtbar.
 
 Typische Nutzung in dieser Story:
 
-- Vor der Entscheidungsvorlage erzeugt die Modellverantwortung einen Management-Prompt und prüft, ob die KI die Auflagenlogik korrekt erklärt.
-- Für die Gremienvorlage wird ein Aufsichtsrat-/Stadtrat-Prompt mit gerundeten Beträgen und ohne interne Notizen erstellt.
+- Vor der Befassungsvorlage erzeugt die Modellverantwortung einen Management-Prompt und prüft, ob die KI Klärpunkte und Befassungslogik korrekt erklärt.
+- Für die Befassungsvorlage wird ein Prompt mit gerundeten Beträgen und ohne interne Notizen erstellt.
 - Regulierungsmanagement nutzt einen eigenen Prompt, um Q/E-Wirkungen, Wirkungsverzüge, Doppelzählungswarnungen und Ruleset-Konfidenz zu prüfen.
 - Projektsteuerung nutzt den PMO-Prompt, um blockierte Aufgaben, nächste fällige Aufgaben und offene Klärpunkte in eine Arbeitsliste zu übersetzen.
 
@@ -224,7 +255,7 @@ Typische Nutzung in dieser Story:
 
 **Situation im EVU:** Die Planungsrunde beginnt nicht mit einer fertigen Excel-Tabelle. Im Raum sitzen Modellverantwortung, Regulierungsmanagement, Controlling, Asset Management und später auch Bilanzierung. Alle kennen einen Teil der Wahrheit: Technik kennt die Notwendigkeit, Controlling kennt den Budgetrahmen, Regulierungsmanagement kennt den regulatorischen Rahmen, aber niemand besitzt allein die entscheidungsreife Gesamtsicht.
 
-**Fachliche Frage:** Welche Entscheidung soll vorbereitet werden? Geht es um eine Budgetfreigabe, eine Portfolio-Priorisierung, eine regulatorische Sensitivität, eine Gremienvorlage oder um die Vorbereitung der nächsten Wirtschaftsplanrunde?
+**Fachliche Frage:** Welche Befassung soll vorbereitet werden? Geht es um eine Budgeteinordnung, eine Portfolio-Priorisierung, eine regulatorische Sensitivität, eine Befassungsvorlage oder um die Vorbereitung der nächsten Wirtschaftsplanrunde?
 
 **App-Beitrag:** Die Startseite ordnet die App als offline-first Werkzeug ein und zwingt nicht sofort in Eingabefelder. Die Rollenwahl macht sichtbar, ob gerade modelliert, geprüft, entschieden oder auditiert wird. Der Prozesshinweis zeigt, dass die Datei einen Arbeitsstand begleitet und nicht nur einen einmaligen Rechenlauf.
 
@@ -327,7 +358,7 @@ Typische Nutzung in dieser Story:
 | Einkauf bestätigt höhere Kosten | Kapitalwert und IRR werden neu bewertet | Budget und Finanzierungspfad müssen aktualisiert werden |
 | Technik bestätigt spätere Inbetriebnahme | AfA- und EOG-Wirkung verschieben sich | Zeitpunkt der Kapitalbindung und Ergebniswirkung ändern sich |
 | Bilanzierung stuft einen Kostenanteil als unsicher aktivierbar ein | Erwartete Kapitalbasis sinkt bzw. wird risikogewichtet | Nicht jede Ausgabe wird automatisch investiv wirksam |
-| Regulierungsmanagement markiert Wirkannahmen als prüfpflichtig | Entscheidungsreife bleibt begrenzt | Die Vorlage braucht Auflagen oder Sensitivitäten |
+| Regulierungsmanagement markiert Wirkannahmen als prüfpflichtig | Entscheidungsreife bleibt begrenzt | Die Vorlage braucht Klärpunkte oder Sensitivitäten |
 
 **Ergebnis:** Das Portfolio wird nicht linear „durchgerechnet“. Neue Fakten ändern Prioritäten, Szenarien und Entscheidungsreife.
 
@@ -356,11 +387,11 @@ Typische Nutzung in dieser Story:
 **Neue Fakten:**
 
 - Technische Wirkung ja, aber nicht vollständig nachgewiesen.
-- Risikoannahmen bleiben für die Beschlusslage erklärungsbedürftig.
+- Risikoannahmen bleiben für die Befassungslage erklärungsbedürftig.
 - Der Modellwert verbessert sich, aber Governance-Hinweise verhindern eine zu einfache Ampelentscheidung.
-- Die spätere Vorlage braucht Sprache für Auflagen, nicht nur für Kennzahlen.
+- Die spätere Vorlage braucht Sprache für Klärpunkte, nicht nur für Kennzahlen.
 
-**Ergebnis:** Das Portfolio kann wirtschaftlich tragfähig sein, obwohl einzelne Wirkannahmen noch Auflagen haben. Damit entsteht eine Beschlussoption mit Bedingungen statt ein hartes Ja/Nein.
+**Ergebnis:** Das Portfolio kann wirtschaftlich tragfähig sein, obwohl einzelne Wirkannahmen noch offen sind. Damit entsteht eine Befassungsgrundlage mit Klärpunkten statt ein hartes Ja/Nein.
 
 **Beraterhinweis:** Nicht erklärbare Effekte sind keine KPIs. Sie sind Klärpunkte. Ein seriöser Beratungsprozess unterscheidet zwischen Rechenlogik, Evidenz und Managemententscheidung.
 
@@ -374,11 +405,11 @@ Typische Nutzung in dieser Story:
 
 ![Konsolidierung mit Managemententscheidung](screenshots/06-konsolidierung-managemententscheidung.png)
 
-**Bild:** Die Managementsicht verdichtet Entscheidungsreife, Jahr-1-Wirkung, IRR, Kapitalwert, Auflagen und nächsten Schritt.
+**Bild:** Die Managementsicht verdichtet Entscheidungsreife, Jahr-1-Wirkung, IRR, Kapitalwert, Klärpunkte und nächsten Schritt.
 
 **Zeitpunkt:** Mai 2027
 
-**Situation im EVU:** Nach mehreren Fachterminen liegen Kosten, Aktivierbarkeit und wesentliche Wirkannahmen vor. Das Managementmeeting soll keine Detaildebatte wiederholen, sondern entscheiden, ob das Portfolio als beschlussreife Vorlage weitergeführt wird.
+**Situation im EVU:** Nach mehreren Fachterminen liegen Kosten, Aktivierbarkeit und wesentliche Wirkannahmen vor. Die Management-Befassung soll keine Detaildebatte wiederholen, sondern einordnen, ob das Portfolio als Befassungsvorlage weitergeführt werden kann.
 
 **Fachliche Frage:** Ist das Portfolio finanzplanerisch tragfähig, regulatorisch erklärbar, technisch begründet und governance-seitig entscheidungsreif?
 
@@ -393,37 +424,37 @@ Typische Nutzung in dieser Story:
 - Regulierungsmanagement akzeptiert die Methodik, verlangt aber Nachverfolgung einzelner Wirkannahmen.
 - Asset Management bestätigt, welche Maßnahmen technisch nicht beliebig verschiebbar sind.
 
-**Ergebnis:** Das Management entscheidet: Die Vorlage soll erstellt werden, aber mit Auflagen. Die App wird damit nicht zum automatischen Genehmigungswerkzeug, sondern zum transparenten Entscheidungsdokument.
+**Ergebnis:** Das Management ordnet ein: Die Vorlage soll erstellt werden, aber mit klar benannten Klärpunkten. Die App wird damit nicht zum automatischen Genehmigungswerkzeug, sondern zum transparenten Arbeitsstand.
 
-**Beraterhinweis:** Eine gute Managementvorlage trennt Beschluss, Begründung und Auflage. Die App sollte genau diese Trennung unterstützen: Was wird freigegeben? Warum? Unter welcher Bedingung? Mit welcher späteren Prüfung?
+**Beraterhinweis:** Eine gute Managementvorlage trennt Einordnung, Begründung und Klärbedarf. Die App sollte genau diese Trennung unterstützen: Was ist belastbar? Warum? Unter welcher Annahme? Mit welcher späteren Prüfung?
 
 ---
 
 <a id="entscheidungsvorlage"></a>
 
-## Meilenstein 6 — Entscheidungsvorlage: Aus Planung wird eine prüfbare Managementunterlage
+## Meilenstein 6 — Befassungsvorlage: Aus Planung wird eine prüfbare Managementunterlage
 
 [Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=entscheidungsvorlage)
 
-![Management-Report Entscheidungsvorlage](screenshots/07-management-report-entscheidungsvorlage.png)
+![Management-Report Befassungsvorlage](screenshots/07-management-report-entscheidungsvorlage.png)
 
 **Bild:** Der Management-Report kombiniert Kennzahlen, Entscheidungsreife, Governance-Hinweise, Arbeitsstand und nächsten Schritt.
 
 **Zeitpunkt:** Juni 2027
 
-**Situation im EVU:** Vor der Gremiensitzung erstellt die Modellverantwortliche den Management-Report. Nach Monaten von Meetings kann jede Person sofort sehen, was beschlossen werden soll, was offen bleibt und welche Auflage in die Vorlage geht.
+**Situation im EVU:** Vor der nächsten Befassung erstellt die Modellverantwortliche den Management-Report. Nach mehreren Befassungen kann jede Person sofort sehen, welcher Arbeitsstand vorliegt, was offen bleibt und welcher Klärbedarf in die Vorlage gehört.
 
 **Fachliche Frage:** Kann ein Dritter nachvollziehen, welche Annahmen zum Zeitpunkt der Entscheidung galten und welche Punkte nicht abschließend geklärt waren?
 
 **App-Beitrag:** Der Report übersetzt Modelllogik in entscheidbare Sprache. Er zeigt nicht nur Zahlen, sondern auch Arbeitsstand, nächster Schritt, offene Punkte und Governance-Hinweise.
 
-**Was EVU-Mitarbeiter wiedererkennen sollen:** Eine Entscheidungsvorlage entsteht selten aus einem einzigen Rechenlauf. Sie entsteht aus abgestimmten Teilbeiträgen: Technik liefert Notwendigkeit und Zeitpunkt, Controlling liefert Budgetanschluss, Regulierungsmanagement liefert Anerkennungslogik, Bilanzierung liefert Aktivierbarkeit und Management verdichtet dies zu einer tragfähigen Beschlussoption.
+**Was EVU-Mitarbeiter wiedererkennen sollen:** Eine Befassungsvorlage entsteht selten aus einem einzigen Rechenlauf. Sie entsteht aus abgestimmten Teilbeiträgen: Technik liefert Notwendigkeit und Zeitpunkt, Controlling liefert Budgetanschluss, Regulierungsmanagement liefert Anerkennungslogik, Bilanzierung liefert Aktivierbarkeit und Management verdichtet dies zu einer tragfähigen Einordnung.
 
 **Neue Fakten / abschließende Einordnung:**
 
 - Das Portfolio ist wirtschaftlich tragfähig.
 - Es gibt weiterhin Blocker bzw. prüfpflichtige Wirkannahmen.
-- Die Vorlage enthält deshalb keine blinde Freigabe, sondern eine Freigabe mit Nachverfolgung.
+- Die Vorlage enthält deshalb keine blinde Einordnung, sondern eine Befassungsgrundlage mit Nachverfolgung.
 - Die finanzielle Sicht bleibt anschlussfähig an Wirtschaftsplan und Controlling, ohne regulatorische Wirkungen zu überdehnen.
 
 **Ergebnis:** Die Entscheidung wird anschlussfähig. Wer später in das Modell schaut, sieht nicht nur Zahlen, sondern auch die damalige Begründung und die vereinbarte Weiterarbeit.
@@ -432,25 +463,25 @@ Typische Nutzung in dieser Story:
 
 <a id="gremium"></a>
 
-## Meilenstein 7 — Gremienvorlage: Aus Modelllogik wird ein beschlussfähiger Text
+## Meilenstein 7 — Präsentation und Befassung: Aus Modelllogik wird ein verständlicher Arbeitsstand
 
 [Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=gremium)
 
-![Gremienvorlage Beschluss](screenshots/08-gremienvorlage-beschluss.png)
+![Befassungsvorlage](screenshots/08-gremienvorlage-beschluss.png)
 
-**Bild:** Die Gremienvorlage reduziert Komplexität, ohne offene Annahmen zu verstecken.
+**Bild:** Die Befassungsvorlage reduziert Komplexität, ohne offene Annahmen zu verstecken.
 
 **Zeitpunkt:** Ende Juni 2027
 
-**Situation im EVU:** Für das Gremium wird die Einseiter-Ansicht genutzt. Die Modellverantwortliche trägt Gremium, Sitzungsdatum und einen neutralen Beschlussvorschlag ein. Die Vorlage übersetzt Rechen- und Governance-Logik in verständliche Entscheidungssprache.
+**Situation im EVU:** Für den Befassungskreis wird die Einseiter-Ansicht genutzt. Die Modellverantwortliche trägt Adressat, Datum und eine neutrale Einordnung ein. Die Vorlage übersetzt Rechen- und Governance-Logik in verständliche Befassungssprache.
 
-**Fachliche Frage:** Was muss ein Gremium wissen, um verantwortlich zu entscheiden, ohne in technische Detailmodellierung gezwungen zu werden?
+**Fachliche Frage:** Was muss ein Befassungskreis wissen, um den Arbeitsstand verantwortlich einzuordnen, ohne in technische Detailmodellierung gezwungen zu werden?
 
-**App-Beitrag:** Die Vorlage enthält Kennzahlen, Begründung, Risiken, Auflagen und Arbeitsstand. Sie unterstützt Druck/PDF und Archivierung, ohne Daten an ein Backend zu senden.
+**App-Beitrag:** Die Vorlage enthält Kennzahlen, Begründung, Risiken, Klärpunkte und Arbeitsstand. Sie unterstützt Druck/PDF und Archivierung, ohne Daten an ein Backend zu senden.
 
-**Aufklärungsleistung:** Gremien benötigen keine technische Detailmodellierung, aber sie benötigen eine faire Darstellung der Entscheidungsgrundlage. Dazu gehören: Warum ist die Maßnahme erforderlich? Welche finanzielle Wirkung wird erwartet? Welche regulatorische Annahme liegt zugrunde? Welche Risiken bleiben? Welche Auflage wird beschlossen?
+**Aufklärungsleistung:** Befassungskreise benötigen keine technische Detailmodellierung, aber sie benötigen eine faire Darstellung des Arbeitsstands. Dazu gehören: Warum ist die Maßnahme erforderlich? Welche finanzielle Wirkung wird erwartet? Welche regulatorische Annahme liegt zugrunde? Welche Risiken bleiben? Welche Klärpunkte müssen weitergeführt werden?
 
-**Entscheidung:** Das Gremium beschließt das priorisierte Maßnahmenpaket vorbehaltlich der dokumentierten Prüfauflagen. Die App dient als Nachweis, welche Annahmen im Moment der Entscheidung galten.
+**Befassung:** Der Befassungskreis ordnet das priorisierte Maßnahmenpaket vorbehaltlich der dokumentierten Prüf- und Klärpunkte ein. Die App dient als Nachweis, welche Annahmen im Moment der Befassung galten.
 
 **Beraterhinweis:** Eine Vorlage ist nicht besser, weil sie jede Zahl enthält. Sie ist besser, wenn sie die entscheidungsrelevanten Zusammenhänge und Unsicherheiten verständlich macht.
 
@@ -458,17 +489,17 @@ Typische Nutzung in dieser Story:
 
 <a id="archiv"></a>
 
-## Meilenstein 8 — Beschluss und Archiv: Wiederaufnahme nach Monaten bleibt möglich
+## Meilenstein 8 — Archiv und Re-Entry: Wiederaufnahme nach Monaten bleibt möglich
 
 [Zur passenden Stelle in der Anwendung springen](https://energychain.github.io/Szenarienrechner-EOG/app.html?story=archiv)
 
-![Archiv und Re-Entry nach Beschluss](screenshots/09-archiv-reentry-abschluss.png)
+![Archiv und Re-Entry nach Befassung](screenshots/09-archiv-reentry-abschluss.png)
 
-**Bild:** Der Re-Entry zeigt, welcher Stand beschlossen wurde und welche Auflagen weiterlaufen.
+**Bild:** Der Re-Entry zeigt, welcher Stand befasst wurde und welche Klärpunkte weiterlaufen.
 
 **Zeitpunkt:** September 2027
 
-**Situation im EVU:** Drei Monate nach dem Beschluss wird die Datei erneut geöffnet. Ohne alte Protokolle zu suchen, sieht die Modellverantwortliche im Prozessbereich: Beschluss gefasst, Umsetzung läuft, Auflagen bleiben Monitoringpunkte, Review nach erster Umsetzungsetappe.
+**Situation im EVU:** Drei Monate nach der Befassung wird die Datei erneut geöffnet. Ohne alte Protokolle zu suchen, sieht die Modellverantwortliche im Prozessbereich: Arbeitsstand befasst, Umsetzung läuft, Klärpunkte bleiben Monitoringpunkte, Review nach erster Umsetzungsetappe.
 
 **Fachliche Frage:** Kann der damalige Entscheidungsstand auch nach Wochen oder Monaten nachvollzogen werden?
 
@@ -476,7 +507,7 @@ Typische Nutzung in dieser Story:
 
 **Warum das im EVU-Alltag wichtig ist:** Planungs- und Investitionsentscheidungen werden häufig über Monate weitergereicht. Personen wechseln, Termine verschieben sich, Annahmen altern. Ein wiederaufnahmefähiges Modell hilft, nicht wieder bei null zu beginnen.
 
-**Ergebnis:** Die Planungsrunde endet nicht mit dem Beschluss. Die offenen Wirkannahmen werden als Monitoringpunkte in die Umsetzung übertragen.
+**Ergebnis:** Die Planungsrunde endet nicht mit einer Befassung. Die offenen Wirkannahmen werden als Monitoringpunkte in die Umsetzung übertragen.
 
 ---
 
@@ -496,7 +527,7 @@ Typische Nutzung in dieser Story:
 
 **Governance-Sicht:** Wenn die technische Wirkung plausibel, aber noch nicht vollständig belegt ist, gehört sie nicht als harte Wahrheit in den Basiscase. Sie wird als Annahme oder prüfpflichtiger Punkt dokumentiert.
 
-**Beschlusslogik:** Freigabe kann sinnvoll sein, wenn technische Notwendigkeit, Budgetfähigkeit und Auflagen klar sind. Die App zeigt dann nicht nur „lohnt sich“, sondern „unter welchen Annahmen und mit welchen offenen Punkten ist die Entscheidung vertretbar“.
+**Befassungslogik:** Eine positive Einordnung kann sinnvoll sein, wenn technische Notwendigkeit, Budgetfähigkeit und Klärstatus transparent sind. Die App zeigt dann nicht nur „lohnt sich“, sondern „unter welchen Annahmen und mit welchen offenen Punkten ist die Weiterarbeit vertretbar“.
 
 ## Wie Ergebnisse zu lesen sind
 
@@ -522,7 +553,7 @@ Typische Nutzung in dieser Story:
 
 ## Warum offline-first fachlich relevant ist
 
-Finanzplanung in regulierten Sparten arbeitet mit sensiblen Daten: Investitionsprogramm, Kostenannahmen, regulatorische Werte, Projektzeitpläne, interne Prioritäten und Gremienunterlagen. Ein offline lauffähiges Werkzeug reduziert die Hürde, solche Daten strukturiert zu bearbeiten, ohne sofort eine Plattform-, Cloud- oder Datenschutzentscheidung treffen zu müssen.
+Finanzplanung in regulierten Sparten arbeitet mit sensiblen Daten: Investitionsprogramm, Kostenannahmen, regulatorische Werte, Projektzeitpläne, interne Prioritäten und Befassungsunterlagen. Ein offline lauffähiges Werkzeug reduziert die Hürde, solche Daten strukturiert zu bearbeiten, ohne sofort eine Plattform-, Cloud- oder Datenschutzentscheidung treffen zu müssen.
 
 Offline-first heißt in diesem Projekt:
 
@@ -554,7 +585,7 @@ Die fiktive Planungsrunde zeigt drei zentrale Nutzungsmuster:
 
 - **Zu Beginn:** Der geführte Start und die Kontext-Hilfe machen aus leeren Eingabefeldern eine fachliche Datenanforderung.
 - **Während der Runde:** Maßnahmen, Szenarien und Wirkannahmen werden iterativ angepasst, ohne offene Punkte zu verstecken.
-- **Am Ende und danach:** Report, Gremienvorlage und Prozessstatus konservieren nicht nur Kennzahlen, sondern auch Arbeitsstand, Auflagen und nächsten Schritt.
+- **Am Ende und danach:** Report, Befassungsvorlage und Prozessstatus konservieren nicht nur Kennzahlen, sondern auch Arbeitsstand, Klärpunkte und nächsten Schritt.
 
 Damit wird die App zu einem Begleiter für echte Finanzplanung in regulierten Sparten: nicht als deterministische Entscheidungsmaschine, nicht als isolierter EOG-Rechner, sondern als nachvollziehbarer, lokaler und prüfbarer Entscheidungsraum für VNB-Portfolios.
 
