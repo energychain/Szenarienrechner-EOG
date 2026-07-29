@@ -1170,6 +1170,11 @@
       box-shadow: 0 12px 28px rgba(15, 23, 42, .07);
     }
 
+    .clarification-workbench-panel {
+      display: grid;
+      gap: 12px;
+    }
+
     .clarification-audit-banner span,
     .clarification-audit-banner p {
       display: block;
@@ -2055,6 +2060,36 @@
     .dialog-body {
       padding: 16px;
       overflow: auto;
+    }
+
+    .clarification-split-modal .dialog {
+      width: min(1180px, 96vw);
+      max-height: min(820px, 94vh);
+    }
+
+    .clarification-split-modal .dialog-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+      gap: 16px;
+      align-items: start;
+      overflow: auto;
+      background: linear-gradient(90deg, #ffffff 0, #ffffff calc(100% - 396px), #f8fbfc calc(100% - 396px), #f8fbfc 100%);
+    }
+
+    .clarification-split-modal .dialog-body > :not(#measureClarificationAuditBanner) {
+      grid-column: 1;
+      min-width: 0;
+    }
+
+    .clarification-split-modal #measureClarificationAuditBanner {
+      grid-column: 2;
+      grid-row: 1 / span 24;
+      position: sticky;
+      top: 0;
+      max-height: calc(min(820px, 94vh) - 126px);
+      overflow: auto;
+      margin: 0;
+      align-self: start;
     }
 
     .ai-prompt-output {
@@ -3047,6 +3082,8 @@
       .footer-inner { align-items: flex-start; flex-direction: column; }
       .footer-meta { justify-content: flex-start; }
       .grid2, .kpis, .summary-hero, .meeting-grid, .report-head, .report-summary, .period-summary, .helper-grid, .project-plan-summary, .clarification-workbench-grid { grid-template-columns: 1fr; }
+      .clarification-split-modal .dialog-body { display: block; background: #fff; }
+      .clarification-split-modal #measureClarificationAuditBanner { position: static; max-height: none; margin-bottom: 14px; }
       .project-plan-milestone header, .project-task { grid-template-columns: 1fr; display: grid; }
       .bridge-grid { grid-template-columns: 1fr; }
       .bridge-operator { transform: rotate(90deg); }

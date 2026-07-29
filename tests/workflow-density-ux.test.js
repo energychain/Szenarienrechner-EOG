@@ -28,6 +28,8 @@ describe('workflow density and clarification UX fixes', () => {
   it('lets users edit data and audit note in one clarification workbench and returns to the kanban', () => {
     expect(ui).toContain('Aufgabe: ${esc(target.task)}');
     expect(ui).toContain('Daten & Befassung bearbeiten');
+    expect(ui).toContain('Befassung zum aktiven Klärpunkt');
+    expect(ui).toContain('Links bleibt die Maßnahme bearbeitbar');
     expect(ui).toContain('Befassungsnotiz speichern');
     expect(ui).toContain('Klärpunkt abschließen');
     expect(ui).toContain('Zurück zu Prüfen & Klären');
@@ -35,9 +37,13 @@ describe('workflow density and clarification UX fixes', () => {
     expect(ui).toContain('Nächster Klärfall');
     expect(ui).toContain('ensureClarificationProjectTask(item');
     expect(ui).toContain('projectTaskIdForClarification');
+    expect(ui).toContain('function expertWorkItems()');
+    expect(ui).toContain('|| expertWorkItems().find(item => item.key === key)');
+    expect(ui).toContain('measureEditNavigationClarificationKeys = workflowItems.map');
     expect(ui).toContain("measureEditReturnView = 'expertWork'");
     expect(ui).toContain('saveMeasureClarificationFromWorkbench');
     expect(ui).toContain('saveMeasureClarificationProgressFromWorkbench');
+    expect(css).toContain('.clarification-split-modal #measureClarificationAuditBanner');
     expect(ui).not.toContain('Nächster Schritt: Ursache bearbeiten, danach Klärnotiz speichern.');
     expect(html).not.toContain('Datenstelle bearbeiten');
     expect(html).toContain('Maßnahmennotiz');

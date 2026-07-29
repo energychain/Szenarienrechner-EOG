@@ -752,26 +752,31 @@ function renderWorkItemCard(item) {
   `;
 }
 
-function renderExpertWorkList() {
-  const node = document.getElementById('expertWorkList');
-  if (!node) return;
+function expertWorkItems() {
   const impactItems = reviewRequiredImpacts(true).map(item => ({
     key: item.measure.id + ':' + item.id,
     measureId: item.measure.id,
+    impactId: item.id,
     title: item.title,
     measure: item.measure.name,
     area: impactWorkArea(item),
     detail: `${impactAreaLabel(item.area)} · ${confidenceLabels[item.confidence]} · ${impactGovernanceLabel(item.governance)}${item.note ? ' · ' + item.note : ''}`,
     priority: clarificationPriorityFor({ area: item.area, title: item.title, detail: item.note, type: 'impact' }),
-    status: 'open',
+    status: clarificationStatus[item.measure.id + ':' + item.id]?.status || 'open',
     type: 'impact'
   }));
   const clarificationWork = clarificationItems().map(item => ({
     ...item,
     area: item.area === 'Risiko' || item.area === 'Q-Element' ? 'technik' : item.area === 'Portfolio' || item.area === 'Kostenbasis' ? 'vnb' : 'controlling',
-    type: 'clarification'
+    type: item.type || 'clarification'
   }));
-  const items = [...impactItems, ...clarificationWork]
+  return [...impactItems, ...clarificationWork];
+}
+
+function renderExpertWorkList() {
+  const node = document.getElementById('expertWorkList');
+  if (!node) return;
+  const items = expertWorkItems()
     .filter(item => expertFilter === 'all' || item.area === expertFilter);
   if (!items.length) {
     node.innerHTML = '<div class="empty-state"><div class="empty-icon">✓</div><strong>Alles geklärt</strong><p>Für den gewählten Bereich liegen keine offenen prüfpflichtigen Punkte vor.</p></div>';
@@ -1462,7 +1467,9 @@ function setPlanningResumeField(field, value) {
 }
 
 function findClarificationItem(key) {
-  return clarificationItems().find(item => item.key === key) || null;
+  return clarificationItems().find(item => item.key === key)
+    || expertWorkItems().find(item => item.key === key)
+    || null;
 }
 
 function renderClarificationAuditModal() {
@@ -1649,7 +1656,7 @@ function openClarificationMeasure(measureId, key = '') {
       }
     };
     const target = clarificationTargetFor(item);
-    const workflowItems = clarificationItems().filter(entry => entry.measureId && entry.status !== 'closed' && (expertFilter === 'all' || (entry.area === item.area || item.area === entry.area)));
+    const workflowItems = expertWorkItems().filter(entry => entry.measureId && entry.status !== 'closed' && (expertFilter === 'all' || entry.area === item.area));
     measureEditNavigationClarificationKeys = workflowItems.map(entry => entry.key);
     measureEditNavigationIds = workflowItems.map(entry => entry.measureId).filter(Boolean);
     measureEditClarificationContext = { key: item.key, title: item.title, note: clarificationStatus[item.key]?.note || '', timestamp, author, projectTaskId: taskId };
@@ -3003,12 +3010,16 @@ function navigateMeasureInCatalog(delta) {
 function openMeasureEditModal() {
   renderDetail();
   updateMeasureStepper();
-  document.getElementById('measureEditModal').classList.remove('hidden');
+  const modal = document.getElementById('measureEditModal');
+  modal.classList.toggle('clarification-split-modal', Boolean(measureEditClarificationContext));
+  modal.classList.remove('hidden');
   focusPendingMeasureField();
 }
 
 function closeMeasureEditModal() {
-  document.getElementById('measureEditModal').classList.add('hidden');
+  const modal = document.getElementById('measureEditModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('clarification-split-modal');
   if (measureEditReturnView) {
     const targetView = measureEditReturnView;
     measureEditReturnView = '';
@@ -5057,36 +5068,38 @@ function renderMeasureClarificationAuditBanner(measure) {
   const timestamp = context.timestamp ? new Date(context.timestamp).toLocaleString('de-DE') : '-';
   banner.classList.remove('hidden');
   banner.innerHTML = `
-    <div class="clarification-workbench-head">
-      <div>
-        <p class="eyebrow">Aktiver Klärpunkt · ${esc(status.status === 'closed' ? 'geklärt' : 'in Bearbeitung')}</p>
-        <strong>${esc(context.title)}</strong>
-        <span>${esc(item.measure || measure?.name || '')} · ${esc(context.author || 'unbekannt')} · ${esc(timestamp)}</span>
+    <aside class="clarification-workbench-panel" aria-label="Befassung zum aktiven Klärpunkt">
+      <div class="clarification-workbench-head">
+        <div>
+          <p class="eyebrow">Aktiver Klärpunkt · ${esc(status.status === 'closed' ? 'geklärt' : 'in Bearbeitung')}</p>
+          <strong>${esc(context.title)}</strong>
+          <span>${esc(item.measure || measure?.name || '')} · ${esc(context.author || 'unbekannt')} · ${esc(timestamp)}</span>
+        </div>
+        <span class="pill warn">Projektplan: ${projectTask ? esc(projectPlanStatusLabels[projectTask.task.status] || projectTask.task.status) : 'in Arbeit'}</span>
       </div>
-      <span class="pill warn">Projektplan: ${projectTask ? esc(projectPlanStatusLabels[projectTask.task.status] || projectTask.task.status) : 'in Arbeit'}</span>
-    </div>
-    <div class="clarification-workbench-grid">
-      <section>
-        <h4>1 · Daten bearbeiten</h4>
-        <p>${esc(target.task)}</p>
-        <button type="button" class="link-button" id="measureClarificationFocusField">Zum Feld: ${esc(target.label)}</button>
-        <p class="hint">Das Datenfeld ist die sachliche Grundlage der Klärung; die Befassungsnotiz dokumentiert den Arbeitsschritt.</p>
-      </section>
-      <section>
-        <h4>2 · Aktuelle Befassung</h4>
-        <label for="measureClarificationNote">Neue Befassungsnotiz</label>
-        <textarea id="measureClarificationNote" rows="3" placeholder="Was wurde in dieser Befassung geprüft, geändert oder offen gelassen? Quelle/Rolle kurz benennen.">${esc(status.draftNote || '')}</textarea>
-        <p id="measureClarificationError" class="form-error" role="alert"></p>
-      </section>
-    </div>
-    ${clarificationBefassungHistoryHtml(status)}
-    <div class="clarification-workbench-foot clarification-workbench-actions">
-      <p>${esc(item.detail || 'Klärpunkt aus der Arbeitsliste; Daten und Befassung werden gemeinsam auditierbar gespeichert.')}</p>
-      <div class="dialog-actions">
-        <button type="button" id="measureClarificationSaveProgress">Befassungsnotiz speichern</button>
-        <button type="button" id="measureClarificationSave" class="primary">Klärpunkt abschließen</button>
+      <div class="clarification-workbench-grid">
+        <section class="clarification-task-card">
+          <h4>Was ist zu tun?</h4>
+          <p>${esc(target.task)}</p>
+          <button type="button" class="link-button" id="measureClarificationFocusField">Zum Feld: ${esc(target.label)}</button>
+          <p class="hint">Links bleibt die Maßnahme bearbeitbar; diese Befassung dokumentiert rechts den Arbeitsschritt.</p>
+        </section>
+        <section class="clarification-note-card">
+          <h4>Aktuelle Befassung</h4>
+          <label for="measureClarificationNote">Neue Befassungsnotiz</label>
+          <textarea id="measureClarificationNote" rows="3" placeholder="Was wurde in dieser Befassung geprüft, geändert oder offen gelassen? Quelle/Rolle kurz benennen.">${esc(status.draftNote || '')}</textarea>
+          <p id="measureClarificationError" class="form-error" role="alert"></p>
+        </section>
       </div>
-    </div>
+      ${clarificationBefassungHistoryHtml(status)}
+      <div class="clarification-workbench-foot clarification-workbench-actions">
+        <p>${esc(item.detail || 'Klärpunkt aus der Arbeitsliste; Daten und Befassung werden gemeinsam auditierbar gespeichert.')}</p>
+        <div class="dialog-actions">
+          <button type="button" id="measureClarificationSaveProgress">Befassungsnotiz speichern</button>
+          <button type="button" id="measureClarificationSave" class="primary">Klärpunkt abschließen</button>
+        </div>
+      </div>
+    </aside>
   `;
 }
 

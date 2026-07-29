@@ -20,13 +20,18 @@ describe('clarification audit UX', () => {
     expect(html).toContain('required');
     expect(html).not.toContain('id="clarificationAuditOpenMeasure"');
     expect(ui).toContain('measureClarificationNote');
+    expect(ui).toContain('Befassung zum aktiven Klärpunkt');
+    expect(ui).toContain('Was ist zu tun?');
+    expect(ui).toContain('Links bleibt die Maßnahme bearbeitbar');
     expect(ui).toContain('Aktuelle Befassung');
     expect(ui).toContain('Befassungsnotiz speichern');
     expect(ui).toContain('Klärpunkt abschließen');
     expect(ui).toContain('clarificationBefassungHistoryHtml');
     expect(ui).toContain('Projektplan: ${projectTask');
+    expect(ui).toContain("modal.classList.toggle('clarification-split-modal'");
     expect(css).toContain('.clarification-audit-banner');
-    expect(css).toContain('.clarification-workbench-grid');
+    expect(css).toContain('.clarification-workbench-panel');
+    expect(css).toContain('.clarification-split-modal .dialog-body');
   });
 
   it('stores clarification status with note, timestamp, author and measure reference', () => {
