@@ -348,6 +348,48 @@
 	          <button type="button" class="scenario" data-scenario="wert">Wert</button>
 	        </div>
 	        <div id="scenarioDiff" class="scenario-diff"></div>
+	        <section id="stressTestWorkbench" class="stress-test-workbench" aria-label="Konservativer Stresstest">
+	          <div class="stress-test-head">
+	            <div>
+	              <p class="eyebrow">Konservativer Stresstest</p>
+	              <h3>Stresstest-Parameter</h3>
+	              <p class="hint">Hier wird festgelegt, wodurch sich das konservative Szenario vom Basisfall unterscheidet. Erst wenn mindestens ein Parameter rechnerisch unterscheidbar ist, kann „Stresstest offen“ verschwinden.</p>
+	            </div>
+	            <div id="stressTestStatus" class="stress-test-status-card"></div>
+	          </div>
+	          <div class="stress-parameter-grid">
+	            <div>
+	              <label for="conservativeAttributionCap">Attributionsdeckel konservativ %</label>
+	              <input id="conservativeAttributionCap" type="number" value="10" min="0" max="100" step="1">
+	              <p class="hint">Deckelt globale Portfolio-/Q-/E-Wirkungen im konservativen Fall.</p>
+	            </div>
+	            <div>
+	              <label for="conservativeQFactor">Q-Faktor konservativ %</label>
+	              <input id="conservativeQFactor" type="number" value="50" min="0" max="100" step="1">
+	              <p class="hint">Reduziert angesetzte Qualitätswirkung gegenüber Basis.</p>
+	            </div>
+	            <div>
+	              <label for="conservativeEFactor">E-/Effizienz-Faktor konservativ %</label>
+	              <input id="conservativeEFactor" type="number" value="50" min="0" max="100" step="1">
+	              <p class="hint">Reduziert angesetzte Effizienz-/EOG-Wirkung gegenüber Basis.</p>
+	            </div>
+	            <div>
+	              <label for="conservativeDiscountRate">Mindest-Diskontsatz konservativ %</label>
+	              <input id="conservativeDiscountRate" type="number" value="" min="0" step="0.1" placeholder="mind. FK-Zins">
+	              <p class="hint">Optionaler Stress für Kapitalwert. Leer = mindestens FK-Zins.</p>
+	            </div>
+	            <div>
+	              <label for="conservativeAssumptionMode">Wirkannahmen im Stresstest</label>
+	              <select id="conservativeAssumptionMode">
+	                <option value="approvedOnly">nur bestätigte Basisannahmen</option>
+	                <option value="basisNoReview">Basisannahmen ohne Review</option>
+	                <option value="includeReview">auch prüfpflichtige Annahmen</option>
+	              </select>
+	              <p class="hint">Für echte Robustheit meist „nur bestätigte Basisannahmen“ verwenden.</p>
+	            </div>
+	          </div>
+	          <p class="hint">Dokumentation: Ergebnis anschließend als Befassung oder Klärpunkt festhalten — welche Stressparameter gesetzt wurden, warum sie angemessen sind und ob die Tragfähigkeit im konservativen Fall hält.</p>
+	        </section>
 	        <div class="grid2" style="margin-top:10px">
           <div>
             <label for="horizon">Horizont Jahre</label>
