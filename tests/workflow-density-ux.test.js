@@ -25,13 +25,16 @@ describe('workflow density and clarification UX fixes', () => {
     expect(css).toContain('body[data-view="measures"] [data-view-panel="measures"] > .table-wrap');
   });
 
-  it('lets users edit a clarification source before writing the closing note and returns to the kanban', () => {
-    expect(ui).toContain('Nächster Schritt: Ursache bearbeiten, danach Klärnotiz speichern.');
-    expect(ui).toContain('Klärung speichern');
-    expect(ui).toContain('Empfohlener Ablauf: erst Datenstelle bearbeiten, dann mit kurzer Notiz auditierbar abschließen.');
+  it('lets users edit data and audit note in one clarification workbench and returns to the kanban', () => {
+    expect(ui).toContain('Aufgabe: ${esc(target.task)}');
+    expect(ui).toContain('Daten & Notiz bearbeiten');
+    expect(ui).toContain('Datenänderung & Klärung speichern');
+    expect(ui).toContain('ensureClarificationProjectTask(item');
+    expect(ui).toContain('projectTaskIdForClarification');
     expect(ui).toContain("measureEditReturnView = 'expertWork'");
-    expect(ui).toContain("openClarificationMeasure(openButton.dataset.measureId, openButton.dataset.clarificationKey || '')");
-    expect(ui).not.toContain('const note = clarificationAuditNoteOrError();\n  if (!note) return;\n  const item = pendingClarificationAudit.item;');
+    expect(ui).toContain('saveMeasureClarificationFromWorkbench');
+    expect(ui).not.toContain('Nächster Schritt: Ursache bearbeiten, danach Klärnotiz speichern.');
+    expect(html).not.toContain('Datenstelle bearbeiten');
   });
 
   it('renders report sidecars as styled cards instead of an unformatted bullet dump', () => {
