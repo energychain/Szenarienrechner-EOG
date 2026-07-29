@@ -458,22 +458,16 @@
           <label class="checkbox-inline"><input id="catalogImportedOnly" type="checkbox"> Import unbestätigt</label>
             </div>
           </section>
-          <section class="catalog-filter-box" aria-labelledby="catalogQuickTitle">
-            <div class="toolbox-head">
-              <strong id="catalogQuickTitle">Schnelllisten</strong>
-              <small>temporäre Sortier-/Top-10-Filter für die Katalogarbeit</small>
-            </div>
+          <details class="catalog-filter-box catalog-secondary-tools" aria-labelledby="catalogQuickTitle">
+            <summary><strong id="catalogQuickTitle">Schnelllisten</strong><small>Top-10 temporär öffnen</small></summary>
             <div class="catalog-controls compact">
               <button type="button" class="catalog-quick" data-quick="npv">Top 10 Kapitalwert</button>
               <button type="button" class="catalog-quick" data-quick="risk">Top 10 Risiko</button>
               <button type="button" class="catalog-quick" data-quick="cost">Top 10 Kosten</button>
             </div>
-          </section>
-          <section class="catalog-filter-box" aria-labelledby="catalogBulkTitle">
-            <div class="toolbox-head">
-              <strong id="catalogBulkTitle">Auswahl bearbeiten</strong>
-              <small>wirkt nur auf angehakte Maßnahmen in der Tabelle</small>
-            </div>
+          </details>
+          <details class="catalog-filter-box catalog-secondary-tools" aria-labelledby="catalogBulkTitle">
+            <summary><strong id="catalogBulkTitle">Auswahl bearbeiten</strong><small>nur angehakte Maßnahmen</small></summary>
             <div class="catalog-controls compact">
               <button type="button" id="bulkImportMeasures">CSV/Excel importieren</button>
               <button type="button" id="exportCatalogCsv">Katalog CSV</button>
@@ -487,7 +481,7 @@
               <button type="button" id="bulkAssignObjective">Ziel zuordnen</button>
               <button type="button" id="bulkAddTag">Tag vergeben</button>
             </div>
-          </section>
+          </details>
         </div>
         <div class="table-wrap">
           <table>
@@ -892,6 +886,7 @@
             <option value="all">alle Sidecars</option>
             <option value="context">Kontext</option>
             <option value="sensitivity">Sensitivitäten</option>
+            <option value="open_questions">offene Prüfpunkte</option>
             <option value="open_bridge_logic">offene Brückenlogik</option>
             <option value="quantified_effect">quantifizierte Wirkung</option>
             <option value="activated">aktivierte Sidecars</option>
