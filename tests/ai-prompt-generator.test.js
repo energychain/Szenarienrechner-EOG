@@ -90,7 +90,7 @@ describe('AI prompt generator', () => {
     expect(prompt).toContain('EOG-Wirkung ist nicht gleich Cashflow');
     expect(prompt).toContain('Basis vs. konservativ');
     expect(prompt).toContain('Diese App sendet nichts an eine KI');
-    expect(prompt).toContain('Interne Freigabe Controlling');
+    expect(prompt).toContain('Interne Befassung Controlling');
     expect(prompt).not.toContain('Budgetrunde intern');
   });
 
@@ -194,5 +194,93 @@ describe('AI prompt generator', () => {
     expect(prompt).toContain('strom_flexibility_review');
     expect((prompt.match(/"agnesRelevant": false/g) || []).length).toBe(0);
     expect((prompt.match(/"agnesRole": "offen"/g) || []).length).toBe(0);
+  });
+
+  it('exports current stress-test parameters and avoids outdated Beschluss/Freigabe framing', () => {
+    const model = {
+      ...demoModel,
+      inputs: {
+        ...demoModel.inputs,
+        conservativeAttributionCap: '25',
+        conservativeQFactor: '40',
+        conservativeEFactor: '30',
+        conservativeDiscountRate: '7.5',
+        conservativeAssumptionMode: 'approvedOnly'
+      }
+    };
+
+    const snapshot = redactModelForPrompt(model, {
+      ...defaultAiPromptOptions,
+      roleId: 'management',
+      dataScope: 'summary'
+    }, { buildInfo: build, ruleset: regulatoryParameterSet });
+    const prompt = buildAiPrompt(model, {
+      ...defaultAiPromptOptions,
+      roleId: 'committee',
+      dataScope: 'summary'
+    }, { buildInfo: build, ruleset: regulatoryParameterSet });
+
+    expect(snapshot.stressTest.parameters.attributionCapPct).toBe(25);
+    expect(snapshot.stressTest.parameters.qFactorPct).toBe(40);
+    expect(snapshot.stressTest.parameters.eFactorPct).toBe(30);
+    expect(snapshot.stressTest.parameters.discountRateFloorPct).toBe(7.5);
+    expect(prompt).toContain('## Konservativer Stresstest / Stresstest-Parameter');
+    expect(prompt).toContain('Befassung');
+    expect(prompt).not.toMatch(/Beschluss|Freigabe|Gremienreife/);
+  });
+
+  it('summarizes governance workbench cards for evidence, documentation and Sidecar questions', () => {
+    const model = {
+      ...demoModel,
+      inputs: { ...demoModel.inputs, sector: 'gas' },
+      measures: [
+        {
+          id: 'm-risk',
+          name: 'Störungsmaßnahme ohne Evidenz',
+          active: true,
+          year: 2027,
+          cost: 10,
+          riskAvoided: 25,
+          note: '',
+          objectiveIds: []
+        }
+      ],
+      sidecar: {
+        objects: [{
+          id: 'ctx-open',
+          type: 'data_quality',
+          division: 'gas',
+          title: 'Offener Datenqualitätskontext',
+          status: 'pruefpflichtig',
+          sidecarType: 'context',
+          evidenceStatus: 'stated',
+          calculationImpact: 'indirect',
+          openQuestions: ['Quelle prüfen'],
+          bridgeLogic: { economicRelation: 'risk_effect', quantificationStatus: 'open', openQuestions: ['Überleitung prüfen'] }
+        }]
+      },
+      clarificationStatus: {
+        'target-mapping:m-risk': { status: 'in_review', notes: [{ note: 'Befassung begonnen', timestamp: '2026-07-29T10:00:00Z' }] }
+      }
+    };
+
+    const snapshot = redactModelForPrompt(model, {
+      ...defaultAiPromptOptions,
+      roleId: 'challenge',
+      dataScope: 'standard'
+    }, { buildInfo: build, ruleset: regulatoryParameterSet });
+    const prompt = buildAiPrompt(model, {
+      ...defaultAiPromptOptions,
+      roleId: 'challenge',
+      dataScope: 'standard'
+    }, { buildInfo: build, ruleset: regulatoryParameterSet });
+
+    expect(snapshot.governanceWorkbench.byColumn.evidence).toBeGreaterThanOrEqual(2);
+    expect(snapshot.governanceWorkbench.byColumn.documentation).toBeGreaterThanOrEqual(2);
+    expect(snapshot.governanceWorkbench.sampleItems.map(item => item.title)).toContain('Störungs-/Risikowirkung belegen');
+    expect(snapshot.governanceWorkbench.sampleItems.map(item => item.title)).toContain('Evidenz-/Sidecar-Prüfpunkt klären');
+    expect(prompt).toContain('## Prüfen & Klären / Befassungs-Workbench');
+    expect(prompt).toContain('Störungs-/Risikowirkung belegen');
+    expect(prompt).toContain('Evidenz-/Sidecar-Prüfpunkt klären');
   });
 });
