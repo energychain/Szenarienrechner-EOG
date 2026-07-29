@@ -3441,11 +3441,6 @@ function renderMeetingFocus(result, first, spread, metrics = portfolioDecisionMe
   document.getElementById('meetingFocusBody').innerHTML = rows[meetingFocus].join('');
 }
 
-
-function akteActionButton(label, view, extra = '') {
-  return `<button type="button" ${extra} data-jump-view="${esc(view)}">${esc(label)}</button>`;
-}
-
 function kanbanCountHtml(openItems) {
   const high = openItems.filter(item => item.priority?.label === 'hoch').length;
   const medium = openItems.filter(item => item.priority?.label === 'mittel').length;
@@ -3465,80 +3460,76 @@ function renderAkteCockpit(result, first, decision, metrics) {
   if (!title) return;
   const maturity = maturityScore();
   const openItems = maturity.openClarifications;
-  const topItems = openItems.slice(0, 5);
   const reliability = workstandReliabilityFor(currentModelData(), result);
   const sidecarStats = sidecarSummary(normalizeSidecar(sidecar));
   const nextTask = projectPlanNextReadyTask(projectPlan);
+  const highClarifications = openItems.filter(item => item.priority?.label === 'hoch').length;
+  const mediumClarifications = openItems.filter(item => item.priority?.label === 'mittel').length;
   const sector = el.sector.value === 'gas' ? 'Gas' : 'Strom';
   title.textContent = `${sector}-Akte · ${phaseLabel(processState.phase)}`;
   document.getElementById('akteSubtitle').textContent = `${result.activeMeasures.length} aktive Maßnahmen · ${maturity.score} % Entscheidungsreife · ${openItems.length} offene Klärpunkte.`;
   document.getElementById('akteDecisionCard').innerHTML = `
     <div class="card-kicker">Entscheidungslage</div>
     <h3>${esc(decision.title)}</h3>
-    <p>${esc(decision.text)}</p>
-    <div class="metric-strip">
-      <span><strong>${fmtTeur(metrics.recurringRegulatoryEog, 1)}</strong>EOG Folgejahr</span>
-      <span><strong>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</strong>IRR indikativ</span>
-      <span><strong>${fmtTeur(result.npv, 1)}</strong>Kapitalwert</span>
+    <div class="metric-strip compact">
+      <span><strong>${fmtTeur(metrics.recurringRegulatoryEog, 1)}</strong>EOG</span>
+      <span><strong>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</strong>IRR</span>
+      <span><strong>${fmtTeur(result.npv, 1)}</strong>NPV</span>
     </div>
-    <div class="card-actions">${akteActionButton('Details prüfen', 'results', 'class="primary"')} ${akteActionButton('Präsentieren', 'presentation')}</div>
+    <span class="card-link-hint">Details öffnen</span>
   `;
   document.getElementById('akteClarificationsCard').innerHTML = `
     <div class="card-kicker">Prüfen & Klären</div>
     <h3>${openItems.length ? `${openItems.length} offene Klärpunkte` : 'Keine offenen Klärpunkte'}</h3>
-    ${kanbanCountHtml(openItems)}
-    <ol class="top-list">${topItems.map(item => `<li><span class="priority-badge priority-${esc(item.priority?.label || 'normal')}">${esc(item.priority?.label || 'normal')}</span><button type="button" data-clarification-jump="${esc(item.key)}">${esc(item.measure)} · ${esc(item.title)}</button></li>`).join('') || '<li>Keine Klärung blockiert die Akte.</li>'}</ol>
-    <div class="card-actions">${akteActionButton('Kanban öffnen', 'expertWork', 'class="primary"')}</div>
+    <div class="kanban-mini compact" aria-label="Klärpunkt-Verteilung">
+      <div><strong>${highClarifications}</strong><span>hoch</span></div>
+      <div><strong>${mediumClarifications}</strong><span>mittel</span></div>
+      <div><strong>${Math.max(openItems.length - highClarifications - mediumClarifications, 0)}</strong><span>normal</span></div>
+    </div>
+    <span class="card-link-hint">Kanban öffnen</span>
   `;
   document.getElementById('akteEvidenceCard').innerHTML = `
     <div class="card-kicker">Evidenz & Systeme</div>
-    <h3>${sidecarStats.total || 0} Sidecar-Objekte · Rückspielweg sichtbar</h3>
-    <div class="status-chips">
+    <h3>${sidecarStats.total || 0} Sidecar-Objekte</h3>
+    <div class="status-chips compact">
       <span class="chip violet">${sidecarStats.withoutCalculationImpact || 0} ohne Rechenwirkung</span>
-      <span class="chip amber">${sidecarStats.openBridgeLogic || 0} offene Brückenlogik</span>
-      <span class="chip teal">${sidecarStats.activated || 0} aktiviert markiert</span>
+      <span class="chip amber">${sidecarStats.openBridgeLogic || 0} offene Brücke</span>
     </div>
-    <p>Quellen, Datenqualität, Systemreferenzen und wirtschaftliche Brücken werden getrennt von Maßnahmen geführt.</p>
-    <div class="card-actions">${akteActionButton('Evidenz prüfen', 'sidecar', 'class="primary"')}</div>
+    <span class="card-link-hint">Evidenz prüfen</span>
   `;
   document.getElementById('akteReliabilityCard').innerHTML = `
     <div class="card-kicker">Belastbarkeit</div>
     <h3>${esc(reliability.verdict)}</h3>
-    <p>${esc(reliability.caveat)}</p>
-    <div class="reliability-mini">${reliability.items.slice(0, 4).map(item => `<span class="${item.severity === 'warn' ? 'amber' : 'green'}"><strong>${esc(item.value)}</strong>${esc(item.label)}</span>`).join('')}</div>
-    <div class="card-actions">${akteActionButton('Arbeitsstand prüfen', 'results')}</div>
+    <div class="reliability-mini compact">${reliability.items.slice(0, 2).map(item => `<span class="${item.severity === 'warn' ? 'amber' : 'green'}"><strong>${esc(item.value)}</strong>${esc(item.label)}</span>`).join('')}</div>
+    <span class="card-link-hint">Arbeitsstand prüfen</span>
   `;
   document.getElementById('akteFlowDiagram').innerHTML = `
     <div class="card-kicker">Governance-Logik</div>
     <h3>Von Daten zur Befassung</h3>
-    <div class="governance-flow" aria-label="Governance-Ablauf">
-      <div><strong>Daten</strong><span>Stammdaten · Systeme</span></div>
-      <div><strong>Maßnahmen</strong><span>Kosten · Timing</span></div>
-      <div><strong>Evidenz</strong><span>Sidecar · Quellen</span></div>
-      <div><strong>Klärung</strong><span>Notiz · Audit</span></div>
-      <div><strong>Entscheidung</strong><span>Report · Präsentation</span></div>
+    <div class="governance-flow compact" aria-label="Governance-Ablauf">
+      <div><strong>Daten</strong></div>
+      <div><strong>Maßnahmen</strong></div>
+      <div><strong>Evidenz</strong></div>
+      <div><strong>Klärung</strong></div>
+      <div><strong>Entscheidung</strong></div>
     </div>
+    <span class="card-link-hint">Präsentationspfad öffnen</span>
   `;
   document.getElementById('akteNextStepCard').innerHTML = `
-    <div class="card-kicker">Nächster sinnvoller Schritt</div>
+    <div class="card-kicker">Nächster Schritt</div>
     <h3>${esc(processState.resume?.nextStep || nextTask?.task?.title || 'Arbeitsstand schärfen')}</h3>
-    <p>${nextTask?.task ? `${esc(nextTask.task.ownerRole)} · Ergebnis: ${esc(nextTask.task.resultArtifact || 'Arbeitsvermerk')}` : 'Noch kein nächster Schritt festgelegt.'}</p>
-    <div class="card-actions">${akteActionButton('Projektplan öffnen', 'projectPlan')} ${akteActionButton('Export vorbereiten', 'report')}</div>
+    <p class="compact-note">${nextTask?.task ? esc(nextTask.task.ownerRole) : 'Projektplan ergänzen'}</p>
+    <span class="card-link-hint">Projektplan öffnen</span>
   `;
   document.getElementById('akteKanbanPreview').innerHTML = `
     <div class="card-kicker">Klärpunkt-Kanban</div>
-    <h3>Bekanntes Arbeitsmuster statt langer Liste</h3>
-    <div class="kanban-board mini-board">
-      <div><strong>Offen</strong>${topItems.slice(0, 3).map(item => `<span>${esc(item.title)}</span>`).join('') || '<span>leer</span>'}</div>
-      <div><strong>In Prüfung</strong><span>per Klärnotiz auditierbar</span></div>
-      <div><strong>Geklärt</strong><span>Zeitstempel + Notiz</span></div>
-    </div>
+    <h3>Offene Punkte als Arbeitsboard</h3>
+    <span class="card-link-hint">Prüfen & Klären öffnen</span>
   `;
   document.getElementById('aktePresentationPreview').innerHTML = `
     <div class="card-kicker">Meeting-Modus</div>
     <h3>Präsentieren und zurück bearbeiten</h3>
-    <p>Folien zeigen Arbeitsstand, Entscheidung, Wasserfall, Klärungen und nächsten Prüfauftrag. Jede Folie kann zurück zur passenden Bearbeitung springen.</p>
-    <div class="card-actions">${akteActionButton('Präsentation starten', 'presentation', 'class="primary"')}</div>
+    <span class="card-link-hint">Präsentation starten</span>
   `;
 }
 
@@ -6029,6 +6020,15 @@ loadRole();
 applyRole(currentRole, false);
 loadExpertMode();
 setExpertMode(expertMode, false);
+
+document.addEventListener('keydown', event => {
+  const jump = event.target.closest?.('[data-jump-view][role="button"]');
+  if (!jump || !['Enter', ' '].includes(event.key)) return;
+  event.preventDefault();
+  document.body.classList.remove('show-start');
+  setView(jump.dataset.jumpView);
+  renderAll();
+});
 
 document.addEventListener('click', event => {
   const jump = event.target.closest('[data-jump-view]');

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync('index.html', 'utf8');
 const ui = readFileSync('src/ui.js', 'utf8');
+const css = readFileSync('src/styles.css', 'utf8');
 const inventory = readFileSync('docs/UX_ELEMENT_INVENTORY.md', 'utf8');
 const design = readFileSync('docs/UX_AKTE_REDESIGN.md', 'utf8');
 
@@ -33,6 +34,20 @@ describe('Akte redesign inventory coverage', () => {
     ].forEach(id => {
       expect(html).toContain(`id="${id}"`);
     });
+  });
+
+  it('keeps the cockpit cards compact and opens details through card clicks', () => {
+    ['akteDecisionCard', 'akteClarificationsCard', 'akteEvidenceCard', 'akteReliabilityCard', 'akteFlowDiagram', 'akteNextStepCard'].forEach(id => {
+      expect(html).toContain(`id="${id}"`);
+      expect(html).toMatch(new RegExp(`id="${id}"[^>]+role="button"[^>]+data-jump-view=`));
+    });
+    expect(ui).toContain('card-link-hint');
+    expect(ui).not.toContain('data-clarification-jump="${esc(item.key)}"');
+    expect(css).toContain('.akte-lower-grid {\n  display: none;');
+    expect(css).toContain('body[data-view="akte"] .sticky-kpis');
+    expect(css).toContain('@media (max-height: 700px) and (min-width: 1181px)');
+    expect(css).toContain('.akte-card:hover');
+    expect(css).toContain('-webkit-line-clamp: 2;');
   });
 
   it('renders the new guided cockpit and presentation mode from the existing model state', () => {
