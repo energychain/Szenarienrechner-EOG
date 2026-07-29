@@ -977,6 +977,74 @@
       margin: 2px 0;
     }
 
+    .stress-test-workbench {
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid #f0d28d;
+      border-radius: 12px;
+      background: #fff9ed;
+    }
+
+    .stress-test-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .stress-test-head h3 {
+      margin: 2px 0 0;
+    }
+
+    .stress-test-status-card {
+      display: grid;
+      gap: 7px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 12px;
+    }
+
+    .stress-test-status-card.warn {
+      border-color: #e0a11b;
+      background: #fff7df;
+    }
+
+    .stress-test-status-card.good {
+      border-color: #6fc18b;
+      background: #f1fff5;
+    }
+
+    .stress-comparison-list {
+      display: grid;
+      gap: 4px;
+    }
+
+    .stress-comparison-list div {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
+      padding-top: 4px;
+    }
+
+    .stress-comparison-list span {
+      color: var(--muted);
+    }
+
+    .stress-parameter-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .inline-action {
+      margin-left: 6px;
+      vertical-align: baseline;
+    }
+
     button {
       min-height: 32px;
       border: 1px solid var(--line);
@@ -3096,7 +3164,7 @@
       .app-footer { padding: 0 12px 16px; }
       .footer-inner { align-items: flex-start; flex-direction: column; }
       .footer-meta { justify-content: flex-start; }
-      .grid2, .kpis, .summary-hero, .meeting-grid, .report-head, .report-summary, .period-summary, .helper-grid, .project-plan-summary, .clarification-workbench-grid { grid-template-columns: 1fr; }
+      .grid2, .kpis, .summary-hero, .meeting-grid, .report-head, .report-summary, .period-summary, .helper-grid, .project-plan-summary, .clarification-workbench-grid, .stress-test-head, .stress-parameter-grid { grid-template-columns: 1fr; }
       .clarification-split-modal .dialog-body { display: block; background: #fff; }
       .clarification-split-modal #measureClarificationAuditBanner { position: static; max-height: none; margin-bottom: 14px; }
       .project-plan-milestone header, .project-task { grid-template-columns: 1fr; display: grid; }

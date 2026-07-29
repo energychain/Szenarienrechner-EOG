@@ -3529,6 +3529,60 @@ function renderScenarioDiff() {
     : `<strong>${scenarioLabel(scenario)}:</strong> keine zusätzlichen Szenarioanpassungen. Es gelten die eingegebenen Annahmen.`;
 }
 
+function stressParameterItems() {
+  const base = currentParams();
+  const conservative = currentScenarioParams('konservativ');
+  return [
+    {
+      label: 'Attribution',
+      basis: fmtPct(base.attribution * 100, 0),
+      stress: fmtPct(conservative.attribution * 100, 0)
+    },
+    {
+      label: 'Q-Faktor',
+      basis: fmtPct(base.qDelta * 100, 2),
+      stress: fmtPct(conservative.qDelta * 100, 2)
+    },
+    {
+      label: 'E-/Effizienz-Faktor',
+      basis: fmtPct(base.eDelta * 100, 2),
+      stress: fmtPct(conservative.eDelta * 100, 2)
+    },
+    {
+      label: 'Diskontsatz',
+      basis: fmtPct(base.discountRate * 100, 1),
+      stress: fmtPct(conservative.discountRate * 100, 1)
+    },
+    {
+      label: 'Wirkannahmen',
+      basis: 'Basisannahmen',
+      stress: conservative.assumptionMode === 'includeReview'
+        ? 'inkl. prüfpflichtig'
+        : conservative.assumptionMode === 'basisNoReview'
+          ? 'ohne Review'
+          : 'nur bestätigt'
+    }
+  ];
+}
+
+function renderStressTestWorkbench(metrics = null) {
+  const node = document.getElementById('stressTestStatus');
+  if (!node) return;
+  const basis = currentPortfolio(currentScenarioParams('basis'));
+  const conservative = currentPortfolio(currentScenarioParams('konservativ'));
+  const resolvedMetrics = metrics || portfolioDecisionMetrics(basis, conservative);
+  const open = resolvedMetrics.conservativeGate === 'stresstest_ausstehend';
+  const items = stressParameterItems();
+  node.className = 'stress-test-status-card ' + (open ? 'warn' : 'good');
+  node.innerHTML = `
+    <strong>${open ? 'Stresstest offen' : 'Stresstest unterscheidbar'}</strong>
+    <span>${open ? 'Basis und Konservativ liefern derzeit gleiche Ergebniswerte.' : 'Konservativ wird als eigener Fall gerechnet.'}</span>
+    <div class="stress-comparison-list">
+      ${items.map(item => `<div><span>${esc(item.label)}</span><strong>${esc(item.basis)} → ${esc(item.stress)}</strong></div>`).join('')}
+    </div>
+  `;
+}
+
 function decisionFor(result, conservativeResult = null) {
   const metrics = portfolioDecisionMetrics(result, conservativeResult);
   const decision = metrics.governanceDecision;
@@ -3554,6 +3608,18 @@ function markStickyChange(node) {
   node.classList.add('changed');
   window.clearTimeout(node._changeTimer);
   node._changeTimer = window.setTimeout(() => node.classList.remove('changed'), 900);
+}
+
+function openStressParameters() {
+  scenario = 'konservativ';
+  basisEditing = true;
+  document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === scenario));
+  setView('basis');
+  renderAll();
+  const workbench = document.getElementById('stressTestWorkbench');
+  workbench?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('conservativeDiscountRate')?.focus?.();
+  setStorageStatus('Konservative Stresstest-Parameter geöffnet. Ergebnis anschließend als Befassung dokumentieren.');
 }
 
 function setDelta(id, delta) {
@@ -3665,8 +3731,14 @@ function renderManagementSummary(result, first, spread, decision, metrics) {
     if (stromCaveats.length) document.getElementById('managementCaveat').textContent += ' Strom-Prüfrahmen: ' + stromCaveats.join(' ');
   }
 
+  if (result.activeMeasures.length && metrics.conservativeGate === 'stresstest_ausstehend') {
+    document.getElementById('managementCaveat').insertAdjacentHTML('beforeend', ' <button type="button" class="link-button inline-action" data-action="openStressParameters">Stresstest-Parameter bearbeiten</button>');
+  }
+
   document.getElementById('managementNextStep').textContent = result.activeMeasures.length
-    ? 'Im Meeting die drei offenen Annahmen festziehen: Aktivierungsprofil, regulatorische Anerkennung und zurechenbare Portfolio-/Risikowirkung.'
+    ? metrics.conservativeGate === 'stresstest_ausstehend'
+      ? 'Konservatives Szenario parametrisieren und das Ergebnis als Befassung dokumentieren.'
+      : 'Im Meeting die drei offenen Annahmen festziehen: Aktivierungsprofil, regulatorische Anerkennung und zurechenbare Portfolio-/Risikowirkung.'
     : 'Eine Maßnahme aktivieren, Demodaten laden oder eine neue Maßnahme geführt erfassen.';
 
 	      const pills = [
@@ -6450,6 +6522,7 @@ function renderAll(persist = true) {
   syncCommitteeFields();
   renderGlobalValidation();
   renderScenarioDiff();
+  renderStressTestWorkbench();
   renderBasisSummaryCards();
   renderStrategyEditor();
   renderMeasures();
@@ -6796,6 +6869,13 @@ document.getElementById('clarificationCounter')?.addEventListener('click', openC
 
 document.addEventListener('click', event => {
   if (!event.target.closest('.info-dot') && !event.target.closest('#fieldHelpPopover')) hideFieldHelp();
+});
+
+document.addEventListener('click', event => {
+  const action = event.target.closest('[data-action="openStressParameters"]');
+  if (!action) return;
+  event.preventDefault();
+  openStressParameters();
 });
 
 document.querySelectorAll('.scenario').forEach(button => {

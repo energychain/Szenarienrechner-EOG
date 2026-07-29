@@ -6,7 +6,9 @@ export const inputIds = [
   'capitalCostMode', 'equityShare', 'equityReturnRate', 'debtShare', 'debtReturnRate', 'deductionCapital',
   'annualEnergyGwh', 'householdConsumptionKwh',
   'horizon', 'discountRate', 'kanuEndYear', 'degressiveRate', 'taxFactor',
-  'portfolioAttribution', 'capexLagYears', 'opexLagYears', 'qeLagYears', 'qDelta', 'eDelta'
+  'portfolioAttribution', 'capexLagYears', 'opexLagYears', 'qeLagYears', 'qDelta', 'eDelta',
+  'conservativeAttributionCap', 'conservativeQFactor', 'conservativeEFactor',
+  'conservativeDiscountRate', 'conservativeAssumptionMode'
 ];
 export const inputDefaults = {
   capitalCostMode: 'simple',
@@ -14,7 +16,12 @@ export const inputDefaults = {
   equityReturnRate: '5.0',
   debtShare: '60',
   debtReturnRate: '5.0',
-  deductionCapital: '0'
+  deductionCapital: '0',
+  conservativeAttributionCap: '10',
+  conservativeQFactor: '50',
+  conservativeEFactor: '50',
+  conservativeDiscountRate: '',
+  conservativeAssumptionMode: 'approvedOnly'
 };
 
 export const detailIds = [

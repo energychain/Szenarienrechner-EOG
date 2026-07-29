@@ -201,6 +201,10 @@ export function params(inputs, overrides = {}) {
   const regulationProcedure = inputs.regulationProcedure === 'simplified' ? 'simplified' : 'standard';
   const qDelta = regulationProcedure === 'simplified' ? 0 : finiteNumber(inputs.qDelta) / 100;
   const eDelta = regulationProcedure === 'simplified' ? 0 : finiteNumber(inputs.eDelta) / 100;
+  const conservativeDiscountRateRaw = finiteNumber(inputs.conservativeDiscountRate, NaN);
+  const conservativeAssumptionMode = ['approvedOnly', 'basisNoReview', 'includeReview'].includes(inputs.conservativeAssumptionMode)
+    ? inputs.conservativeAssumptionMode
+    : 'approvedOnly';
   return {
     sector,
     regulationProcedure,
@@ -219,6 +223,13 @@ export function params(inputs, overrides = {}) {
     attribution: clamp(finiteNumber(inputs.portfolioAttribution), 0, 100) / 100,
     qDelta,
     eDelta,
+    conservativeStress: {
+      attributionCap: clamp(finiteNumber(inputs.conservativeAttributionCap, 10), 0, 100) / 100,
+      qFactor: clamp(finiteNumber(inputs.conservativeQFactor, 50), 0, 100) / 100,
+      eFactor: clamp(finiteNumber(inputs.conservativeEFactor, 50), 0, 100) / 100,
+      discountRateFloor: Number.isFinite(conservativeDiscountRateRaw) ? conservativeDiscountRateRaw / 100 : null,
+      assumptionMode: conservativeAssumptionMode
+    },
     annualEnergyGwh: finiteNumber(inputs.annualEnergyGwh, NaN),
     householdConsumptionKwh: finiteNumber(inputs.householdConsumptionKwh, sector === 'gas' ? 15000 : 2900),
     rulesetId: regulatoryParameterSet.id,
@@ -1619,13 +1630,17 @@ export function tariffImpactFor(eogTeur, p) {
 
 export function scenarioParams(baseParams, name) {
   if (name === 'konservativ') {
+    const stress = baseParams.conservativeStress || {};
+    const discountRateFloor = Number.isFinite(stress.discountRateFloor)
+      ? stress.discountRateFloor
+      : baseParams.financingRate;
     return {
       ...baseParams,
-      attribution: Math.min(baseParams.attribution, 0.1),
-      qDelta: baseParams.qDelta * 0.5,
-      eDelta: baseParams.eDelta * 0.5,
-      discountRate: Math.max(baseParams.discountRate, baseParams.financingRate),
-      assumptionMode: 'approvedOnly'
+      attribution: Math.min(baseParams.attribution, Number.isFinite(stress.attributionCap) ? stress.attributionCap : 0.1),
+      qDelta: baseParams.qDelta * (Number.isFinite(stress.qFactor) ? stress.qFactor : 0.5),
+      eDelta: baseParams.eDelta * (Number.isFinite(stress.eFactor) ? stress.eFactor : 0.5),
+      discountRate: Math.max(baseParams.discountRate, discountRateFloor),
+      assumptionMode: stress.assumptionMode || 'approvedOnly'
     };
   }
   if (name === 'wert') {
