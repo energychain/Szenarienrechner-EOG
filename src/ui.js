@@ -4140,8 +4140,34 @@ function presentationSlides(result, first, decision, metrics) {
   const openItems = maturity.openClarifications;
   const reliability = workstandReliabilityFor(currentModelData(), result);
   const waterfall = portfolioWaterfallFor(result);
+  const sectorLabel = el.sector.value === 'gas' ? 'Gas' : 'Strom';
+  const phase = phaseLabel(processState.phase);
+  const blockerText = maturity.blockers === 1 ? '1 Blocker' : `${maturity.blockers} Blocker`;
+  const reviewText = maturity.reviewCount === 1 ? '1 prüfpflichtiger Punkt' : `${maturity.reviewCount} prüfpflichtige Punkte`;
   return [
-    { title: 'Diese Akte', eyebrow: 'Arbeitsstand', view: 'akte', body: `${el.sector.value === 'gas' ? 'Gas' : 'Strom'} · ${phaseLabel(processState.phase)} · ${result.activeMeasures.length} aktive Maßnahmen`, visual: maturityRingHtml(maturity.score, maturity.blockers, 120) },
+    {
+      title: `${sectorLabel}-Planungsakte`,
+      eyebrow: 'Startfolie',
+      view: 'akte',
+      body: `Arbeitsstand ${phase} · ${result.activeMeasures.length} aktive Maßnahmen · ${openItems.length} offene Klärpunkte. Die Kennzahl ist der Arbeitsstand-Score, nicht ein Beschlussstatus.`,
+      visual: `
+        <div class="presentation-title-grid">
+          <div class="presentation-maturity-callout">
+            ${maturityRingHtml(maturity.score, maturity.blockers, 132)}
+            <div>
+              <strong>Arbeitsstand-Score</strong>
+              <span>${maturity.score} von 100 Entscheidungsreife</span>
+              <small>${esc(blockerText)} · ${esc(reviewText)}</small>
+            </div>
+          </div>
+          <div class="presentation-title-facts" aria-label="Kontext der Akte">
+            <span><strong>${esc(sectorLabel)}</strong>Sparte</span>
+            <span><strong>${esc(phase)}</strong>Phase</span>
+            <span><strong>${result.activeMeasures.length}</strong>aktive Maßnahmen</span>
+          </div>
+        </div>
+      `
+    },
     { title: decision.title, eyebrow: 'Entscheidungslage', view: 'results', body: decision.text, visual: `<div class="metric-strip large"><span><strong>${fmtTeur(metrics.recurringRegulatoryEog, 1)}</strong>EOG</span><span><strong>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</strong>IRR</span><span><strong>${fmtTeur(result.npv, 1)}</strong>NPV</span></div>` },
     { title: 'EOG ≠ Cashflow', eyebrow: 'Überleitung', view: 'results', body: `${fmtTeur(waterfall.firstFollowYear.regulatoryEogEffect, 1)} regulatorische EOG plus ${fmtTeur(waterfall.firstFollowYear.economicBridge, 1)} wirtschaftliche Überleitung.`, visual: `<div class="presentation-flow"><span>Basis-EOG</span><span>→</span><span>Maßnahmen</span><span>→</span><span>Cashflow-Überleitung</span></div>` },
     { title: `${openItems.length} offene Klärpunkte`, eyebrow: 'Prüfauftrag', view: 'expertWork', body: openItems.slice(0, 4).map(item => `${item.priority?.label || 'normal'}: ${item.measure} · ${item.title}`).join(' | ') || 'Keine offenen Klärpunkte.', visual: kanbanCountHtml(openItems) },
