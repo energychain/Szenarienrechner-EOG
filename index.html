@@ -515,8 +515,8 @@
     <section class="panel app-view hidden" data-view-panel="expertWork" aria-label="Offene Punkte Fachexpertise">
       <div class="section-head-row">
         <div>
-          <h2>Deine offenen Punkte</h2>
-          <p class="hint">Prüfpflichtige Wirkannahmen und Klärpunkte aus dem Modell. Eintrag öffnen, Annahme prüfen, Status setzen.</p>
+          <h2>Klärpunkt-Kanban</h2>
+          <p class="hint">Prüfpflichtige Wirkannahmen und Klärpunkte als Arbeitsboard. Karte öffnen, Ursache bearbeiten oder auditierbar klären.</p>
         </div>
         <div class="segmented compact-segmented" aria-label="Bereich filtern">
           <button type="button" class="expert-filter active" data-expert-filter="all">Alle</button>
@@ -824,7 +824,7 @@
             <button type="button" id="presentationPrev">Zurück</button>
             <span id="presentationCounter" class="pill">1 / 7</span>
             <button type="button" id="presentationNext" class="primary">Weiter</button>
-            <button type="button" data-jump-view="akte">Zur Akte</button>
+            <button type="button" class="presentation-close" data-jump-view="akte">Schließen</button>
           </div>
         </div>
         <div id="presentationDeck" class="presentation-deck" aria-live="polite"></div>
