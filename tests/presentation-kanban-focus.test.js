@@ -42,13 +42,18 @@ describe('presentation focus window and clarification kanban', () => {
     expect(actionIndex).toBeLessThan(measureIndex);
   });
 
-  it('currently derives kanban columns from impact, warning and measure-note clarification items', () => {
+  it('derives deterministic evidence and documentation cards from measures and sidecars', () => {
     expect(ui).toContain('const impactItems = reviewRequiredImpacts(true).map');
     expect(ui).toContain('const noteItems = measures');
     expect(ui).toContain("title: 'Maßnahmennotiz klären'");
     expect(ui).toContain("warning.type === 'possible_double_counting'");
-    expect(ui).toContain('function workItemColumn');
-    expect(ui).toContain("if (label === 'mittel') return 'evidence';");
-    expect(ui).toContain("return 'normal';");
+    expect(ui).toContain('function measureEvidenceItems()');
+    expect(ui).toContain("title: 'Systemreferenz / Rückspielweg ergänzen'");
+    expect(ui).toContain("title: 'Störungs-/Risikowirkung belegen'");
+    expect(ui).toContain("title: 'Ziel-Zuordnung dokumentieren'");
+    expect(ui).toContain('function sidecarClarificationItems()');
+    expect(ui).toContain("title: 'Evidenz-/Sidecar-Prüfpunkt klären'");
+    expect(ui).toContain("if (['high', 'evidence', 'normal'].includes(item.column)) return item.column;");
+    expect(ui).toContain('openSidecarWorkItem');
   });
 });
