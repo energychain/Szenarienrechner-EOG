@@ -9,13 +9,21 @@ describe('presentation focus window and clarification kanban', () => {
   it('renders presentation as a closeable focused meeting window', () => {
     expect(html).toContain('class="presentation-close" data-jump-view="akte"');
     expect(html).toContain('Schließen</button>');
+    expect(html).toContain('<h2>Präsentation</h2>');
     expect(ui).toContain('presentation-slide-content');
     expect(ui).toContain('presentation-body');
+    expect(ui).toContain("title: `${sectorLabel}-Planungsakte`");
+    expect(ui).toContain('Arbeitsstand-Score');
+    expect(ui).toContain('von 100 Entscheidungsreife');
+    expect(ui).toContain('presentation-title-grid');
+    expect(ui).toContain('presentation-maturity-callout');
     expect(css).toContain('body[data-view="presentation"] .compact-akte-nav');
     expect(css).toContain('body[data-view="presentation"] .sticky-kpis');
     expect(css).toContain('body[data-view="presentation"] footer');
     expect(css).toContain('body[data-view="presentation"] main');
     expect(css).toContain('presentation-slide-actions');
+    expect(css).toContain('.presentation-title-grid');
+    expect(css).toContain('.presentation-maturity-callout');
     expect(css).toContain('-webkit-line-clamp: 3;');
   });
 

@@ -28,7 +28,7 @@ await page.getByRole('button', { name: /Demodaten ansehen/ }).click();
 await page.locator('#akteDecisionCard').waitFor({ timeout: 10000 });
 await page.getByRole('button', { name: /^Akte/ }).waitFor({ timeout: 10000 });
 await page.locator('[data-view="presentation"]').first().click();
-await page.getByText('Meeting-Ansicht').waitFor({ timeout: 10000 });
+await page.getByRole('heading', { name: 'Präsentation' }).waitFor({ timeout: 10000 });
 await page.getByRole('button', { name: /Schließen/ }).click();
 await page.locator('.support-tabs').evaluate(menu => menu.setAttribute('open', ''));
 await page.locator('[data-view="projectPlan"]').first().click();
