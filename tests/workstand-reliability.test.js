@@ -82,4 +82,27 @@ describe('workstand reliability dashboard', () => {
     ]));
     expect(reliability.verdict).toBe('prüfpflichtig');
   });
+
+  it('counts open sidecar questions as open reliability work instead of documented objects', () => {
+    const model = {
+      inputs: baseInputs,
+      measures: [],
+      sidecar: {
+        objects: [
+          { id: 'ctx1', type: 'context', division: 'gas', title: 'Transformationspfad', evidenceStatus: 'validated', status: 'pruefpflichtig', openQuestions: ['Gebietspfad prüfen', 'ND/MD/HD abgrenzen'] },
+          { id: 'ctx2', type: 'context', division: 'gas', title: 'Wirkannahmen', evidenceStatus: 'validated', status: 'pruefpflichtig', openQuestions: ['RiskAvoided Owner zuordnen'] },
+          { id: 'ctx3', type: 'context', division: 'gas', title: 'Reportkontext', evidenceStatus: 'validated', status: 'context', openQuestions: [] }
+        ]
+      }
+    };
+    const reliability = workstandReliabilityFor(model, calcPortfolio(model, params(baseInputs)));
+    const sidecarItem = reliability.items.find(item => item.key === 'sidecar-evidence');
+
+    expect(reliability.sidecar).toMatchObject({ total: 3, weakEvidence: 0, openQuestions: 3, dataQualityOpen: 0 });
+    expect(sidecarItem).toMatchObject({
+      severity: 'warn',
+      value: '3 von 6',
+      detail: '3 offene Sidecar-Prüffrage(n), 0 Datenqualitätsobjekt(e) offen.'
+    });
+  });
 });
