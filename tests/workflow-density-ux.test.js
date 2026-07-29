@@ -44,6 +44,8 @@ describe('workflow density and clarification UX fixes', () => {
     expect(ui).toContain('saveMeasureClarificationFromWorkbench');
     expect(ui).toContain('saveMeasureClarificationProgressFromWorkbench');
     expect(css).toContain('.clarification-split-modal #measureClarificationAuditBanner');
+    expect(css).toContain('grid-template-columns: minmax(0, 1fr) minmax(440px, 480px);');
+    expect(css).toContain('.clarification-workbench-actions .dialog-actions');
     expect(ui).not.toContain('Nächster Schritt: Ursache bearbeiten, danach Klärnotiz speichern.');
     expect(html).not.toContain('Datenstelle bearbeiten');
     expect(html).toContain('Maßnahmennotiz');

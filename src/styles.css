@@ -1193,7 +1193,7 @@
 
     .clarification-workbench-grid {
       display: grid;
-      grid-template-columns: minmax(220px, .9fr) minmax(280px, 1.1fr);
+      grid-template-columns: 1fr;
       gap: 12px;
     }
 
@@ -1230,7 +1230,18 @@
     }
 
     .clarification-workbench-actions {
-      align-items: center;
+      align-items: flex-start;
+    }
+
+    .clarification-workbench-actions .dialog-actions {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 0;
+    }
+
+    .clarification-workbench-actions .dialog-actions button {
+      max-width: 100%;
+      white-space: normal;
     }
 
     .clarification-befassung-history {
@@ -2063,17 +2074,17 @@
     }
 
     .clarification-split-modal .dialog {
-      width: min(1180px, 96vw);
+      width: min(1320px, 98vw);
       max-height: min(820px, 94vh);
     }
 
     .clarification-split-modal .dialog-body {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+      grid-template-columns: minmax(0, 1fr) minmax(440px, 480px);
       gap: 16px;
       align-items: start;
       overflow: auto;
-      background: linear-gradient(90deg, #ffffff 0, #ffffff calc(100% - 396px), #f8fbfc calc(100% - 396px), #f8fbfc 100%);
+      background: linear-gradient(90deg, #ffffff 0, #ffffff calc(100% - 496px), #f8fbfc calc(100% - 496px), #f8fbfc 100%);
     }
 
     .clarification-split-modal .dialog-body > :not(#measureClarificationAuditBanner) {
