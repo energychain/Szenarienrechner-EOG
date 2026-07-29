@@ -1222,10 +1222,20 @@ function isOpenClassification(measure = {}) {
 
 function sidecarReliabilitySummary(sidecar = {}) {
   const objects = Array.isArray(sidecar.objects) ? sidecar.objects : [];
-  const weakEvidence = objects.filter(object => ['missing', 'stated', 'conflicting', 'stale'].includes(object.evidenceStatus || 'missing')).length;
+  const weakEvidenceObjects = objects.filter(object => ['missing', 'stated', 'conflicting', 'stale'].includes(object.evidenceStatus || 'missing'));
+  const dataQualityOpenObjects = objects.filter(object => object.type === 'data_quality' && object.status !== 'archived' && object.evidenceStatus !== 'validated');
   const openQuestions = objects.reduce((sum, object) => sum + (Array.isArray(object.openQuestions) ? object.openQuestions.length : 0), 0);
-  const dataQualityOpen = objects.filter(object => object.type === 'data_quality' && object.status !== 'archived' && object.evidenceStatus !== 'validated').length;
-  return { total: objects.length, weakEvidence, openQuestions, dataQualityOpen };
+  const openObjectIds = new Set([...weakEvidenceObjects, ...dataQualityOpenObjects].map(object => object.id || object.title));
+  const documentedObjects = objects.filter(object => !openObjectIds.has(object.id || object.title)).length;
+  const openReliabilityItems = openQuestions + openObjectIds.size;
+  return {
+    total: objects.length,
+    weakEvidence: weakEvidenceObjects.length,
+    openQuestions,
+    dataQualityOpen: dataQualityOpenObjects.length,
+    documentedObjects,
+    openReliabilityItems
+  };
 }
 
 export function workstandReliabilityFor(model = {}, result = null) {
@@ -1282,7 +1292,9 @@ export function workstandReliabilityFor(model = {}, result = null) {
   items.push({
     key: 'sidecar-evidence',
     label: 'Sidecar-/Evidenzlage',
-    value: sidecar.total ? `${sidecar.weakEvidence} von ${sidecar.total}` : '0 Objekte',
+    value: sidecar.total
+      ? `${sidecar.openReliabilityItems} von ${sidecar.openReliabilityItems + sidecar.documentedObjects}`
+      : '0 Objekte',
     severity: sidecar.weakEvidence || sidecar.openQuestions || sidecar.dataQualityOpen ? 'warn' : 'good',
     detail: sidecar.total
       ? `${sidecar.openQuestions} offene Sidecar-Prüffrage(n), ${sidecar.dataQualityOpen} Datenqualitätsobjekt(e) offen.`
