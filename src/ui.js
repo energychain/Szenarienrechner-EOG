@@ -739,14 +739,14 @@ function renderWorkItemCard(item) {
         <span>${esc(item.area)}</span>
       </div>
       <strong>${esc(item.title)}</strong>
+      <div class="row-actions compact-actions work-card-primary-action">
+        <button type="button" class="primary" data-action="openWorkItem" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId || '')}">${actionLabel}</button>
+      </div>
       <p>${esc(item.measure)}</p>
       ${detail ? `<small title="${esc(detail)}">${esc(detail)}</small>` : ''}
       <div class="work-card-guidance">
         <span>Aufgabe: ${esc(target.task)}</span>
         <span>${projectTask ? `Projektplan: ${esc(projectPlanStatusLabels[projectTask.task.status] || projectTask.task.status)}` : 'wird beim Bearbeiten im Projektplan gespiegelt'}</span>
-      </div>
-      <div class="row-actions compact-actions">
-        <button type="button" class="primary" data-action="openWorkItem" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId || '')}">${actionLabel}</button>
       </div>
     </article>
   `;

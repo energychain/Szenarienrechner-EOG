@@ -34,5 +34,21 @@ describe('presentation focus window and clarification kanban', () => {
     expect(css).toContain('overflow: hidden !important;');
     expect(css).toContain('.work-kanban-column.high');
     expect(css).toContain('.work-kanban-card');
+    const titleIndex = ui.indexOf('<strong>${esc(item.title)}</strong>');
+    const actionIndex = ui.indexOf('work-card-primary-action');
+    const measureIndex = ui.indexOf('<p>${esc(item.measure)}</p>');
+    expect(titleIndex).toBeGreaterThan(-1);
+    expect(actionIndex).toBeGreaterThan(titleIndex);
+    expect(actionIndex).toBeLessThan(measureIndex);
+  });
+
+  it('currently derives kanban columns from impact, warning and measure-note clarification items', () => {
+    expect(ui).toContain('const impactItems = reviewRequiredImpacts(true).map');
+    expect(ui).toContain('const noteItems = measures');
+    expect(ui).toContain("title: 'Maßnahmennotiz klären'");
+    expect(ui).toContain("warning.type === 'possible_double_counting'");
+    expect(ui).toContain('function workItemColumn');
+    expect(ui).toContain("if (label === 'mittel') return 'evidence';");
+    expect(ui).toContain("return 'normal';");
   });
 });
