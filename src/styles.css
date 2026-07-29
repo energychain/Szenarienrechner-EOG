@@ -1216,9 +1216,9 @@
 
     .clarification-workbench-foot {
       display: flex;
+      flex-direction: column;
       gap: 12px;
-      justify-content: space-between;
-      align-items: center;
+      align-items: stretch;
       margin-top: 12px;
       padding-top: 10px;
       border-top: 1px solid rgba(148, 163, 184, .22);
@@ -1226,21 +1226,25 @@
 
     .clarification-workbench-foot p {
       margin: 0;
-      max-width: 65ch;
+      max-width: none;
     }
 
     .clarification-workbench-actions {
-      align-items: flex-start;
+      align-items: stretch;
     }
 
     .clarification-workbench-actions .dialog-actions {
-      flex-wrap: wrap;
-      justify-content: flex-end;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      width: 100%;
       min-width: 0;
     }
 
     .clarification-workbench-actions .dialog-actions button {
+      width: 100%;
       max-width: 100%;
+      justify-content: center;
       white-space: normal;
     }
 
