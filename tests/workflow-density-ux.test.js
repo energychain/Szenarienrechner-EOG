@@ -27,14 +27,21 @@ describe('workflow density and clarification UX fixes', () => {
 
   it('lets users edit data and audit note in one clarification workbench and returns to the kanban', () => {
     expect(ui).toContain('Aufgabe: ${esc(target.task)}');
-    expect(ui).toContain('Daten & Notiz bearbeiten');
-    expect(ui).toContain('Datenänderung & Klärung speichern');
+    expect(ui).toContain('Daten & Befassung bearbeiten');
+    expect(ui).toContain('Befassungsnotiz speichern');
+    expect(ui).toContain('Klärpunkt abschließen');
+    expect(ui).toContain('Zurück zu Prüfen & Klären');
+    expect(ui).toContain('Vorheriger Klärfall');
+    expect(ui).toContain('Nächster Klärfall');
     expect(ui).toContain('ensureClarificationProjectTask(item');
     expect(ui).toContain('projectTaskIdForClarification');
     expect(ui).toContain("measureEditReturnView = 'expertWork'");
     expect(ui).toContain('saveMeasureClarificationFromWorkbench');
+    expect(ui).toContain('saveMeasureClarificationProgressFromWorkbench');
     expect(ui).not.toContain('Nächster Schritt: Ursache bearbeiten, danach Klärnotiz speichern.');
     expect(html).not.toContain('Datenstelle bearbeiten');
+    expect(html).toContain('Maßnahmennotiz');
+    expect(html).toContain('Befassungsnotizen zu Klärfällen');
   });
 
   it('renders report sidecars as styled cards instead of an unformatted bullet dump', () => {

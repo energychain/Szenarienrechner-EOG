@@ -20,7 +20,10 @@ describe('clarification audit UX', () => {
     expect(html).toContain('required');
     expect(html).not.toContain('id="clarificationAuditOpenMeasure"');
     expect(ui).toContain('measureClarificationNote');
-    expect(ui).toContain('Datenänderung & Klärung speichern');
+    expect(ui).toContain('Aktuelle Befassung');
+    expect(ui).toContain('Befassungsnotiz speichern');
+    expect(ui).toContain('Klärpunkt abschließen');
+    expect(ui).toContain('clarificationBefassungHistoryHtml');
     expect(ui).toContain('Projektplan: ${projectTask');
     expect(css).toContain('.clarification-audit-banner');
     expect(css).toContain('.clarification-workbench-grid');
@@ -28,9 +31,10 @@ describe('clarification audit UX', () => {
 
   it('stores clarification status with note, timestamp, author and measure reference', () => {
     expect(ui).toContain('note: note');
+    expect(ui).toContain('befassungen: nextClarificationBefassungen');
+    expect(ui).toContain("type = 'clarificationAuditCompleted'");
     expect(ui).toContain('timestamp: timestamp');
     expect(ui).toContain('author: author');
     expect(ui).toContain('measureId: pendingClarificationAudit.item.measureId');
-    expect(ui).toContain("type: 'clarificationAuditCompleted'");
   });
 });
