@@ -152,6 +152,7 @@ let currentRole = 'owner';
 let clarificationStatus = {};
 let pendingClarificationAudit = null;
 let measureEditClarificationContext = null;
+let measureEditReturnView = '';
 let lastReleaseCheck = null;
 let releaseCheckInProgress = false;
 let pendingImportReview = null;
@@ -652,6 +653,7 @@ function workItemColumn(item) {
 function renderWorkItemCard(item) {
   const priority = item.priority?.label || 'normal';
   const detail = String(item.detail || '').trim();
+  const actionLabel = item.status === 'closed' ? 'Audit ansehen' : item.measureId ? 'Bearbeiten' : 'Prüfen';
   return `
     <article class="work-kanban-card ${item.status === 'closed' ? 'closed' : ''}" data-work-item="${esc(item.key)}">
       <div class="work-card-topline">
@@ -661,9 +663,10 @@ function renderWorkItemCard(item) {
       <strong>${esc(item.title)}</strong>
       <p>${esc(item.measure)}</p>
       ${detail ? `<small title="${esc(detail)}">${esc(detail)}</small>` : ''}
+      <div class="work-card-guidance">Nächster Schritt: Ursache bearbeiten, danach Klärnotiz speichern.</div>
       <div class="row-actions compact-actions">
-        <button type="button" data-action="openWorkItem" data-measure-id="${esc(item.measureId || '')}">Datenstelle</button>
-        ${item.type === 'clarification' ? `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit' : 'Klären'}</button>` : ''}
+        <button type="button" class="primary" data-action="openWorkItem" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId || '')}">${actionLabel}</button>
+        ${item.type === 'clarification' ? `<button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit' : 'Klärung speichern'}</button>` : ''}
       </div>
     </article>
   `;
@@ -1244,7 +1247,7 @@ function renderMaturityAndClarifications() {
           <p class="hint">${esc(item.detail)}</p>
         </div>
         <div class="row-actions">
-          ${item.measureId ? `<button type="button" data-action="openClarificationMeasure" data-measure-id="${esc(item.measureId)}">Datenstelle</button>` : ''}
+          ${item.measureId ? `<button type="button" data-action="openClarificationMeasure" data-clarification-key="${esc(item.key)}" data-measure-id="${esc(item.measureId)}">Datenstelle bearbeiten</button>` : ''}
           <button type="button" data-action="openClarificationAudit" data-clarification-key="${esc(item.key)}">${item.status === 'closed' ? 'Audit ansehen' : 'Klären'}</button>
         </div>
       </article>
@@ -1387,16 +1390,23 @@ function renderClarificationAuditModal() {
   if (!pendingClarificationAudit) return;
   const item = pendingClarificationAudit.item;
   const status = clarificationStatus[item.key] || {};
+  const inReview = status.status === 'in_review';
   const body = document.getElementById('clarificationAuditBody');
   const note = document.getElementById('clarificationAuditNote');
   const error = document.getElementById('clarificationAuditError');
   const openMeasure = document.getElementById('clarificationAuditOpenMeasure');
   if (body) {
     body.innerHTML = `
-      <p><strong>${esc(item.measure)}: ${esc(item.title)}</strong></p>
-      <p class="clarification-meta">${esc(item.area)} · Zielphase ${esc(phaseLabel(item.targetPhase))} · ${item.status === 'closed' ? 'geklärt' : 'offen'}</p>
-      <p>${esc(item.detail)}</p>
-      ${status.note ? `<p class="hint"><strong>Letzte Klärnotiz:</strong> ${esc(status.note)} · ${esc(status.author || 'unbekannt')} · ${status.timestamp ? esc(new Date(status.timestamp).toLocaleString('de-DE')) : '-'}</p>` : ''}
+      <div class="clarification-modal-brief">
+        <p class="eyebrow">${esc(item.area)} · Zielphase ${esc(phaseLabel(item.targetPhase))} · ${item.status === 'closed' ? 'geklärt' : inReview ? 'in Bearbeitung' : 'offen'}</p>
+        <h3>${esc(item.measure)}: ${esc(item.title)}</h3>
+        <p class="hint">Empfohlener Ablauf: erst Datenstelle bearbeiten, dann mit kurzer Notiz auditierbar abschließen.</p>
+        <details class="compact-detail">
+          <summary>Fachlichen Hinweis anzeigen</summary>
+          <p>${esc(item.detail)}</p>
+        </details>
+        ${status.note ? `<p class="hint"><strong>Letzte Klärnotiz:</strong> ${esc(status.note)} · ${esc(status.author || 'unbekannt')} · ${status.timestamp ? esc(new Date(status.timestamp).toLocaleString('de-DE')) : '-'}</p>` : ''}
+      </div>
     `;
   }
   if (note) {
@@ -1477,24 +1487,24 @@ function saveClarificationAudit() {
 
 function openClarificationMeasureFromAudit() {
   if (!pendingClarificationAudit?.item?.measureId) return;
-  const note = clarificationAuditNoteOrError();
-  if (!note) return;
   const item = pendingClarificationAudit.item;
   const author = ensureAuthor();
   const timestamp = new Date().toISOString();
+  const note = String(document.getElementById('clarificationAuditNote')?.value || '').trim();
   clarificationStatus = {
     ...clarificationStatus,
     [item.key]: {
       ...(clarificationStatus[item.key] || {}),
       status: 'in_review',
-      note: note,
+      note: note || (clarificationStatus[item.key]?.note || ''),
       author: author,
       timestamp: timestamp,
       measureId: pendingClarificationAudit.item.measureId || '',
       title: item.title
     }
   };
-  measureEditClarificationContext = { key: item.key, title: item.title, note, timestamp, author };
+  measureEditClarificationContext = { key: item.key, title: item.title, note: note || 'Klärpunkt wird bearbeitet; Abschlussnotiz folgt beim Speichern der Klärung.', timestamp, author };
+  measureEditReturnView = 'expertWork';
   selectedId = item.measureId;
   closeClarificationAudit();
   setView('measures');
@@ -1502,8 +1512,26 @@ function openClarificationMeasureFromAudit() {
   openMeasureEditModal();
 }
 
-function openClarificationMeasure(measureId) {
+function openClarificationMeasure(measureId, key = '') {
   if (!measureId) return;
+  const item = key ? findClarificationItem(key) : null;
+  if (item) {
+    const author = ensureAuthor();
+    const timestamp = new Date().toISOString();
+    clarificationStatus = {
+      ...clarificationStatus,
+      [item.key]: {
+        ...(clarificationStatus[item.key] || {}),
+        status: clarificationStatus[item.key]?.status === 'closed' ? 'closed' : 'in_review',
+        author,
+        timestamp,
+        measureId: item.measureId || '',
+        title: item.title
+      }
+    };
+    measureEditClarificationContext = { key: item.key, title: item.title, note: 'Klärpunkt wird bearbeitet; Abschlussnotiz folgt beim Speichern der Klärung.', timestamp, author };
+    measureEditReturnView = 'expertWork';
+  }
   selectedId = measureId;
   setView('measures');
   renderAll();
@@ -2722,6 +2750,13 @@ function openMeasureEditModal() {
 
 function closeMeasureEditModal() {
   document.getElementById('measureEditModal').classList.add('hidden');
+  if (measureEditReturnView) {
+    const targetView = measureEditReturnView;
+    measureEditReturnView = '';
+    measureEditClarificationContext = null;
+    setView(targetView);
+    renderAll();
+  }
 }
 
 function meetingOverrideKey(focus, cardKey) {
@@ -4988,6 +5023,7 @@ function sidecarMatchesModeFilter(object) {
   if (sidecarModeFilter === 'all') return true;
   if (sidecarModeFilter === 'context') return object.sidecarType === 'context';
   if (sidecarModeFilter === 'sensitivity') return object.sidecarType === 'sensitivity';
+  if (sidecarModeFilter === 'open_questions') return object.openQuestions.length || sidecarHasOpenBridgeLogic(object) || ['missing', 'conflicting', 'stale'].includes(object.evidenceStatus);
   if (sidecarModeFilter === 'open_bridge_logic') return sidecarHasOpenBridgeLogic(object);
   if (sidecarModeFilter === 'quantified_effect') return sidecarHasQuantifiedBridge(object);
   if (sidecarModeFilter === 'activated') return object.activationStatus === 'activated';
@@ -5062,11 +5098,11 @@ function renderSidecar() {
   const cards = document.getElementById('sidecarSummaryCards');
   if (cards) {
     cards.innerHTML = `
-      <div class="summary-card"><strong>${summary.total}</strong><span>Sidecar-Objekte</span></div>
-      <div class="summary-card"><strong>${summary.openQuestions}</strong><span>offene Prüfpunkte</span></div>
-      <div class="summary-card"><strong>${summary.openBridgeLogic}</strong><span>offene Brückenlogik</span></div>
-      <div class="summary-card"><strong>${summary.quantifiedNotActivated}</strong><span>quantifiziert, aber nicht aktiviert</span></div>
-      <div class="summary-card"><strong>${summary.activated}</strong><span>aktiviert markiert</span></div>
+      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="all"><strong>${summary.total}</strong><span>Sidecar-Objekte</span></button>
+      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_questions"><strong>${summary.openQuestions}</strong><span>offene Prüfpunkte</span></button>
+      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_bridge_logic"><strong>${summary.openBridgeLogic}</strong><span>offene Brückenlogik</span></button>
+      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="quantified_effect"><strong>${summary.quantifiedNotActivated}</strong><span>quantifiziert, aber nicht aktiviert</span></button>
+      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="activated"><strong>${summary.activated}</strong><span>aktiviert markiert</span></button>
     `;
   }
   const filter = document.getElementById('sidecarDivisionFilter');
@@ -5098,7 +5134,7 @@ function renderSidecar() {
         </div>
       </div>
       <details class="sidecar-editor-disclosure" ${object.id === selectedSidecarId ? 'open' : ''}>
-        <summary class="sidecar-edit-action"><span>Bearbeiten & verknüpfen</span><small>Felder, Maßnahmenbezug und Brückenlogik öffnen</small></summary>
+        <summary class="sidecar-edit-action"><span>Bearbeiten/Verknüpfen</span></summary>
         <div class="grid2 sidecar-editor-grid">
           <div><label data-help-id="sidecarTitle">Titel<input data-sidecar-field="title" data-sidecar-id="${esc(object.id)}" value="${esc(object.title)}"></label></div>
           <div><label data-help-id="sidecarDivision">Sparte<select data-sidecar-field="division" data-sidecar-id="${esc(object.id)}"><option value="strom" ${object.division === 'strom' ? 'selected' : ''}>Strom</option><option value="gas" ${object.division === 'gas' ? 'selected' : ''}>Gas</option><option value="cross_division" ${object.division === 'cross_division' ? 'selected' : ''}>spartenübergreifend</option></select></label></div>
@@ -5143,7 +5179,7 @@ function sidecarReportSummaryHtml() {
         <div class="report-box"><strong>Rechenwirkung</strong><p>${summary.withoutCalculationImpact} ohne Rechenwirkung, ${summary.calculationImpact.indirect || 0} indirekt, ${summary.calculationImpact.scenario_only || 0} nur Szenario, ${summary.calculationImpact.active || 0} aktiv markiert.</p></div>
         <div class="report-box"><strong>Brückenlogik</strong><p>${summary.openBridgeLogic} offene Brückenlogik, ${summary.quantifiedNotActivated} quantifiziert, aber nicht aktiviert; ${summary.activated} aktiviert markiert.</p></div>
       </div>
-      ${open.length ? `<ul>${open.slice(0, 8).map(object => `<li>${esc(object.division)} · ${esc(object.sidecarType)} · ${esc(sidecarTypeLabel(object))}: ${esc(object.title)} — ${esc(sidecarBridgeWarning(object))}</li>`).join('')}</ul>` : '<p class="hint">Keine offenen Sidecar-Prüfpunkte im sanitisierten Exportprofil.</p>'}
+      ${open.length ? `<div class="report-sidecar-list">${open.slice(0, 8).map(object => `<article class="report-sidecar-item"><span>${esc(object.division)} · ${esc(object.sidecarType)} · ${esc(sidecarTypeLabel(object))}</span><strong>${esc(object.title)}</strong><p>${esc(sidecarBridgeWarning(object))}</p></article>`).join('')}</div>` : '<p class="hint">Keine offenen Sidecar-Prüfpunkte im sanitisierten Exportprofil.</p>'}
     </section>
   `;
 }
@@ -6063,6 +6099,15 @@ document.getElementById('sidecarModeFilter')?.addEventListener('change', event =
   sidecarModeFilter = event.target.value;
   renderSidecar();
 });
+document.getElementById('sidecarSummaryCards')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-sidecar-summary-filter]');
+  if (!button) return;
+  sidecarModeFilter = button.dataset.sidecarSummaryFilter;
+  const modeFilter = document.getElementById('sidecarModeFilter');
+  if (modeFilter) modeFilter.value = sidecarModeFilter;
+  renderSidecar();
+  document.getElementById('sidecarBody')?.focus?.();
+});
 document.getElementById('sidecarBody')?.addEventListener('focusin', event => {
   const id = event.target.dataset.sidecarId || event.target.closest('[data-sidecar-card]')?.dataset.sidecarCard;
   if (id) selectedSidecarId = id;
@@ -6193,7 +6238,7 @@ document.getElementById('clarificationList').addEventListener('click', event => 
     return;
   }
   const measureButton = event.target.closest('[data-action="openClarificationMeasure"]');
-  if (measureButton) openClarificationMeasure(measureButton.dataset.measureId);
+  if (measureButton) openClarificationMeasure(measureButton.dataset.measureId, measureButton.dataset.clarificationKey || '');
 });
 
 document.getElementById('measureBody').addEventListener('click', event => {
@@ -6388,10 +6433,8 @@ document.getElementById('basisSummaryCards').addEventListener('click', event => 
 document.getElementById('expertWorkList').addEventListener('click', event => {
   const openButton = event.target.closest('[data-action="openWorkItem"]');
   if (openButton?.dataset.measureId) {
-    selectedId = openButton.dataset.measureId;
-    setView('measures');
-    renderAll();
-    openMeasureEditModal();
+    openClarificationMeasure(openButton.dataset.measureId, openButton.dataset.clarificationKey || '');
+    return;
   }
   const clarifyButton = event.target.closest('[data-action="openClarificationAudit"]');
   if (clarifyButton) openClarificationAudit(clarifyButton.dataset.clarificationKey);
