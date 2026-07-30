@@ -4950,3 +4950,55 @@ button, .view-tab, [role="button"] { min-width: 44px; min-height: 44px; }
 @media (prefers-color-scheme: dark) {
   :root { color-scheme: light dark; }
 }
+
+
+/* CR-05 glossary and content density */
+.glossary-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: 14px;
+}
+.glossary-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  max-height: 62vh;
+  overflow: auto;
+}
+.glossary-list button {
+  justify-content: flex-start;
+  text-align: left;
+}
+.glossary-list button.active,
+.glossary-entry.active {
+  border-color: rgba(0, 111, 143, .34);
+  background: #eef8fb;
+}
+.glossary-entry {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.glossary-entry h3 {
+  margin-top: 0;
+}
+.glossary-entry dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.glossary-entry dt {
+  font-weight: 900;
+  color: var(--accent);
+}
+.glossary-entry dd {
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+.measure-dialog-nav .danger-action {
+  margin-right: auto;
+}
+@media (max-width: 760px) {
+  .glossary-layout { grid-template-columns: 1fr; }
+}

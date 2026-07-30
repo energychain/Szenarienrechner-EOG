@@ -54,10 +54,10 @@
               <button type="button" id="printReport">Report drucken</button>
               <span class="menu-section-title">Hilfe & Kontext</span>
               <button type="button" id="openHelp">Hilfe</button>
+              <button type="button" id="openGlossary">Glossar</button>
               <a id="openStory" class="menu-link" href="story/planungsrunde-userstory.html" target="_blank" rel="noopener">Userstory</a>
               <a id="openEcosystem" class="menu-link" href="docs/index.html" target="_blank" rel="noopener">Methodik & Vorlagen</a>
               <button type="button" id="openAiPromptGenerator">KI-Prompt erstellen</button>
-              <span class="menu-section-title">Unterstützung</span>
               <button type="button" id="checkReleaseAwareness">Aktualität prüfen</button>
               <button type="button" id="openSupportIssue">Feedback / Support melden</button>
               <button type="button" id="exportSupportPackage">Support-Paket exportieren</button>
@@ -1197,7 +1197,7 @@
             </div>
             <div>
               <label for="mCost">Kosten TEUR</label>
-              <input id="mCost" type="number" min="0" step="1">
+              <div class="input-with-unit"><input id="mCost" type="text" inputmode="numeric" data-format="teur" min="0" step="1" aria-describedby="mCostUnit"><span id="mCostUnit">TEUR</span></div>
             </div>
             <div>
               <label for="mYear">Inbetriebnahme</label>
@@ -1350,13 +1350,13 @@
             <div><label for="mAffectedNetworkLevel">Netzebene</label><select id="mAffectedNetworkLevel"><option value="">offen</option><option value="NS">NS</option><option value="MS">MS</option><option value="UW">UW</option><option value="cross_level">ebenenübergreifend</option></select></div>
             <div><label for="mActivationWindow">Flexibilitätsfenster</label><input id="mActivationWindow" type="text" placeholder="offen"></div>
             <div class="wide-field"><label for="mDispatchLogic">Abruf-/Dispatchlogik</label><input id="mDispatchLogic" type="text" placeholder="offen"></div>
-            <div><label for="mAvoidedCapexTeur">vermiedene CAPEX TEUR</label><input id="mAvoidedCapexTeur" type="number" min="0" step="1"></div>
+            <div><label for="mAvoidedCapexTeur">vermiedene CAPEX TEUR</label><div class="input-with-unit"><input id="mAvoidedCapexTeur" type="text" inputmode="numeric" data-format="teur" min="0" step="1" aria-describedby="mAvoidedCapexTeurUnit"><span id="mAvoidedCapexTeurUnit">TEUR</span></div></div>
             <div><label for="mAvoidedCapexConfidence">CAPEX-Vermeidung Evidenz</label><select id="mAvoidedCapexConfidence"><option value="none">keine</option><option value="low">niedrig</option><option value="medium">mittel</option><option value="high">hoch</option></select></div>
-            <div><label for="mDeferredCapexTeur">verschobene CAPEX TEUR</label><input id="mDeferredCapexTeur" type="number" min="0" step="1"></div>
+            <div><label for="mDeferredCapexTeur">verschobene CAPEX TEUR</label><div class="input-with-unit"><input id="mDeferredCapexTeur" type="text" inputmode="numeric" data-format="teur" min="0" step="1" aria-describedby="mDeferredCapexTeurUnit"><span id="mDeferredCapexTeurUnit">TEUR</span></div></div>
             <div><label for="mDeferredCapexFromYear">Verschiebung von Jahr</label><input id="mDeferredCapexFromYear" type="number" step="1"></div>
             <div><label for="mDeferredCapexToYear">Verschiebung bis Jahr</label><input id="mDeferredCapexToYear" type="number" step="1"></div>
             <div class="wide-field"><label for="mCapexAvoidanceEvidenceRef">Nachweis CAPEX-Vermeidung</label><input id="mCapexAvoidanceEvidenceRef" type="text" placeholder="offen"></div>
-            <div><label for="mFlexOpexPaTeur">Flex-OPEX TEUR p.a.</label><input id="mFlexOpexPaTeur" type="number" min="0" step="1"></div>
+            <div><label for="mFlexOpexPaTeur">Flex-OPEX TEUR p.a.</label><div class="input-with-unit"><input id="mFlexOpexPaTeur" type="text" inputmode="numeric" data-format="teur" min="0" step="1" aria-describedby="mFlexOpexPaTeurUnit"><span id="mFlexOpexPaTeurUnit">TEUR p.a.</span></div></div>
             <div><label for="mFlexOpexStartYear">OPEX ab Jahr</label><input id="mFlexOpexStartYear" type="number" step="1"></div>
             <div><label for="mFlexOpexDurationYears">OPEX-Dauer Jahre</label><input id="mFlexOpexDurationYears" type="number" min="0" step="1"></div>
             <div><label for="mOpexRecognitionStatus">OPEX-Anerkennung</label><select id="mOpexRecognitionStatus"><option value="unknown">offen</option><option value="pruefpflichtig">prüfpflichtig</option><option value="expected">erwartet</option><option value="not_recognized">nicht anerkannt</option></select></div>
@@ -1380,7 +1380,7 @@
             <div><label for="mRedispatchCompensationWaiverLimitPct">Verzichtsgrenze %</label><input id="mRedispatchCompensationWaiverLimitPct" type="number" min="0" max="100" step="1" placeholder="20"></div>
             <label class="check-option"><input id="mWindPriorityArea" type="checkbox"> Windvorranggebiet (18 %)</label>
             <div><label for="mRedispatchRiskClass">Redispatch-Risikoklasse</label><select id="mRedispatchRiskClass"><option value="low">niedrig</option><option value="medium">mittel</option><option value="high">hoch</option></select></div>
-            <div><label for="mAnnualRevenueAtRiskTeur">Erlösrisiko TEUR p.a.</label><input id="mAnnualRevenueAtRiskTeur" type="number" min="0" step="1"></div>
+            <div><label for="mAnnualRevenueAtRiskTeur">Erlösrisiko TEUR p.a.</label><div class="input-with-unit"><input id="mAnnualRevenueAtRiskTeur" type="text" inputmode="numeric" data-format="teur" min="0" step="1" aria-describedby="mAnnualRevenueAtRiskTeurUnit"><span id="mAnnualRevenueAtRiskTeurUnit">TEUR p.a.</span></div></div>
             <div><label for="mConnectionRequestPowerKw">Anschlussleistung kW</label><input id="mConnectionRequestPowerKw" type="number" min="0" step="1"></div>
             <div><label for="mVoltageLevel">Spannungsebene</label><select id="mVoltageLevel"><option value="low_voltage">Niederspannung</option><option value="medium_voltage">Mittelspannung</option><option value="high_voltage">Hochspannung</option></select></div>
             <div><label for="mConnectionRequestStatus">Netzanschlussstatus</label><select id="mConnectionRequestStatus"><option value="draft">Entwurf</option><option value="submitted">eingereicht</option><option value="confirmed_received">Eingang bestätigt</option><option value="under_review">in Prüfung</option><option value="capacity_reserved">Kapazität reserviert</option><option value="capacity_released">Kapazität freigegeben</option><option value="connection_offer">Anschlussangebot</option><option value="commissioned">in Betrieb</option></select></div>
@@ -1388,7 +1388,7 @@
             <div><label for="mReservationExpiryDate">Reservierung läuft ab</label><input id="mReservationExpiryDate" type="date"></div>
             <div class="wide-field"><label for="mNextRequiredEvidence">Nächster Nachweis</label><input id="mNextRequiredEvidence" type="text" placeholder="z.B. bestätigte Eingangsbestätigung, Netzbetreiber-Antwort"></div>
             <label class="check-option"><input id="mGenerationConnectionCostContributionEnabled" type="checkbox"> Baukostenzuschuss Erzeugungsanlage berücksichtigen</label>
-            <div><label for="mConnectionCostContributionTeur">Baukostenzuschuss TEUR</label><input id="mConnectionCostContributionTeur" type="number" min="0" step="1"></div>
+            <div><label for="mConnectionCostContributionTeur">Baukostenzuschuss TEUR</label><div class="input-with-unit"><input id="mConnectionCostContributionTeur" type="text" inputmode="numeric" data-format="teur" min="0" step="1" aria-describedby="mConnectionCostContributionTeurUnit"><span id="mConnectionCostContributionTeurUnit">TEUR</span></div></div>
             <div><label for="mConnectionCostContributionMode">Zuschuss-Modus</label><select id="mConnectionCostContributionMode"><option value="none">keiner</option><option value="flat">pauschal</option><option value="regional_parameter">regionaler Parameter</option><option value="user_defined">nutzerdefiniert</option></select></div>
           </div>
           <div id="stromEeg2027Summary" class="gas-transformation-summary"></div>
@@ -1400,15 +1400,15 @@
           <div class="grid2">
             <div>
               <label for="mOpexPa">Betriebskosten TEUR p.a.</label>
-              <input id="mOpexPa" type="number" step="1">
+              <div class="input-with-unit"><input id="mOpexPa" type="text" inputmode="numeric" data-format="teur" step="1" aria-describedby="mOpexPaUnit"><span id="mOpexPaUnit">TEUR p.a.</span></div>
             </div>
             <div>
               <label for="mOpexDeltaPa">vermiedene Betriebskosten TEUR p.a.</label>
-              <input id="mOpexDeltaPa" type="number" step="1">
+              <div class="input-with-unit"><input id="mOpexDeltaPa" type="text" inputmode="numeric" data-format="teur" step="1" aria-describedby="mOpexDeltaPaUnit"><span id="mOpexDeltaPaUnit">TEUR p.a.</span></div>
             </div>
             <div>
               <label for="mReinvestCost">Reinvestition TEUR</label>
-              <input id="mReinvestCost" type="number" min="0" step="1">
+              <div class="input-with-unit"><input id="mReinvestCost" type="text" inputmode="numeric" data-format="teur" min="0" step="1" aria-describedby="mReinvestCostUnit"><span id="mReinvestCostUnit">TEUR</span></div>
             </div>
             <div>
               <label for="mReinvestMode">Reinvestitionslogik</label>
@@ -1423,7 +1423,7 @@
             </div>
             <div>
               <label for="mDecommissionCost">Rückbau/Entsorgung TEUR</label>
-              <input id="mDecommissionCost" type="number" min="0" step="1">
+              <div class="input-with-unit"><input id="mDecommissionCost" type="text" inputmode="numeric" data-format="teur" min="0" step="1" aria-describedby="mDecommissionCostUnit"><span id="mDecommissionCostUnit">TEUR</span></div>
             </div>
             <div>
               <label for="mDecommissionYear">Rückbaujahr</label>
@@ -1508,15 +1508,15 @@
           <div class="grid2">
             <div>
               <label for="mQDirect">Q direkt TEUR p.a.</label>
-              <input id="mQDirect" type="number" step="1">
+              <div class="input-with-unit"><input id="mQDirect" type="text" inputmode="numeric" data-format="teur" step="1" aria-describedby="mQDirectUnit"><span id="mQDirectUnit">TEUR p.a.</span></div>
             </div>
             <div>
               <label for="mEDirect">E direkt TEUR p.a.</label>
-              <input id="mEDirect" type="number" step="1">
+              <div class="input-with-unit"><input id="mEDirect" type="text" inputmode="numeric" data-format="teur" step="1" aria-describedby="mEDirectUnit"><span id="mEDirectUnit">TEUR p.a.</span></div>
             </div>
             <div>
               <label for="mRiskAvoided">Risikowert TEUR p.a.</label>
-              <input id="mRiskAvoided" type="number" step="1">
+              <div class="input-with-unit"><input id="mRiskAvoided" type="text" inputmode="numeric" data-format="teur" step="1" aria-describedby="mRiskAvoidedUnit"><span id="mRiskAvoidedUnit">TEUR p.a.</span></div>
             </div>
             <div>
               <label for="mPortfolioShare">Portfolioanteil %</label>
@@ -1561,6 +1561,7 @@
       </div>
       <div class="dialog-foot measure-dialog-nav">
         <button type="button" id="measureEditClose">Schließen</button>
+        <button type="button" id="deleteSelectedMeasure" class="danger-action">Maßnahme löschen</button>
         <div class="measure-stepper" aria-label="Maßnahmen nacheinander bearbeiten">
           <button type="button" id="measureEditPrev">Vorherige Maßnahme</button>
           <span id="measureEditPosition" class="hint">-</span>
@@ -1682,6 +1683,22 @@
         <button type="button" id="dangerZoneExport">Daten herunterladen</button>
         <button type="button" id="dangerZoneCancel">Abbrechen</button>
         <button type="button" id="dangerZoneConfirm" class="danger-action" disabled>Browserdaten löschen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="glossaryModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="glossaryTitle">
+    <div class="dialog wide-dialog">
+      <div class="dialog-head">
+        <h2 id="glossaryTitle">Glossar</h2>
+      </div>
+      <div class="dialog-body glossary-layout">
+        <nav id="glossaryList" class="glossary-list" aria-label="Glossarbegriffe"></nav>
+        <article id="glossaryEntry" class="glossary-entry" aria-live="polite"></article>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" id="glossaryClose">Schließen</button>
+        <div></div>
       </div>
     </div>
   </div>
