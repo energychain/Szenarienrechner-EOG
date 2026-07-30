@@ -34,6 +34,8 @@ describe('UX review product structure', () => {
   it('deduplicates high-level status and replaces cryptic badges with purpose labels', () => {
     expect(ui).toContain('const navStatusLabels =');
     expect(ui).toContain("status-results");
+    expect(html).toContain('Akte / Entscheidung im Detail');
+    expect(html).toContain('Akte / Projektplan');
     expect(ui).not.toContain('`${maturity.score} % Reife`');
     expect(ui).not.toContain('`${maturity.blockers} offen`');
     expect(html).toContain('Einschätzung</div>');
@@ -58,19 +60,20 @@ describe('UX review product structure', () => {
     expect(ui).toContain('function captureUndoSnapshot');
     expect(ui).toContain('function restoreLastUndoSnapshot');
     expect(ui).toContain("showToast('Bulk-Aktion angewendet. Rückgängig ist kurzzeitig möglich.'");
+    expect(ui).toContain("node.textContent = 'Lokaler Arbeitsstand im Browser aktiv.'");
   });
 
-  it('keeps measure editing contextual and offers a full workspace route', () => {
-    expect(html).toContain('data-view-panel="measureWorkspace"');
-    expect(html).toContain('Maßnahmen-Workspace');
-    expect(ui).toContain('function openMeasureWorkspace');
-    expect(ui).toContain('Maßnahme im Workspace öffnen');
+  it('removes the placeholder measure workspace until a real full-page editor exists', () => {
+    expect(html).not.toContain('data-view-panel="measureWorkspace"');
+    expect(html).not.toContain('Maßnahmen-Workspace');
+    expect(ui).not.toContain('function openMeasureWorkspace');
+    expect(html).not.toContain('Maßnahme im Workspace öffnen');
   });
 
   it('adds keyboard and visible help affordances without relying only on hover titles', () => {
     expect(ui).toContain("event.key === 'ArrowRight'");
     expect(ui).toContain("event.key === 'ArrowLeft'");
-    expect(html).toContain('appHelpPanel');
+    expect(html).toContain('inline-help-panel');
     expect(css).toContain('.inline-help-panel');
   });
 });

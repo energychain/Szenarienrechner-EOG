@@ -4862,13 +4862,6 @@ body:not([data-view="results"]):not([data-view="report"]) .sticky-kpis {
   display: none;
 }
 
-body[data-view="measureWorkspace"] main {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-body[data-view="measureWorkspace"] [data-view-panel="measureWorkspace"] {
-  min-height: min(620px, calc(100vh - 230px));
-}
 
 @media (max-width: 1120px) {
   .product-nav {
@@ -4880,4 +4873,22 @@ body[data-view="measureWorkspace"] [data-view-panel="measureWorkspace"] {
   .expert-mode-inline {
     min-height: 44px;
   }
+}
+
+.subview-return {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .82);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.subview-return span {
+  font-weight: 700;
+  color: var(--ink);
 }
