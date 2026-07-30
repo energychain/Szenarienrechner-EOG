@@ -7444,7 +7444,9 @@ document.querySelectorAll('[data-role-choice]').forEach(button => {
     if (profile) {
       meetingFocus = profile.focus;
       setExpertMode(profile.expert);
+      if (!document.body.classList.contains('show-start')) setView(profile.view);
       document.querySelectorAll('.focus-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.focus === meetingFocus));
+      showToast(`Rolle ${roleProfiles[role].label} aktiv: Ansicht und Bearbeitbarkeit aktualisiert.`, { duration: 5000 });
     }
     renderAll(!document.body.classList.contains('show-start'));
   });
