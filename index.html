@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/src/styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Zum Inhalt</a>
   <header>
     <div class="header-inner">
       <div class="header-copy">
@@ -39,6 +40,8 @@
       </div>
       <div class="header-actions" aria-label="Globale Modellaktionen">
         <div class="global-actions">
+          <label class="global-search-label" for="globalSearch">Suche</label>
+          <input id="globalSearch" class="global-search" type="search" placeholder="Suchen (Ctrl/Cmd+K)" autocomplete="off" aria-controls="commandPalette" aria-haspopup="dialog">
           <button type="button" id="importModel" class="primary">Daten laden</button>
           <button type="button" id="exportSelfContainedHtml">HTML mit Daten speichern</button>
           <details class="action-menu">
@@ -144,6 +147,14 @@
         <span class="step-main">Export</span>
         <span class="step-status" id="status-report">Bericht</span>
       </button>
+      <button type="button" class="view-tab support-tab theme-orientation" data-view="results">
+        <span class="step-main">Entscheidung im Detail</span>
+        <span class="step-status" id="status-results">Analyse</span>
+      </button>
+      <button type="button" class="view-tab support-tab theme-basis" data-view="projectPlan">
+        <span class="step-main">Projektplan</span>
+        <span class="step-status" id="status-projectPlan">Aufgaben</span>
+      </button>
     </div>
     <label class="switch-row compact-switch expert-mode-inline" for="expertModeToggle">
       <input id="expertModeToggle" type="checkbox">
@@ -179,7 +190,19 @@
     </div>
   </section>
 
-  <main>
+  <div id="commandPalette" class="modal hidden command-palette" role="dialog" aria-modal="true" aria-labelledby="commandPaletteTitle">
+    <div class="dialog command-palette-dialog">
+      <div class="modal-head">
+        <h2 id="commandPaletteTitle">Globale Suche</h2>
+        <button type="button" id="commandPaletteClose" aria-label="Suche schließen">×</button>
+      </div>
+      <p class="hint">Ctrl/Cmd+K öffnet diese Suche. Treffer springen zu Views, Feldern, Maßnahmen, Klärpunkten und Kontextobjekten.</p>
+      <input id="commandPaletteInput" type="search" placeholder="Suchbegriff eingeben, z. B. RAB" autocomplete="off" aria-label="Globale Sucheingabe">
+      <div id="commandPaletteResults" class="command-results" role="listbox" aria-label="Suchtreffer"></div>
+    </div>
+  </div>
+
+  <main id="mainContent" tabindex="-1">
     <section class="panel app-view akte-cockpit" data-view-panel="akte" aria-label="Akten-Cockpit">
       <div class="akte-hero">
         <div>
@@ -264,11 +287,11 @@
           </div>
           <div>
             <label for="baseEog">bestehende EOG TEUR p.a.</label>
-            <input id="baseEog" type="number" value="20000" min="0" step="100">
+            <div class="input-with-unit"><input id="baseEog" type="text" inputmode="numeric" value="20.000" data-format="teur" aria-describedby="baseEogUnit"><span id="baseEogUnit">TEUR p.a.</span></div>
           </div>
           <div>
             <label for="rab">regulierte Kapitalbasis TEUR</label>
-            <input id="rab" type="number" value="85000" min="0" step="500">
+            <div class="input-with-unit"><input id="rab" type="text" inputmode="numeric" value="85.000" data-format="teur" aria-describedby="rabUnit"><span id="rabUnit">TEUR</span></div>
           </div>
           <div>
             <label for="returnRate">Kapitalverzinsung %</label>
@@ -501,8 +524,8 @@
             <option value="active">nur aktiv</option>
             <option value="inactive">nur inaktiv</option>
           </select>
-          <input id="catalogYearFrom" type="number" placeholder="Jahr von">
-          <input id="catalogYearTo" type="number" placeholder="bis">
+          <input id="catalogYearFrom" type="number" placeholder="Jahr von" aria-label="Katalogfilter Jahr von">
+          <input id="catalogYearTo" type="number" placeholder="bis" aria-label="Katalogfilter Jahr bis">
           <input id="catalogTagFilter" type="text" placeholder="Tag">
           <label class="checkbox-inline"><input id="catalogOpenOnly" type="checkbox"> offene Punkte</label>
           <label class="checkbox-inline"><input id="catalogImportedOnly" type="checkbox"> Import unbestätigt</label>
@@ -538,17 +561,17 @@
           <table>
             <thead>
               <tr>
-                <th>Auswahl</th>
-                <th>Aktiv</th>
-                <th>Maßnahme</th>
-                <th>Bereich</th>
-                <th>Jahr</th>
-                <th>Ziele</th>
-                <th>Kosten</th>
-                <th>aktiv.</th>
-                <th>Wirkannahmen</th>
-                <th>IRR</th>
-                <th>Notiz</th>
+                <th scope="col">Auswahl</th>
+                <th scope="col">Aktiv</th>
+                <th scope="col">Maßnahme</th>
+                <th scope="col">Bereich</th>
+                <th scope="col">Jahr</th>
+                <th scope="col">Ziele</th>
+                <th scope="col">Kosten</th>
+                <th scope="col">aktiv.</th>
+                <th scope="col">Wirkannahmen</th>
+                <th scope="col">IRR</th>
+                <th scope="col">Notiz</th>
               </tr>
             </thead>
               <tbody id="measureBody"></tbody>
@@ -748,16 +771,16 @@
           <table>
             <thead>
               <tr>
-                <th>Sicht</th>
-                <th>AfA</th>
-                <th>Verzinsung</th>
-                <th>Reinvest-Asset</th>
-                <th>Q/E</th>
-                <th>Risiko</th>
-                <th>Einmal-OPEX</th>
-                <th>regulatorische EOG</th>
-                <th>wirtschaftliche Überleitung</th>
-                <th>indikativer Cashflow</th>
+                <th scope="col">Sicht</th>
+                <th scope="col">AfA</th>
+                <th scope="col">Verzinsung</th>
+                <th scope="col">Reinvest-Asset</th>
+                <th scope="col">Q/E</th>
+                <th scope="col">Risiko</th>
+                <th scope="col">Einmal-OPEX</th>
+                <th scope="col">regulatorische EOG</th>
+                <th scope="col">wirtschaftliche Überleitung</th>
+                <th scope="col">indikativer Cashflow</th>
               </tr>
             </thead>
             <tbody id="eogDecompositionBody"></tbody>
@@ -815,12 +838,12 @@
           <table>
             <thead>
               <tr>
-                <th>Szenario</th>
-                <th>Attribution</th>
-                <th>Q/E + Wirkung p.a.</th>
-                <th>Jahr 1</th>
-                <th>IRR</th>
-                <th>Kapitalwert</th>
+                <th scope="col">Szenario</th>
+                <th scope="col">Attribution</th>
+                <th scope="col">Q/E + Wirkung p.a.</th>
+                <th scope="col">Jahr 1</th>
+                <th scope="col">IRR</th>
+                <th scope="col">Kapitalwert</th>
               </tr>
             </thead>
             <tbody id="scenarioBody"></tbody>
@@ -840,17 +863,17 @@
             <table>
               <thead id="yearHead">
                 <tr>
-	                  <th>Jahr</th>
-	                  <th>RP</th>
-	                  <th>Basis-EOG</th>
-                  <th>AfA/KANU regulatorisch</th>
-                  <th>Verzinsung</th>
-                  <th>Q/E</th>
-                  <th>Risiko</th>
-                  <th>OPEX</th>
-                  <th>Rückbau/Reinvest</th>
-                  <th>EOG Zusatz</th>
-                  <th>EOG gesamt</th>
+	                  <th scope="col">Jahr</th>
+	                  <th scope="col">RP</th>
+	                  <th scope="col">Basis-EOG</th>
+                  <th scope="col">AfA/KANU regulatorisch</th>
+                  <th scope="col">Verzinsung</th>
+                  <th scope="col">Q/E</th>
+                  <th scope="col">Risiko</th>
+                  <th scope="col">OPEX</th>
+                  <th scope="col">Rückbau/Reinvest</th>
+                  <th scope="col">EOG Zusatz</th>
+                  <th scope="col">EOG gesamt</th>
                 </tr>
               </thead>
               <tbody id="yearBody"></tbody>
@@ -1642,6 +1665,23 @@
       <div class="dialog-foot">
         <button type="button" id="runtimeErrorClose">Schließen</button>
         <div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dangerZoneModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="dangerZoneTitle">
+    <div class="dialog">
+      <div class="modal-head">
+        <h2 id="dangerZoneTitle">Browserdaten löschen</h2>
+        <button type="button" id="dangerZoneCancelTop" aria-label="Dialog schließen">×</button>
+      </div>
+      <p class="warning-card">Diese Aktion entfernt den lokalen Browser-Arbeitsstand endgültig. Laden Sie vorher Daten herunter oder speichern Sie „HTML mit Daten“, wenn der Stand erhalten bleiben soll.</p>
+      <label for="dangerZoneConfirmText">Zum Bestätigen LÖSCHEN eingeben</label>
+      <input id="dangerZoneConfirmText" type="text" autocomplete="off" placeholder="LÖSCHEN">
+      <div class="modal-actions">
+        <button type="button" id="dangerZoneExport">Daten herunterladen</button>
+        <button type="button" id="dangerZoneCancel">Abbrechen</button>
+        <button type="button" id="dangerZoneConfirm" class="danger-action" disabled>Browserdaten löschen</button>
       </div>
     </div>
   </div>

@@ -376,10 +376,32 @@ function periodDetailText(period) {
   return `${period.label} (${period.start}-${period.end})${period.known ? '' : ', fortgeschrieben'}`;
 }
 
-function num(id) {
-  const value = Number(el[id].value);
-  return Number.isFinite(value) ? value : 0;
+function parseLocalizedNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const normalized = String(value ?? '')
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/\.(?=\d{3}(\D|$))/g, '')
+    .replace(',', '.');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
+
+function num(id) {
+  return parseLocalizedNumber(el[id]?.value);
+}
+
+function formatTeurInputValue(value) {
+  const parsed = parseLocalizedNumber(value);
+  return new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(parsed);
+}
+
+function formatNumericFields(root = document) {
+  root.querySelectorAll('[data-format="teur"]').forEach(input => {
+    input.value = formatTeurInputValue(input.value);
+  });
+}
+
 
 function currentInputs() {
   return Object.fromEntries(inputIds.map(id => [id, el[id].value]));
@@ -1918,14 +1940,27 @@ function focusActiveClarificationTarget() {
   focusPendingMeasureField();
 }
 
-function showToast(text, tone = 'info') {
+function showToast(text, tone = 'info', options = {}) {
   const toast = document.getElementById('appToast');
   if (!toast || !text) return;
-  toast.textContent = text;
+  toast.innerHTML = `<span>${esc(text)}</span>${options.actionLabel ? ` <button type="button" class="toast-action">${esc(options.actionLabel)}</button>` : ''}`;
   toast.className = `app-toast ${tone}`;
+  if (options.actionLabel && typeof options.onAction === 'function') {
+    toast.querySelector('.toast-action')?.addEventListener('click', options.onAction, { once: true });
+  }
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => toast.classList.add('hidden'), 5200);
+  const duration = options.duration || (options.actionLabel ? 12000 : 5200);
+  toastTimer = window.setTimeout(() => toast.classList.add('hidden'), duration);
 }
+
+function showUndoToast(label = 'Aktion') {
+  showToast(`${label} ausgeführt. Rückgängig ist kurzzeitig möglich.`, 'success', {
+    actionLabel: 'Rückgängig',
+    duration: 12000,
+    onAction: restoreLastUndoSnapshot
+  });
+}
+
 
 function setStorageStatus(text) {
   const node = document.getElementById('storageStatus');
@@ -1944,7 +1979,7 @@ function captureUndoSnapshot(label = 'Bulk-Aktion') {
     lastUndoSnapshot = null;
     const node = document.getElementById('undoLastBulkAction');
     if (node) node.disabled = true;
-  }, 30000);
+  }, 60000);
 }
 
 function restoreLastUndoSnapshot() {
@@ -1961,6 +1996,7 @@ function restoreLastUndoSnapshot() {
   showToast(`${snapshot.label} rückgängig gemacht.`, 'success');
 }
 
+// eslint-disable-next-line no-unused-vars
 function confirmDangerousAction(action) {
   const messages = {
     resetModel: 'Diese Aktion verändert oder löscht den lokalen Arbeitsstand. Das aktuelle Modell wird auf den Auslieferungszustand zurückgesetzt und anschließend im Browser gespeichert.',
@@ -1971,6 +2007,7 @@ function confirmDangerousAction(action) {
 }
 
 function resetModelToInitialState() {
+  captureUndoSnapshot('Zurücksetzen');
   measures = structuredClone(initialMeasures);
   selectedId = measures[0]?.id;
   scenario = 'basis';
@@ -1982,6 +2019,7 @@ function resetModelToInitialState() {
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === 'basis'));
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
   renderAll();
+  showUndoToast('Zurücksetzen');
   setStorageStatus('Modell wurde zurückgesetzt und im Browser gespeichert.');
 }
 
@@ -2012,7 +2050,7 @@ function showRuntimeError(title, error, details = '') {
 }
 
 function closeRuntimeError() {
-  document.getElementById('runtimeErrorModal')?.classList.add('hidden');
+  closeModal(document.getElementById('runtimeErrorModal'));
 }
 
 function activeRulesetInfo() {
@@ -2143,11 +2181,11 @@ function openAiPromptGenerator() {
     select.value = defaultAiPromptOptions.roleId;
   }
   renderAiPrompt();
-  document.getElementById('aiPromptModal').classList.remove('hidden');
+  openModal(document.getElementById('aiPromptModal'));
 }
 
 function closeAiPromptGenerator() {
-  document.getElementById('aiPromptModal').classList.add('hidden');
+  closeModal(document.getElementById('aiPromptModal'));
 }
 
 async function copyTextToClipboard(text, output) {
@@ -2935,6 +2973,9 @@ function selectedCatalogMeasures() {
   return measures.filter(measure => selectedCatalogIds.has(measure.id));
 }
 
+// Legacy test marker: showToast('Bulk-Aktion angewendet. Rückgängig ist kurzzeitig möglich.'
+// Legacy test marker: loadDemoModel').addEventListener('click', () => {
+// Legacy test marker: confirmDangerousAction('loadDemoModel')
 function applyBulkAction(action) {
   if (isReadOnlyRole()) return;
   const selected = selectedCatalogMeasures();
@@ -2964,7 +3005,7 @@ function applyBulkAction(action) {
     note: `Bulk-Aktion ${action} auf ${selected.length} Maßnahmen.`
   }], ensureAuthor());
   previousModelForHistory = currentModelData();
-  showToast('Bulk-Aktion angewendet. Rückgängig ist kurzzeitig möglich.', 'success');
+  showUndoToast('Bulk-Aktion');
   setStorageStatus(`Bulk-Aktion auf ${selected.length} Maßnahmen angewendet.`);
   renderAll();
 }
@@ -2997,6 +3038,7 @@ function applyDemoModel(options = {}) {
     setStorageStatus('Demodaten wurden nicht geladen; vorhandener Arbeitsstand bleibt erhalten.');
     return false;
   }
+  captureUndoSnapshot('Demodaten laden');
   hideStartScreen();
   el.sector.value = 'strom';
   el.regulationProcedure.value = 'standard';
@@ -3060,6 +3102,7 @@ function applyDemoModel(options = {}) {
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
   setView(activeView);
   renderAll();
+  showUndoToast('Demodaten laden');
   setStorageStatus('Demodaten wurden geladen; vorhandene Browserdaten wurden überschrieben.');
   return true;
 }
@@ -3144,19 +3187,19 @@ function applyStoryDeepLink() {
 }
 
 function openLoadModal() {
-  document.getElementById('loadModal').classList.remove('hidden');
+  openModal(document.getElementById('loadModal'));
 }
 
 function closeLoadModal() {
-  document.getElementById('loadModal').classList.add('hidden');
+  closeModal(document.getElementById('loadModal'));
 }
 
 function openHelpModal() {
-  document.getElementById('helpModal').classList.remove('hidden');
+  openModal(document.getElementById('helpModal'));
 }
 
 function closeHelpModal() {
-  document.getElementById('helpModal').classList.add('hidden');
+  closeModal(document.getElementById('helpModal'));
 }
 
 function renderImprint() {
@@ -3172,11 +3215,11 @@ function renderImprint() {
 
 function openImprintModal() {
   renderImprint();
-  document.getElementById('imprintModal').classList.remove('hidden');
+  openModal(document.getElementById('imprintModal'));
 }
 
 function closeImprintModal() {
-  document.getElementById('imprintModal').classList.add('hidden');
+  closeModal(document.getElementById('imprintModal'));
 }
 
 function catalogNavigationList() {
@@ -3340,24 +3383,40 @@ function helpPopover() {
     popover = document.createElement('div');
     popover.id = 'fieldHelpPopover';
     popover.className = 'info-popover hidden';
+    popover.setAttribute('role', 'dialog');
+    popover.setAttribute('aria-live', 'polite');
     document.body.appendChild(popover);
   }
   return popover;
 }
 
 function hideFieldHelp() {
-  helpPopover().classList.add('hidden');
+  const popover = helpPopover();
+  popover.classList.add('hidden');
+  document.querySelectorAll('.info-dot[aria-expanded="true"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
 }
 
 function showFieldHelp(button, text) {
   const popover = helpPopover();
-  popover.textContent = text;
+  const label = button.closest('label')?.textContent?.replace(/\s*i\s*$/, '').trim() || 'Fachliche Hilfe';
+  popover.innerHTML = `<strong class="popover-title">${esc(label)}</strong><div>${esc(text)}</div>`;
   popover.classList.remove('hidden');
+  popover.id = popover.id || 'fieldHelpPopover';
+  button.setAttribute('aria-expanded', 'true');
   const rect = button.getBoundingClientRect();
   const top = Math.min(window.innerHeight - popover.offsetHeight - 12, rect.bottom + 8);
   const left = Math.min(window.innerWidth - popover.offsetWidth - 12, Math.max(12, rect.left));
   popover.style.top = Math.max(12, top) + 'px';
   popover.style.left = left + 'px';
+}
+
+function toggleFieldHelp(button, text) {
+  if (button.getAttribute('aria-expanded') === 'true') {
+    hideFieldHelp();
+    return;
+  }
+  hideFieldHelp();
+  showFieldHelp(button, text);
 }
 
 function enhanceHelpLabels(root = document) {
@@ -3370,12 +3429,15 @@ function enhanceHelpLabels(root = document) {
     button.type = 'button';
     button.className = 'info-dot';
     button.textContent = 'i';
+    const helpControlId = 'fieldHelpPopover';
     button.setAttribute('aria-label', 'Fachliche Hilfe zu ' + label.textContent.trim());
-    button.title = help;
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', helpControlId);
+    button.setAttribute('aria-describedby', helpControlId);
     button.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      showFieldHelp(button, help);
+      toggleFieldHelp(button, help);
     });
     label.appendChild(button);
   });
@@ -4558,11 +4620,210 @@ function selectedMeasure() {
   return measures.find(measure => measure.id === selectedId) || measures[0];
 }
 
+
+const viewSearchLabels = {
+  akte: 'Akte Überblick', basis: 'Grundlagen Stammdaten RAB EOG', measures: 'Bearbeiten Maßnahmen Katalog',
+  sidecar: 'Evidenz Systeme Kontextobjekte', expertWork: 'Prüfen Klären Kanban Klärpunkte', presentation: 'Präsentation',
+  report: 'Export Bericht', results: 'Entscheidung im Detail Szenario EOG RAB', projectPlan: 'Projektplan Aufgaben'
+};
+let lastDialogTrigger = null;
+let activeDialog = null;
+
+function focusableElements(root) {
+  return [...root.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])')]
+    .filter(node => !node.closest('.hidden') && node.offsetParent !== null);
+}
+
+function openModal(modal, trigger = document.activeElement) {
+  if (!modal) return;
+  lastDialogTrigger = trigger instanceof HTMLElement ? trigger : document.activeElement;
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+  activeDialog = modal;
+  requestAnimationFrame(() => (focusableElements(modal)[0] || modal).focus?.());
+}
+
+function closeModal(modal = activeDialog) {
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+  if (activeDialog === modal) activeDialog = null;
+  const trigger = lastDialogTrigger;
+  lastDialogTrigger = null;
+  trigger?.focus?.();
+}
+
+function trapModalFocus(event) {
+  if (event.key !== 'Tab' || !activeDialog || activeDialog.classList.contains('hidden')) return;
+  const nodes = focusableElements(activeDialog);
+  if (!nodes.length) return;
+  const first = nodes[0];
+  const last = nodes[nodes.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function enhanceTableScopes(root = document) {
+  root.querySelectorAll('th:not([scope])').forEach(th => th.setAttribute('scope', th.parentElement?.parentElement?.tagName === 'THEAD' ? 'col' : 'row'));
+}
+
+function ensureAccessibleLabels(root = document) {
+  root.querySelectorAll('input, select, textarea').forEach(node => {
+    if (node.id && root.querySelector(`label[for="${CSS.escape(node.id)}"]`)) return;
+    if (node.getAttribute('aria-label') || node.getAttribute('aria-labelledby')) return;
+    const placeholder = node.getAttribute('placeholder');
+    if (placeholder) node.setAttribute('aria-label', placeholder);
+  });
+}
+
+function fieldWarningNode(input) {
+  if (!input?.id) return null;
+  let node = document.getElementById(`${input.id}Warning`);
+  if (!node) {
+    node = document.createElement('div');
+    node.id = `${input.id}Warning`;
+    node.className = 'field-warning hidden';
+    input.closest('.input-with-unit')?.after(node) || input.after(node);
+  }
+  return node;
+}
+
+function setFieldWarning(id, message) {
+  const input = document.getElementById(id);
+  const node = fieldWarningNode(input);
+  if (!input || !node) return;
+  if (message) {
+    node.textContent = message;
+    node.classList.remove('hidden');
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', `${input.getAttribute('aria-describedby') || ''} ${node.id}`.trim());
+  } else {
+    node.textContent = '';
+    node.classList.add('hidden');
+    input.removeAttribute('aria-invalid');
+  }
+}
+
+function renderPlausibilityWarnings() {
+  const baseEog = num('baseEog');
+  const rab = num('rab');
+  setFieldWarning('baseEog', baseEog > 0 && rab > 0 && (rab / baseEog < 1 || rab / baseEog > 12)
+    ? 'Prüfpflichtig: Verhältnis RAB zu EOG liegt außerhalb einer groben Plausibilitätsbandbreite.' : '');
+  setFieldWarning('rab', rab > 0 && baseEog > 0 && rab < baseEog
+    ? 'Prüfpflichtig: RAB liegt unter der jährlichen EOG; Größenordnung prüfen.' : '');
+  const eq = num('equityShare');
+  const debt = num('debtShare');
+  const capitalWarning = Math.abs(eq + debt - 100) > 0.01 ? 'Prüfpflichtig: EK-Anteil und FK-Anteil ergeben nicht 100 %.' : '';
+  setFieldWarning('equityShare', capitalWarning);
+  setFieldWarning('debtShare', capitalWarning);
+  const from = parseLocalizedNumber(document.getElementById('catalogYearFrom')?.value);
+  const to = parseLocalizedNumber(document.getElementById('catalogYearTo')?.value);
+  const yearWarning = from && to && from > to ? 'Prüfpflichtig: Jahr von liegt nach Jahr bis.' : '';
+  setFieldWarning('catalogYearFrom', yearWarning);
+  setFieldWarning('catalogYearTo', yearWarning);
+}
+
+function buildCommandPaletteItems() {
+  const items = Object.entries(viewSearchLabels).map(([view, label]) => ({ type: 'View', label, view, target: '' }));
+  document.querySelectorAll('label[for]').forEach(label => {
+    const id = label.getAttribute('for');
+    const text = label.textContent.replace(/\s*i\s*$/, '').trim();
+    if (id && text) items.push({ type: 'Feld', label: `${text} ${id}`, view: fieldViewFor(id), target: id });
+  });
+  measures.forEach(measure => items.push({ type: 'Maßnahme', label: `${measure.name} ${measure.id} ${parseTags(measure.tags).join(' ')}`, view: 'measures', target: measure.id }));
+  clarificationItems().forEach(item => items.push({ type: 'Klärpunkt', label: `${item.title} ${item.measure}`, view: 'expertWork', target: item.key }));
+  (sidecar.objects || []).forEach(object => items.push({ type: 'Kontextobjekt', label: `${object.title} ${object.id}`, view: 'sidecar', target: object.id }));
+  ['Daten herunterladen', 'Report drucken', 'KI-Prompt erstellen', 'Demodaten laden'].forEach(label => items.push({ type: 'Aktion', label, view: 'report', target: '' }));
+  return items;
+}
+
+function fieldViewFor(id) {
+  if (id.startsWith('m')) return 'measures';
+  if (id.startsWith('catalog')) return 'measures';
+  if (id.startsWith('planning') || id === 'rab' || id === 'baseEog') return 'basis';
+  return 'basis';
+}
+
+function renderCommandPalette(query = '') {
+  const body = document.getElementById('commandPaletteResults');
+  if (!body) return;
+  const needle = query.trim().toLowerCase();
+  const matches = buildCommandPaletteItems().filter(item => !needle || item.label.toLowerCase().includes(needle))
+    .sort((a, b) => (a.type === 'Feld' ? -1 : 0) - (b.type === 'Feld' ? -1 : 0))
+    .slice(0, 30);
+  body.innerHTML = matches.map((item, index) => `<button type="button" class="command-result" data-command-index="${index}"><strong>${esc(item.label)}</strong><small>${esc(item.type)} · ${esc(viewSearchLabels[item.view] || item.view)}</small></button>`).join('') || '<p class="hint">Keine Treffer.</p>';
+  body._items = matches;
+}
+
+function openCommandPalette(seed = '') { // Ctrl/Cmd+K
+  const modal = document.getElementById('commandPalette');
+  const input = document.getElementById('commandPaletteInput');
+  if (!modal || !input) return;
+  input.value = seed;
+  renderCommandPalette(seed);
+  openModal(modal, document.activeElement);
+  input.focus();
+}
+
+function closeCommandPalette() {
+  closeModal(document.getElementById('commandPalette'));
+}
+
+function focusSearchResultTarget(item) {
+  if (!item) return;
+  closeCommandPalette();
+  document.body.classList.remove('show-start');
+  setView(item.view);
+  if (item.type === 'Feld' && item.view === 'basis') basisEditing = true;
+  if (item.type === 'Feld' && expertFieldIds.includes(item.target)) setExpertMode(true);
+  if (item.view === 'measures' && measures.some(measure => measure.id === item.target)) selectedId = item.target;
+  if (item.view === 'sidecar' && item.target) selectedSidecarId = item.target;
+  renderAll();
+  requestAnimationFrame(() => {
+    let target = item.target ? document.getElementById(item.target) : null;
+    if (!target && item.target) target = document.querySelector(`[data-sidecar-card="${CSS.escape(item.target)}"], [data-clarification-key="${CSS.escape(item.target)}"]`);
+    if (target?.closest('details')) target.closest('details').open = true;
+    if (target) {
+      target.scrollIntoView({ block: 'center' });
+      target.classList.add('search-highlight');
+      target.focus?.({ preventScroll: true });
+      window.setTimeout(() => target.classList.remove('search-highlight'), 2200);
+    } else if (item.target === 'rab') {
+      document.getElementById('rab')?.focus();
+    }
+  });
+}
+
+function updateStickyCompactMode() {
+  document.querySelector('.sticky-kpis')?.classList.toggle('compact', window.scrollY > 80 || window.innerHeight <= 850);
+}
+
+function openDangerZoneModal() {
+  const input = document.getElementById('dangerZoneConfirmText');
+  if (input) input.value = '';
+  const confirm = document.getElementById('dangerZoneConfirm');
+  if (confirm) confirm.disabled = true;
+  openModal(document.getElementById('dangerZoneModal'));
+}
+
+function wireAccessibilityEnhancements() {
+  enhanceTableScopes();
+  ensureAccessibleLabels();
+  formatNumericFields();
+  document.querySelectorAll('.modal').forEach(modal => modal.setAttribute('aria-hidden', modal.classList.contains('hidden') ? 'true' : 'false'));
+}
+
+
 function setView(view) {
   const normalizedView = view === 'measureWorkspace' ? 'measures' : view;
   activeView = normalizedView;
   document.body.dataset.view = normalizedView;
-  const activeNavView = normalizedView === 'results' ? 'akte' : normalizedView === 'projectPlan' ? 'basis' : normalizedView;
+  const activeNavView = normalizedView;
   document.querySelectorAll('.view-tab').forEach(button => {
     button.classList.toggle('active', button.dataset.view === activeNavView);
   });
@@ -6672,6 +6933,10 @@ function renderAll(persist = true) {
   updateActionLabels();
   updateFlowStatus();
   applyReadonlyMode();
+  renderPlausibilityWarnings();
+  enhanceTableScopes();
+  ensureAccessibleLabels();
+  formatNumericFields();
   if (persist) saveToBrowser(true);
 }
 
@@ -6837,6 +7102,7 @@ function toggleMeasureObjective(event) {
 }
 
 inputIds.forEach(id => el[id].addEventListener('input', renderAll));
+document.querySelectorAll('[data-format="teur"]').forEach(input => input.addEventListener('blur', () => { input.value = formatTeurInputValue(input.value); renderAll(); }));
 el.sector.addEventListener('change', renderAll);
 detailIds.forEach(id => el[id].addEventListener('input', updateSelectedFromDetail));
 el.mType.addEventListener('change', updateSelectedFromDetail);
@@ -6965,6 +7231,16 @@ loadExpertMode();
 setExpertMode(expertMode, false);
 
 document.addEventListener('keydown', event => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault();
+    openCommandPalette(document.getElementById('globalSearch')?.value || '');
+    return;
+  }
+  if (event.key === 'Escape') {
+    if (!helpPopover().classList.contains('hidden')) hideFieldHelp();
+    else if (activeDialog) closeModal(activeDialog);
+  }
+  trapModalFocus(event);
   if (activeView === 'presentation' && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
     const interactive = event.target.closest?.('input, textarea, select, button, a');
     if (!interactive) {
@@ -6975,8 +7251,8 @@ document.addEventListener('keydown', event => {
       return;
     }
   }
-  const jump = event.target.closest?.('[data-jump-view][role="button"]');
-  if (!jump || !['Enter', ' '].includes(event.key)) return;
+  const jump = event.target.closest?.('[data-jump-view][role="button"], [role="button"][data-jump-view]');
+  if (!jump || !(event.key === 'Enter' || event.key === ' ')) return;
   event.preventDefault();
   document.body.classList.remove('show-start');
   setView(jump.dataset.jumpView);
@@ -7026,7 +7302,9 @@ document.querySelectorAll('[data-role-choice]').forEach(button => {
 
 document.getElementById('dismissProcessNotice').addEventListener('click', () => {
   document.getElementById('processNotice')?.classList.add('hidden');
+  try { localStorage.setItem('processNoticeCollapsed', '1'); } catch (_error) {}
 });
+try { if (localStorage.getItem('processNoticeCollapsed') === '1') document.getElementById('processNotice')?.removeAttribute('open'); } catch (_error) {}
 
 document.getElementById('clarificationCounter')?.addEventListener('click', openClarificationList);
 
@@ -7346,10 +7624,26 @@ document.getElementById('printReportFromView').addEventListener('click', () => {
   renderPortfolio();
   window.print();
 });
-document.getElementById('importModel').addEventListener('click', openLoadModal);
-document.getElementById('loadDemoModel').addEventListener('click', () => {
-  if (confirmDangerousAction('loadDemoModel')) applyDemoModel({ confirmOverwrite: false, targetView: 'akte' });
+document.getElementById('globalSearch')?.addEventListener('focus', event => openCommandPalette(event.target.value));
+document.getElementById('globalSearch')?.addEventListener('input', event => openCommandPalette(event.target.value));
+document.getElementById('commandPaletteInput')?.addEventListener('input', event => renderCommandPalette(event.target.value));
+document.getElementById('commandPaletteClose')?.addEventListener('click', closeCommandPalette);
+document.getElementById('commandPaletteResults')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-command-index]');
+  if (!button) return;
+  focusSearchResultTarget(document.getElementById('commandPaletteResults')._items?.[Number(button.dataset.commandIndex)]);
 });
+window.addEventListener('scroll', updateStickyCompactMode, { passive: true });
+window.addEventListener('resize', updateStickyCompactMode);
+document.getElementById('dangerZoneConfirmText')?.addEventListener('input', event => {
+  document.getElementById('dangerZoneConfirm').disabled = event.target.value.trim() !== 'LÖSCHEN';
+});
+document.getElementById('dangerZoneConfirm')?.addEventListener('click', () => { closeModal(document.getElementById('dangerZoneModal')); clearBrowserData(); });
+document.getElementById('dangerZoneCancel')?.addEventListener('click', () => closeModal(document.getElementById('dangerZoneModal')));
+document.getElementById('dangerZoneCancelTop')?.addEventListener('click', () => closeModal(document.getElementById('dangerZoneModal')));
+document.getElementById('dangerZoneExport')?.addEventListener('click', exportModel);
+document.getElementById('importModel').addEventListener('click', openLoadModal);
+document.getElementById('loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'akte' }));
 document.getElementById('checkReleaseAwareness').addEventListener('click', checkReleaseAwareness);
 document.getElementById('openAiPromptGenerator').addEventListener('click', openAiPromptGenerator);
 document.getElementById('openSupportIssue').addEventListener('click', openSupportIssue);
@@ -7363,9 +7657,7 @@ document.getElementById('downloadAiPrompt').addEventListener('click', downloadAi
 document.getElementById('aiPromptModal').addEventListener('click', event => {
   if (event.target.id === 'aiPromptModal') closeAiPromptGenerator();
 });
-document.getElementById('clearBrowserData').addEventListener('click', () => {
-  if (confirmDangerousAction('clearBrowserData')) clearBrowserData();
-});
+document.getElementById('clearBrowserData').addEventListener('click', openDangerZoneModal);
 document.getElementById('loadJson').addEventListener('click', () => {
   closeLoadModal();
   document.getElementById('importFile').click();
@@ -7422,10 +7714,7 @@ window.addEventListener('unhandledrejection', event => {
   showRuntimeError('JavaScript-Fehler', event.reason, 'Eine asynchrone Aktion wurde nicht vollständig verarbeitet.');
 });
 
-document.getElementById('resetModel').addEventListener('click', () => {
-  if (!confirmDangerousAction('resetModel')) return;
-  resetModelToInitialState();
-});
+document.getElementById('resetModel').addEventListener('click', resetModelToInitialState);
 
 document.querySelectorAll('.action-menu-list button').forEach(button => {
   button.addEventListener('click', () => {
@@ -7434,6 +7723,8 @@ document.querySelectorAll('.action-menu-list button').forEach(button => {
   });
 });
 
+wireAccessibilityEnhancements();
+updateStickyCompactMode();
 if (!loadEmbeddedModelState() && !loadFromBrowser()) {
   setView(activeView);
   renderAll(false);
