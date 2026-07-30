@@ -60,7 +60,7 @@ Die Akte kann als folienartige Befassungsansicht gezeigt werden. Präsentation u
 
 Info-Dots sind keine `title`-Hovertexte mehr. Sie öffnen zugängliche Popovers, deren Inhalte sichtbar, kopierbar und per Tastatur erreichbar sind. Passende Begriffe können direkt im Glossar geöffnet werden.
 
-Das Glossar erklärt zentrale Begriffe wie EOG, RAB, QE, KANU, ARegV, Befassung, Klärpunkt, Attribution, No-Regret, Kontextobjekt und Entscheidungsreife. Es ist über das Mehr-Menü und per Deep-Link `#glossar/<begriff>` erreichbar.
+Das Glossar erklärt zentrale Begriffe wie EOG, RAB, QE/Qualitätselement, IRR, Kapitalwert/NPV, Diskontsatz, Cashflow, CAPEX, OPEX, AfA, Nutzungsdauer, Befassung, Klärpunkt, Wirkannahme, Evidenz, Stresstest, Systemreferenz/Rückspielweg, Kontextobjekt/Sidecar, Strom-Flexibilität, EEG-2027-/Netzanschluss-Entwurfsbegriffe, Gas-Transformationsbegriffe und Kapitalkosten-Expertenfelder. Es ist über das Mehr-Menü und per Deep-Link `#glossar/<begriff>` erreichbar.
 
 ## Fehlertoleranz
 

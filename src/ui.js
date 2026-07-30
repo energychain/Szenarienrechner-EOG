@@ -180,24 +180,57 @@ let sidecarFilterDivision = 'all';
 let sidecarModeFilter = 'all';
 
 const glossaryEntries = [
-  { slug: 'eog', term: 'EOG', definition: 'Erlösobergrenze: regulatorischer jährlicher Erlösrahmen der Sparte.', calculator: 'Dient als Basis- und Ergebnisgröße für jährliche EOG-Wirkungen.', source: 'EOG-Bescheid, Regulierungsmanagement, Netzentgeltkalkulation.' },
-  { slug: 'rab', term: 'RAB', definition: 'Regulated Asset Base bzw. regulierte Kapitalbasis.', calculator: 'Anker für Verzinsung, Kapitalkosten und Kapitalwertbetrachtung.', source: 'Anlagenbuchhaltung, Regulierungsrechnung, Bescheid.' },
-  { slug: 'qe', term: 'QE', definition: 'Qualitätselement im Anreizregulierungskontext.', calculator: 'Wird als prüfpflichtige Q-Wirkung modelliert; bei Gas nicht automatisch anzusetzen.', source: 'ARegV, Qualitätsregulierung, Regulierungsmanagement.' },
+  { slug: 'eog', term: 'EOG', aliases: ['Erlösobergrenze'], definition: 'Erlösobergrenze: regulatorischer jährlicher Erlösrahmen der Sparte.', calculator: 'Dient als Basis- und Ergebnisgröße für jährliche EOG-Wirkungen; EOG-Wirkung ist nicht automatisch Cashflow.', source: 'EOG-Bescheid, Regulierungsmanagement, Netzentgeltkalkulation.' },
+  { slug: 'rab', term: 'RAB', aliases: ['Regulated Asset Base', 'regulierte Kapitalbasis'], definition: 'Regulated Asset Base bzw. regulierte Kapitalbasis.', calculator: 'Anker für Verzinsung, Kapitalkosten und Kapitalwertbetrachtung.', source: 'Anlagenbuchhaltung, Regulierungsrechnung, Bescheid.' },
+  { slug: 'qe', term: 'QE', aliases: ['Qualitätselement', 'Q-Element'], definition: 'Qualitätselement im Anreizregulierungskontext.', calculator: 'Wird als prüfpflichtige Q-Wirkung modelliert; bei Gas nicht automatisch anzusetzen.', source: 'ARegV, Qualitätsregulierung, Regulierungsmanagement.' },
   { slug: 'kanu', term: 'KANU', definition: 'Regulatorischer Rahmen für Nutzungsdauer-/AfA-Fragen im Gas-Kontext.', calculator: 'Beeinflusst Gas-AfA-Szenarien und Transformationspfad-Prüfung.', source: 'BNetzA-Festlegungen, Regulierungsmanagement.' },
   { slug: 'nest-ramen', term: 'NEST/RAMEN', definition: 'Regulatorischer Reform- und Festlegungskontext der Anreizregulierung.', calculator: 'Kennzeichnet Arbeitsstände und prüfpflichtige Regeln.', source: 'BNetzA-Veröffentlichungen und Konsultationsunterlagen.' },
-  { slug: 'aregv', term: 'ARegV', definition: 'Anreizregulierungsverordnung als zentraler Ordnungsrahmen.', calculator: 'Begriffe wie Regulierungsperiode, Effizienz und vereinfachtes Verfahren beziehen sich darauf.', source: 'Gesetzestext, Bescheide, Fachabteilung.' },
+  { slug: 'aregv', term: 'ARegV', aliases: ['Anreizregulierungsverordnung'], definition: 'Anreizregulierungsverordnung als zentraler Ordnungsrahmen.', calculator: 'Begriffe wie Regulierungsperiode, Effizienz und vereinfachtes Verfahren beziehen sich darauf.', source: 'Gesetzestext, Bescheide, Fachabteilung.' },
   { slug: 'regulierungsperiode', term: 'Regulierungsperiode', definition: 'Mehrjähriger Zeitraum, für den regulatorische Parameter gelten.', calculator: 'Ordnet Startjahr, Kostenbasisjahr und Ruleset ein.', source: 'Regulierungsbescheid, BNetzA/Landesregulierung.' },
   { slug: 'kostenbasisjahr', term: 'Kostenbasisjahr', definition: 'Referenzjahr für Kostenprüfung und Ausgangsniveau.', calculator: 'Hilft, Startjahr und EOG-Basis einzuordnen.', source: 'Kostenprüfung, Regulierungsbescheid.' },
+  { slug: 'irr', term: 'IRR', aliases: ['interner Zinsfuß', 'Rendite'], definition: 'Interner Zinsfuß einer Zahlungsreihe; Renditekennzahl, bei der der Kapitalwert rechnerisch null wird.', calculator: 'Die App zeigt IRR nur als indikative Finanzierungsgröße; bei mehreren Vorzeichenwechseln ist MIRR oder Kapitalwert belastbarer.', source: 'Finanzmodell, Controlling, Investitionsrechnung.' },
+  { slug: 'kapitalwert-npv', term: 'Kapitalwert/NPV', aliases: ['NPV', 'Net Present Value'], definition: 'Barwert der modellierten Zahlungs- bzw. Wirkungssicht nach Abzinsung mit dem Diskontsatz.', calculator: 'Dient als indikative Tragfähigkeitsgröße neben IRR/MIRR; kein garantierter Zahlungsstrom.', source: 'Finanzplanung, Controlling, Szenariorechnung.' },
+  { slug: 'diskontsatz', term: 'Diskontsatz', aliases: ['Abzinsungssatz'], definition: 'Zinssatz, mit dem künftige Effekte auf den heutigen Wert abgezinst werden.', calculator: 'Wirkt direkt auf Kapitalwert/NPV und konservative Szenarioprüfung; im Arbeitsstand oft am FK-Zins oder einer Mindestverzinsung orientiert.', source: 'Finanzierungsvorgaben, Controlling, Kapitalkostenannahmen.' },
+  { slug: 'cashflow', term: 'Cashflow', definition: 'Indikative Zahlungs- bzw. Wirtschaftlichkeitssicht aus modellierten Wirkungen, Kosten und Zeitpunkten.', calculator: 'Die App trennt bewusst EOG-Wirkung und Cashflow; regulatorische Erlöse sind nicht automatisch liquide Zahlungsströme.', source: 'Finanzplanung, Wirtschaftsplan, Controlling.' },
+  { slug: 'capex', term: 'CAPEX', aliases: ['Investition', 'Investitionskosten'], definition: 'Investive Ausgaben bzw. aktivierbare Kosten einer Maßnahme.', calculator: 'CAPEX fließt in Kapitalbindung, AfA, Kapitalkosten und Portfolio-Summen ein; bei Strom-Flex kann OPEX eine CAPEX-Alternative ersetzen.', source: 'Investitionsplan, Anlagenbuchhaltung, Asset Management.' },
+  { slug: 'opex', term: 'OPEX', aliases: ['Betriebskosten'], definition: 'Laufende Betriebs- oder Aufwandskosten einer Maßnahme.', calculator: 'OPEX wirkt als jährliche wirtschaftliche Belastung; in Flex-Szenarien kann OPEX-gegen-CAPEX-Substitution als prüfpflichtiger Vergleich geführt werden.', source: 'Wirtschaftsplan, Kostenstellen, Betriebsführung.' },
+  { slug: 'abschreibung', term: 'AfA/Abschreibung', aliases: ['AfA'], definition: 'Planmäßige Verteilung aktivierter Kosten über die Nutzungsdauer.', calculator: 'Beeinflusst Jahresreihen, Restwerte und bei Gas KANU-/Transformationspfad-Prüfungen.', source: 'Anlagenbuchhaltung, HGB/Regulierungsrechnung, Nutzungsdauerannahmen.' },
+  { slug: 'nutzungsdauer', term: 'Nutzungsdauer', definition: 'Zeitraum, über den ein Asset fachlich, bilanziell oder regulatorisch genutzt bzw. abgeschrieben wird.', calculator: 'Wirkt auf AfA, Restwerte, Laufzeitkonflikte und Gas-Transformationswarnungen.', source: 'Anlagenbuchhaltung, technische Bewertung, Regulierungsvorgaben.' },
   { slug: 'befassung', term: 'Befassung', definition: 'Dokumentierter fachlicher Arbeits- oder Prüfstand ohne automatische Beschlusswirkung.', calculator: 'Befassungsnotizen halten Klärarbeit zu offenen Punkten fest.', source: 'Projektplan, Arbeitsnotiz, Reviewtermin.' },
   { slug: 'klaerpunkt', term: 'Klärpunkt', definition: 'Offene prüfpflichtige Frage im Arbeitsstand.', calculator: 'Erscheint im Kanban und kann mit Befassungsnotizen geschlossen werden.', source: 'Validierung, Kontextobjekte, Maßnahmendaten.' },
+  { slug: 'wirkannahme', term: 'Wirkannahme', aliases: ['Impact Assumption'], definition: 'Fachliche Annahme, dass eine Maßnahme eine bestimmte regulatorische, wirtschaftliche oder Risikowirkung hat.', calculator: 'Wirkannahmen tragen Klärpunkt-Logik, Stresstest und Prompt-Export; sie sind nicht automatisch bestätigte Fakten.', source: 'Fachbewertung, Evidenz, Asset Management, Controlling.' },
+  { slug: 'evidenz', term: 'Evidenz', aliases: ['Nachweis', 'Beleg'], definition: 'Quelle oder Nachweis, der eine Maßnahme, Annahme oder Wirkung fachlich stützt.', calculator: 'Fehlende oder schwache Evidenz erzeugt Klärpunkte und beeinflusst die Einschätzung der Arbeitsstand-Reife.', source: 'Bescheid, Systemauszug, Planungsunterlage, Befassungsnotiz.' },
+  { slug: 'stresstest', term: 'Stresstest / konservatives Szenario', aliases: ['konservatives Szenario', 'Stressfall'], definition: 'Bewusste Gegenprüfung mit vorsichtigeren Parametern als im Basisfall.', calculator: 'Nur ein unterscheidbarer konservativer Fall kann Robustheit stützen; identische Basis-/Konservativ-Werte bleiben prüfpflichtig.', source: 'Szenarioannahmen, Controlling, Risikoprüfung.' },
+  { slug: 'systemreferenz', term: 'Systemreferenz / Rückspielweg', aliases: ['Rückspielweg', 'Quellsystem'], definition: 'Verweis auf führende Systeme oder Akten, aus denen Daten stammen oder in die Ergebnisse zurückgespielt werden.', calculator: 'Hilft, Maßnahmen mit ERP, Asset-System, Risikoakte oder Projektplanung nachvollziehbar zu verbinden.', source: 'ERP, Anlagenbuchhaltung, Asset Management, Risikoregister.' },
+  { slug: 'risiko-mapping', term: 'Risiko-Mapping', aliases: ['Risikozuordnung'], definition: 'Zuordnung einer Maßnahme zu Risikoereignis, Schadenspotenzial, Eintrittswahrscheinlichkeit oder Vermeidungseffekt.', calculator: 'Stützt Risikowert/RiskAvoided und Evidenz-Klärpunkte, ohne automatisch eine rechtliche Anerkennung zu behaupten.', source: 'Risikoregister, Störungsstatistik, Technikbewertung.' },
+  { slug: 'snapshot', term: 'Snapshot', aliases: ['Schnappschuss'], definition: 'Gesicherter Stand des lokalen Modell-JSON zu einem Zeitpunkt.', calculator: 'Dient als Audit-/Exportstand und als Grundlage für Rückgängig-Funktionen bei destruktiven Aktionen.', source: 'Lokaler Browser-Arbeitsstand, JSON-/HTML-mit-Daten-Export.' },
+  { slug: 'vnb', term: 'VNB', aliases: ['Verteilnetzbetreiber'], definition: 'Verteilnetzbetreiber, also Betreiber eines Strom- oder Gasverteilnetzes.', calculator: 'Die App modelliert VNB-Spartenportfolios und deren regulatorische Arbeitsstände.', source: 'Unternehmensrolle, Regulierung, Netzbetrieb.' },
+  { slug: 'teur', term: 'TEUR', definition: 'Einheit Tausend Euro.', calculator: 'Beträge werden meist in TEUR geführt; 20 TEUR entsprechen 20.000 EUR.', source: 'Controlling, Wirtschaftsplan, Exporttabellen.' },
   { slug: 'attribution', term: 'Attribution', definition: 'Zurechnung eines Effekts zur Maßnahme oder zum Portfolio.', calculator: 'Begrenzt, welcher Anteil einer Wirkung in Szenarien berücksichtigt wird.', source: 'Fachliche Herleitung, Controlling, Evidenz.' },
   { slug: 'wirkungsverzug', term: 'Wirkungsverzug', definition: 'Zeitlicher Abstand zwischen Maßnahme und regulatorischer oder wirtschaftlicher Wirkung.', calculator: 'CAPEX-, OPEX- und QE-Lags verschieben Effekte in Jahresreihen.', source: 'Regulierungslogik, Projektzeitplan, Bescheid.' },
   { slug: 'kapitalkostenabgleich', term: 'Kapitalkostenabgleich', definition: 'Abgleich von Verzinsung, Finanzierung und Kapitalbindung.', calculator: 'Wirkt auf Spread, IRR/MIRR und Kapitalwertindikatoren.', source: 'Finanzplanung, Controlling, Regulierungsrechnung.' },
   { slug: 'regulierungskonto', term: 'Regulierungskonto', definition: 'Regulatorische Ausgleichslogik für Differenzen zwischen Plan und Ist.', calculator: 'Wird als Kontext für EOG-/Zeitversatzfragen geführt, nicht als Detailkonto simuliert.', source: 'Bescheid, Regulierungsmanagement.' },
   { slug: 'vereinfachtes-verfahren', term: 'vereinfachtes Verfahren', definition: 'Regulierungsvereinfachung nach § 24 ARegV.', calculator: 'Ändert die Einordnung einzelner Q-/E-Komponenten und wird als Verfahren dokumentiert.', source: 'ARegV, Bescheid, Regulierungsmanagement.' },
   { slug: 'no-regret', term: 'No-Regret', definition: 'Maßnahme, die auch unter Unsicherheit fachlich naheliegt.', calculator: 'Kennzeichnet Maßnahmen mit strategischer oder Risiko-Begründung trotz offener Details.', source: 'Strategie, Asset Management, Risikoanalyse.' },
-  { slug: 'kontextobjekt', term: 'Kontextobjekt', definition: 'Technisch Sidecar: Evidenz-, System- oder Kontextinformation außerhalb klassischer Maßnahmen.', calculator: 'Bleibt grundsätzlich KPI-neutral; Rechenwirkung nur bei expliziter Aktivierung und Mapping.', source: 'Quellen, Systeme, Evidenzprüfung, Modulimporte.' },
+  { slug: 'kontextobjekt', term: 'Kontextobjekt', aliases: ['Sidecar', 'Evidenzobjekt'], definition: 'Evidenz-, System- oder Kontextinformation außerhalb klassischer Maßnahmen; Sidecar ist der technische Alias in Datenmodell und Doku.', calculator: 'Bleibt grundsätzlich KPI-neutral; Rechenwirkung nur bei expliziter Aktivierung und Mapping.', source: 'Quellen, Systeme, Evidenzprüfung, Modulimporte.' },
   { slug: 'entscheidungsreife', term: 'Entscheidungsreife', definition: 'Arbeitsstand-Score zur Einordnung von Daten-, Evidenz- und Klärpunktreife.', calculator: 'Trennt rechnerische Indikation von fachlicher Befassungsgrundlage.', source: 'Akte, Projektplan, Klärpunkte, Kontextobjekte.' },
+  { slug: 'agnes', term: 'AGNeS', definition: 'Arbeitsbegriff für steuerbare Netz-/Flexibilitätsobjekte im Stromkontext.', calculator: 'AGNeS-Relevanz wird als eigener Prüfpunkt geführt; ohne validierten Netzfahrplan entsteht keine automatische Ergebniswirkung.', source: 'Netzplanung, Steuerbarkeitskonzept, Strom-Flexibilitätsprüfung.' },
+  { slug: 'netzfahrplan', term: 'Netzfahrplan', definition: 'Planungs- oder Betriebsrahmen, der Steuerbarkeit, Einspeisung, Last oder Flexibilität netzdienlich einordnet.', calculator: 'Er stützt Strom-Flexibilitätsobjekte und die Prüfung vermiedener oder verschobener CAPEX.', source: 'Netzplanung, Anschlusskonzept, Betriebsführung.' },
+  { slug: 'flexibilitaetsobjekt', term: 'Flexibilität(sobjekt)', aliases: ['Flexibilität', 'Flexibilitätsobjekt'], definition: 'Strom-Kontextobjekt oder Maßnahmentyp für steuerbare Last, Einspeisung, Speicher oder netzdienliche Betriebsweise.', calculator: 'Kann OPEX-gegen-CAPEX-Substitution oder vermiedene/verschobene CAPEX als prüfpflichtige TEUR-Wirkung dokumentieren.', source: 'Netzplanung, Redispatch-/Steuerbarkeitsdaten, Modulrechnung.' },
+  { slug: 'eeg-2027-netzanschlusspaket', term: 'EEG 2027 / Netzanschlusspaket', aliases: ['Kabinettsentwurf 29.07.2026'], definition: 'Entwurfsbasierter Strom-Regelstand für EEG- und Netzanschlussannahmen; kein endgültiges geltendes Recht.', calculator: 'Kennzeichnet Strom-Annahmen, Entwurfswarnungen und Klärpunkte; Gas-Akten bleiben davon unberührt.', source: 'Kabinettsentwürfe, parlamentarischer Stand, BNetzA-Folgefestlegungen.' },
+  { slug: 'kapazitaetslimitiertes-netzgebiet', term: 'kapazitätslimitiertes Netzgebiet', definition: 'Strom-Netzgebiet, in dem Anschluss- oder Einspeisekapazität planerisch begrenzt oder bewirtschaftet wird.', calculator: 'Markiert Redispatch-/Anschlussrisiken, Erlösrisiko und Nachweisbedarf als Strom-only Prüfpunkte.', source: 'Netzplanung, Anschlussprüfung, Entwurfsregelstand.' },
+  { slug: 'erloesrisiko', term: 'Erlösrisiko', definition: 'Möglicher jährlicher Erlösverlust oder wirtschaftlicher Nachteil aus Abregelung, Redispatch, Anschluss- oder Marktrisiken.', calculator: 'Wird in TEUR p.a. dokumentiert und kann als Risikowert in die bestehende Portfolio-Logik einfließen.', source: 'Modulrechnung, Netzplanung, Direktvermarktung, Controlling.' },
+  { slug: 'risk-avoided', term: 'Risikowert (RiskAvoided)', aliases: ['RiskAvoided', 'Risiko-/Vermeidungseffekt'], definition: 'Arbeitswert für vermiedene Risiken oder Störungskosten durch eine Maßnahme.', calculator: 'Erhöht nicht automatisch Evidenzqualität; Herleitung, Quelle und Mapping bleiben prüfpflichtig.', source: 'Risikoregister, Störungsdaten, fachliche Bewertung.' },
+  { slug: 'ewigkeitsvermutung', term: 'Ewigkeitsvermutung', definition: 'Annahme, dass ein Gasnetz dauerhaft weiterbetrieben wird.', calculator: 'Wenn sie entfällt, werden Nutzungsdauer, AfA, Restwerte, Stilllegung und Rückbau prüfpflichtig.', source: 'Gas-Transformationsplanung, Bilanzierung, Regulierung.' },
+  { slug: 'stilllegung-rueckbau', term: 'Stilllegung/Rückbau', definition: 'Außerbetriebnahme und physischer oder funktionaler Rückbau von Netzassets.', calculator: 'Kann Kosten, Rückstellungen, Restwerte, Ist-Kosten und regulatorische Behandlung im Gas-Transformationspfad auslösen.', source: 'Technik, Asset Management, Bilanzierung, Regulierungsmanagement.' },
+  { slug: 'umwidmung-wasserstoffleitung', term: 'Umwidmung/Wasserstoffleitung', aliases: ['H2-Leitung', 'Wasserstofffähigkeit'], definition: 'Prüfung, ob Gasassets künftig für Wasserstoff oder andere Nutzungen umgewidmet werden können.', calculator: 'Beeinflusst KANU-/Ausnahmeabgrenzung, Nutzungsdauer und Transformationspfad-Einordnung.', source: 'Netzplanung, H2-Strategie, technische Assetprüfung.' },
+  { slug: 'rueckstellungen', term: 'Rückstellungen', definition: 'Bilanzielle Vorsorge für wahrscheinliche Verpflichtungen, z. B. Stilllegung oder Rückbau.', calculator: 'Werden als prüfpflichtiger Gas-Kontext dokumentiert; die App ersetzt keine bilanzielle Entscheidung.', source: 'Rechnungswesen, Wirtschaftsprüfung, Rechts-/Regulierungsprüfung.' },
+  { slug: 'kaneu', term: 'KAnEu', definition: 'Arbeitsbegriff im Gas-Kontext für kanalisierte Ausnahme-/Übergangsfragen in der Nutzungsdauer- und Kostenbehandlung.', calculator: 'Wird als prüfpflichtiger Transformationspfad-Parameter geführt, solange Rechts-/Festlegungsstand und Asset-Scope offen sind.', source: 'Regulierungsmanagement, BNetzA-/Konsultationsstand, Fachprüfung.' },
+  { slug: 'ist-kosten-kostenpfad', term: 'Ist-Kosten/Kostenpfad', aliases: ['Kostenpfad', 'Ist-Kosten'], definition: 'Abgleich tatsächlicher Kosten mit dem regulatorischen oder planerischen Kostenverlauf.', calculator: 'Hilft, Stilllegung, Rückbau, OPEX und EOG-Wirkungen nicht mit bloßen Planannahmen zu verwechseln.', source: 'Kostenrechnung, Regulierungsmanagement, Controlling.' },
+  { slug: 'abzugskapital', term: 'Abzugskapital', definition: 'Kapitalbestandteile, die von der verzinslichen Kapitalbasis abgezogen werden.', calculator: 'Expertenfeld im Kapitalkostenmodell; verändert die Kapitalbasis, nicht die Maßnahmensumme selbst.', source: 'Regulierungsrechnung, Bilanz, Bescheid.' },
+  { slug: 'ek-fk-anteil', term: 'EK-/FK-Anteil', aliases: ['Eigenkapitalanteil', 'Fremdkapitalanteil'], definition: 'Aufteilung der Finanzierung in Eigen- und Fremdkapital.', calculator: 'Dient der Kapitalkosten- und Plausibilitätsprüfung; EK und FK sollten zusammen 100 % ergeben.', source: 'Finanzplanung, Regulierungsrechnung, Controlling.' },
+  { slug: 'kapitalverzinsung', term: 'Kapitalverzinsung', aliases: ['EK-Zins', 'FK-Zins'], definition: 'Zinssätze bzw. gewichtete Verzinsung für gebundenes Kapital.', calculator: 'Wirkt auf Kapitalkosten, Spread, Kapitalwert und konservative Gegenprüfung.', source: 'Regulierungsparameter, Finanzierungsannahmen, Bescheid.' },
+  { slug: 'baukostenzuschuss-bkz', term: 'Baukostenzuschuss (BKZ)', aliases: ['BKZ', 'Baukostenzuschuss'], definition: 'Zuschuss oder Kostenbeitrag im Zusammenhang mit Netzanschluss oder Baukosten.', calculator: 'Bei Strom kann ein BKZ als Zusatz-CAPEX bzw. prüfpflichtiger Entwurfsparameter dokumentiert werden.', source: 'Anschlussvertrag, Netzanschlussprüfung, Controlling.' },
 ];
 
 
@@ -3242,6 +3275,7 @@ function renderGlossary(selectedSlug = 'eog') {
   entry.innerHTML = `
     <p class="eyebrow">Glossar</p>
     <h3>${esc(selected.term)}</h3>
+    ${selected.aliases?.length ? `<p class="hint">Auch auffindbar als: ${selected.aliases.map(alias => esc(alias)).join(', ')}</p>` : ''}
     <dl>
       <dt>Kurzdefinition</dt><dd>${esc(selected.definition)}</dd>
       <dt>Bezug im Rechner</dt><dd>${esc(selected.calculator)}</dd>
@@ -3461,26 +3495,10 @@ function hideFieldHelp() {
 
 function glossarySlugForHelp(label, text) {
   const haystack = `${label} ${text}`.toLowerCase();
-  const matches = [
-    ['nest-ramen', ['nest', 'ramen']],
-    ['vereinfachtes-verfahren', ['vereinfachtes verfahren', '§ 24']],
-    ['kostenbasisjahr', ['kostenbasis', 'fotojahr']],
-    ['regulierungsperiode', ['regulierungsperiode']],
-    ['regulierungskonto', ['regulierungskonto']],
-    ['kapitalkostenabgleich', ['kapitalkosten', 'abzugskapital', 'finanzierung', 'zinssatz', 'spread', 'wacc']],
-    ['entscheidungsreife', ['entscheidungsreife', 'arbeitsstand-score']],
-    ['kontextobjekt', ['kontextobjekt', 'sidecar', 'evidenzobjekt']],
-    ['wirkungsverzug', ['wirkungsverzug', 'lag', 'verzug']],
-    ['attribution', ['attribution', 'zurechnung']],
-    ['befassung', ['befassung', 'befassungsnotiz']],
-    ['klaerpunkt', ['klärpunkt', 'klaerpunkt', 'offene frage']],
-    ['no-regret', ['no-regret', 'noregret']],
-    ['kanu', ['kanu']],
-    ['aregv', ['aregv', 'anreizregulierungsverordnung']],
-    ['qe', ['qualitätselement', 'q-element', 'qe', 'q-reg']],
-    ['rab', ['rab', 'regulierte kapitalbasis', 'kapitalbasis']],
-    ['eog', ['eog', 'erlösobergrenze']],
-  ];
+  const matches = glossaryEntries.map(item => [
+    item.slug,
+    [item.term, item.slug, ...(item.aliases || [])].map(term => term.toLowerCase()),
+  ]);
   const found = matches.find(([, needles]) => needles.some(needle => haystack.includes(needle)));
   return found?.[0] || '';
 }
@@ -4825,6 +4843,12 @@ function renderPlausibilityWarnings() {
 
 function buildCommandPaletteItems() {
   const items = Object.entries(viewSearchLabels).map(([view, label]) => ({ type: 'View', label, view, target: '' }));
+  glossaryEntries.forEach(item => items.push({
+    type: 'Glossar',
+    label: `${item.term} ${(item.aliases || []).join(' ')} ${item.definition}`,
+    view: 'basis',
+    target: item.slug
+  }));
   document.querySelectorAll('label[for]').forEach(label => {
     const id = label.getAttribute('for');
     const text = label.textContent.replace(/\s*i\s*$/, '').trim();
@@ -4872,6 +4896,10 @@ function closeCommandPalette() {
 function focusSearchResultTarget(item) {
   if (!item) return;
   closeCommandPalette();
+  if (item.type === 'Glossar') {
+    openGlossaryModal(item.target || 'eog');
+    return;
+  }
   document.body.classList.remove('show-start');
   setView(item.view);
   if (item.type === 'Feld' && item.view === 'basis') basisEditing = true;
