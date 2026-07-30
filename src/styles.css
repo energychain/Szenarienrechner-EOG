@@ -4775,3 +4775,109 @@ body[data-view="measures"] [data-view-panel="measures"] > .table-wrap {
   0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, .45); }
   100% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
 }
+
+/* UX review 2026-07-30: product structure, status deduplication, feedback */
+.product-nav {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+
+.product-nav .workflow-tabs {
+  grid-template-columns: repeat(7, minmax(92px, 1fr));
+}
+
+.expert-mode-inline {
+  min-height: 62px;
+  align-self: stretch;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.menu-section-title {
+  display: block;
+  padding: 8px 4px 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-top: 1px solid var(--line);
+}
+
+.menu-section-title:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.menu-section-title.danger {
+  color: var(--bad);
+}
+
+.app-toast {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 80;
+  max-width: min(420px, calc(100vw - 44px));
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 111, 143, .3);
+  border-radius: 12px;
+  background: #f2fbfd;
+  color: var(--ink);
+  box-shadow: 0 16px 44px rgba(22, 32, 42, .18);
+}
+
+.app-toast.success {
+  border-color: rgba(29, 127, 95, .3);
+  background: #f0fbf6;
+}
+
+.app-toast.hidden {
+  display: none;
+}
+
+.inline-help-panel {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+  padding: 12px 14px;
+  border: 1px solid #f0d58a;
+  border-radius: 12px;
+  background: #fff7df;
+}
+
+.process-controls-main {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  max-width: 980px;
+}
+
+.compact-phase-hint {
+  margin: 8px 0;
+  max-width: 480px;
+}
+
+body:not([data-view="results"]):not([data-view="report"]) .sticky-kpis {
+  display: none;
+}
+
+body[data-view="measureWorkspace"] main {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body[data-view="measureWorkspace"] [data-view-panel="measureWorkspace"] {
+  min-height: min(620px, calc(100vh - 230px));
+}
+
+@media (max-width: 1120px) {
+  .product-nav {
+    grid-template-columns: 1fr;
+  }
+  .product-nav .workflow-tabs {
+    grid-template-columns: repeat(4, minmax(96px, 1fr));
+  }
+  .expert-mode-inline {
+    min-height: 44px;
+  }
+}

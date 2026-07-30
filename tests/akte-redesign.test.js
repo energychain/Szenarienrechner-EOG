@@ -20,9 +20,11 @@ describe('Akte redesign inventory coverage', () => {
     ['basis', 'measures', 'expertWork', 'results', 'report', 'sidecar', 'projectPlan', 'akte', 'presentation'].forEach(view => {
       expect(html).toContain(`data-view-panel="${view}"`);
     });
-    ['akte', 'measures', 'sidecar', 'expertWork', 'presentation', 'report', 'basis', 'results', 'projectPlan'].forEach(view => {
+    ['akte', 'measures', 'sidecar', 'expertWork', 'presentation', 'report', 'basis'].forEach(view => {
       expect(html).toContain(`data-view="${view}"`);
     });
+    expect(html).toContain('data-jump-view="results"');
+    expect(html).toContain('data-jump-view="projectPlan"');
   });
 
   it('keeps central global actions and advanced dialogs present', () => {

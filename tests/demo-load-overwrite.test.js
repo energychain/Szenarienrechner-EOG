@@ -13,7 +13,8 @@ describe('demo data loading UX', () => {
     expect(ui).toContain('Der aktuell im Browser gespeicherte Arbeitsstand wird dadurch überschrieben');
     expect(ui).toContain('Demodaten wurden nicht geladen; vorhandener Arbeitsstand bleibt erhalten.');
     expect(ui).toContain("startDemo').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'akte' })");
-    expect(ui).toContain("loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'akte' })");
+    expect(ui).toContain("loadDemoModel').addEventListener('click', () => {");
+    expect(ui).toContain("confirmDangerousAction('loadDemoModel')");
     expect(ui).toContain("loadDemoFromModal').addEventListener('click'");
   });
 

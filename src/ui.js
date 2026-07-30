@@ -139,6 +139,9 @@ const legacyStorageKeys = [];
 const modelVersion = 8;
 const appVersion = '0.3.1';
 let storageStatusTimer = null;
+let toastTimer = null;
+let lastUndoSnapshot = null;
+let undoSnapshotTimer = null;
 let expertMode = false;
 let history = emptyHistory();
 let previousModelForHistory = null;
@@ -347,7 +350,7 @@ function applyReadonlyMode() {
   });
   [
     'newMeasure', 'toggleAllInCatalog', 'addImpactAssumption', 'addObjective',
-    'openBasisWizard', 'toggleBasisEdit', 'meetingTextSave', 'meetingTextReset'
+    'openSelectedMeasureWorkspace', 'openBasisWizard', 'toggleBasisEdit', 'meetingTextSave', 'meetingTextReset'
   ].forEach(id => {
     const node = document.getElementById(id);
     if (node) node.disabled = readOnly;
@@ -1895,15 +1898,104 @@ function focusActiveClarificationTarget() {
   focusPendingMeasureField();
 }
 
+function showToast(text, tone = 'info') {
+  const toast = document.getElementById('appToast');
+  if (!toast || !text) return;
+  toast.textContent = text;
+  toast.className = `app-toast ${tone}`;
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => toast.classList.add('hidden'), 5200);
+}
+
 function setStorageStatus(text) {
   const node = document.getElementById('storageStatus');
   if (!node) return;
   node.textContent = text;
+  if (text) showToast(text);
   window.clearTimeout(storageStatusTimer);
   storageStatusTimer = window.setTimeout(() => {
     if (node.textContent === text) node.textContent = '';
   }, 4500);
 }
+
+function captureUndoSnapshot(label = 'Bulk-Aktion') {
+  lastUndoSnapshot = { label, state: collectModelState() };
+  const button = document.getElementById('undoLastBulkAction');
+  if (button) button.disabled = false;
+  window.clearTimeout(undoSnapshotTimer);
+  undoSnapshotTimer = window.setTimeout(() => {
+    lastUndoSnapshot = null;
+    const node = document.getElementById('undoLastBulkAction');
+    if (node) node.disabled = true;
+  }, 30000);
+}
+
+function restoreLastUndoSnapshot() {
+  if (!lastUndoSnapshot) {
+    setStorageStatus('Keine rückgängig machbare Bulk-Aktion verfügbar.');
+    return;
+  }
+  const snapshot = lastUndoSnapshot;
+  lastUndoSnapshot = null;
+  window.clearTimeout(undoSnapshotTimer);
+  applyModelState(snapshot.state);
+  const button = document.getElementById('undoLastBulkAction');
+  if (button) button.disabled = true;
+  showToast(`${snapshot.label} rückgängig gemacht.`, 'success');
+}
+
+function confirmDangerousAction(action) {
+  const messages = {
+    resetModel: 'Diese Aktion verändert oder löscht den lokalen Arbeitsstand. Das aktuelle Modell wird auf den Auslieferungszustand zurückgesetzt und anschließend im Browser gespeichert.',
+    clearBrowserData: 'Diese Aktion verändert oder löscht den lokalen Arbeitsstand. Alle im Browser gespeicherten Daten dieses Rechners werden entfernt; das aktuell geöffnete Modell bleibt nur bis zum Neuladen sichtbar.',
+    loadDemoModel: 'Diese Aktion verändert oder löscht den lokalen Arbeitsstand. Demodaten ersetzen den aktuell gespeicherten Browser-Arbeitsstand; speichern Sie vorher JSON oder HTML mit Daten, wenn Sie ihn behalten möchten.'
+  };
+  return window.confirm(messages[action] || 'Diese Aktion verändert oder löscht den lokalen Arbeitsstand. Fortfahren?');
+}
+
+function resetModelToInitialState() {
+  measures = structuredClone(initialMeasures);
+  selectedId = measures[0]?.id;
+  scenario = 'basis';
+  meetingFocus = 'management';
+  processState = defaultProcessState();
+  strategy = defaultStrategy();
+  clarificationStatus = {};
+  meetingTextOverrides = {};
+  document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === 'basis'));
+  document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
+  renderAll();
+  setStorageStatus('Modell wurde zurückgesetzt und im Browser gespeichert.');
+}
+
+function openMeasureWorkspace() {
+  setView('measureWorkspace');
+  renderMeasureWorkspace();
+  setStorageStatus('Maßnahmen-Workspace geöffnet.');
+}
+
+function renderMeasureWorkspace() {
+  const node = document.getElementById('measureWorkspaceSummary');
+  if (!node) return;
+  const measure = selectedMeasure();
+  if (!measure) {
+    node.innerHTML = '<article class="summary-card"><strong>Keine Maßnahme ausgewählt</strong><p>Wählen Sie zuerst eine Maßnahme in der Liste aus.</p></article>';
+    return;
+  }
+  node.innerHTML = `
+    <article class="summary-card">
+      <span class="summary-label">Aktuelle Maßnahme</span>
+      <strong>${esc(measure.name)}</strong>
+      <p>${esc(measure.orgUnit || 'kein Bereich')} · ${esc(String(measure.year || 'ohne Jahr'))} · ${fmtTeur(measure.cost || 0)}</p>
+      <button type="button" class="primary" id="openSelectedMeasureWorkspaceInline">Maßnahme im Workspace öffnen</button>
+    </article>
+    <article class="summary-card">
+      <span class="summary-label">Hinweis</span>
+      <p>Der vollständige Formularumbau auf eine eigene Seite ist vorbereitet. In dieser Iteration öffnet der Workspace die gewählte Maßnahme noch im bewährten Editor, aber ohne versteckten Detailwerkzeuge-Einstieg.</p>
+    </article>
+  `;
+}
+
 
 function errorMessageText(error) {
   if (error?.message) return String(error.message);
@@ -2253,7 +2345,7 @@ function applyModelState(state) {
     ? model.selectedId
     : measures[0]?.id;
   scenario = ['basis', 'konservativ', 'wert'].includes(model.scenario) ? model.scenario : 'basis';
-  activeView = ['akte', 'basis', 'measures', 'results', 'report', 'projectPlan', 'expertWork', 'sidecar', 'presentation'].includes(model.activeView) ? model.activeView : activeView;
+  activeView = ['akte', 'basis', 'measures', 'measureWorkspace', 'results', 'report', 'projectPlan', 'expertWork', 'sidecar', 'presentation'].includes(model.activeView) ? model.activeView : activeView;
   reportMode = ['management', 'committee'].includes(model.reportMode) ? model.reportMode : 'management';
   meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(model.meetingFocus) ? model.meetingFocus : 'management';
   meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
@@ -2845,6 +2937,7 @@ function applyBulkAction(action) {
     setStorageStatus('Keine Maßnahmen ausgewählt.');
     return;
   }
+  captureUndoSnapshot('Bulk-Aktion');
   const orgUnit = document.getElementById('bulkOrgUnit')?.value || '';
   const objectiveId = document.getElementById('bulkObjective')?.value || '';
   const tag = document.getElementById('bulkTag')?.value.trim() || '';
@@ -2866,6 +2959,7 @@ function applyBulkAction(action) {
     note: `Bulk-Aktion ${action} auf ${selected.length} Maßnahmen.`
   }], ensureAuthor());
   previousModelForHistory = currentModelData();
+  showToast('Bulk-Aktion angewendet. Rückgängig ist kurzzeitig möglich.', 'success');
   setStorageStatus(`Bulk-Aktion auf ${selected.length} Maßnahmen angewendet.`);
   renderAll();
 }
@@ -4983,48 +5077,32 @@ function setStepStatus(id, text, cls) {
   node.classList.toggle('open', cls === 'open');
 }
 
+const navStatusLabels = {
+  akte: 'Überblick',
+  basis: 'Stammdaten',
+  measures: 'Katalog',
+  sidecar: 'Kontextobjekte',
+  expertWork: 'Arbeitsboard',
+  presentation: 'Befassung',
+  report: 'Bericht',
+  results: 'Analyse',
+  projectPlan: 'Projektplan',
+  measureWorkspace: 'Workspace'
+};
+
 function updateFlowStatus() {
   const basisComplete = Boolean(el.sector.value) && num('baseYear') > 0 && num('baseEog') > 0;
   const activeCount = measures.filter(measure => measure.active).length;
   const hasMeasures = activeCount > 0;
   const decisionReady = basisComplete && hasMeasures;
-
-  setStepStatus(
-    'status-basis',
-    basisComplete ? 'Stammdaten erledigt' : 'Stammdaten unvollständig',
-    basisComplete ? 'done' : 'warn'
-  );
-  setStepStatus(
-    'status-measures',
-    hasMeasures ? `${activeCount} aktiv` : '0 Maßnahmen aktiv',
-    hasMeasures ? 'done' : 'warn'
-  );
-  setStepStatus(
-    'status-results',
-    decisionReady ? 'entscheidungsfähig' : 'Entscheidung offen',
-    decisionReady ? 'done' : 'open'
-  );
-  const maturity = maturityScore();
-  setStepStatus(
-    'status-akte',
-    `${maturity.score} % Reife`,
-    maturity.blockers ? 'warn' : 'done'
-  );
-  setStepStatus(
-    'status-expertWork',
-    maturity.blockers ? `${maturity.blockers} offen` : 'alles geklärt',
-    maturity.blockers ? 'warn' : 'done'
-  );
-  setStepStatus(
-    'status-presentation',
-    decisionReady ? 'bereit' : 'Arbeitsstand',
-    decisionReady ? 'done' : 'open'
-  );
-  setStepStatus(
-    'status-report',
-    decisionReady ? 'Export bereit' : 'noch offen',
-    decisionReady ? 'done' : 'open'
-  );
+  setStepStatus('status-akte', navStatusLabels.akte, decisionReady ? 'done' : 'open');
+  setStepStatus('status-basis', navStatusLabels.basis, basisComplete ? 'done' : 'warn');
+  setStepStatus('status-measures', navStatusLabels.measures, hasMeasures ? 'done' : 'warn');
+  setStepStatus('status-sidecar', navStatusLabels.sidecar, (sidecar.objects || []).length ? 'done' : 'open');
+  setStepStatus('status-expertWork', navStatusLabels.expertWork, maturityScore().blockers ? 'warn' : 'done');
+  setStepStatus('status-presentation', navStatusLabels.presentation, decisionReady ? 'done' : 'open');
+  setStepStatus('status-report', navStatusLabels.report, decisionReady ? 'done' : 'open');
+  setStepStatus('status-results', navStatusLabels.results, decisionReady ? 'done' : 'open');
 }
 
 function selectOptions(options, selected) {
@@ -6539,6 +6617,7 @@ function renderAll(persist = true) {
   renderProcessUx();
   renderProjectPlan();
   renderSidecar();
+  renderMeasureWorkspace();
   renderChangeSinceSeen();
   renderMaturityAndClarifications();
   renderReportMode();
@@ -6819,20 +6898,36 @@ loadExpertMode();
 setExpertMode(expertMode, false);
 
 document.addEventListener('keydown', event => {
+  if (activeView === 'presentation' && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+    const interactive = event.target.closest?.('input, textarea, select, button, a');
+    if (!interactive) {
+      event.preventDefault();
+      presentationSlideIndex += event.key === 'ArrowRight' ? 1 : -1;
+      presentationSlideIndex = Math.max(0, presentationSlideIndex);
+      renderPortfolio();
+      return;
+    }
+  }
   const jump = event.target.closest?.('[data-jump-view][role="button"]');
   if (!jump || !['Enter', ' '].includes(event.key)) return;
   event.preventDefault();
   document.body.classList.remove('show-start');
-  setView(jump.dataset.jumpView);
-  renderAll();
+  if (jump.dataset.jumpView === 'measureWorkspace') openMeasureWorkspace();
+  else {
+    setView(jump.dataset.jumpView);
+    renderAll();
+  }
 });
 
 document.addEventListener('click', event => {
   const jump = event.target.closest('[data-jump-view]');
   if (!jump) return;
   document.body.classList.remove('show-start');
-  setView(jump.dataset.jumpView);
-  renderAll();
+  if (jump.dataset.jumpView === 'measureWorkspace') openMeasureWorkspace();
+  else {
+    setView(jump.dataset.jumpView);
+    renderAll();
+  }
 });
 
 document.addEventListener('click', event => {
@@ -6851,7 +6946,7 @@ document.getElementById('presentationNext')?.addEventListener('click', () => {
 });
 
 document.querySelectorAll('.view-tab').forEach(button => {
-  button.addEventListener('click', () => setView(button.dataset.view));
+  button.addEventListener('click', () => { setView(button.dataset.view); renderMeasureWorkspace(); });
 });
 
 document.querySelectorAll('[data-role-choice]').forEach(button => {
@@ -6917,6 +7012,10 @@ document.getElementById('clarificationList').addEventListener('click', event => 
   }
   const measureButton = event.target.closest('[data-action="openClarificationMeasure"]');
   if (measureButton) openClarificationMeasure(measureButton.dataset.measureId, measureButton.dataset.clarificationKey || '');
+});
+
+document.addEventListener('click', event => {
+  if (event.target.closest('#openSelectedMeasureWorkspaceInline')) openMeasureEditModal();
 });
 
 document.getElementById('measureBody').addEventListener('click', event => {
@@ -6992,6 +7091,7 @@ document.getElementById('catalogOpenOnly').addEventListener('change', event => {
   catalogFilters = { ...catalogFilters, openOnly: event.target.checked };
   renderMeasures();
 });
+document.getElementById('openSelectedMeasureWorkspace')?.addEventListener('click', openMeasureEditModal);
 document.getElementById('catalogImportedOnly').addEventListener('change', event => {
   catalogFilters = { ...catalogFilters, importedOnly: event.target.checked };
   renderMeasures();
@@ -7008,6 +7108,7 @@ document.getElementById('bulkDeactivate').addEventListener('click', () => applyB
 document.getElementById('bulkSetOrgUnit').addEventListener('click', () => applyBulkAction('orgUnit'));
 document.getElementById('bulkAssignObjective').addEventListener('click', () => applyBulkAction('objective'));
 document.getElementById('bulkAddTag').addEventListener('click', () => applyBulkAction('tag'));
+document.getElementById('undoLastBulkAction')?.addEventListener('click', restoreLastUndoSnapshot);
 document.getElementById('bulkImportMeasures').addEventListener('click', openBulkImportModal);
 document.getElementById('exportCatalogCsv').addEventListener('click', exportCatalogCsv);
 document.getElementById('bulkImportCancel').addEventListener('click', closeBulkImportModal);
@@ -7189,7 +7290,9 @@ document.getElementById('printReportFromView').addEventListener('click', () => {
   window.print();
 });
 document.getElementById('importModel').addEventListener('click', openLoadModal);
-document.getElementById('loadDemoModel').addEventListener('click', () => applyDemoModel({ confirmOverwrite: true, targetView: 'akte' }));
+document.getElementById('loadDemoModel').addEventListener('click', () => {
+  if (confirmDangerousAction('loadDemoModel')) applyDemoModel({ confirmOverwrite: false, targetView: 'akte' });
+});
 document.getElementById('checkReleaseAwareness').addEventListener('click', checkReleaseAwareness);
 document.getElementById('openAiPromptGenerator').addEventListener('click', openAiPromptGenerator);
 document.getElementById('openSupportIssue').addEventListener('click', openSupportIssue);
@@ -7204,9 +7307,7 @@ document.getElementById('aiPromptModal').addEventListener('click', event => {
   if (event.target.id === 'aiPromptModal') closeAiPromptGenerator();
 });
 document.getElementById('clearBrowserData').addEventListener('click', () => {
-  if (window.confirm('Alle im Browser gespeicherten Daten dieses Rechners löschen? Das aktuelle Modell bleibt bis zum Neuladen sichtbar.')) {
-    clearBrowserData();
-  }
+  if (confirmDangerousAction('clearBrowserData')) clearBrowserData();
 });
 document.getElementById('loadJson').addEventListener('click', () => {
   closeLoadModal();
@@ -7265,19 +7366,8 @@ window.addEventListener('unhandledrejection', event => {
 });
 
 document.getElementById('resetModel').addEventListener('click', () => {
-  if (!window.confirm('Aktuelles Modell zurücksetzen? Gespeicherte Browserdaten werden danach mit dem leeren Modell überschrieben.')) return;
-  measures = structuredClone(initialMeasures);
-  selectedId = measures[0]?.id;
-  scenario = 'basis';
-  meetingFocus = 'management';
-  processState = defaultProcessState();
-  strategy = defaultStrategy();
-  clarificationStatus = {};
-  meetingTextOverrides = {};
-  document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === 'basis'));
-  document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
-  renderAll();
-  setStorageStatus('Modell wurde zurückgesetzt und im Browser gespeichert.');
+  if (!confirmDangerousAction('resetModel')) return;
+  resetModelToInitialState();
 });
 
 document.querySelectorAll('.action-menu-list button').forEach(button => {

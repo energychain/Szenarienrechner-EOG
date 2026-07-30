@@ -7,7 +7,7 @@ const dataFormat = readFileSync(new URL('../DATA_FORMAT.md', import.meta.url), '
 
 describe('project plan UI integration', () => {
   it('adds a persistent project plan view to the app shell', () => {
-    expect(html).toContain('data-view="projectPlan"');
+    expect(html).toContain('data-jump-view="projectPlan"');
     expect(html).toContain('data-view-panel="projectPlan"');
     expect(html).toContain('projectPlanBody');
     expect(ui).toContain('renderProjectPlan');

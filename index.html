@@ -29,27 +29,8 @@
             <summary>Phase: <span id="phasePillLabel">Maßnahmenbewertung</span></summary>
             <div class="compact-popover-body">
               <div id="phaseStepper" class="phase-stepper" aria-label="Phasenfortschritt"></div>
-              <div class="process-controls">
-                <label for="processPhase">Phase</label>
-                <select id="processPhase">
-                  <option value="initialisierung">Initialisierung</option>
-                  <option value="datenerhebung">Datenerhebung</option>
-                  <option value="massnahmenbewertung">Maßnahmenbewertung</option>
-                  <option value="konsolidierung">Konsolidierung</option>
-                  <option value="entscheidungsvorlage">Entscheidungsvorlage</option>
-                  <option value="archiv">Beschluss/Archiv</option>
-                </select>
-                <label for="phaseTargetDate">Ziel Entscheidung</label>
-                <input id="phaseTargetDate" type="date">
-                <label for="planningStatusNote">Arbeitsstand</label>
-                <textarea id="planningStatusNote" rows="2" placeholder="Kurz festhalten: Was ist entschieden, was ist noch offen?"></textarea>
-                <label for="planningNextStep">Nächster Schritt</label>
-                <textarea id="planningNextStep" rows="2" placeholder="Welche Abstimmung oder Entscheidung ist als Nächstes dran?"></textarea>
-                <label for="planningOwner">Zuständig</label>
-                <input id="planningOwner" type="text" placeholder="Rolle, Team oder Person">
-                <label for="planningDueDate">Fällig</label>
-                <input id="planningDueDate" type="date">
-              </div>
+              <p class="hint compact-phase-hint">Phase, Arbeitsstand, Zuständigkeit und nächster Schritt werden unter Grundlagen gepflegt. Das Header-Popover dient nur der Orientierung.</p>
+              <button type="button" data-jump-view="basis" class="secondary">Phase ändern</button>
             </div>
           </details>
           <span id="readonlyPill" class="readonly-pill hidden">Lesemodus</span>
@@ -63,25 +44,30 @@
           <details class="action-menu">
             <summary>Mehr</summary>
             <div class="action-menu-list">
+              <span class="menu-section-title">Export</span>
               <button type="button" id="exportModel">Daten herunterladen</button>
+              <button type="button" id="exportSpreadsheetXlsx">Tabellen als XLSX exportieren</button>
+              <button type="button" id="exportSpreadsheetCsvZip">Tabellen als CSV-ZIP exportieren</button>
               <button type="button" id="printReport">Report drucken</button>
+              <span class="menu-section-title">Hilfe & Kontext</span>
               <button type="button" id="openHelp">Hilfe</button>
               <a id="openStory" class="menu-link" href="story/planungsrunde-userstory.html" target="_blank" rel="noopener">Userstory</a>
               <a id="openEcosystem" class="menu-link" href="docs/index.html" target="_blank" rel="noopener">Methodik & Vorlagen</a>
-              <button type="button" id="checkReleaseAwareness">Aktualität prüfen</button>
               <button type="button" id="openAiPromptGenerator">KI-Prompt erstellen</button>
-              <button type="button" id="exportSpreadsheetXlsx">Tabellen als XLSX exportieren</button>
-              <button type="button" id="exportSpreadsheetCsvZip">Tabellen als CSV-ZIP exportieren</button>
+              <span class="menu-section-title">Unterstützung</span>
+              <button type="button" id="checkReleaseAwareness">Aktualität prüfen</button>
               <button type="button" id="openSupportIssue">Feedback / Support melden</button>
               <button type="button" id="exportSupportPackage">Support-Paket exportieren</button>
-              <button type="button" id="loadDemoModel">Demodaten laden</button>
-              <button type="button" id="resetModel">Zurücksetzen</button>
-              <button type="button" id="clearBrowserData" class="danger-action">Browserdaten löschen</button>
+              <span class="menu-section-title danger">Arbeitsstand ersetzen oder löschen</span>
+              <button type="button" id="loadDemoModel" data-confirm-action="loadDemoModel">Demodaten laden</button>
+              <button type="button" id="resetModel" data-confirm-action="resetModel">Zurücksetzen</button>
+              <button type="button" id="clearBrowserData" data-confirm-action="clearBrowserData" class="danger-action">Browserdaten löschen</button>
             </div>
           </details>
         </div>
         <input id="importFile" class="hidden-file" type="file" accept="application/json,.json">
         <div id="storageStatus" class="status-line"></div>
+        <div id="appToast" class="app-toast hidden" role="status" aria-live="polite"></div>
       </div>
     </div>
   </header>
@@ -128,54 +114,41 @@
     </div>
   </section>
 
-  <nav class="view-tabs akte-nav compact-akte-nav" aria-label="Akte-Arbeitsfluss">
+  <nav class="view-tabs akte-nav product-nav" aria-label="Akte-Arbeitsfluss">
     <div class="workflow-tabs" aria-label="Hauptpfad der Akte">
       <button type="button" class="view-tab active theme-orientation" data-view="akte">
         <span class="step-main">Akte</span>
-        <span class="step-status" id="status-akte">Cockpit</span>
+        <span class="step-status" id="status-akte">Überblick</span>
+      </button>
+      <button type="button" class="view-tab theme-basis" data-view="basis">
+        <span class="step-main">Grundlagen</span>
+        <span class="step-status" id="status-basis">Stammdaten</span>
       </button>
       <button type="button" class="view-tab theme-edit" data-view="measures">
         <span class="step-main">Bearbeiten</span>
-        <span class="step-status" id="status-measures">0 Maßnahmen aktiv</span>
+        <span class="step-status" id="status-measures">Katalog</span>
       </button>
       <button type="button" class="view-tab theme-evidence" data-view="sidecar">
         <span class="step-main">Evidenz & Systeme</span>
-        <span class="step-status" id="status-sidecar">0 Objekte</span>
+        <span class="step-status" id="status-sidecar">Kontextobjekte</span>
       </button>
       <button type="button" class="view-tab theme-clarify" data-view="expertWork">
         <span class="step-main">Prüfen & Klären</span>
-        <span class="step-status" id="status-expertWork">Aufgaben</span>
+        <span class="step-status" id="status-expertWork">Arbeitsboard</span>
       </button>
       <button type="button" class="view-tab theme-present" data-view="presentation">
         <span class="step-main">Präsentation</span>
-        <span class="step-status" id="status-presentation">Meeting</span>
+        <span class="step-status" id="status-presentation">Befassung</span>
       </button>
       <button type="button" class="view-tab theme-export" data-view="report">
         <span class="step-main">Export</span>
-        <span class="step-status" id="status-report">Report</span>
+        <span class="step-status" id="status-report">Bericht</span>
       </button>
     </div>
-    <details class="support-tabs" aria-label="Werkzeuge und Detailpflege">
-      <summary class="support-tabs-label">Detailwerkzeuge</summary>
-      <div class="support-tabs-body">
-      <button type="button" class="view-tab support-tab" data-view="basis">
-        <span class="step-main">Grundlagen</span>
-        <span class="step-status" id="status-basis">Stammdaten offen</span>
-      </button>
-      <button type="button" class="view-tab support-tab" data-view="results">
-        <span class="step-main">Entscheidung im Detail</span>
-        <span class="step-status" id="status-results">Entscheidung offen</span>
-      </button>
-      <button type="button" class="view-tab support-tab" data-view="projectPlan">
-        <span class="step-main">Projektplan</span>
-        <span class="step-status" id="status-projectPlan">Plan offen</span>
-      </button>
-      <label class="switch-row compact-switch" for="expertModeToggle">
-        <input id="expertModeToggle" type="checkbox">
-        Expertenmodus
-      </label>
-      </div>
-    </details>
+    <label class="switch-row compact-switch expert-mode-inline" for="expertModeToggle">
+      <input id="expertModeToggle" type="checkbox">
+      Expertenmodus
+    </label>
   </nav>
 
   <section class="sticky-kpis" aria-label="Live-Wirkung">
@@ -185,7 +158,7 @@
       <div class="delta" id="stickyMaturityDelta"></div>
     </div>
     <div class="sticky-kpi" id="stickyVerdictTile">
-      <div class="label">Verdict</div>
+      <div class="label">Einschätzung</div>
       <div class="value" id="stickyVerdict">-</div>
       <div class="delta" id="stickyVerdictDelta">live</div>
     </div>
@@ -236,6 +209,37 @@
 
     <section class="panel app-view hidden" data-view-panel="basis" aria-label="Basisdaten und Szenario">
       <div id="basisSummaryCards" class="summary-card-grid" aria-label="Grundlagen-Zusammenfassung"></div>
+
+      <div id="phaseEditorPanel" class="group basis-edit-section" aria-label="Arbeitsstand und Phase">
+        <div class="section-head-row">
+          <div>
+            <h2>Arbeitsstand & Phase pflegen</h2>
+            <p class="hint">Hier werden Phase, kurzer Arbeitsstand, nächster Schritt, Zuständigkeit und Fälligkeit gespeichert. Im Header wird dieser Stand nur angezeigt.</p>
+          </div>
+          <button type="button" class="secondary" data-jump-view="projectPlan">Projektplan öffnen</button>
+        </div>
+        <div class="process-controls process-controls-main">
+          <label for="processPhase">Phase ändern</label>
+          <select id="processPhase">
+            <option value="initialisierung">Initialisierung</option>
+            <option value="datenerhebung">Datenerhebung</option>
+            <option value="massnahmenbewertung">Maßnahmenbewertung</option>
+            <option value="konsolidierung">Konsolidierung</option>
+            <option value="entscheidungsvorlage">Entscheidungsvorlage</option>
+            <option value="archiv">Archiv / Re-Entry</option>
+          </select>
+          <label for="phaseTargetDate">Ziel Befassung</label>
+          <input id="phaseTargetDate" type="date">
+          <label for="planningStatusNote">Arbeitsstand</label>
+          <textarea id="planningStatusNote" rows="2" placeholder="Kurz festhalten: Was ist belastbar, was bleibt offen?"></textarea>
+          <label for="planningNextStep">Nächster Schritt</label>
+          <textarea id="planningNextStep" rows="2" placeholder="Welche Befassung oder Klärung ist als Nächstes dran?"></textarea>
+          <label for="planningOwner">Zuständig</label>
+          <input id="planningOwner" type="text" placeholder="Rolle, Team oder Person">
+          <label for="planningDueDate">Fällig</label>
+          <input id="planningDueDate" type="date">
+        </div>
+      </div>
 
       <div class="group basis-edit-section">
         <h2>Basisdaten Sparte</h2>
@@ -466,6 +470,7 @@
             <h2>Maßnahmenkatalog</h2>
             <p class="hint">Suche, Filter und Schnelllisten gehören zum Katalog. Neue Maßnahmen werden geführt im Dialog angelegt.</p>
           </div>
+          <button type="button" data-jump-view="measureWorkspace">Maßnahme im Workspace öffnen</button>
           <button type="button" id="newMeasure" class="primary">Neue Maßnahme</button>
         </div>
         <div class="catalog-toolbox" aria-label="Maßnahmenkatalog Werkzeuge">
@@ -522,6 +527,7 @@
               <button type="button" id="bulkSetOrgUnit">Bereich setzen</button>
               <button type="button" id="bulkAssignObjective">Ziel zuordnen</button>
               <button type="button" id="bulkAddTag">Tag vergeben</button>
+              <button type="button" id="undoLastBulkAction" class="secondary" disabled>Letzte Bulk-Aktion rückgängig</button>
             </div>
           </details>
         </div>
@@ -546,6 +552,24 @@
             </table>
           </div>
         </div>
+    </section>
+
+    <section class="panel app-view hidden" data-view-panel="measureWorkspace" aria-label="Maßnahmen-Workspace">
+      <div class="section-head-row">
+        <div>
+          <h2>Maßnahmen-Workspace</h2>
+          <p class="hint">Für freie Bearbeitung öffnet dieser Arbeitsbereich die aktuell ausgewählte Maßnahme. Klärfälle nutzen weiterhin die Split-Befassungs-Workbench.</p>
+        </div>
+        <div class="row-actions">
+          <button type="button" class="primary" id="openSelectedMeasureWorkspace">Ausgewählte Maßnahme bearbeiten</button>
+          <button type="button" data-jump-view="measures">Zur Maßnahmenliste</button>
+        </div>
+      </div>
+      <div class="inline-help-panel" id="appHelpPanel">
+        <strong>Bearbeitungslogik</strong>
+        <p>Maßnahmendaten sind dauerhafte Aktenfelder. Befassungsnotizen dokumentieren einzelne Klärschritte. Nutzen Sie „Prüfen & Klären“, wenn Datenänderung und Befassung gleichzeitig sichtbar bleiben sollen.</p>
+      </div>
+      <div id="measureWorkspaceSummary" class="summary-card-grid"></div>
     </section>
 
     <section class="panel app-view hidden" data-view-panel="expertWork" aria-label="Offene Punkte Fachexpertise">
