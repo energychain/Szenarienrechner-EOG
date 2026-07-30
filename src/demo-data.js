@@ -449,7 +449,7 @@ export const demoSidecar = {
       type: 'decommissioning_context',
       sidecarType: 'context',
       division: 'gas',
-      title: 'Gas-Transformationspfad: Stilllegung, Rückbau, Rückstellungen',
+      title: 'Gas-Pfad: Stilllegung, Rückbau, Rückstellungen',
       summary: 'Synthetischer Gas-Kontext für KANU-/AfA-/Restwert- und Rückstellungsprüfung; keine automatische KPI-Wirkung.',
       status: 'pruefpflichtig',
       activationStatus: 'not_activated',

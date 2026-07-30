@@ -3459,10 +3459,40 @@ function hideFieldHelp() {
   document.querySelectorAll('.info-dot[aria-expanded="true"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
 }
 
+function glossarySlugForHelp(label, text) {
+  const haystack = `${label} ${text}`.toLowerCase();
+  const matches = [
+    ['nest-ramen', ['nest', 'ramen']],
+    ['vereinfachtes-verfahren', ['vereinfachtes verfahren', '§ 24']],
+    ['kostenbasisjahr', ['kostenbasis', 'fotojahr']],
+    ['regulierungsperiode', ['regulierungsperiode']],
+    ['regulierungskonto', ['regulierungskonto']],
+    ['kapitalkostenabgleich', ['kapitalkosten', 'abzugskapital', 'finanzierung', 'zinssatz', 'spread', 'wacc']],
+    ['entscheidungsreife', ['entscheidungsreife', 'arbeitsstand-score']],
+    ['kontextobjekt', ['kontextobjekt', 'sidecar', 'evidenzobjekt']],
+    ['wirkungsverzug', ['wirkungsverzug', 'lag', 'verzug']],
+    ['attribution', ['attribution', 'zurechnung']],
+    ['befassung', ['befassung', 'befassungsnotiz']],
+    ['klaerpunkt', ['klärpunkt', 'klaerpunkt', 'offene frage']],
+    ['no-regret', ['no-regret', 'noregret']],
+    ['kanu', ['kanu']],
+    ['aregv', ['aregv', 'anreizregulierungsverordnung']],
+    ['qe', ['qualitätselement', 'q-element', 'qe', 'q-reg']],
+    ['rab', ['rab', 'regulierte kapitalbasis', 'kapitalbasis']],
+    ['eog', ['eog', 'erlösobergrenze']],
+  ];
+  const found = matches.find(([, needles]) => needles.some(needle => haystack.includes(needle)));
+  return found?.[0] || '';
+}
+
 function showFieldHelp(button, text) {
   const popover = helpPopover();
   const label = button.closest('label')?.textContent?.replace(/\s*i\s*$/, '').trim() || 'Fachliche Hilfe';
-  popover.innerHTML = `<strong class="popover-title">${esc(label)}</strong><div>${esc(text)}</div>`;
+  const glossarySlug = glossarySlugForHelp(label, text);
+  const glossaryLink = glossarySlug
+    ? `<p class="popover-glossary-link"><a href="#glossar/${esc(glossarySlug)}" data-open-glossary="${esc(glossarySlug)}">Im Glossar öffnen</a></p>`
+    : '';
+  popover.innerHTML = `<strong class="popover-title">${esc(label)}</strong><div>${esc(text)}</div>${glossaryLink}`;
   popover.classList.remove('hidden');
   popover.id = popover.id || 'fieldHelpPopover';
   button.setAttribute('aria-expanded', 'true');
@@ -5041,8 +5071,7 @@ function modalValue(id) {
 }
 
 function modalNumber(id) {
-  const value = Number(modalValue(id));
-  return Number.isFinite(value) ? value : 0;
+  return parseLocalizedNumber(modalValue(id));
 }
 
 function reviewRows(rows) {
@@ -5141,7 +5170,7 @@ function renderBasisWizardStep() {
         </div>
         <div>
           <label for="w_deductionCapital">Abzugskapital TEUR</label>
-          <input id="w_deductionCapital" type="number" value="${d.deductionCapital}" min="0" step="100">
+          <div class="input-with-unit"><input id="w_deductionCapital" type="text" inputmode="numeric" value="${formatTeurInputValue(d.deductionCapital)}" data-format="teur" min="0" step="100" aria-describedby="w_deductionCapitalUnit"><span id="w_deductionCapitalUnit">TEUR</span></div>
         </div>
         <div>
           <label for="w_horizon">Horizont Jahre</label>
@@ -5355,6 +5384,7 @@ function renderWizard() {
   document.getElementById('wizardStepper').innerHTML = steps.map((_, index) => `<span class="${index <= wizard.step ? 'active' : ''}"></span>`).join('');
   document.getElementById('wizardBody').innerHTML = wizard.type === 'basis' ? renderBasisWizardStep() : renderMeasureWizardStep();
   enhanceHelpLabels(document.getElementById('wizardBody'));
+  formatNumericFields(document.getElementById('wizardBody'));
   document.getElementById('wizardBack').disabled = wizard.step === 0;
   document.getElementById('wizardNext').textContent = wizard.step === steps.length - 1 ? 'Speichern' : 'Weiter';
   document.getElementById('wizardModal').classList.remove('hidden');
@@ -7189,7 +7219,12 @@ function toggleMeasureObjective(event) {
 }
 
 inputIds.forEach(id => el[id].addEventListener('input', renderAll));
-document.querySelectorAll('[data-format="teur"]').forEach(input => input.addEventListener('blur', () => { input.value = formatTeurInputValue(input.value); renderAll(); }));
+document.addEventListener('focusout', event => {
+  const input = event.target.closest?.('[data-format="teur"]');
+  if (!input) return;
+  input.value = formatTeurInputValue(input.value);
+  renderAll();
+});
 el.sector.addEventListener('change', renderAll);
 detailIds.forEach(id => el[id].addEventListener('input', updateSelectedFromDetail));
 el.mType.addEventListener('change', updateSelectedFromDetail);
@@ -7562,6 +7597,14 @@ document.getElementById('bulkImportFile').addEventListener('change', event => {
 
 document.getElementById('openHelp').addEventListener('click', openHelpModal);
 document.getElementById('openGlossary')?.addEventListener('click', () => openGlossaryModal('eog'));
+document.addEventListener('click', event => {
+  const glossaryLink = event.target.closest('[data-open-glossary]');
+  if (!glossaryLink) return;
+  event.preventDefault();
+  hideFieldHelp();
+  openGlossaryModal(glossaryLink.dataset.openGlossary || 'eog');
+});
+window.addEventListener('hashchange', applyGlossaryDeepLink);
 document.getElementById('glossaryClose')?.addEventListener('click', closeGlossaryModal);
 document.getElementById('glossaryModal')?.addEventListener('click', event => { if (event.target.id === 'glossaryModal') closeGlossaryModal(); });
 document.getElementById('glossaryList')?.addEventListener('click', event => { const button = event.target.closest('[data-glossary-term]'); if (button) renderGlossary(button.dataset.glossaryTerm); });

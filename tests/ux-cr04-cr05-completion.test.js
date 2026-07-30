@@ -6,6 +6,7 @@ const ui = readFileSync('src/ui.js', 'utf8');
 const css = readFileSync('src/styles.css', 'utf8');
 
 const teurFields = [
+  'deductionCapital',
   'mCost',
   'mAvoidedCapexTeur',
   'mDeferredCapexTeur',
@@ -68,6 +69,14 @@ describe('CR-05 language and glossary', () => {
     for (const term of glossaryTerms) {
       expect(ui).toContain(`term: '${term}'`);
     }
+  });
+
+  it('links info-dot popovers to matching glossary entries', () => {
+    expect(ui).toContain('function glossarySlugForHelp');
+    expect(ui).toContain('data-open-glossary');
+    expect(ui).toContain('Im Glossar öffnen');
+    expect(ui).toContain("window.addEventListener('hashchange', applyGlossaryDeepLink)");
+    expect(css).toContain('.popover-glossary-link');
   });
 
   it('keeps the Mehr menu to the three CR-05 sections', () => {
