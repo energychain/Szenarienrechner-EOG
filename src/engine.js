@@ -2,6 +2,7 @@
 // Dieses Modul ist bewusst DOM-frei: Modellzustand und Parameter rein, Ergebnisobjekt raus.
 
 import { regulatoryParameterSet } from './rulesets/index.js';
+import { stromEffectiveMeasureFor, stromEeg2027WarningsFor } from './strom-eeg2027.js';
 
 export { regulatoryParameterSet };
 
@@ -708,11 +709,12 @@ export function eligibleCapitalFor(avgCapital, p) {
 
 /** @returns {any} */
 export function calcMeasure(measure, p, portfolioEffectPa = 0) {
-  const active = expectedActivated(measure);
+  const effectiveMeasure = stromEffectiveMeasureFor(measure, p.sector);
+  const active = expectedActivated(effectiveMeasure);
   const opex = active.nonActivated * clamp(finiteNumber(measure.opexRecognition), 0, 100) / 100;
   const start = Math.round(finiteNumber(measure.year));
   const qAndE = finiteNumber(measure.qDirect) + finiteNumber(measure.eDirect) + portfolioEffectPa;
-  const risk = finiteNumber(measure.riskAvoided);
+  const risk = finiteNumber(effectiveMeasure.riskAvoided);
   const opexPa = finiteNumber(measure.opexPa);
   const opexDeltaPa = finiteNumber(measure.opexDeltaPa);
   const reinvestCost = finiteNumber(measure.reinvestCost);
@@ -858,14 +860,15 @@ export function calcMeasure(measure, p, portfolioEffectPa = 0) {
     });
   }
 
-  const flows = [-finiteNumber(measure.cost), ...rows.map(row => row.indicativeCashflow)];
+  const capexTeur = finiteNumber(effectiveMeasure.cost);
+  const flows = [-capexTeur, ...rows.map(row => row.indicativeCashflow)];
   const returnMetric = returnMetricFor(flows, p.financingRate, p.discountRate);
   const measureIrr = returnMetric.value;
   const measureNpv = npv(p.discountRate, flows);
   const impactSummary = impactEffectsForMeasure(measure, p, start);
   const futureGrossCosts = rows.map(row => Math.max(0, -row.opex) + Math.max(0, -row.reinvestDecommission));
-  const totexNominal = finiteNumber(measure.cost) + futureGrossCosts.reduce((sum, value) => sum + value, 0);
-  const totexDiscounted = finiteNumber(measure.cost) + futureGrossCosts.reduce((sum, value, index) => sum + value / Math.pow(1 + p.discountRate, index + 1), 0);
+  const totexNominal = capexTeur + futureGrossCosts.reduce((sum, value) => sum + value, 0);
+  const totexDiscounted = capexTeur + futureGrossCosts.reduce((sum, value, index) => sum + value / Math.pow(1 + p.discountRate, index + 1), 0);
   return {
     measure,
     activated: active.activated,
@@ -1330,7 +1333,8 @@ export function calcPortfolio(model, p) {
         ...doubleCountingWarningsFor(measure, p, portfolioEffect),
         ...gasTransformationWarningsFor(measure, p),
         ...flexibilityWarningsFor(measure, p),
-        ...stromMeasurePlausibilityWarningsFor(measure, p)
+        ...stromMeasurePlausibilityWarningsFor(measure, p),
+        ...stromEeg2027WarningsFor(measure, p.sector, p.baseYear)
       ]
     };
   });
@@ -1393,7 +1397,7 @@ export function calcPortfolio(model, p) {
     });
   });
 
-  const invest = activeMeasures.reduce((sum, measure) => sum + (isStromFlexibilityMeasure(measure, p) ? 0 : finiteNumber(measure.cost)), 0);
+  const invest = activeMeasures.reduce((sum, measure) => sum + (isStromFlexibilityMeasure(measure, p) ? 0 : finiteNumber(stromEffectiveMeasureFor(measure, p.sector).cost)), 0);
   const activated = results.reduce((sum, result) => sum + result.activated, 0);
   const flows = [-invest, ...yearly.map(row => row.indicativeCashflow)];
   const returnMetric = invest > 0

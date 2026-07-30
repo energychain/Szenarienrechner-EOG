@@ -73,6 +73,7 @@ describe('spreadsheet exports', () => {
       'Systemreferenzen',
       'Risiko_Mapping',
       'Sidecar_Ueberleitungslogik',
+      'Strom_EEG2027_Netzanschluss',
       'Monitoring_Massnahmen',
       'Monitoring_Aggregat',
       'QReg_Netzleistung',

@@ -9,6 +9,7 @@ import {
 import { projectPlanEffectiveTaskStates, projectPlanTaskCounts } from './project-plan.js';
 import { normalizeGermanTeurText } from './render-utils.js';
 import { normalizeSidecar, sanitizeSidecarForExport, sidecarSummary } from './sidecar.js';
+import { stromEeg2027PortfolioSummary } from './strom-eeg2027.js';
 
 export const llmContextUrl = 'https://energychain.github.io/Szenarienrechner-EOG/llm.txt';
 
@@ -574,6 +575,48 @@ ${warnings.includes('project_maturity_review') ? 'Klärpunkt project_maturity_re
 `;
 }
 
+function anonymizeWarningMeasures(warnings = [], measures = [], options = {}) {
+  if (!options.anonymizeMeasures && options.dataScope !== 'summary') return warnings;
+  const aliases = new Map();
+  measures.forEach((measure, index) => {
+    const alias = `Maßnahme ${index + 1}`;
+    if (measure.id) aliases.set(String(measure.id), alias);
+    if (measure.name) aliases.set(String(measure.name), alias);
+  });
+  return warnings.map(warning => ({
+    ...warning,
+    measure: aliases.get(String(warning.measureId || '')) || aliases.get(String(warning.measure || '')) || warning.measure
+  }));
+}
+
+function stromEeg2027SummaryForPrompt(model = {}, sector = 'strom', options = {}) {
+  const summary = stromEeg2027PortfolioSummary(model, sector);
+  if (!summary?.applicable) return summary;
+  if (options.dataScope === 'summary') return { ...summary, measures: [] };
+  if (!options.anonymizeMeasures) return summary;
+  return {
+    ...summary,
+    measures: (summary.measures || []).map((measure, index) => ({ ...measure, name: `Maßnahme ${index + 1}` }))
+  };
+}
+
+function riskSummaryForPrompt(summary = {}, measures = [], options = {}) {
+  if (!summary || (!options.anonymizeMeasures && options.dataScope !== 'summary')) return summary;
+  const aliases = new Map();
+  measures.forEach((measure, index) => {
+    const alias = `Maßnahme ${index + 1}`;
+    if (measure.id) aliases.set(String(measure.id), alias);
+    if (measure.name) aliases.set(String(measure.name), alias);
+  });
+  return {
+    ...summary,
+    examples: (summary.examples || []).map(example => ({
+      ...example,
+      measure: aliases.get(String(example.measureId || '')) || aliases.get(String(example.measure || '')) || example.measure
+    }))
+  };
+}
+
 export function redactModelForPrompt(model, options = defaultAiPromptOptions, context = {}) {
   const merged = { ...defaultAiPromptOptions, ...options };
   const inputs = model?.inputs || {};
@@ -608,7 +651,7 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
   const compactedPromptWarnings = params.sector === 'strom'
     ? compactWarningsForPrompt(combinedWarningsRaw)
     : { warnings: combinedWarningsRaw, riskSummary: riskAvoidedSummaryFor([]) };
-  const combinedWarnings = compactedPromptWarnings.warnings;
+  const combinedWarnings = anonymizeWarningMeasures(compactedPromptWarnings.warnings, candidateMeasures, merged);
   const governanceWorkbench = governanceWorkbenchForPrompt(model, combinedWarnings, merged);
   const stressTest = stressTestForPrompt(params, conservativeParams, metrics);
 
@@ -652,10 +695,11 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       ...promptFlexibilitySummary,
       ...(basis.flexibilitySummary || {})
     },
+    stromEeg2027: stromEeg2027SummaryForPrompt(model, params.sector, merged),
     stromReview: params.sector === 'strom' ? {
       warningTypes: [...new Set(combinedWarnings.map(warning => warning.type).filter(Boolean))],
       notes: combinedWarnings.map(warning => warning.detail || warning.title).filter(Boolean).slice(0, 12),
-      riskAvoided: compactedPromptWarnings.riskSummary
+      riskAvoided: riskSummaryForPrompt(compactedPromptWarnings.riskSummary, candidateMeasures, merged)
     } : null,
     portfolioSegmentation: params.sector === 'strom' ? segmentationForPrompt(basis.portfolioSegmentation, merged.roundAmounts) : null,
     sidecar: sidecarForPrompt(model, 'sanitized_external'),
@@ -669,6 +713,18 @@ function dataScopeHint(scope) {
   if (scope === 'summary') return 'Nur aggregierte Kennzahlen und Prozess-/Projektplan-Auszug. Keine Maßnahmenliste.';
   if (scope === 'detailed') return 'Ausführlicher Prompt mit Maßnahmen und Wirkannahmen. Vor Nutzung besonders sorgfältig redigieren.';
   return 'Standard: Kennzahlen, gerundete Maßnahmenwerte und Projektplan-Auszug; Notizen standardmäßig ausgelassen.';
+}
+
+function stromEeg2027PromptSection(snapshot) {
+  const summary = snapshot.stromEeg2027;
+  if (!summary?.applicable) return '';
+  const lines = (summary.measures || []).map(measure => `- ${measure.name || measure.id}: Netzanschlussstatus ab 135 kW ${measure.connectionRequestPowerKw > 135 ? 'einschlägig' : 'nicht einschlägig'}; Erlösrisiko ${measure.annualRevenueAtRiskTeur} TEUR p.a.; Baukostenzuschuss ${measure.connectionCostContributionTeur} TEUR; Regelstand ${measure.regulatoryStatus} / ${measure.assumptionStatus}.`);
+  return `
+## Strom EEG 2027 / Netzanschlusspaket (Entwurfsstand)
+${summary.notice}
+Aggregat: Entwurfsannahmen ${summary.draftAssumptions}; nutzerseitig überschrieben ${summary.userSuppliedAssumptions}; kapazitätslimitierte Maßnahmen ${summary.capacityLimitedMeasures}; Netzanschlussstatus ab 135 kW ${summary.connection135KwMeasures}; Erlösrisiko ${summary.annualRevenueAtRiskTeur} TEUR p.a.; Baukostenzuschüsse ${summary.connectionCostContributionTeur} TEUR.
+${lines.join('\n')}
+`;
 }
 
 function flexibilityPromptSection(snapshot) {
@@ -768,6 +824,7 @@ Datenumfang: ${dataScopeHint(merged.dataScope)}
 Redaktion: Maßnahmennamen ${merged.anonymizeMeasures ? 'anonymisiert' : 'original'}, Beträge ${merged.roundAmounts ? 'gerundet' : 'nicht gerundet'}, Notizen ${merged.omitNotes ? 'ausgelassen' : 'enthalten'}.
 ${stromReviewSection(snapshot)}
 ${stressTestPromptSection(snapshot)}
+${stromEeg2027PromptSection(snapshot)}
 ${governanceWorkbenchPromptSection(snapshot)}
 ${flexibilityPromptSection(snapshot)}
 ${sidecarPromptSection(snapshot)}

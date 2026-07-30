@@ -101,6 +101,7 @@ import {
   sidecarSummary,
   sanitizeSidecarForExport
 } from './sidecar.js';
+import { normalizeStromEeg2027Measure } from './strom-eeg2027.js';
 import {
   bulkImportSteps,
   committeeIds,
@@ -468,6 +469,26 @@ function normalizeMeasureForUi(measure, index = 0) {
     agnesRole: String(measure.agnesRole || 'offen'),
     agnesIntegrationStatus: String(measure.agnesIntegrationStatus || 'not_assessed'),
     agnesDataNeeded: Array.isArray(measure.agnesDataNeeded) ? measure.agnesDataNeeded.map(String) : parseTags(measure.agnesDataNeeded),
+    regulatoryStatus: String(measure.regulatoryStatus || 'current_law'),
+    regulatoryStatusLabel: String(measure.regulatoryStatusLabel || ''),
+    regulatoryStatusDate: String(measure.regulatoryStatusDate || ''),
+    assumptionStatus: String(measure.assumptionStatus || 'confirmed'),
+    capacityLimitedGridArea: Boolean(measure.capacityLimitedGridArea),
+    capacityLimitedTechnology: String(measure.capacityLimitedTechnology || 'none'),
+    redispatchCompensationWaiverEnabled: Boolean(measure.redispatchCompensationWaiverEnabled),
+    redispatchCompensationWaiverLimitPct: Number(measure.redispatchCompensationWaiverLimitPct) || 20,
+    windPriorityArea: Boolean(measure.windPriorityArea),
+    redispatchRiskClass: String(measure.redispatchRiskClass || 'low'),
+    annualRevenueAtRiskTeur: Number(measure.annualRevenueAtRiskTeur) || 0,
+    connectionRequestPowerKw: Number(measure.connectionRequestPowerKw) || 0,
+    voltageLevel: String(measure.voltageLevel || 'low_voltage'),
+    connectionRequestStatus: String(measure.connectionRequestStatus || 'draft'),
+    queueRiskClass: String(measure.queueRiskClass || 'low'),
+    reservationExpiryDate: String(measure.reservationExpiryDate || ''),
+    nextRequiredEvidence: String(measure.nextRequiredEvidence || ''),
+    generationConnectionCostContributionEnabled: Boolean(measure.generationConnectionCostContributionEnabled),
+    connectionCostContributionTeur: Number(measure.connectionCostContributionTeur) || 0,
+    connectionCostContributionMode: String(measure.connectionCostContributionMode || 'none'),
     tags: parseTags(measure.tags),
     hgbLife: Number(measure.hgbLife) || Number(measure.life) || 1,
     importStatus: String(measure.importStatus || ''),
@@ -2199,7 +2220,23 @@ function rememberSeenHead() {
   } catch (_error) {}
 }
 
+function stripStromEeg2027Fields(measure) {
+  const clone = structuredClone(measure);
+  [
+    'regulatoryStatus', 'regulatoryStatusLabel', 'regulatoryStatusDate', 'assumptionStatus',
+    'capacityLimitedGridArea', 'capacityLimitedTechnology', 'redispatchCompensationWaiverEnabled',
+    'redispatchCompensationWaiverLimitPct', 'windPriorityArea', 'redispatchRiskClass', 'annualRevenueAtRiskTeur',
+    'connectionRequestPowerKw', 'voltageLevel', 'connectionRequestStatus', 'queueRiskClass',
+    'reservationExpiryDate', 'nextRequiredEvidence', 'generationConnectionCostContributionEnabled',
+    'connectionCostContributionTeur', 'connectionCostContributionMode'
+  ].forEach(key => delete clone[key]);
+  return clone;
+}
+
 function currentModelData() {
+  const inputs = Object.fromEntries(inputIds.map(id => [id, el[id].value]));
+  const sector = inputs.sector === 'strom' ? 'strom' : 'gas';
+  const exportMeasures = sector === 'strom' ? structuredClone(measures) : measures.map(stripStromEeg2027Fields);
   return {
     activeView,
     reportMode,
@@ -2217,8 +2254,8 @@ function currentModelData() {
     importMapping: structuredClone(importMapping),
     catalogGroupBy,
     resultViewMode,
-    inputs: Object.fromEntries(inputIds.map(id => [id, el[id].value])),
-    measures: structuredClone(measures),
+    inputs,
+    measures: exportMeasures,
     meetingTextOverrides: structuredClone(meetingTextOverrides),
     clarificationStatus: structuredClone(clarificationStatus),
     lastReleaseCheck: lastReleaseCheck ? structuredClone(lastReleaseCheck) : null
@@ -3531,6 +3568,29 @@ function renderFlexibilityLayer(measure) {
     <div class="grid2">
       <div><strong>CAPEX-Vermeidung</strong><p>${fmtTeur(helper.avoidedCapexTeur)} vermieden · ${fmtTeur(helper.deferredCapexTeur)} verschoben</p></div>
       <div><strong>Flex-OPEX / AGNeS</strong><p>${fmtTeur(helper.flexOpexPaTeur)} p.a. · ${helper.agnesRelevant ? esc(helper.agnesRole) : 'kein AGNeS-Bezug gesetzt'}</p></div>
+    </div>
+  `;
+}
+
+function renderStromEeg2027Layer(measure) {
+  const node = document.getElementById('stromEeg2027Summary');
+  if (!node) return;
+  const p = currentParams();
+  if (p.sector !== 'strom' || !measure) {
+    node.innerHTML = '';
+    return;
+  }
+  const extension = normalizeStromEeg2027Measure(measure, p.sector);
+  const connectionHint = extension.connectionRequestPowerKw > 135
+    ? 'Anwendungsbereich >135 kW markiert; Nachweise und Reservierungsfrist prüfen.'
+    : '135-kW-Anwendungsbereich derzeit nicht einschlägig oder Leistung noch nicht angegeben.';
+  node.innerHTML = `
+    <div class="meta">Strom-only · ${esc(extension.regulatoryStatusLabel)} · ${esc(extension.assumptionStatus)}</div>
+    <strong>${esc(connectionHint)}</strong>
+    <p class="hint">Entwurfsstand / Vertrag prüfen. Erlösrisiko fließt als Risikowert, Baukostenzuschuss als Zusatz-CAPEX in die bestehende TEUR-Sicht ein; keine kWh-/Preisprofilrechnung.</p>
+    <div class="grid2">
+      <div><strong>Redispatch / Erlösrisiko</strong><p>${esc(extension.redispatchRiskClass)} · ${fmtTeur(extension.annualRevenueAtRiskTeur)} p.a. · Grenze ${fmtPct(extension.redispatchCompensationWaiverLimitPct, 0)}</p></div>
+      <div><strong>Netzanschluss / Zuschuss</strong><p>${esc(extension.connectionRequestStatus)} · ${fmtPlain(extension.connectionRequestPowerKw, 0)} kW · ${fmtTeur(extension.connectionCostContributionTeur)} Zusatz-CAPEX</p></div>
     </div>
   `;
 }
@@ -5465,6 +5525,24 @@ function renderDetail() {
   el.mAgnesRole.value = measure.agnesRole || 'offen';
   el.mAgnesIntegrationStatus.value = measure.agnesIntegrationStatus || 'not_assessed';
   el.mAgnesDataNeeded.value = Array.isArray(measure.agnesDataNeeded) ? measure.agnesDataNeeded.join(', ') : (measure.agnesDataNeeded || '');
+  el.mRegulatoryStatus.value = measure.regulatoryStatus || 'current_law';
+  el.mAssumptionStatus.value = measure.assumptionStatus || 'confirmed';
+  el.mCapacityLimitedGridArea.checked = Boolean(measure.capacityLimitedGridArea);
+  el.mCapacityLimitedTechnology.value = measure.capacityLimitedTechnology || 'none';
+  el.mRedispatchCompensationWaiverEnabled.checked = Boolean(measure.redispatchCompensationWaiverEnabled);
+  el.mRedispatchCompensationWaiverLimitPct.value = measure.redispatchCompensationWaiverLimitPct || (measure.windPriorityArea ? 18 : 20);
+  el.mWindPriorityArea.checked = Boolean(measure.windPriorityArea);
+  el.mRedispatchRiskClass.value = measure.redispatchRiskClass || 'low';
+  el.mAnnualRevenueAtRiskTeur.value = measure.annualRevenueAtRiskTeur || 0;
+  el.mConnectionRequestPowerKw.value = measure.connectionRequestPowerKw || 0;
+  el.mVoltageLevel.value = measure.voltageLevel || 'low_voltage';
+  el.mConnectionRequestStatus.value = measure.connectionRequestStatus || 'draft';
+  el.mQueueRiskClass.value = measure.queueRiskClass || 'low';
+  el.mReservationExpiryDate.value = measure.reservationExpiryDate || '';
+  el.mNextRequiredEvidence.value = measure.nextRequiredEvidence || '';
+  el.mGenerationConnectionCostContributionEnabled.checked = Boolean(measure.generationConnectionCostContributionEnabled);
+  el.mConnectionCostContributionTeur.value = measure.connectionCostContributionTeur || 0;
+  el.mConnectionCostContributionMode.value = measure.connectionCostContributionMode || 'none';
   el.mCost.value = measure.cost;
   el.mYear.value = measure.year;
   el.mSecure.value = measure.secure;
@@ -5507,6 +5585,7 @@ function renderDetail() {
 	      renderMeasureValidation(measure);
       renderGasTransformationLayer(measure);
       renderFlexibilityLayer(measure);
+      renderStromEeg2027Layer(measure);
       renderHelperCalculators(measure);
       renderMeasureDrilldown(measure);
       renderImpactAssumptions(measure);
@@ -6651,6 +6730,26 @@ function updateSelectedFromDetail() {
         agnesRole: el.mAgnesRole.value,
         agnesIntegrationStatus: el.mAgnesIntegrationStatus.value,
         agnesDataNeeded: parseTags(el.mAgnesDataNeeded.value),
+        regulatoryStatus: el.mRegulatoryStatus.value,
+        regulatoryStatusDate: el.mRegulatoryStatus.value === 'cabinet_draft_2026_07_29' ? '2026-07-29' : '',
+        regulatoryStatusLabel: el.mRegulatoryStatus.value === 'cabinet_draft_2026_07_29' ? 'Kabinettsentwurf EEG 2027 / Netzanschlusspaket' : '',
+        assumptionStatus: el.mAssumptionStatus.value,
+        capacityLimitedGridArea: el.mCapacityLimitedGridArea.checked,
+        capacityLimitedTechnology: el.mCapacityLimitedTechnology.value,
+        redispatchCompensationWaiverEnabled: el.mRedispatchCompensationWaiverEnabled.checked,
+        redispatchCompensationWaiverLimitPct: num('mRedispatchCompensationWaiverLimitPct'),
+        windPriorityArea: el.mWindPriorityArea.checked,
+        redispatchRiskClass: el.mRedispatchRiskClass.value,
+        annualRevenueAtRiskTeur: num('mAnnualRevenueAtRiskTeur'),
+        connectionRequestPowerKw: num('mConnectionRequestPowerKw'),
+        voltageLevel: el.mVoltageLevel.value,
+        connectionRequestStatus: el.mConnectionRequestStatus.value,
+        queueRiskClass: el.mQueueRiskClass.value,
+        reservationExpiryDate: el.mReservationExpiryDate.value,
+        nextRequiredEvidence: el.mNextRequiredEvidence.value.trim(),
+        generationConnectionCostContributionEnabled: el.mGenerationConnectionCostContributionEnabled.checked,
+        connectionCostContributionTeur: num('mConnectionCostContributionTeur'),
+        connectionCostContributionMode: el.mConnectionCostContributionMode.value,
 	        tags: parseTags(el.mTags.value),
 	        type: el.mType.value,
 	        cost: num('mCost'),
