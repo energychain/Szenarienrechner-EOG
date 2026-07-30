@@ -31,8 +31,24 @@ const glossaryTerms = [
   'ARegV',
   'Regulierungsperiode',
   'Kostenbasisjahr',
+  'IRR',
+  'Kapitalwert/NPV',
+  'Diskontsatz',
+  'Cashflow',
+  'CAPEX',
+  'OPEX',
+  'AfA/Abschreibung',
+  'Nutzungsdauer',
   'Befassung',
   'Klärpunkt',
+  'Wirkannahme',
+  'Evidenz',
+  'Stresstest / konservatives Szenario',
+  'Systemreferenz / Rückspielweg',
+  'Risiko-Mapping',
+  'Snapshot',
+  'VNB',
+  'TEUR',
   'Attribution',
   'Wirkungsverzug',
   'Kapitalkostenabgleich',
@@ -41,6 +57,23 @@ const glossaryTerms = [
   'No-Regret',
   'Kontextobjekt',
   'Entscheidungsreife',
+  'AGNeS',
+  'Netzfahrplan',
+  'Flexibilität(sobjekt)',
+  'EEG 2027 / Netzanschlusspaket',
+  'kapazitätslimitiertes Netzgebiet',
+  'Erlösrisiko',
+  'Risikowert (RiskAvoided)',
+  'Ewigkeitsvermutung',
+  'Stilllegung/Rückbau',
+  'Umwidmung/Wasserstoffleitung',
+  'Rückstellungen',
+  'KAnEu',
+  'Ist-Kosten/Kostenpfad',
+  'Abzugskapital',
+  'EK-/FK-Anteil',
+  'Kapitalverzinsung',
+  'Baukostenzuschuss (BKZ)',
 ];
 
 describe('CR-04 completion: amount fields and single delete undo', () => {
@@ -69,6 +102,10 @@ describe('CR-05 language and glossary', () => {
     for (const term of glossaryTerms) {
       expect(ui).toContain(`term: '${term}'`);
     }
+    expect(ui).toContain("aliases: ['Sidecar', 'Evidenzobjekt']");
+    expect(ui).toContain("aliases: ['Qualitätselement', 'Q-Element']");
+    expect(ui).toContain('Auch auffindbar als');
+    expect(ui).toContain("type: 'Glossar'");
   });
 
   it('links info-dot popovers to matching glossary entries', () => {
