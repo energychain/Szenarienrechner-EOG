@@ -326,7 +326,7 @@
           </div>
           <div>
             <label for="deductionCapital">Abzugskapital TEUR</label>
-            <input id="deductionCapital" type="number" value="0" min="0" step="100">
+            <div class="input-with-unit"><input id="deductionCapital" type="text" inputmode="numeric" value="0" data-format="teur" min="0" step="100" aria-describedby="deductionCapitalUnit"><span id="deductionCapitalUnit">TEUR</span></div>
           </div>
           <div>
             <label for="annualEnergyGwh">verteilte Jahresarbeit GWh</label>
