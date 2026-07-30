@@ -14,15 +14,15 @@
     <div class="header-inner">
       <div class="header-copy">
         <p class="product-kicker">Digitale Akte</p>
-        <h1 title="Portfolio-App für regulierte Sparten: Basisdaten der Sparte, geplante Maßnahmen und Szenarioannahmen werden in einer gemeinsamen EOG-, Rendite- und Finanzierungslogik gerechnet.">Szenario-Rechner regulierte Sparten</h1>
+        <h1>Szenario-Rechner regulierte Sparten</h1>
         <div class="header-context" aria-label="Rolle und Prozessphase">
           <details class="compact-popover role-popover">
             <summary>Rolle: <span class="role-pill">Modellverantwortung</span></summary>
             <div class="compact-popover-body role-selector compact" aria-label="Rollenwahl">
               <button type="button" data-role-choice="owner" class="active"><strong>Modellverantwortung</strong><span>voll bearbeiten</span></button>
               <button type="button" data-role-choice="expert"><strong>Fachexpertise</strong><span>offene Punkte prüfen</span></button>
-              <button type="button" data-role-choice="management"><strong>Management</strong><span>lesen</span></button>
-              <button type="button" data-role-choice="audit"><strong>Audit</strong><span>Historie und Report</span></button>
+              <button type="button" data-role-choice="management"><strong>Management</strong><span>Befassung prüfen</span></button>
+              <button type="button" data-role-choice="audit"><strong>Audit</strong><span>Historie und Export</span></button>
             </div>
           </details>
           <details class="compact-popover phase-popover">
@@ -94,8 +94,8 @@
         <p class="eyebrow">In welcher Rolle bist du hier?</p>
         <button type="button" data-role-choice="owner" class="active"><strong>Modellverantwortung</strong><span>voll bearbeiten</span></button>
         <button type="button" data-role-choice="expert"><strong>Fachexpertise</strong><span>offene Punkte prüfen</span></button>
-        <button type="button" data-role-choice="management"><strong>Management</strong><span>Entscheidung und Änderungen</span></button>
-        <button type="button" data-role-choice="audit"><strong>Audit</strong><span>Historie und Report</span></button>
+        <button type="button" data-role-choice="management"><strong>Management</strong><span>Befassung prüfen</span></button>
+        <button type="button" data-role-choice="audit"><strong>Audit</strong><span>Historie und Export</span></button>
       </div>
     </div>
     <div class="start-actions" aria-label="Startwege">
@@ -470,8 +470,11 @@
             <h2>Maßnahmenkatalog</h2>
             <p class="hint">Suche, Filter und Schnelllisten gehören zum Katalog. Neue Maßnahmen werden geführt im Dialog angelegt.</p>
           </div>
-          <button type="button" data-jump-view="measureWorkspace">Maßnahme im Workspace öffnen</button>
           <button type="button" id="newMeasure" class="primary">Neue Maßnahme</button>
+        </div>
+        <div class="inline-help-panel" id="measureEditHelpPanel">
+          <strong>Bearbeitungslogik</strong>
+          <p>Maßnahmendaten sind dauerhafte Aktenfelder. Befassungsnotizen dokumentieren einzelne Klärschritte. Nutze „Prüfen & Klären“, wenn Datenänderung und Befassung gleichzeitig sichtbar bleiben sollen.</p>
         </div>
         <div class="catalog-toolbox" aria-label="Maßnahmenkatalog Werkzeuge">
           <section class="catalog-filter-box" aria-labelledby="catalogFilterTitle">
@@ -554,24 +557,6 @@
         </div>
     </section>
 
-    <section class="panel app-view hidden" data-view-panel="measureWorkspace" aria-label="Maßnahmen-Workspace">
-      <div class="section-head-row">
-        <div>
-          <h2>Maßnahmen-Workspace</h2>
-          <p class="hint">Für freie Bearbeitung öffnet dieser Arbeitsbereich die aktuell ausgewählte Maßnahme. Klärfälle nutzen weiterhin die Split-Befassungs-Workbench.</p>
-        </div>
-        <div class="row-actions">
-          <button type="button" class="primary" id="openSelectedMeasureWorkspace">Ausgewählte Maßnahme bearbeiten</button>
-          <button type="button" data-jump-view="measures">Zur Maßnahmenliste</button>
-        </div>
-      </div>
-      <div class="inline-help-panel" id="appHelpPanel">
-        <strong>Bearbeitungslogik</strong>
-        <p>Maßnahmendaten sind dauerhafte Aktenfelder. Befassungsnotizen dokumentieren einzelne Klärschritte. Nutzen Sie „Prüfen & Klären“, wenn Datenänderung und Befassung gleichzeitig sichtbar bleiben sollen.</p>
-      </div>
-      <div id="measureWorkspaceSummary" class="summary-card-grid"></div>
-    </section>
-
     <section class="panel app-view hidden" data-view-panel="expertWork" aria-label="Offene Punkte Fachexpertise">
       <div class="section-head-row">
         <div>
@@ -589,8 +574,15 @@
     </section>
 
     <div class="stack wide app-view hidden" data-view-panel="results">
+      <nav class="subview-return" aria-label="Einordnung und Rückweg">
+        <span>Akte / Entscheidung im Detail</span>
+        <div class="row-actions compact-actions">
+          <button type="button" data-jump-view="akte">Zur Akte</button>
+          <button type="button" data-jump-view="report">Zum Export</button>
+        </div>
+      </nav>
       <section class="panel" aria-label="Managemententscheidung">
-        <h2>Management-Entscheidung</h2>
+        <h2>Entscheidung im Detail</h2>
         <div class="summary-hero">
           <div id="managementVerdict" class="verdict-card">
             <div class="verdict-label">Entscheidungstendenz</div>
@@ -718,7 +710,7 @@
         <div class="section-head-row">
           <div>
             <h2>Belastbarkeit des Arbeitsstands</h2>
-            <p class="hint">Verdichtet Nicht-Aussagen im Arbeitsstand: belegte RiskAvoided-Werte, Ziel-Zuordnung, Klassifikation und Sidecar-/Evidenzlage.</p>
+            <p class="hint">Verdichtet Nicht-Aussagen im Arbeitsstand: belegte RiskAvoided-Werte, Ziel-Zuordnung, Klassifikation und Kontextobjekt-/Evidenzlage.</p>
           </div>
         </div>
         <div id="workstandReliabilityCards" class="summary-card-grid"></div>
@@ -894,21 +886,21 @@
       <div class="report-actions">
         <div class="segmented report-mode-switch" aria-label="Reportart">
           <button type="button" class="report-mode active" data-report-mode="management">Management-Report</button>
-          <button type="button" class="report-mode" data-report-mode="committee">Gremienvorlage (1 Seite)</button>
+          <button type="button" class="report-mode" data-report-mode="committee">Befassungsvorlage (1 Seite)</button>
         </div>
         <button type="button" id="printReportFromView" class="primary">Report drucken</button>
       </div>
       <div class="group committee-fields">
-        <h2>Gremienvorlage</h2>
+        <h2>Befassungsvorlage</h2>
         <div class="grid2">
           <div>
-            <label for="committeeBody">Gremium</label>
+            <label for="committeeBody">Befassungskreis</label>
             <input id="committeeBody" type="text" value="Gemeinderat">
           </div>
           <div>
             <label for="committeeAudience">Adressat</label>
             <select id="committeeAudience">
-              <option value="kommunal">Kommunales Gremium</option>
+              <option value="kommunal">Kommunaler Befassungskreis</option>
               <option value="vorstand">Vorstand</option>
             </select>
           </div>
@@ -917,7 +909,7 @@
             <input id="committeeMeetingDate" type="date">
           </div>
           <div class="wide-field">
-            <label for="committeeProposalText">Beschlussvorschlag</label>
+            <label for="committeeProposalText">Befassungs-/Einordnungsvorschlag</label>
             <textarea id="committeeProposalText" placeholder="optional"></textarea>
           </div>
         </div>
@@ -929,13 +921,13 @@
       <div class="section-head-row sidecar-hero">
         <div>
           <p class="eyebrow">Evidenz & Systeme</p>
-          <h2>Kontext & Evidenz</h2>
-          <p class="hint">Sidecar-Objekte werden verdichtet geführt: erst Überblick und Filter, Details erst nach Klick. Sie bleiben standardmäßig nicht KPI-wirksam.</p>
+          <h2>Kontextobjekte & Evidenz</h2>
+          <p class="hint">Kontextobjekte werden verdichtet geführt: erst Überblick und Filter, Details erst nach Klick. Sie bleiben standardmäßig nicht KPI-wirksam.</p>
         </div>
-        <button type="button" id="addSidecarObject" class="primary">Sidecar-Objekt hinzufügen</button>
+        <button type="button" id="addSidecarObject" class="primary">Kontextobjekt hinzufügen</button>
       </div>
-      <div id="sidecarSummaryCards" class="summary-card-grid sidecar-summary-grid" aria-label="Sidecar-Zusammenfassung"></div>
-      <div class="sidecar-toolbar" aria-label="Sidecar Filter">
+      <div id="sidecarSummaryCards" class="summary-card-grid sidecar-summary-grid" aria-label="Kontextobjekte-Zusammenfassung"></div>
+      <div class="sidecar-toolbar" aria-label="Kontextobjekte filtern">
         <div>
           <strong>Arbeitsliste eingrenzen</strong>
           <small>nach Sparte, Rechenwirkung und offener Überleitungslogik</small>
@@ -947,23 +939,30 @@
             <option value="gas">Gas</option>
             <option value="cross_division">spartenübergreifend</option>
           </select>
-          <select id="sidecarModeFilter" aria-label="Sidecar-Arbeitsmodus filtern">
-            <option value="all">alle Sidecars</option>
+          <select id="sidecarModeFilter" aria-label="Kontextobjekt-Arbeitsmodus filtern">
+            <option value="all">alle Kontextobjekte</option>
             <option value="context">Kontext</option>
             <option value="sensitivity">Sensitivitäten</option>
             <option value="open_questions">offene Prüfpunkte</option>
             <option value="open_bridge_logic">offene Überleitungslogik</option>
             <option value="quantified_effect">quantifizierte Wirkung</option>
-            <option value="activated">aktivierte Sidecars</option>
+            <option value="activated">aktivierte Kontextobjekte</option>
             <option value="no_calculation">ohne Rechenwirkung</option>
           </select>
         </div>
       </div>
       <div id="sidecarBody" class="sidecar-card-list"></div>
-      <p class="hint warning sidecar-footer-note">Rechenwirkung entsteht erst durch explizite Aktivierung und definierte Mapping-Logik. In dieser Stufe bleibt der Sidecar passiv und verändert keine EOG-/KPI-Ergebnisse.</p>
+      <p class="hint warning sidecar-footer-note">Rechenwirkung entsteht erst durch explizite Aktivierung und definierte Mapping-Logik. In dieser Stufe bleibt das Kontextobjekt passiv und verändert keine EOG-/KPI-Ergebnisse.</p>
     </section>
 
     <section class="panel app-view hidden" data-view-panel="projectPlan" aria-label="Projektplan Planungsrunde">
+      <nav class="subview-return" aria-label="Einordnung und Rückweg">
+        <span>Akte / Projektplan</span>
+        <div class="row-actions compact-actions">
+          <button type="button" data-jump-view="akte">Zur Akte</button>
+          <button type="button" data-jump-view="basis">Zu Grundlagen</button>
+        </div>
+      </nav>
       <div class="section-head-row">
         <div>
           <p class="eyebrow">Planungsrunde</p>
@@ -1666,7 +1665,7 @@
             <p>Kleinere Netzbetreiber können mit einem vereinfachten Verfahren arbeiten, bei dem einzelne Größen pauschal behandelt werden. Wenn dieses Verfahren gewählt ist, dokumentiert die App Qualitäts- und Effizienzeffekte weiter, behandelt sie aber nicht als individuellen Erlösbeitrag. Details zur Teilnahme und Auslegung sollten mit Regulierungsmanagement oder Beratung geklärt werden.</p>
           </div>
           <div class="note warning">
-            Der Rechner ersetzt keine regulatorische Prüfung und keinen Beschluss. Er schafft eine gemeinsame, nachvollziehbare Entscheidungsgrundlage für Governance, Priorisierung und Finanzierung.
+            Der Rechner ersetzt keine regulatorische Prüfung und keine Befassung. Er schafft eine gemeinsame, nachvollziehbare Arbeitsgrundlage für Einordnung, Priorisierung und Finanzierung.
           </div>
         </div>
       </div>

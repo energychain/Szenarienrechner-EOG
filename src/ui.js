@@ -350,7 +350,7 @@ function applyReadonlyMode() {
   });
   [
     'newMeasure', 'toggleAllInCatalog', 'addImpactAssumption', 'addObjective',
-    'openSelectedMeasureWorkspace', 'openBasisWizard', 'toggleBasisEdit', 'meetingTextSave', 'meetingTextReset'
+    'openBasisWizard', 'toggleBasisEdit', 'meetingTextSave', 'meetingTextReset'
   ].forEach(id => {
     const node = document.getElementById(id);
     if (node) node.disabled = readOnly;
@@ -688,7 +688,7 @@ function projectTaskForClarification(item = {}) {
 
 function clarificationTargetFor(item = {}) {
   if (item.type === 'sidecar') {
-    return { fieldId: 'sidecarOpenQuestions', label: 'Sidecar-Prüfpunkt', task: 'Evidenzobjekt, offene Prüffrage oder Überleitungslogik prüfen' };
+    return { fieldId: 'sidecarOpenQuestions', label: 'Kontextobjekt-Prüfpunkt', task: 'Evidenzobjekt, offene Prüffrage oder Überleitungslogik prüfen' };
   }
   if (item.type === 'system_reference') {
     return { fieldId: 'mSourceSystem', label: 'Quellsystem / Datensatz', task: 'Rückspielweg und Systemreferenz ergänzen' };
@@ -786,7 +786,7 @@ function expertWorkItems() {
   }));
   const clarificationWork = clarificationItems().map(item => ({
     ...item,
-    area: item.area === 'Risiko' || item.area === 'Q-Element' ? 'technik' : item.area === 'Portfolio' || item.area === 'Kostenbasis' ? 'vnb' : item.area === 'Evidenz' || item.area === 'Sidecar' ? 'vnb' : 'controlling',
+    area: item.area === 'Risiko' || item.area === 'Q-Element' ? 'technik' : item.area === 'Portfolio' || item.area === 'Kostenbasis' ? 'vnb' : item.area === 'Evidenz' || item.area === 'Kontextobjekt' ? 'vnb' : 'controlling',
     type: item.type || 'clarification'
   }));
   return [...impactItems, ...clarificationWork];
@@ -875,10 +875,10 @@ function sidecarClarificationItems() {
         key: `sidecar:${object.id}`,
         type: 'sidecar',
         sidecarId: object.id,
-        area: 'Sidecar',
+        area: 'Kontextobjekt',
         column: 'evidence',
         targetPhase: 'konsolidierung',
-        title: 'Evidenz-/Sidecar-Prüfpunkt klären',
+        title: 'Evidenz-/Kontextobjekt-Prüfpunkt klären',
         measure: object.title,
         detail: reasons.join(' · ')
       };
@@ -1109,7 +1109,7 @@ function renderProjectPlan() {
       <div><strong>${counts.completed}/${counts.total}</strong><span>Aufgaben erledigt</span></div>
       <div><strong>${counts.byStatus.in_progress || 0}</strong><span>in Arbeit</span></div>
       <div><strong>${counts.byStatus.blocked || 0}</strong><span>blockiert durch Abhängigkeiten/Auflagen</span></div>
-      <div><strong>${esc(projectPlanMilestoneDate(projectPlan.baseYear, 6.5))}</strong><span>exemplarischer Gremienpunkt</span></div>
+      <div><strong>${esc(projectPlanMilestoneDate(projectPlan.baseYear, 6.5))}</strong><span>exemplarische Befassung</span></div>
     </div>
     ${nextReady ? `<div class="project-next-task"><strong>Nächste fällige Aufgabe:</strong> ${esc(nextReady.milestone.id.toUpperCase())} · ${esc(nextReady.task.title)} <span>${esc(projectPlanRoles[nextReady.task.ownerRole] || nextReady.task.ownerRole)} · fällig ${esc(projectPlanMilestoneDate(projectPlan.baseYear, nextReady.milestone.plannedOffsetMonths, nextReady.task.dueOffsetDays))}</span><button type="button" data-project-jump="${esc(nextReady.task.id)}">Zur Aufgabe</button></div>` : `<div class="project-next-task done"><strong>Alle aktuell freigegebenen Aufgaben sind erledigt oder blockiert.</strong></div>`}
     <p class="project-role-next-heading">Nächste fällige Aufgabe je Rolle steht in den Rollen-Swimlanes.</p>
@@ -1279,8 +1279,7 @@ function renderProcessUx() {
   }
   const banner = document.getElementById('processBanner');
   if (banner) {
-    const maturity = maturityScore();
-    const compactStatus = `Stand: ${phase} · ${maturity.score} % Entscheidungsreife · ${openCount} Klärpunkte offen`;
+    const compactStatus = `Stand: ${phase}`;
     const fullStatus = shouldShowPlanningResume(resume)
       ? `${resumeSummary.headline}. ${resumeSummary.status} ${resumeSummary.next}. ${resumeSummary.risks}.`
       : `KW ${isoWeek(new Date())} - ${phase}. ${reviewCount} Wirkannahmen prüfpflichtig, ${openCount} Klärpunkte offen${target ? `, Zieltermin Entscheidungsvorlage: ${formatDateShort(target)}` : ''}.`;
@@ -1299,7 +1298,7 @@ function renderProcessUx() {
   }
   const counter = document.getElementById('clarificationCounter');
   if (counter) {
-    counter.textContent = openCount ? `${openCount} Klärpunkte offen` : 'Keine offenen Klärpunkte';
+    counter.textContent = openCount ? 'Klärpunkte offen' : 'Keine offenen Klärpunkte';
     counter.title = 'Zur Klärpunktliste springen';
   }
   const storyMilestone = storyMilestoneForPhase(processState.phase, activeView);
@@ -1910,12 +1909,9 @@ function showToast(text, tone = 'info') {
 function setStorageStatus(text) {
   const node = document.getElementById('storageStatus');
   if (!node) return;
-  node.textContent = text;
+  node.textContent = 'Lokaler Arbeitsstand im Browser aktiv.';
   if (text) showToast(text);
   window.clearTimeout(storageStatusTimer);
-  storageStatusTimer = window.setTimeout(() => {
-    if (node.textContent === text) node.textContent = '';
-  }, 4500);
 }
 
 function captureUndoSnapshot(label = 'Bulk-Aktion') {
@@ -1966,34 +1962,6 @@ function resetModelToInitialState() {
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
   renderAll();
   setStorageStatus('Modell wurde zurückgesetzt und im Browser gespeichert.');
-}
-
-function openMeasureWorkspace() {
-  setView('measureWorkspace');
-  renderMeasureWorkspace();
-  setStorageStatus('Maßnahmen-Workspace geöffnet.');
-}
-
-function renderMeasureWorkspace() {
-  const node = document.getElementById('measureWorkspaceSummary');
-  if (!node) return;
-  const measure = selectedMeasure();
-  if (!measure) {
-    node.innerHTML = '<article class="summary-card"><strong>Keine Maßnahme ausgewählt</strong><p>Wählen Sie zuerst eine Maßnahme in der Liste aus.</p></article>';
-    return;
-  }
-  node.innerHTML = `
-    <article class="summary-card">
-      <span class="summary-label">Aktuelle Maßnahme</span>
-      <strong>${esc(measure.name)}</strong>
-      <p>${esc(measure.orgUnit || 'kein Bereich')} · ${esc(String(measure.year || 'ohne Jahr'))} · ${fmtTeur(measure.cost || 0)}</p>
-      <button type="button" class="primary" id="openSelectedMeasureWorkspaceInline">Maßnahme im Workspace öffnen</button>
-    </article>
-    <article class="summary-card">
-      <span class="summary-label">Hinweis</span>
-      <p>Der vollständige Formularumbau auf eine eigene Seite ist vorbereitet. In dieser Iteration öffnet der Workspace die gewählte Maßnahme noch im bewährten Editor, aber ohne versteckten Detailwerkzeuge-Einstieg.</p>
-    </article>
-  `;
 }
 
 
@@ -2345,7 +2313,7 @@ function applyModelState(state) {
     ? model.selectedId
     : measures[0]?.id;
   scenario = ['basis', 'konservativ', 'wert'].includes(model.scenario) ? model.scenario : 'basis';
-  activeView = ['akte', 'basis', 'measures', 'measureWorkspace', 'results', 'report', 'projectPlan', 'expertWork', 'sidecar', 'presentation'].includes(model.activeView) ? model.activeView : activeView;
+  activeView = ['akte', 'basis', 'measures', 'results', 'report', 'projectPlan', 'expertWork', 'sidecar', 'presentation'].includes(model.activeView) ? model.activeView : model.activeView === 'measureWorkspace' ? 'measures' : activeView;
   reportMode = ['management', 'committee'].includes(model.reportMode) ? model.reportMode : 'management';
   meetingFocus = ['management', 'technik', 'vnb', 'controlling', 'finanzierung'].includes(model.meetingFocus) ? model.meetingFocus : 'management';
   meetingTextOverrides = model.meetingTextOverrides && typeof model.meetingTextOverrides === 'object'
@@ -3028,7 +2996,7 @@ function applyDemoModel(options = {}) {
   sidecar = normalizeSidecar(structuredClone(demoSidecar));
   selectedSidecarId = sidecar.objects[0]?.id || '';
   strategy = normalizeStrategy({
-    sampReference: 'Synthetische Akte für eine regulierte Sparten-Planungsrunde 2027: Strommaßnahmen, Gas-Transformationskontext, Sidecar-Evidenz, Systemreferenzen, Stresstest-Parameter und Befassungs-/Klärlogik bewusst als Demo-Arbeitsstand angelegt.',
+    sampReference: 'Synthetische Akte für eine regulierte Sparten-Planungsrunde 2027: Strommaßnahmen, Gas-Transformationskontext, Kontextobjekt-Evidenz, Systemreferenzen, Stresstest-Parameter und Befassungs-/Klärlogik bewusst als Demo-Arbeitsstand angelegt.',
     objectives: defaultObjectives
   });
   committee = normalizeCommittee({
@@ -3098,18 +3066,18 @@ const storyResumeText = {
   },
   entscheidungsvorlage: {
     statusNote: 'Entscheidungsvorlage: priorisierte Maßnahmen, Kennzahlen und offene Prüfpunkte sind im Report zusammengeführt.',
-    nextStep: 'Beschlussvorschlag mit Auflagen finalisieren und an das zuständige Gremium geben.',
+    nextStep: 'Befassungsvorschlag mit Auflagen finalisieren und an den Befassungskreis geben.',
     owner: 'Modellverantwortung / Geschäftsführung',
     dueDate: '2027-06-20'
   },
   gremium: {
-    statusNote: 'Gremienvorlage: Einseiter übersetzt Modelllogik, Kennzahlen und Auflagen in beschlussfähige Sprache.',
-    nextStep: 'Beschluss fassen und Monitoringpunkte in die Umsetzung übergeben.',
-    owner: 'Gremium / Modellverantwortung',
+    statusNote: 'Befassungsvorlage: Einseiter übersetzt Modelllogik, Kennzahlen und Auflagen in eine prüfbare Einordnung.',
+    nextStep: 'Nächste Befassung durchführen und Monitoringpunkte in die Umsetzung übergeben.',
+    owner: 'Befassungskreis / Modellverantwortung',
     dueDate: '2027-06-20'
   },
   archiv: {
-    statusNote: 'Beschluss gefasst: Portfolio wird umgesetzt, Auflagen werden als Nachweis- und Monitoringpunkte weitergeführt.',
+    statusNote: 'Befassung abgeschlossen: Portfolio-Arbeitsstand wird weitergeführt, Auflagen bleiben als Nachweis- und Monitoringpunkte sichtbar.',
     nextStep: 'JSON-Modell und Report als Entscheidungsstand archivieren; Review nach erster Umsetzungsetappe.',
     owner: 'Modellverantwortung / Audit',
     dueDate: '2027-09-30'
@@ -3536,7 +3504,7 @@ function renderGasTransformationLayer(measure) {
   const lifeConflict = helper.recommendedQuestion === 'Nutzungsdauer-Entscheid erforderlich';
   node.innerHTML = `
     <div class="meta">prüfpflichtige Gas-Herleitung · ${esc(helper.confidence)}</div>
-    ${lifeConflict ? '<div class="warning-card compact"><strong>Nutzungsdauer-Entscheid erforderlich</strong><p>Die Nutzungsdauer kollidiert mit KANU-/Transformationshorizont und Wegfall der Ewigkeitsvermutung; Kennzahlen erst nach bewusster fachlicher Freigabe nutzen.</p></div>' : ''}
+    ${lifeConflict ? '<div class="warning-card compact"><strong>Nutzungsdauer-Entscheid erforderlich</strong><p>Die Nutzungsdauer kollidiert mit KANU-/Transformationshorizont und Wegfall der Ewigkeitsvermutung; Kennzahlen erst nach bewusster fachlicher Befassung nutzen.</p></div>' : ''}
     <strong>${esc(helper.summary)}</strong>
     <p class="hint">${esc(helper.governance)}</p>
     <div class="grid2">
@@ -4103,13 +4071,13 @@ function sidecarFinancialSignalsHtml() {
     return impact !== 'none' || object.sensitivity === 'high' || (object.openQuestions || []).length > 0;
   });
   if (!relevant.length) {
-    return '<p class="hint">Sidecar-Finanzsignale: keine offenen oder sensitivitätsrelevanten Sidecar-Objekte im aktuellen Arbeitsstand.</p>';
+    return '<p class="hint">Kontextobjekt-Finanzsignale: keine offenen oder sensitivitätsrelevanten Kontextobjekte im aktuellen Arbeitsstand.</p>';
   }
   const rows = relevant.slice(0, 6).map(object => {
     const links = [...(object.linkedMeasures || []), ...(object.linkedScenarios || [])].filter(Boolean).join(', ') || 'nicht verknüpft';
     return `<li><strong>${esc(object.title)}</strong> · Rechenwirkung ${esc(object.calculationImpact || 'none')} · Sensitivität ${esc(object.sensitivity || 'internal')} · ${esc(links)}</li>`;
   }).join('');
-  return `<div class="waterfall-summary"><strong>Sidecar-Finanzsignale</strong><p class="hint">Sidecar-Objekte werden nicht automatisch KPI-wirksam. Für die Tornado-Einordnung zählen sie als Priorisierungshinweis, sobald calculationImpact, Sensitivität oder offene Fragen auf werttreibende Annahmen zeigen.</p><ul>${rows}</ul></div>`;
+  return `<div class="waterfall-summary"><strong>Kontextobjekt-Finanzsignale</strong><p class="hint">Kontextobjekte werden nicht automatisch KPI-wirksam. Für die Tornado-Einordnung zählen sie als Priorisierungshinweis, sobald calculationImpact, Sensitivität oder offene Fragen auf werttreibende Annahmen zeigen.</p><ul>${rows}</ul></div>`;
 }
 
 function renderMeasureDrilldown(measure) {
@@ -4186,7 +4154,7 @@ function renderMeetingFocus(result, first, spread, metrics = portfolioDecisionMe
   const spreadText = Number.isFinite(spread) ? fmtPct(spread * 100, 1) : '-';
   const rows = {
     management: [
-      meetingCard('management', 'decisionQuestion', 'Beschlussfrage', Number.isFinite(result.irr) ? irrText + ' IRR indikativ' : '', `Ist der Business Case bei ${fmtTeur(result.invest)} Investition und ${fmtTeur(metrics.recurringRegulatoryEog, 1)} EOG-Wirkung im ersten Folgejahr mit den offenen Auflagen tragfähig?`),
+      meetingCard('management', 'decisionQuestion', 'Befassungsfrage', Number.isFinite(result.irr) ? irrText + ' IRR indikativ' : '', `Ist der Business Case bei ${fmtTeur(result.invest)} Investition und ${fmtTeur(metrics.recurringRegulatoryEog, 1)} EOG-Wirkung im ersten Folgejahr mit den offenen Auflagen tragfähig?`),
       meetingCard('management', 'whyItWorks', 'Warum es trägt', Number.isFinite(spread) ? spreadText + ' Spread' : '', `Rendite wird als indikativer Cashflow gegen FK-Zins ${fmtPct(result.p.financingRate * 100, 1)} und Kapitalwert ${fmtTeur(result.npv, 1)} gespiegelt; konservativ ${metrics.conservative && Number.isFinite(metrics.conservative.irr) ? fmtPct(metrics.conservative.irr * 100, 1) : '-'}.`),
       meetingCard('management', 'watchOut', 'Nicht übersehen', '', result.qePa + result.impactPa > 0 ? `Q/E- und Wirkannahmen von ${fmtTeur(result.qePa + result.impactPa, 1)} p.a. brauchen Nachweis, Attribution und Governance-Status.` : 'Ohne Portfolioeffekt zählt vor allem die direkte regulatorische Kapitalwirkung.')
     ],
@@ -4263,10 +4231,10 @@ function renderAkteCockpit(result, first, decision, metrics) {
   `;
   document.getElementById('akteEvidenceCard').innerHTML = `
     <div class="card-kicker">Evidenz & Systeme</div>
-    <h3>${sidecarStats.total || 0} Sidecar-Objekte</h3>
+    <h3>${sidecarStats.total || 0} Kontextobjekte</h3>
     <div class="status-chips compact">
       <span class="chip violet">${sidecarStats.withoutCalculationImpact || 0} ohne Rechenwirkung</span>
-      <span class="chip amber">${sidecarStats.openBridgeLogic || 0} offene Brücke</span>
+      <span class="chip amber">${sidecarStats.openBridgeLogic || 0} offene Überleitung</span>
     </div>
     <span class="card-link-hint">Evidenz prüfen</span>
   `;
@@ -4322,7 +4290,7 @@ function presentationSlides(result, first, decision, metrics) {
       title: `${sectorLabel}-Planungsakte`,
       eyebrow: 'Startfolie',
       view: 'akte',
-      body: `Arbeitsstand ${phase} · ${result.activeMeasures.length} aktive Maßnahmen · ${openItems.length} offene Klärpunkte. Die Kennzahl ist der Arbeitsstand-Score, nicht ein Beschlussstatus.`,
+      body: `Arbeitsstand ${phase} · ${result.activeMeasures.length} aktive Maßnahmen · ${openItems.length} offene Klärpunkte. Die Kennzahl ist der Arbeitsstand-Score, kein Befassungsabschluss.`,
       visual: `
         <div class="presentation-title-grid">
           <div class="presentation-maturity-callout">
@@ -4345,7 +4313,7 @@ function presentationSlides(result, first, decision, metrics) {
     { title: 'EOG ≠ Cashflow', eyebrow: 'Überleitung', view: 'results', body: `${fmtTeur(waterfall.firstFollowYear.regulatoryEogEffect, 1)} regulatorische EOG plus ${fmtTeur(waterfall.firstFollowYear.economicBridge, 1)} wirtschaftliche Überleitung.`, visual: `<div class="presentation-flow"><span>Basis-EOG</span><span>→</span><span>Maßnahmen</span><span>→</span><span>Cashflow-Überleitung</span></div>` },
     { title: `${openItems.length} offene Klärpunkte`, eyebrow: 'Prüfauftrag', view: 'expertWork', body: openItems.slice(0, 4).map(item => `${item.priority?.label || 'normal'}: ${item.measure} · ${item.title}`).join(' | ') || 'Keine offenen Klärpunkte.', visual: kanbanCountHtml(openItems) },
     { title: 'Belastbarkeit des Arbeitsstands', eyebrow: 'Governance', view: 'results', body: `${reliability.verdict}. ${reliability.caveat}`, visual: `<div class="reliability-mini large">${reliability.items.slice(0, 4).map(item => `<span class="${item.severity === 'warn' ? 'amber' : 'green'}"><strong>${esc(item.value)}</strong>${esc(item.label)}</span>`).join('')}</div>` },
-    { title: 'Evidenz & Systeme', eyebrow: 'Sidecar', view: 'sidecar', body: 'Sidecar-Objekte, Systemreferenzen und Überleitungslogik bleibt sichtbar, aber ohne automatische KPI-Wirkung.', visual: `<div class="presentation-flow violet"><span>Quelle</span><span>→</span><span>Evidenz</span><span>→</span><span>Überleitung</span><span>→</span><span>Prüfung</span></div>` },
+    { title: 'Evidenz & Systeme', eyebrow: 'Kontextobjekte', view: 'sidecar', body: 'Kontextobjekte, Systemreferenzen und Überleitungslogik bleiben sichtbar, aber ohne automatische KPI-Wirkung.', visual: `<div class="presentation-flow violet"><span>Quelle</span><span>→</span><span>Evidenz</span><span>→</span><span>Überleitung</span><span>→</span><span>Prüfung</span></div>` },
     { title: 'Nächster Schritt', eyebrow: 'Befassung', view: 'projectPlan', body: processState.resume?.nextStep || projectPlanNextReadyTask(projectPlan)?.task?.title || 'Nächsten Prüfauftrag festlegen.', visual: `<div class="meeting-closeout">Arbeitsstand sichern · Report/Export erzeugen · nächste Befassung vorbereiten</div>` }
   ];
 }
@@ -4531,13 +4499,15 @@ function selectedMeasure() {
 }
 
 function setView(view) {
-  activeView = view;
-  document.body.dataset.view = view;
+  const normalizedView = view === 'measureWorkspace' ? 'measures' : view;
+  activeView = normalizedView;
+  document.body.dataset.view = normalizedView;
+  const activeNavView = normalizedView === 'results' ? 'akte' : normalizedView === 'projectPlan' ? 'basis' : normalizedView;
   document.querySelectorAll('.view-tab').forEach(button => {
-    button.classList.toggle('active', button.dataset.view === view);
+    button.classList.toggle('active', button.dataset.view === activeNavView);
   });
   document.querySelectorAll('[data-view-panel]').forEach(panel => {
-    panel.classList.toggle('hidden', panel.dataset.viewPanel !== view);
+    panel.classList.toggle('hidden', panel.dataset.viewPanel !== normalizedView);
   });
 }
 
@@ -5087,7 +5057,6 @@ const navStatusLabels = {
   report: 'Bericht',
   results: 'Analyse',
   projectPlan: 'Projektplan',
-  measureWorkspace: 'Workspace'
 };
 
 function updateFlowStatus() {
@@ -5313,8 +5282,8 @@ function renderImpactAssumptions(measure) {
       <label>Datenbasis / Quelle</label>
       <select data-impact-field="evidenceType" data-impact-id="${esc(impact.id)}">${selectOptions(evidenceTypeLabels, impact.evidenceType)}</select>
       <textarea data-impact-field="evidence" data-impact-id="${esc(impact.id)}" placeholder="Historie, Betriebserfahrung, Gutachten, Regulierungsmanagement ...">${esc(impact.evidence)}</textarea>
-      <label>Prüf- oder Freigabehinweis</label>
-      <textarea data-impact-field="note" data-impact-id="${esc(impact.id)}" placeholder="Was muss vor Beschluss/Freigabe noch bestätigt werden?">${esc(impact.note)}</textarea>
+      <label>Prüf- oder Einordnungshinweis</label>
+      <textarea data-impact-field="note" data-impact-id="${esc(impact.id)}" placeholder="Was muss vor Abschluss des Klärpunkts noch bestätigt werden?">${esc(impact.note)}</textarea>
     </article>
   `;
   }).join('');
@@ -5736,7 +5705,7 @@ function addSidecarObject() {
   sidecar = normalizeSidecar({ ...sidecar, objects: [...sidecar.objects, object] });
   selectedSidecarId = object.id;
   renderAll();
-  setStorageStatus('Sidecar-Objekt wurde hinzugefügt.');
+  setStorageStatus('Kontextobjekt wurde hinzugefügt.');
 }
 
 function updateSidecarObject(id, patchFields = {}, rerender = true) {
@@ -5774,7 +5743,7 @@ function sidecarMatchesModeFilter(object) {
 function sidecarBridgeWarning(object) {
   const bridge = object.bridgeLogic || {};
   if (['effect_assumption', 'economic_bridge'].includes(object.sidecarType) && object.calculationImpact !== 'none' && !bridge.description) {
-    return 'Sidecar sichtbar, wirtschaftliche Überleitung nicht modelliert';
+    return 'Kontextobjekt sichtbar, wirtschaftliche Überleitung nicht modelliert';
   }
   if (['effect_assumption', 'economic_bridge'].includes(object.sidecarType) && ['open', 'described', 'not_applicable'].includes(bridge.quantificationStatus)) {
     return 'Wirkbeziehung beschrieben, Quantifizierung offen';
@@ -5782,7 +5751,7 @@ function sidecarBridgeWarning(object) {
   if (object.activationStatus === 'activated' || object.calculationImpact === 'active') {
     return 'Aktivierung verändert keine Kennzahl ohne freigegebene Mapping-Logik';
   }
-  return 'Sidecar sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung';
+  return 'Kontextobjekt sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung';
 }
 
 function sidecarNextAuditAction(object) {
@@ -5834,11 +5803,11 @@ function renderSidecar() {
   sidecar = normalizeSidecar(sidecar);
   const summary = sidecarSummary(sidecar);
   const status = document.getElementById('status-sidecar');
-  if (status) status.textContent = `${summary.total} Objekte · ${summary.openQuestions} Prüfpunkte`;
+  if (status) status.textContent = navStatusLabels.sidecar;
   const cards = document.getElementById('sidecarSummaryCards');
   if (cards) {
     cards.innerHTML = `
-      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="all"><strong>${summary.total}</strong><span>Sidecar-Objekte</span></button>
+      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="all"><strong>${summary.total}</strong><span>Kontextobjekte</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_questions"><strong>${summary.openQuestions}</strong><span>offene Prüfpunkte</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_bridge_logic"><strong>${summary.openBridgeLogic}</strong><span>offene Überleitungslogik</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="quantified_effect"><strong>${summary.quantifiedNotActivated}</strong><span>quantifiziert, aber nicht aktiviert</span></button>
@@ -5867,7 +5836,7 @@ function renderSidecar() {
             <span>Nächste Prüfaktion: ${esc(sidecarNextAuditAction(object))}</span>
           </div>
         </div>
-        <div class="sidecar-card-status" aria-label="Sidecar-Status">
+        <div class="sidecar-card-status" aria-label="Kontextobjekt-Status">
           <span class="sidecar-status-chip">${esc(sidecarTypeLabel(object))}</span>
           <span class="sidecar-status-chip">${esc(sidecarImpactLabel(object))}</span>
           <span class="sidecar-status-chip">${esc(sidecarEvidenceLabel(object))}</span>
@@ -5879,7 +5848,7 @@ function renderSidecar() {
           <div><label data-help-id="sidecarTitle">Titel<input data-sidecar-field="title" data-sidecar-id="${esc(object.id)}" value="${esc(object.title)}"></label></div>
           <div><label data-help-id="sidecarDivision">Sparte<select data-sidecar-field="division" data-sidecar-id="${esc(object.id)}"><option value="strom" ${object.division === 'strom' ? 'selected' : ''}>Strom</option><option value="gas" ${object.division === 'gas' ? 'selected' : ''}>Gas</option><option value="cross_division" ${object.division === 'cross_division' ? 'selected' : ''}>spartenübergreifend</option></select></label></div>
           <div><label data-help-id="sidecarType">Typ<input data-sidecar-field="type" data-sidecar-id="${esc(object.id)}" value="${esc(object.type)}"></label></div>
-          <div><label data-help-id="sidecarBridgeLogic">Sidecar-Typ<select data-sidecar-field="sidecarType" data-sidecar-id="${esc(object.id)}"><option value="context" ${object.sidecarType === 'context' ? 'selected' : ''}>Kontext</option><option value="sensitivity" ${object.sidecarType === 'sensitivity' ? 'selected' : ''}>Sensitivität</option><option value="effect_assumption" ${object.sidecarType === 'effect_assumption' ? 'selected' : ''}>Wirkannahme</option><option value="economic_bridge" ${object.sidecarType === 'economic_bridge' ? 'selected' : ''}>wirtschaftliche Überleitung</option><option value="system_reference" ${object.sidecarType === 'system_reference' ? 'selected' : ''}>Systemreferenz</option></select></label></div>
+          <div><label data-help-id="sidecarBridgeLogic">Kontextobjekt-Typ<select data-sidecar-field="sidecarType" data-sidecar-id="${esc(object.id)}"><option value="context" ${object.sidecarType === 'context' ? 'selected' : ''}>Kontext</option><option value="sensitivity" ${object.sidecarType === 'sensitivity' ? 'selected' : ''}>Sensitivität</option><option value="effect_assumption" ${object.sidecarType === 'effect_assumption' ? 'selected' : ''}>Wirkannahme</option><option value="economic_bridge" ${object.sidecarType === 'economic_bridge' ? 'selected' : ''}>wirtschaftliche Überleitung</option><option value="system_reference" ${object.sidecarType === 'system_reference' ? 'selected' : ''}>Systemreferenz</option></select></label></div>
           <div><label data-help-id="sidecarStatus">Status<select data-sidecar-field="status" data-sidecar-id="${esc(object.id)}"><option value="context" ${object.status === 'context' ? 'selected' : ''}>Kontext</option><option value="pruefpflichtig" ${object.status === 'pruefpflichtig' ? 'selected' : ''}>prüfpflichtig</option><option value="quantified" ${object.status === 'quantified' ? 'selected' : ''}>quantifiziert</option><option value="active" ${object.status === 'active' ? 'selected' : ''}>aktiv</option><option value="archived" ${object.status === 'archived' ? 'selected' : ''}>archiviert</option></select></label></div>
           <div><label data-help-id="sidecarEvidenceStatus">Evidenzstatus<select data-sidecar-field="evidenceStatus" data-sidecar-id="${esc(object.id)}"><option value="missing" ${object.evidenceStatus === 'missing' ? 'selected' : ''}>fehlt</option><option value="stated" ${object.evidenceStatus === 'stated' ? 'selected' : ''}>benannt</option><option value="source_available" ${object.evidenceStatus === 'source_available' ? 'selected' : ''}>Quelle verfügbar</option><option value="validated" ${object.evidenceStatus === 'validated' ? 'selected' : ''}>validiert</option><option value="conflicting" ${object.evidenceStatus === 'conflicting' ? 'selected' : ''}>widersprüchlich</option><option value="stale" ${object.evidenceStatus === 'stale' ? 'selected' : ''}>veraltet</option></select></label></div>
           <div><label data-help-id="sidecarCalculationImpact">Rechenwirkung<select data-sidecar-field="calculationImpact" data-sidecar-id="${esc(object.id)}"><option value="none" ${object.calculationImpact === 'none' ? 'selected' : ''}>keine</option><option value="scenario_only" ${object.calculationImpact === 'scenario_only' ? 'selected' : ''}>nur Szenario</option><option value="indirect" ${object.calculationImpact === 'indirect' ? 'selected' : ''}>indirekt</option><option value="active" ${object.calculationImpact === 'active' ? 'selected' : ''}>aktiv markiert</option></select></label></div>
@@ -5897,11 +5866,11 @@ function renderSidecar() {
           <div><label data-help-id="sidecarBridgeLogic">Einheit<input data-sidecar-field="bridgeLogic.amountUnit" data-sidecar-id="${esc(object.id)}" placeholder="z.B. TEUR/a" value="${esc(object.bridgeLogic?.amountUnit || '')}"></label></div>
           <div><label data-help-id="sidecarBridgeLogic">Zeithorizont<input data-sidecar-field="bridgeLogic.timeHorizon" data-sidecar-id="${esc(object.id)}" value="${esc(object.bridgeLogic?.timeHorizon || '')}"></label></div>
           <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Methode / Annahmen<input data-sidecar-field="bridgeLogic.quantificationMethod" data-sidecar-id="${esc(object.id)}" value="${esc(object.bridgeLogic?.quantificationMethod || '')}"></label></div>
-          <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Brücken-Prüffragen<input data-sidecar-field="bridgeLogic.openQuestions" data-sidecar-id="${esc(object.id)}" value="${esc((object.bridgeLogic?.openQuestions || []).join('; '))}"></label></div>
+          <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Überleitungs-Prüffragen<input data-sidecar-field="bridgeLogic.openQuestions" data-sidecar-id="${esc(object.id)}" value="${esc((object.bridgeLogic?.openQuestions || []).join('; '))}"></label></div>
         </div>
       </details>
     </article>
-  `).join('') : '<div class="empty-state"><strong>Noch keine Sidecar-Objekte.</strong><small>Kontext- und Evidenzwissen kann hier getrennt von Maßnahmen erfasst werden.</small></div>';
+  `).join('') : '<div class="empty-state"><strong>Noch keine Kontextobjekte.</strong><small>Kontext- und Evidenzwissen kann hier getrennt von Maßnahmen erfasst werden.</small></div>';
   enhanceHelpLabels(body);
 }
 
@@ -5911,15 +5880,15 @@ function sidecarReportSummaryHtml() {
   const open = exportSidecar.objects.filter(object => object.openQuestions.length || sidecarHasOpenBridgeLogic(object) || ['missing', 'conflicting', 'stale'].includes(object.evidenceStatus));
   return `
     <section class="report-section">
-      <h2>Kontext- und Wirkobjekte / Sidecars</h2>
-      <p class="hint">Sidecar-Objekte sind Kontext-, Evidenz-, Sensitivitäts- oder Wirkobjekte. Sidecar sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung: Sie sind nicht als klassische Maßnahmen zu lesen und gehen nicht in CAPEX-/EOG-/KPI-Summen ein.</p>
+      <h2>Kontextobjekte und wirtschaftliche Überleitung</h2>
+      <p class="hint">Kontextobjekte sind Kontext-, Evidenz-, Sensitivitäts- oder Wirkobjekte. Kontextobjekte sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung: Sie sind nicht als klassische Maßnahmen zu lesen und gehen nicht in CAPEX-/EOG-/KPI-Summen ein.</p>
       <div class="report-summary">
         <div class="report-box"><strong>Evidenzlage</strong><p>${summary.total} Objekte, davon ${summary.byEvidenceStatus.validated || 0} validiert und ${summary.byEvidenceStatus.missing || 0} ohne Evidenz.</p></div>
         <div class="report-box"><strong>Datenqualität</strong><p>${summary.dataQualityOpen} offene Datenqualitätsobjekte; ${summary.openQuestions} offene Prüfpunkte.</p></div>
         <div class="report-box"><strong>Rechenwirkung</strong><p>${summary.withoutCalculationImpact} ohne Rechenwirkung, ${summary.calculationImpact.indirect || 0} indirekt, ${summary.calculationImpact.scenario_only || 0} nur Szenario, ${summary.calculationImpact.active || 0} aktiv markiert.</p></div>
         <div class="report-box"><strong>Überleitungslogik</strong><p>${summary.openBridgeLogic} offene Überleitungslogik, ${summary.quantifiedNotActivated} quantifiziert, aber nicht aktiviert; ${summary.activated} aktiviert markiert.</p></div>
       </div>
-      ${open.length ? `<div class="report-sidecar-list">${open.slice(0, 8).map(object => `<article class="report-sidecar-item"><span>${esc(object.division)} · ${esc(object.sidecarType)} · ${esc(sidecarTypeLabel(object))}</span><strong>${esc(object.title)}</strong><p>${esc(sidecarBridgeWarning(object))}</p></article>`).join('')}</div>` : '<p class="hint">Keine offenen Sidecar-Prüfpunkte im sanitisierten Exportprofil.</p>'}
+      ${open.length ? `<div class="report-sidecar-list">${open.slice(0, 8).map(object => `<article class="report-sidecar-item"><span>${esc(object.division)} · ${esc(object.sidecarType)} · ${esc(sidecarTypeLabel(object))}</span><strong>${esc(object.title)}</strong><p>${esc(sidecarBridgeWarning(object))}</p></article>`).join('')}</div>` : '<p class="hint">Keine offenen Kontextobjekt-Prüfpunkte im sanitisierten Exportprofil.</p>'}
     </section>
   `;
 }
@@ -6092,7 +6061,7 @@ function eventJournalRows() {
 
 function plainCommitteeStory(result, first, metrics = portfolioDecisionMetrics(result)) {
   if (!result.activeMeasures.length) {
-    return 'Es ist noch keine aktive Maßnahme ausgewählt. Die Vorlage dokumentiert daher einen Arbeitsstand ohne Beschlussreife.';
+    return 'Es ist noch keine aktive Maßnahme ausgewählt. Die Vorlage dokumentiert daher einen Arbeitsstand ohne Befassungsreife.';
   }
   const activeText = result.activeMeasures.length === 1 ? 'eine aktive Maßnahme' : `${result.activeMeasures.length} aktive Maßnahmen`;
   const tariff = tariffImpactLine(result.tariffImpact);
@@ -6106,8 +6075,8 @@ function committeeProposal(result) {
   const text = String(committee.proposalText || '').trim();
   if (text) return text;
   return result.activeMeasures.length
-    ? 'Das Gremium nimmt die dargestellte Maßnahmebewertung zur Kenntnis und beauftragt die Verwaltung, die offenen Punkte vor einer finalen Budgetfreigabe zu klären.'
-    : 'Das Gremium nimmt den Arbeitsstand zur Kenntnis. Eine Beschlussfassung wird nach Ergänzung aktiver Maßnahmen vorbereitet.';
+    ? 'Der Befassungskreis nimmt die dargestellte Maßnahmebewertung zur Kenntnis und beauftragt die offenen Punkte vor einer finalen Einordnung zu klären.'
+    : 'Der Befassungskreis nimmt den Arbeitsstand zur Kenntnis. Eine belastbare Einordnung wird nach Ergänzung aktiver Maßnahmen vorbereitet.';
 }
 
 function committeeReportHtml(result, first, spread, metrics = portfolioDecisionMetrics(result)) {
@@ -6146,8 +6115,8 @@ function committeeReportHtml(result, first, spread, metrics = portfolioDecisionM
     <article class="committee-page">
       <header class="committee-head">
         <div>
-          <h1>${isBoardAudience ? 'Vorstandsvorlage Investitionsbewertung' : 'Gremienvorlage Investitionsbewertung'}</h1>
-          <p>${esc(committee.body || (isBoardAudience ? 'Vorstand' : 'Gremium'))}${committee.meetingDate ? ` · Sitzung ${esc(formatDateShort(committee.meetingDate))}` : ''}</p>
+          <h1>${isBoardAudience ? 'Vorstandsvorlage Investitionsbewertung' : 'Befassungsvorlage Investitionsbewertung'}</h1>
+          <p>${esc(committee.body || (isBoardAudience ? 'Vorstand' : 'Befassungskreis'))}${committee.meetingDate ? ` · Sitzung ${esc(formatDateShort(committee.meetingDate))}` : ''}</p>
         </div>
         <div>
           <strong>${result.p.sector === 'gas' ? 'Gas' : 'Strom'}</strong><br>
@@ -6160,7 +6129,7 @@ function committeeReportHtml(result, first, spread, metrics = portfolioDecisionM
         <p>${esc(planningSummary.next)}. ${esc(planningSummary.risks)}.</p>
       </section>
       <section>
-        <h2>Anlass und Beschlussvorschlag</h2>
+        <h2>Anlass und Einordnungsvorschlag</h2>
         <p>${esc(committeeProposal(result))}</p>
       </section>
       <section>
@@ -6229,7 +6198,7 @@ function systemIntegrationReportHtml(result) {
       <div class="report-summary">
         <div class="report-box"><strong>Systemreferenzen</strong><p>${linkedBack} von ${active.length} aktiven Maßnahmen mit Quellsystem und Datensatz-/PSP-Bezug.</p></div>
         <div class="report-box"><strong>Risiko-Mapping</strong><p>${riskMeasures.length - incompleteRisk.length} von ${riskMeasures.length} Risikowerten mit Datenbank-/Evidenzbezug.</p></div>
-        <div class="report-box"><strong>Nutzungsmodus</strong><p>Sidecar zu bestehenden Systemen / Import-Export-Brücke; keine Vollintegration und keine führende Stammdatenhaltung.</p></div>
+        <div class="report-box"><strong>Nutzungsmodus</strong><p>Kontextobjekte zu bestehenden Systemen / Import-Export-Überleitung; keine Vollintegration und keine führende Stammdatenhaltung.</p></div>
       </div>
     </section>
   `;
@@ -6617,7 +6586,6 @@ function renderAll(persist = true) {
   renderProcessUx();
   renderProjectPlan();
   renderSidecar();
-  renderMeasureWorkspace();
   renderChangeSinceSeen();
   renderMaturityAndClarifications();
   renderReportMode();
@@ -6912,22 +6880,16 @@ document.addEventListener('keydown', event => {
   if (!jump || !['Enter', ' '].includes(event.key)) return;
   event.preventDefault();
   document.body.classList.remove('show-start');
-  if (jump.dataset.jumpView === 'measureWorkspace') openMeasureWorkspace();
-  else {
-    setView(jump.dataset.jumpView);
-    renderAll();
-  }
+  setView(jump.dataset.jumpView);
+  renderAll();
 });
 
 document.addEventListener('click', event => {
   const jump = event.target.closest('[data-jump-view]');
   if (!jump) return;
   document.body.classList.remove('show-start');
-  if (jump.dataset.jumpView === 'measureWorkspace') openMeasureWorkspace();
-  else {
-    setView(jump.dataset.jumpView);
-    renderAll();
-  }
+  setView(jump.dataset.jumpView);
+  renderAll();
 });
 
 document.addEventListener('click', event => {
@@ -6946,7 +6908,7 @@ document.getElementById('presentationNext')?.addEventListener('click', () => {
 });
 
 document.querySelectorAll('.view-tab').forEach(button => {
-  button.addEventListener('click', () => { setView(button.dataset.view); renderMeasureWorkspace(); });
+  button.addEventListener('click', () => { setView(button.dataset.view); renderAll(); });
 });
 
 document.querySelectorAll('[data-role-choice]').forEach(button => {
@@ -7014,9 +6976,6 @@ document.getElementById('clarificationList').addEventListener('click', event => 
   if (measureButton) openClarificationMeasure(measureButton.dataset.measureId, measureButton.dataset.clarificationKey || '');
 });
 
-document.addEventListener('click', event => {
-  if (event.target.closest('#openSelectedMeasureWorkspaceInline')) openMeasureEditModal();
-});
 
 document.getElementById('measureBody').addEventListener('click', event => {
   const action = event.target.dataset.action;
@@ -7091,7 +7050,6 @@ document.getElementById('catalogOpenOnly').addEventListener('change', event => {
   catalogFilters = { ...catalogFilters, openOnly: event.target.checked };
   renderMeasures();
 });
-document.getElementById('openSelectedMeasureWorkspace')?.addEventListener('click', openMeasureEditModal);
 document.getElementById('catalogImportedOnly').addEventListener('change', event => {
   catalogFilters = { ...catalogFilters, importedOnly: event.target.checked };
   renderMeasures();

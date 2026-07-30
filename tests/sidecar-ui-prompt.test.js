@@ -18,7 +18,7 @@ function baseModel(sidecar) {
 describe('sidecar UI and prompt integration', () => {
   test('adds Kontext & Evidenz as separate app view, not as measure table', () => {
     expect(indexHtml).toContain('data-view="sidecar"');
-    expect(indexHtml).toContain('Kontext & Evidenz');
+    expect(indexHtml).toContain('Kontextobjekte & Evidenz');
     expect(indexHtml).toContain('id="sidecarBody"');
     expect(indexHtml).toContain('id="addSidecarObject"');
     expect(uiJs).toContain('renderSidecar');

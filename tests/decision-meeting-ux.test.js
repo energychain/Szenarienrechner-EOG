@@ -13,7 +13,7 @@ function indexOf(fragment) {
 
 describe('decision view meeting and clarification UX', () => {
   it('keeps the meeting entry point before the long clarification list and KPI panels', () => {
-    const decision = indexOf('Management-Entscheidung');
+    const decision = indexOf('Entscheidung im Detail');
     const meeting = indexOf('Meeting-Fokus');
     const clarification = indexOf('Arbeitsstand und Klärpunkte');
     const kpis = indexOf('Kernkennzahlen');

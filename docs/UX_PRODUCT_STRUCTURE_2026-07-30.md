@@ -14,7 +14,7 @@ Primärer Arbeitsfluss:
 
 1. Akte: Orientierung, Arbeitsstand-Score, nächster Schritt.
 2. Grundlagen: Stammdaten, Phase, Szenario und Stresstest-Parameter.
-3. Bearbeiten: Maßnahmenkatalog und Maßnahmen-Workspace.
+3. Bearbeiten: Maßnahmenkatalog; ein eigener Maßnahmeneditor wird erst sichtbar, wenn er einen echten Mehrwert gegenüber dem bestehenden Editor bietet.
 4. Evidenz & Systeme: Kontextobjekte, Datenqualität, Systemreferenzen und wirtschaftliche Überleitung.
 5. Prüfen & Klären: deterministisches Kanban mit Befassungs-Workbench.
 6. Präsentation: fokussiertes Befassungsfenster.

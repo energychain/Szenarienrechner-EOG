@@ -22,7 +22,8 @@ describe('Akte top navigation layout', () => {
   it('keeps secondary tools reachable as work areas, not as a competing nav level', () => {
     expect(html).not.toContain('class="support-tabs"');
     expect(html).not.toContain('Detailwerkzeuge</summary>');
-    expect(html).toContain('data-view-panel="measureWorkspace"');
+    expect(html).not.toContain('data-view-panel="measureWorkspace"');
+    expect(html).toContain('class="subview-return"');
     expect(html).toContain('data-jump-view="projectPlan"');
     expect(html).toContain('data-jump-view="results"');
     expect(html).toContain('id="expertModeToggle"');
@@ -40,7 +41,7 @@ describe('Akte top navigation layout', () => {
     expect(css).toContain('.phase-stepper b {');
     expect(ui).toContain('function phaseStepperLabel');
     expect(ui).toContain("entscheidungsvorlage: 'Vorlage'");
-    expect(ui).toContain('const compactStatus = `Stand: ${phase} · ${maturity.score} % Entscheidungsreife · ${openCount} Klärpunkte offen`;');
+    expect(ui).toContain('const compactStatus = `Stand: ${phase}`;');
     expect(ui).not.toContain('maturityScore()} % Entscheidungsreife');
   });
 

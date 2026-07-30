@@ -15,7 +15,7 @@ describe('workstand reliability UI', () => {
     expect(engine).toContain('RiskAvoided-Werte unbelegt');
     expect(engine).toContain('Maßnahmen ohne Ziel-Zuordnung');
     expect(engine).toContain('No-Regret-Typisierung');
-    expect(engine).toContain('Sidecar-/Evidenzlage');
+    expect(engine).toContain('Kontextobjekt-/Evidenzlage');
   });
 
   it('renders reliability counters as actionable progress cards', () => {
