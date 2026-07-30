@@ -29,6 +29,12 @@ describe('Akte top navigation layout', () => {
     expect(html).toContain('id="expertModeToggle"');
   });
 
+  it('refreshes the visible work area when the user changes role', () => {
+    expect(ui).toContain("if (!document.body.classList.contains('show-start')) setView(profile.view);");
+    expect(ui).toContain('Rolle ${roleProfiles[role].label} aktiv: Ansicht und Bearbeitbarkeit aktualisiert.');
+    expect(ui).toMatch(/applyRole\(role\);[\s\S]+setExpertMode\(profile\.expert\);[\s\S]+setView\(profile\.view\);[\s\S]+renderAll/);
+  });
+
   it('keeps the header visually calm with one primary action group and collapsed workstand context', () => {
     expect(html).toContain('class="product-kicker">Digitale Akte</p>');
     expect(html).toContain('class="process-notice compact-process-notice"');
