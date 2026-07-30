@@ -1345,6 +1345,31 @@
           </div>
           <div id="flexibilitySummary" class="gas-transformation-summary"></div>
         </div>
+        <div id="stromEeg2027Layer" class="group strom-only strom-eeg2027-only">
+          <h3>EEG 2027 / Netzanschluss (Entwurfsstand)</h3>
+          <p class="hint warning">Regelstand: Kabinettsentwurf 29.07.2026, nicht endgültiges geltendes Recht. Statusfelder und TEUR-Wirkungen für Strom; keine anlagenscharfe kWh- oder Marktpreisrechnung in der Akte.</p>
+          <div class="grid2">
+            <div><label for="mRegulatoryStatus">Regelstand</label><select id="mRegulatoryStatus"><option value="current_law">geltender Regelstand</option><option value="cabinet_draft_2026_07_29">Kabinettsentwurf 29.07.2026</option><option value="user_defined">nutzerdefiniert</option></select></div>
+            <div><label for="mAssumptionStatus">Annahmenstatus</label><select id="mAssumptionStatus"><option value="confirmed">bestätigt</option><option value="draft">Entwurf / prüfpflichtig</option><option value="user_supplied">nutzerseitig überschrieben</option><option value="placeholder">Platzhalter</option></select></div>
+            <label class="check-option"><input id="mCapacityLimitedGridArea" type="checkbox"> kapazitätslimitiertes Netzgebiet</label>
+            <div><label for="mCapacityLimitedTechnology">Technologie</label><select id="mCapacityLimitedTechnology"><option value="none">keine</option><option value="pv">PV</option><option value="wind">Wind</option><option value="all">alle</option></select></div>
+            <label class="check-option"><input id="mRedispatchCompensationWaiverEnabled" type="checkbox"> Redispatch-Entschädigungsverzicht prüfen</label>
+            <div><label for="mRedispatchCompensationWaiverLimitPct">Verzichtsgrenze %</label><input id="mRedispatchCompensationWaiverLimitPct" type="number" min="0" max="100" step="1" placeholder="20"></div>
+            <label class="check-option"><input id="mWindPriorityArea" type="checkbox"> Windvorranggebiet (18 %)</label>
+            <div><label for="mRedispatchRiskClass">Redispatch-Risikoklasse</label><select id="mRedispatchRiskClass"><option value="low">niedrig</option><option value="medium">mittel</option><option value="high">hoch</option></select></div>
+            <div><label for="mAnnualRevenueAtRiskTeur">Erlösrisiko TEUR p.a.</label><input id="mAnnualRevenueAtRiskTeur" type="number" min="0" step="1"></div>
+            <div><label for="mConnectionRequestPowerKw">Anschlussleistung kW</label><input id="mConnectionRequestPowerKw" type="number" min="0" step="1"></div>
+            <div><label for="mVoltageLevel">Spannungsebene</label><select id="mVoltageLevel"><option value="low_voltage">Niederspannung</option><option value="medium_voltage">Mittelspannung</option><option value="high_voltage">Hochspannung</option></select></div>
+            <div><label for="mConnectionRequestStatus">Netzanschlussstatus</label><select id="mConnectionRequestStatus"><option value="draft">Entwurf</option><option value="submitted">eingereicht</option><option value="confirmed_received">Eingang bestätigt</option><option value="under_review">in Prüfung</option><option value="capacity_reserved">Kapazität reserviert</option><option value="capacity_released">Kapazität freigegeben</option><option value="connection_offer">Anschlussangebot</option><option value="commissioned">in Betrieb</option></select></div>
+            <div><label for="mQueueRiskClass">Queue-/Reservierungsrisiko</label><select id="mQueueRiskClass"><option value="low">niedrig</option><option value="medium">mittel</option><option value="high">hoch</option></select></div>
+            <div><label for="mReservationExpiryDate">Reservierung läuft ab</label><input id="mReservationExpiryDate" type="date"></div>
+            <div class="wide-field"><label for="mNextRequiredEvidence">Nächster Nachweis</label><input id="mNextRequiredEvidence" type="text" placeholder="z.B. bestätigte Eingangsbestätigung, Netzbetreiber-Antwort"></div>
+            <label class="check-option"><input id="mGenerationConnectionCostContributionEnabled" type="checkbox"> Baukostenzuschuss Erzeugungsanlage berücksichtigen</label>
+            <div><label for="mConnectionCostContributionTeur">Baukostenzuschuss TEUR</label><input id="mConnectionCostContributionTeur" type="number" min="0" step="1"></div>
+            <div><label for="mConnectionCostContributionMode">Zuschuss-Modus</label><select id="mConnectionCostContributionMode"><option value="none">keiner</option><option value="flat">pauschal</option><option value="regional_parameter">regionaler Parameter</option><option value="user_defined">nutzerdefiniert</option></select></div>
+          </div>
+          <div id="stromEeg2027Summary" class="gas-transformation-summary"></div>
+        </div>
         <div class="group">
           <h3>Lebenszyklus der Maßnahme</h3>
           <p class="hint">Errichtung ist oben erfasst. Betrieb, Erneuerung und Rückbau sind standardmäßig 0 und im Expertenmodus änderbar.</p>

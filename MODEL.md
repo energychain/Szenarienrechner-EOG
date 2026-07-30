@@ -43,6 +43,14 @@ Für die Sparte Strom kann eine Maßnahme als `effectType: flexibility` geführt
 
 Eine Ergebniswirkung entsteht nur, wenn das Objekt aktiv ist und die Mindestlogik getragen wird: validierter Netzfahrplan, quantifizierte vermiedene oder verschobene CAPEX und jährliche Flex-OPEX. Ohne diese Angaben erzeugt die App einen Klärpunkt und setzt keine automatische Flexibilitätswirkung an. Gas-Transformationslogik bleibt davon getrennt.
 
+### Strom EEG 2027 / Netzanschluss (Entwurfsstand)
+
+Für die Sparte Strom kann eine Maßnahme zusätzlich den Abschnitt `EEG 2027 / Netzanschluss (Entwurfsstand)` führen. Die Felder sind optional und werden bei Gas-Akten nicht gerendert und nicht exportiert. Der Regelstand wird als Entwurf gekennzeichnet: Kabinettsentwurf 29.07.2026, nicht endgültiges geltendes Recht; produktive Nutzung erfordert Prüfung gegen Bundestagsfassung, Verkündung und BNetzA-Festlegungen.
+
+Der Abschnitt dokumentiert nur Statusattribute und aggregierte TEUR-Wirkungen: `regulatoryStatus`, `assumptionStatus`, kapazitätslimitiertes Netzgebiet, Redispatch-Entschädigungsverzicht mit 20-%- bzw. 18-%-Grenze im Windvorranggebiet, Netzanschlussstatus ab 135 kW, Reservierungsfristen, fehlende Nachweise, Baukostenzuschüsse und jährliches Erlösrisiko. `annualRevenueAtRiskTeur` fließt als Risikowert in die bestehende Portfolio-/EOG-Logik ein; `connectionCostContributionTeur` erhöht die bestehende CAPEX-Sicht. Es entsteht kein neuer Akten-Rechenkern und keine kWh-, Stunden- oder Preisprofilrechnung.
+
+Annahmen mit `assumptionStatus: draft` sowie offene Nachweise, kapazitätslimitierte Netzgebiete, Reservierungsfristen und Baukostenzuschüsse erzeugen Klärpunkte in „Prüfen & Klären“. Anlagenscharfe PV-, Speicher-, negative-Preise- oder CfD-Rechnungen sind in `docs/change-requests/CR-FLEXCALC-001.md` als separates Modul geschnitten und kommen nur über Kontextobjekte oder aggregierte Maßnahmen-Importe zurück in die Akte.
+
 ### Szenarien
 
 Die App arbeitet mit Szenarien wie konservativ, Basis und Wert. Szenarien dienen dazu, Unsicherheit sichtbar zu machen, nicht Scheingenauigkeit zu erzeugen.

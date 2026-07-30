@@ -7,6 +7,7 @@ import {
 } from './engine.js';
 import { projectPlanEffectiveTaskStates, projectPlanMilestoneDate, projectPlanRoles } from './project-plan.js';
 import { normalizeSidecar, sidecarSummary } from './sidecar.js';
+import { normalizeStromEeg2027Measure, stromEeg2027PortfolioSummary } from './strom-eeg2027.js';
 
 const scenarioLabels = {
   basis: 'Basis',
@@ -478,6 +479,52 @@ export function spreadsheetTables(model, options = {}) {
 
   const normalizedSidecar = normalizeSidecar(model?.sidecar);
   const sidecarBridgeSummary = sidecarSummary(normalizedSidecar);
+  const stromEeg2027Summary = stromEeg2027PortfolioSummary(model, p.sector);
+  const stromEeg2027Rows = [[
+    'measureId', 'name', 'regulatoryStatus', 'regulatoryStatusDate', 'assumptionStatus',
+    'capacityLimitedGridArea', 'capacityLimitedTechnology', 'redispatchCompensationWaiverEnabled',
+    'redispatchCompensationWaiverLimitPct', 'windPriorityArea', 'redispatchRiskClass', 'annualRevenueAtRiskTeur',
+    'connectionRequestPowerKw', 'voltageLevel', 'connectionRequestStatus', 'queueRiskClass',
+    'reservationExpiryDate', 'nextRequiredEvidence', 'generationConnectionCostContributionEnabled',
+    'connectionCostContributionTeur', 'connectionCostContributionMode', 'notice'
+  ]];
+  if (stromEeg2027Summary?.applicable) {
+    measures.forEach(measure => {
+      const extension = normalizeStromEeg2027Measure(measure, p.sector);
+      const relevant = extension.regulatoryStatus === 'cabinet_draft_2026_07_29'
+        || extension.assumptionStatus !== 'confirmed'
+        || extension.capacityLimitedGridArea
+        || extension.redispatchCompensationWaiverEnabled
+        || extension.annualRevenueAtRiskTeur > 0
+        || extension.connectionRequestPowerKw > 0
+        || extension.connectionCostContributionTeur > 0;
+      if (!relevant) return;
+      stromEeg2027Rows.push([
+        measure.id || '',
+        measure.name || '',
+        extension.regulatoryStatus,
+        extension.regulatoryStatusDate,
+        extension.assumptionStatus,
+        Boolean(extension.capacityLimitedGridArea),
+        extension.capacityLimitedTechnology,
+        Boolean(extension.redispatchCompensationWaiverEnabled),
+        extension.redispatchCompensationWaiverLimitPct,
+        Boolean(extension.windPriorityArea),
+        extension.redispatchRiskClass,
+        round(extension.annualRevenueAtRiskTeur, 2),
+        round(extension.connectionRequestPowerKw, 2),
+        extension.voltageLevel,
+        extension.connectionRequestStatus,
+        extension.queueRiskClass,
+        extension.reservationExpiryDate,
+        extension.nextRequiredEvidence,
+        Boolean(extension.generationConnectionCostContributionEnabled),
+        round(extension.connectionCostContributionTeur, 2),
+        extension.connectionCostContributionMode,
+        stromEeg2027Summary.notice
+      ]);
+    });
+  }
   const sidecarRows = [[
     'id', 'title', 'division', 'category', 'sidecarType', 'linkedMeasures', 'calculationImpact', 'activationStatus',
     'economicRelation', 'quantificationStatus', 'amount', 'amountUnit', 'timeHorizon', 'openQuestions', 'nextStatus'
@@ -534,6 +581,7 @@ export function spreadsheetTables(model, options = {}) {
     { name: 'Systemreferenzen', rows: systemReferenceRows },
     { name: 'Risiko_Mapping', rows: riskMappingRows },
     { name: 'Sidecar_Ueberleitungslogik', rows: sidecarRows },
+    ...(stromEeg2027Summary?.applicable ? [{ name: 'Strom_EEG2027_Netzanschluss', rows: stromEeg2027Rows }] : []),
     { name: 'Monitoring_Massnahmen', rows: monitoringMeasureRows },
     { name: 'Monitoring_Aggregat', rows: monitoringAggregateRows },
     { name: 'QReg_Netzleistung', rows: qregRows },

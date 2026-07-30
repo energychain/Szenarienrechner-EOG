@@ -37,6 +37,10 @@ Der Prompt-Export übernimmt einen aggregierten Auszug der aktuellen Klärfall-L
 
 Für Strom-Flexibilitäten enthält der Prompt zusätzlich eine feste Abgrenzung: Flexibilitätsobjekte, Netzfahrpläne, Speicher-/Laststeuerung und AGNeS-Bezüge sind nicht automatisch klassische Netz-CAPEX. Sie beschreiben mögliche OPEX-gegen-CAPEX-Substitutionen. Eine rechnerische Wirkung soll erst interpretiert werden, wenn Netzfahrplan, vermiedene oder verschobene CAPEX, jährliche Flex-OPEX und Steuerungs-/Nachweislogik belastbar dokumentiert sind.
 
+Für Strom-Maßnahmen mit EEG-2027-/Netzanschluss-Entwurfsfeldern enthält der Prompt einen eigenen Abschnitt **„Strom EEG 2027 / Netzanschlusspaket (Entwurfsstand)”**. Er nennt den Regelstand „Kabinettsentwurf 29.07.2026, nicht endgültiges geltendes Recht”, zählt Entwurfs- und nutzerseitige Annahmen, markiert kapazitätslimitierte Netzgebiete, Netzanschlussstatus ab 135 kW, jährliches Erlösrisiko und Baukostenzuschüsse. Gas-Akten erhalten diesen Abschnitt nicht.
+
+Anlagenscharfe PV-, Speicher-, negative-Preise- oder CfD-Rechnungen sind nicht Teil des Prompt-Kontexts der Akte. Sie sind als separates Modul `CR-FLEXCALC-001` geschnitten; in der Akte und im Prompt erscheinen daraus nur aggregierte TEUR-Wirkungen p.a. und Evidenz-/Annahmenverweise.
+
 Flexibilitäts- und AGNeS-Daten werden im Prompt dedupliziert: Klassische CAPEX-Maßnahmen enthalten keine leeren Default-Felder wie `agnesRelevant=false` oder `agnesRole=offen`. Flexibilitäts-/Netzfahrplanobjekte erscheinen stattdessen in einem eigenen Abschnitt „Strom-Flexibilitätsobjekte / Netzfahrplan / AGNeS“ — auch dann, wenn sie als Kontext- oder Prüfobjekt nicht rechenwirksam sind. Wenn ein Flexibilitätsobjekt wegen fehlendem Netzfahrplan, fehlender Quantifizierung oder ungeklärter AGNeS-/Nachweislogik nicht wirkt, wird der Klärpunkt `strom_flexibility_review` ausgegeben.
 
 ## Kontext & Evidenz / Sidecar im Prompt
