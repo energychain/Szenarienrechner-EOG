@@ -8,10 +8,13 @@ const inventory = readFileSync('docs/UX_ELEMENT_INVENTORY.md', 'utf8');
 const design = readFileSync('docs/UX_AKTE_REDESIGN.md', 'utf8');
 
 describe('Akte redesign inventory coverage', () => {
-  it('documents the pre-redesign inventory and redesign quality gate', () => {
-    expect(inventory).toContain('Vorhandene Views');
-    expect(inventory).toContain('Globale Aktionen');
-    expect(inventory).toContain('Redesign-Erweiterungen');
+  it('documents the current inventory and redesign quality gate', () => {
+    expect(inventory).toContain('View-Panels');
+    expect(inventory).toContain('Navigation und Orientierung');
+    expect(inventory).toContain('Regressions-Checkliste');
+    expect(inventory).toContain('Globale Suche im Header');
+    expect(inventory).toContain('Glossar-Modal');
+    expect(inventory).toContain('Danger-Zone-Dialog mit „LÖSCHEN“-Bestätigung');
     expect(design).toContain('digitale, präsentier- und auditierbare Akte');
     expect(design).toContain('Keine View soll im Normalzustand die gesamte Seite scrollen lassen');
   });

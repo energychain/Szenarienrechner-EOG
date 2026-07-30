@@ -7,12 +7,14 @@ const ui = readFileSync('src/ui.js', 'utf8');
 const concept = readFileSync('docs/UX_PRODUCT_STRUCTURE_2026-07-30.md', 'utf8');
 
 describe('UX review product structure', () => {
-  it('documents the target concept and four implementation phases', () => {
-    expect(concept).toContain('Digitale Akte: Zielstruktur nach Usability-Review');
-    expect(concept).toContain('Phase 1: Eine Navigationsebene');
+  it('documents the current product structure and four implementation phases', () => {
+    expect(concept).toContain('Digitale Akte: Produktstruktur nach Usability-Reviews');
+    expect(concept).toContain('Phase 1: Navigation und Orientierung');
     expect(concept).toContain('Phase 2: Statusanzeigen deduplizieren');
     expect(concept).toContain('Phase 3: Sicheres Bearbeiten und Undo');
     expect(concept).toContain('Phase 4: Hilfe, Tastatur und Barrierefreiheit');
+    expect(concept).toContain('Entscheidung im Detail und Projektplan sind seit CR-01 wieder direkt erreichbar');
+    expect(concept).toContain('Rückgängig ist umgesetzt für Zurücksetzen, Demodaten laden, Bulk-Aktionen und einzelne Maßnahmenlöschungen');
   });
 
   it('uses one primary navigation level and promotes Grundlagen to the main workflow', () => {
