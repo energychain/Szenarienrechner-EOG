@@ -7,10 +7,11 @@ const ui = readFileSync('src/ui.js', 'utf8');
 
 describe('Akte top navigation layout', () => {
   it('uses user-intent navigation instead of internal module tabs', () => {
-    expect(html).toContain('class="view-tabs akte-nav compact-akte-nav"');
+    expect(html).toContain('class="view-tabs akte-nav product-nav"');
     expect(html).toContain('aria-label="Akte-Arbeitsfluss"');
     expect(html).toContain('data-view="akte"');
     expect(html).toContain('Akte</span>');
+    expect(html).toContain('Grundlagen</span>');
     expect(html).toContain('Bearbeiten</span>');
     expect(html).toContain('Evidenz & Systeme</span>');
     expect(html).toContain('Prüfen & Klären</span>');
@@ -18,14 +19,12 @@ describe('Akte top navigation layout', () => {
     expect(html).toContain('Export</span>');
   });
 
-  it('keeps secondary tools reachable without competing with the main path', () => {
-    expect(html).toContain('class="support-tabs"');
-    expect(html).toContain('aria-label="Werkzeuge und Detailpflege"');
-    expect(html).toContain('class="support-tabs-label">Detailwerkzeuge</summary>');
-    expect(html).toContain('class="support-tabs-body"');
-    expect(html).toContain('data-view="basis"');
-    expect(html).toContain('data-view="results"');
-    expect(html).toContain('data-view="projectPlan"');
+  it('keeps secondary tools reachable as work areas, not as a competing nav level', () => {
+    expect(html).not.toContain('class="support-tabs"');
+    expect(html).not.toContain('Detailwerkzeuge</summary>');
+    expect(html).toContain('data-view-panel="measureWorkspace"');
+    expect(html).toContain('data-jump-view="projectPlan"');
+    expect(html).toContain('data-jump-view="results"');
     expect(html).toContain('id="expertModeToggle"');
   });
 

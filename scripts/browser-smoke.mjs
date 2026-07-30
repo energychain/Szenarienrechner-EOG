@@ -30,8 +30,7 @@ await page.getByRole('button', { name: /^Akte/ }).waitFor({ timeout: 10000 });
 await page.locator('[data-view="presentation"]').first().click();
 await page.getByRole('heading', { name: 'Präsentation' }).waitFor({ timeout: 10000 });
 await page.getByRole('button', { name: /Schließen/ }).click();
-await page.locator('.support-tabs').evaluate(menu => menu.setAttribute('open', ''));
-await page.locator('[data-view="projectPlan"]').first().click();
+await page.locator('[data-jump-view="projectPlan"]').first().click();
 await page.getByText('Nächste fällige Aufgabe je Rolle').waitFor({ timeout: 10000 });
 const fileInputsHidden = await page.locator('input[type="file"]').evaluateAll(inputs => inputs.every(input => {
   const style = window.getComputedStyle(input);
@@ -61,7 +60,7 @@ exportedPage.on('console', msg => {
 });
 exportedPage.on('pageerror', error => exportedErrors.push(error.message));
 await exportedPage.goto(pathToFileURL(selfContainedPath).href, { waitUntil: 'domcontentloaded' });
-await exportedPage.getByText('HTML-Datei mit eingebettetem Datenstand geladen.').waitFor({ timeout: 10000 });
+await exportedPage.locator('#storageStatus').getByText('HTML-Datei mit eingebettetem Datenstand geladen.').waitFor({ timeout: 10000 });
 await exportedPage.getByRole('heading', { name: /Projektplan aus der Userstory/ }).waitFor({ timeout: 10000 });
 await exportedPage.locator('.action-menu').evaluate(menu => menu.setAttribute('open', ''));
 await exportedPage.locator('#openAiPromptGenerator').click();
@@ -72,7 +71,7 @@ await exportedPage.evaluate(() => {
   document.execCommand = command => command === 'copy';
 });
 await exportedPage.getByRole('button', { name: /In Zwischenablage kopieren/ }).click();
-await exportedPage.getByText(/Lokaler Fallback wurde genutzt|Prompt ist markiert/).waitFor({ timeout: 10000 });
+await exportedPage.locator('#storageStatus').getByText(/Lokaler Fallback wurde genutzt|Prompt ist markiert/).waitFor({ timeout: 10000 });
 if (exportedErrors.length) {
   throw new Error(`HTML-mit-Daten-Export erzeugt Browser-Fehler: ${exportedErrors.join(' | ')}`);
 }
