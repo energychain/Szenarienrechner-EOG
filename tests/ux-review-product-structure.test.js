@@ -45,7 +45,8 @@ describe('UX review product structure', () => {
 
   it('groups the more menu and marks destructive actions with consequences', () => {
     expect(html).toContain('menu-section-title">Export');
-    expect(html).toContain('menu-section-title">Unterstützung');
+    expect(html).toContain('menu-section-title">Hilfe & Kontext');
+    expect(html).not.toContain('menu-section-title">Unterstützung');
     expect(html).toContain('menu-section-title danger">Arbeitsstand ersetzen oder löschen');
     expect(html).toContain('data-confirm-action="resetModel"');
     expect(html).toContain('data-confirm-action="clearBrowserData"');

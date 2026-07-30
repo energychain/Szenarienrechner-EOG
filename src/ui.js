@@ -179,6 +179,28 @@ let selectedSidecarId = '';
 let sidecarFilterDivision = 'all';
 let sidecarModeFilter = 'all';
 
+const glossaryEntries = [
+  { slug: 'eog', term: 'EOG', definition: 'Erlösobergrenze: regulatorischer jährlicher Erlösrahmen der Sparte.', calculator: 'Dient als Basis- und Ergebnisgröße für jährliche EOG-Wirkungen.', source: 'EOG-Bescheid, Regulierungsmanagement, Netzentgeltkalkulation.' },
+  { slug: 'rab', term: 'RAB', definition: 'Regulated Asset Base bzw. regulierte Kapitalbasis.', calculator: 'Anker für Verzinsung, Kapitalkosten und Kapitalwertbetrachtung.', source: 'Anlagenbuchhaltung, Regulierungsrechnung, Bescheid.' },
+  { slug: 'qe', term: 'QE', definition: 'Qualitätselement im Anreizregulierungskontext.', calculator: 'Wird als prüfpflichtige Q-Wirkung modelliert; bei Gas nicht automatisch anzusetzen.', source: 'ARegV, Qualitätsregulierung, Regulierungsmanagement.' },
+  { slug: 'kanu', term: 'KANU', definition: 'Regulatorischer Rahmen für Nutzungsdauer-/AfA-Fragen im Gas-Kontext.', calculator: 'Beeinflusst Gas-AfA-Szenarien und Transformationspfad-Prüfung.', source: 'BNetzA-Festlegungen, Regulierungsmanagement.' },
+  { slug: 'nest-ramen', term: 'NEST/RAMEN', definition: 'Regulatorischer Reform- und Festlegungskontext der Anreizregulierung.', calculator: 'Kennzeichnet Arbeitsstände und prüfpflichtige Regeln.', source: 'BNetzA-Veröffentlichungen und Konsultationsunterlagen.' },
+  { slug: 'aregv', term: 'ARegV', definition: 'Anreizregulierungsverordnung als zentraler Ordnungsrahmen.', calculator: 'Begriffe wie Regulierungsperiode, Effizienz und vereinfachtes Verfahren beziehen sich darauf.', source: 'Gesetzestext, Bescheide, Fachabteilung.' },
+  { slug: 'regulierungsperiode', term: 'Regulierungsperiode', definition: 'Mehrjähriger Zeitraum, für den regulatorische Parameter gelten.', calculator: 'Ordnet Startjahr, Kostenbasisjahr und Ruleset ein.', source: 'Regulierungsbescheid, BNetzA/Landesregulierung.' },
+  { slug: 'kostenbasisjahr', term: 'Kostenbasisjahr', definition: 'Referenzjahr für Kostenprüfung und Ausgangsniveau.', calculator: 'Hilft, Startjahr und EOG-Basis einzuordnen.', source: 'Kostenprüfung, Regulierungsbescheid.' },
+  { slug: 'befassung', term: 'Befassung', definition: 'Dokumentierter fachlicher Arbeits- oder Prüfstand ohne automatische Beschlusswirkung.', calculator: 'Befassungsnotizen halten Klärarbeit zu offenen Punkten fest.', source: 'Projektplan, Arbeitsnotiz, Reviewtermin.' },
+  { slug: 'klaerpunkt', term: 'Klärpunkt', definition: 'Offene prüfpflichtige Frage im Arbeitsstand.', calculator: 'Erscheint im Kanban und kann mit Befassungsnotizen geschlossen werden.', source: 'Validierung, Kontextobjekte, Maßnahmendaten.' },
+  { slug: 'attribution', term: 'Attribution', definition: 'Zurechnung eines Effekts zur Maßnahme oder zum Portfolio.', calculator: 'Begrenzt, welcher Anteil einer Wirkung in Szenarien berücksichtigt wird.', source: 'Fachliche Herleitung, Controlling, Evidenz.' },
+  { slug: 'wirkungsverzug', term: 'Wirkungsverzug', definition: 'Zeitlicher Abstand zwischen Maßnahme und regulatorischer oder wirtschaftlicher Wirkung.', calculator: 'CAPEX-, OPEX- und QE-Lags verschieben Effekte in Jahresreihen.', source: 'Regulierungslogik, Projektzeitplan, Bescheid.' },
+  { slug: 'kapitalkostenabgleich', term: 'Kapitalkostenabgleich', definition: 'Abgleich von Verzinsung, Finanzierung und Kapitalbindung.', calculator: 'Wirkt auf Spread, IRR/MIRR und Kapitalwertindikatoren.', source: 'Finanzplanung, Controlling, Regulierungsrechnung.' },
+  { slug: 'regulierungskonto', term: 'Regulierungskonto', definition: 'Regulatorische Ausgleichslogik für Differenzen zwischen Plan und Ist.', calculator: 'Wird als Kontext für EOG-/Zeitversatzfragen geführt, nicht als Detailkonto simuliert.', source: 'Bescheid, Regulierungsmanagement.' },
+  { slug: 'vereinfachtes-verfahren', term: 'vereinfachtes Verfahren', definition: 'Regulierungsvereinfachung nach § 24 ARegV.', calculator: 'Ändert die Einordnung einzelner Q-/E-Komponenten und wird als Verfahren dokumentiert.', source: 'ARegV, Bescheid, Regulierungsmanagement.' },
+  { slug: 'no-regret', term: 'No-Regret', definition: 'Maßnahme, die auch unter Unsicherheit fachlich naheliegt.', calculator: 'Kennzeichnet Maßnahmen mit strategischer oder Risiko-Begründung trotz offener Details.', source: 'Strategie, Asset Management, Risikoanalyse.' },
+  { slug: 'kontextobjekt', term: 'Kontextobjekt', definition: 'Technisch Sidecar: Evidenz-, System- oder Kontextinformation außerhalb klassischer Maßnahmen.', calculator: 'Bleibt grundsätzlich KPI-neutral; Rechenwirkung nur bei expliziter Aktivierung und Mapping.', source: 'Quellen, Systeme, Evidenzprüfung, Modulimporte.' },
+  { slug: 'entscheidungsreife', term: 'Entscheidungsreife', definition: 'Arbeitsstand-Score zur Einordnung von Daten-, Evidenz- und Klärpunktreife.', calculator: 'Trennt rechnerische Indikation von fachlicher Befassungsgrundlage.', source: 'Akte, Projektplan, Klärpunkte, Kontextobjekte.' },
+];
+
+
 function defaultCatalogFilters() {
   return {
     search: '',
@@ -402,6 +424,12 @@ function formatNumericFields(root = document) {
   });
 }
 
+function compactHeading(text, maxLength = 58) {
+  const raw = String(text || '').trim();
+  if (raw.length <= maxLength) return raw;
+  const cut = raw.slice(0, maxLength - 1);
+  return `${cut.slice(0, Math.max(0, cut.lastIndexOf(' ')) || cut.length)}…`;
+}
 
 function currentInputs() {
   return Object.fromEntries(inputIds.map(id => [id, el[id].value]));
@@ -2019,8 +2047,8 @@ function resetModelToInitialState() {
   document.querySelectorAll('.scenario').forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === 'basis'));
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
   renderAll();
-  showUndoToast('Zurücksetzen');
   setStorageStatus('Modell wurde zurückgesetzt und im Browser gespeichert.');
+  showUndoToast('Zurücksetzen');
 }
 
 
@@ -3005,8 +3033,8 @@ function applyBulkAction(action) {
     note: `Bulk-Aktion ${action} auf ${selected.length} Maßnahmen.`
   }], ensureAuthor());
   previousModelForHistory = currentModelData();
-  showUndoToast('Bulk-Aktion');
   setStorageStatus(`Bulk-Aktion auf ${selected.length} Maßnahmen angewendet.`);
+  showUndoToast('Bulk-Aktion');
   renderAll();
 }
 
@@ -3102,8 +3130,8 @@ function applyDemoModel(options = {}) {
   document.querySelectorAll('.focus-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.focus === meetingFocus));
   setView(activeView);
   renderAll();
-  showUndoToast('Demodaten laden');
   setStorageStatus('Demodaten wurden geladen; vorhandene Browserdaten wurden überschrieben.');
+  showUndoToast('Demodaten laden');
   return true;
 }
 
@@ -3200,6 +3228,41 @@ function openHelpModal() {
 
 function closeHelpModal() {
   closeModal(document.getElementById('helpModal'));
+}
+
+function renderGlossary(selectedSlug = 'eog') {
+  const list = document.getElementById('glossaryList');
+  const entry = document.getElementById('glossaryEntry');
+  if (!list || !entry) return;
+  const selected = glossaryEntries.find(item => item.slug === selectedSlug) || glossaryEntries[0];
+  list.innerHTML = glossaryEntries.map(item => `
+    <button type="button" class="${item.slug === selected.slug ? 'active' : ''}" data-glossary-term="${esc(item.slug)}">${esc(item.term)}</button>
+  `).join('');
+  entry.classList.add('active');
+  entry.innerHTML = `
+    <p class="eyebrow">Glossar</p>
+    <h3>${esc(selected.term)}</h3>
+    <dl>
+      <dt>Kurzdefinition</dt><dd>${esc(selected.definition)}</dd>
+      <dt>Bezug im Rechner</dt><dd>${esc(selected.calculator)}</dd>
+      <dt>Typische Quelle</dt><dd>${esc(selected.source)}</dd>
+    </dl>
+  `;
+  window.history.replaceState(null, '', `#glossar/${selected.slug}`);
+}
+
+function openGlossaryModal(slug = 'eog') {
+  renderGlossary(slug);
+  openModal(document.getElementById('glossaryModal'));
+}
+
+function closeGlossaryModal() {
+  closeModal(document.getElementById('glossaryModal'));
+}
+
+function applyGlossaryDeepLink() {
+  const hash = window.location.hash.toLowerCase();
+  if (hash.startsWith('#glossar/')) openGlossaryModal(hash.replace('#glossar/', '') || 'eog');
 }
 
 function renderImprint() {
@@ -4378,9 +4441,11 @@ function renderAkteCockpit(result, first, decision, metrics) {
     </div>
     <span class="card-link-hint">Präsentationspfad öffnen</span>
   `;
+  const nextStepText = processState.resume?.nextStep || nextTask?.task?.title || 'Arbeitsstand schärfen';
   document.getElementById('akteNextStepCard').innerHTML = `
     <div class="card-kicker">Nächster Schritt</div>
-    <h3>${esc(processState.resume?.nextStep || nextTask?.task?.title || 'Arbeitsstand schärfen')}</h3>
+    <h3>${esc(compactHeading(nextStepText))}</h3>
+    <p class="compact-note full-next-step-text">${esc(nextStepText)}</p>
     <p class="compact-note">${nextTask?.task ? esc(nextTask.task.ownerRole) : 'Projektplan ergänzen'}</p>
     <span class="card-link-hint">Projektplan öffnen</span>
   `;
@@ -6940,6 +7005,28 @@ function renderAll(persist = true) {
   if (persist) saveToBrowser(true);
 }
 
+function deleteSelectedMeasure() {
+  if (isReadOnlyRole()) return;
+  const measure = selectedMeasure();
+  if (!measure) return;
+  captureUndoSnapshot('Maßnahme löschen');
+  measures = measures.filter(item => item.id !== measure.id);
+  selectedId = measures[0]?.id;
+  closeMeasureEditModal();
+  history = appendHistoryEvents(history, [{
+    type: 'measureDeleted',
+    subject: { scope: 'measure', id: measure.id, label: measure.name },
+    field: 'measures',
+    oldValue: { id: measure.id, name: measure.name },
+    newValue: null,
+    note: `Maßnahme gelöscht: ${measure.name}`
+  }], ensureAuthor());
+  previousModelForHistory = currentModelData();
+  renderAll();
+  setStorageStatus('Maßnahme wurde gelöscht.');
+  showUndoToast('Maßnahme löschen');
+}
+
 function updateSelectedFromDetail() {
   const measure = selectedMeasure();
   if (!measure) return;
@@ -7474,6 +7561,10 @@ document.getElementById('bulkImportFile').addEventListener('change', event => {
 });
 
 document.getElementById('openHelp').addEventListener('click', openHelpModal);
+document.getElementById('openGlossary')?.addEventListener('click', () => openGlossaryModal('eog'));
+document.getElementById('glossaryClose')?.addEventListener('click', closeGlossaryModal);
+document.getElementById('glossaryModal')?.addEventListener('click', event => { if (event.target.id === 'glossaryModal') closeGlossaryModal(); });
+document.getElementById('glossaryList')?.addEventListener('click', event => { const button = event.target.closest('[data-glossary-term]'); if (button) renderGlossary(button.dataset.glossaryTerm); });
 document.getElementById('helpClose').addEventListener('click', closeHelpModal);
 document.getElementById('helpModal').addEventListener('click', event => {
   if (event.target.id === 'helpModal') closeHelpModal();
@@ -7486,6 +7577,7 @@ document.getElementById('imprintModal').addEventListener('click', event => {
 document.getElementById('measureEditClose').addEventListener('click', closeMeasureEditModal);
 document.getElementById('measureEditPrev').addEventListener('click', () => navigateMeasureInCatalog(-1));
 document.getElementById('measureEditNext').addEventListener('click', () => navigateMeasureInCatalog(1));
+document.getElementById('deleteSelectedMeasure')?.addEventListener('click', deleteSelectedMeasure);
 document.getElementById('measureEditModal').addEventListener('click', event => {
   if (event.target.id === 'measureEditModal') closeMeasureEditModal();
   if (event.target.closest('#measureClarificationSaveProgress')) saveMeasureClarificationProgressFromWorkbench();
@@ -7732,3 +7824,4 @@ if (!loadEmbeddedModelState() && !loadFromBrowser()) {
   showStartScreen();
 }
 applyStoryDeepLink();
+applyGlossaryDeepLink();
