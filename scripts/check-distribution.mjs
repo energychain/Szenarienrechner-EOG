@@ -72,6 +72,11 @@ assert(readFileSync('dist/llm.txt', 'utf8').includes('EOG-Wirkung ist nicht glei
 assert(readFileSync('dist/llms.txt', 'utf8').includes('llm.txt'), 'Build must publish llms.txt pointer.');
 assert(appHtml.includes('Apache-2.0'), 'Built app artifact must show the Apache-2.0 license.');
 assert(!appHtml.includes('CC BY-NC-SA'), 'Built app artifact must not contain the old CC BY-NC-SA license label.');
+const restrictedSystemTerms = [['LI', 'DS'].join(''), ['S', 'AP'].join('')];
+for (const term of restrictedSystemTerms) {
+  assert(!appHtml.includes(term), `Built app artifact must not contain restricted system term: ${term}.`);
+  assert(!appPageHtml.includes(term), `Browser app artifact must not contain restricted system term: ${term}.`);
+}
 const legacyReleaseName = ['gas', 'massnahme', 'eog', 'rechner'].join('-') + '.html';
 assert(!readme.includes(legacyReleaseName), 'README must use the neutral release filename.');
 assert(readme.includes('REGULATORY_ASSUMPTIONS.md'), 'README must link the regulatory assumptions document.');

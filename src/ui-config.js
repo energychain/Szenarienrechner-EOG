@@ -115,7 +115,7 @@ export const importFields = [
   ['riskAssessmentStatus', 'Risiko-Bewertungsstatus']
 ];
 export const importHeaderSynonyms = {
-  externalId: ['psp', 'psp-element', 'projektnr', 'projektnummer', 'projekt-id', 'id', 'sap'],
+  externalId: ['psp', 'psp-element', 'erp-psp', 'projektnr', 'projektnummer', 'projekt-id', 'id'],
   name: ['bezeichnung', 'maßnahme', 'massnahme', 'projektname', 'projekt', 'titel', 'name'],
   orgUnit: ['bereich', 'gesellschaft', 'oe', 'organisation', 'orgunit', 'kostenstelle'],
   type: ['typ', 'maßnahmenart', 'massnahmenart', 'kategorie'],
@@ -146,8 +146,8 @@ export const importHeaderSynonyms = {
   sourceSystem: ['quellsystem', 'source system', 'sourceSystem'],
   sourceRecordId: ['quelldatensatz', 'quell-datensatz', 'source record', 'zeile', 'blatt zeile'],
   scoringRef: ['scoring referenz', 'scoringref', 'scoring-id', 'scoring id'],
-  assetSystemRef: ['asset referenz', 'asset-system', 'asset id', 'gis id', 'lids'],
-  erpRef: ['erp referenz', 'anlagenbuchhaltung', 'sap ref', 'sap id'],
+  assetSystemRef: ['asset referenz', 'asset-system', 'asset id', 'gis id', 'objekt id'],
+  erpRef: ['erp referenz', 'anlagenbuchhaltung', 'erp-psp', 'psp element', 'anlagen nr'],
   riskDbRef: ['risikodatenbank', 'risiko id', 'riskdb', 'risk id'],
   sourceStatus: ['quellenstatus', 'source status'],
   riskEvidenceStatus: ['risiko evidenz', 'risiko-evidenzstatus', 'risk evidence'],
