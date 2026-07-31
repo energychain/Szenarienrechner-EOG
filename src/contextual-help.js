@@ -26,7 +26,7 @@ export const fieldHelp = {
   qDelta: 'Geschätzte Qualitätswirkung auf die relevante Portfolio-Basis. Typische Quellen: Qualitätskennzahlen, Störungsstatistik, Betriebserfahrung, Netzplanung oder Maßnahmensteckbrief. Der Euro-Effekt entsteht erst über Basis x Delta x Attribution.',
   eDelta: 'Geschätzte Effizienz- oder EOG-Wirkung auf Portfolioebene. Nur ansetzen, wenn ein plausibler kausaler Zusammenhang besteht; Quelle: Effizienzprogramm, Benchmarking, Prozesscontrolling oder regulatorische Wirkungsanalyse.',
   mName: 'Eindeutige Bezeichnung der Maßnahme. Sie sollte fachlich wiedererkennbar sein, damit Annahmen später prüfbar bleiben.',
-  mExternalId: 'Schlüssel aus dem führenden System, zum Beispiel SAP-PSP-Element, Projektnummer oder Asset-Management-ID. Diese ID ist für Monitoring-/Reporting-Exporte maßgeblich; interne App-IDs sind nur technische Referenzen.',
+  mExternalId: 'Schlüssel aus dem führenden System, zum Beispiel ERP-PSP-Element, Projektnummer oder Asset-Management-ID. Diese ID ist für Monitoring-/Reporting-Exporte maßgeblich; interne App-IDs sind nur technische Referenzen.',
   mOrgUnit: 'Organisationseinheit oder Gesellschaft, aus der die Maßnahme stammt. Der Katalog kann danach gruppieren und aggregieren.',
   mTags: 'Freie Schlagworte für Filter und Klausuren, zum Beispiel RP5, Pflicht oder Klausur-09. Mehrere Tags mit Komma trennen.',
   mMonitoringProfile: 'Ordnet die Maßnahme einem Export-/Reporting-Profil zu: aggregiertes Monitoring, Netzleistungsfähigkeit/Q-Reg oder Netzausbauplan/§14d. Das ist eine Vorbereitung, kein offizielles Behördenformular.',

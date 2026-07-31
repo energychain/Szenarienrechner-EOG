@@ -19,10 +19,16 @@ describe('synthetic demo data module', () => {
     const demoSource = readFileSync('src/demo-data.js', 'utf8');
     expect(demoSource).toContain('Synthetic demo fixtures only');
     expect(demoSource).toMatch(/synthetisch|Synthetisch/);
-    const privateTerms = ['T' + 'WL', ['HERMES', 'BRIEFING'].join('_'), 'Snake', 'snake'];
+    const privateTerms = ['T' + 'WL', ['HERMES', 'BRIEFING'].join('_'), 'Snake', 'snake', ['LI', 'DS'].join(''), ['S', 'AP'].join('')];
     for (const term of privateTerms) {
       expect(demoSource).not.toContain(term);
     }
+  });
+
+  it('uses generic ERP-PSP examples for leading-system identifiers', () => {
+    expect(demoMeasures.some(measure => String(measure.externalId || '').startsWith('ERP-PSP-'))).toBe(true);
+    expect(demoMeasures.every(measure => !String(measure.externalId || '').includes(['S', 'AP'].join('')))).toBe(true);
+    expect(demoMeasures.every(measure => !String(measure.externalId || '').includes(['LI', 'DS'].join('')))).toBe(true);
   });
 
   it('includes synthetic gas transformation examples for the Gas-only review path', () => {

@@ -6,7 +6,7 @@ export const demoMeasures = [
   {
     id: 'demo_grid_automation',
     active: true,
-    externalId: 'SAP-PSP-NA-2027-001',
+    externalId: 'ERP-PSP-NA-2027-001',
     orgUnit: 'Netze Strom',
     tags: ['Demo', 'Strom', 'Automatisierung'],
     effectType: 'classic',
@@ -84,7 +84,7 @@ export const demoMeasures = [
   {
     id: 'demo_station_replacement',
     active: true,
-    externalId: 'SAP-PSP-ONS-2027-014',
+    externalId: 'ERP-PSP-ONS-2027-014',
     orgUnit: 'Netze Strom',
     tags: ['Demo', 'Strom', 'Station'],
     effectType: 'classic',
@@ -142,7 +142,7 @@ export const demoMeasures = [
   {
     id: 'demo_fault_response_budget',
     active: true,
-    externalId: 'SAP-PSP-STOER-2028-002',
+    externalId: 'ERP-PSP-STOER-2028-002',
     orgUnit: 'Netze Strom',
     tags: ['Demo', 'Störung', 'Evidenz offen'],
     effectType: 'classic',
@@ -241,7 +241,7 @@ export const demoMeasures = [
   {
     id: 'demo_pressure_station',
     active: false,
-    externalId: 'SAP-PSP-GAS-2029-003',
+    externalId: 'ERP-PSP-GAS-2029-003',
     orgUnit: 'Netze Gas',
     tags: ['Demo', 'Gas', 'Transformation'],
     effectType: 'classic',
@@ -303,7 +303,7 @@ export const demoMeasures = [
   {
     id: 'demo_line_replacement',
     active: false,
-    externalId: 'SAP-PSP-GAS-2029-011',
+    externalId: 'ERP-PSP-GAS-2029-011',
     orgUnit: 'Netze Gas',
     tags: ['Demo', 'Gas', 'Rückbau'],
     effectType: 'classic',

@@ -82,7 +82,7 @@ describe('spreadsheet exports', () => {
     ]);
     expect(tables.find(table => table.name === 'Massnahmen')?.rows[0]).toContain('yearOneRegulatoryEogTeur');
     expect(tables.find(table => table.name === 'Monitoring_Massnahmen')?.rows[0]).toContain('externalId');
-    expect(tables.find(table => table.name === 'Monitoring_Massnahmen')?.rows.flat()).toContain('SAP-PSP-NA-2027-001');
+    expect(tables.find(table => table.name === 'Monitoring_Massnahmen')?.rows.flat()).toContain('ERP-PSP-NA-2027-001');
     expect(tables.find(table => table.name === 'Monitoring_Aggregat')?.rows.flat()).toContain('Neubau/Ausbau/Erweiterung');
     expect(tables.find(table => table.name === 'Netzausbauplan_14d')?.rows[0]).not.toContain('id');
     expect(tables.find(table => table.name === 'Sidecar_Ueberleitungslogik')?.rows[0]).toContain('sidecarType');
@@ -112,7 +112,7 @@ describe('spreadsheet exports', () => {
     expect(measuresSheetXml).toContain(`dimension ref="A1:AZ${demoMeasures.length + 1}"`);
     expect(measuresSheetXml).toContain('<row r="2"');
     expect(measuresSheetXml).toContain(' t="s"');
-    expect(sharedStringsXml).toContain('SAP-PSP-NA-2027-001');
+    expect(sharedStringsXml).toContain('ERP-PSP-NA-2027-001');
     expect(sharedStringsXml).toContain('Netzautomatisierung Demogebiet Alpha');
     expect(csvZip[0]).toBe(0x50);
     expect(csvZip[1]).toBe(0x4b);
