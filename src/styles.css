@@ -4975,6 +4975,10 @@ button, .view-tab, [role="button"] { min-width: 44px; min-height: 44px; }
 .glossary-entry.active {
   border-color: rgba(0, 111, 143, .34);
   background: #eef8fb;
+  color: var(--ink);
+}
+.glossary-list button.active {
+  color: var(--ink);
 }
 .glossary-entry {
   padding: 14px 16px;
