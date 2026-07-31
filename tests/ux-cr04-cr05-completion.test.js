@@ -57,6 +57,7 @@ const glossaryTerms = [
   'vereinfachtes Verfahren',
   'No-Regret',
   'Kontextobjekt',
+  'Sidecar',
   'Entscheidungsreife',
   'AGNeS',
   'Netzfahrplan',
@@ -104,6 +105,9 @@ describe('CR-05 language and glossary', () => {
       expect(ui).toContain(`term: '${term}'`);
     }
     expect(ui).toContain("aliases: ['Sidecar', 'Evidenzobjekt']");
+    expect(ui).toContain("term: 'Sidecar'");
+    expect(ui).toContain("aliases: ['Kontextobjekt', 'Evidenzobjekt']");
+    expect(ui).toContain('Technischer Begriff für ein Kontextobjekt');
     expect(ui).toContain("aliases: ['Qualitätselement', 'Q-Element']");
     expect(ui).toContain("aliases: ['wirtschaftliche Brücke', 'wirtschaftliche Überleitung', 'Brücke', 'Überleitung']");
     expect(ui).toContain('function sortedGlossaryEntries');
