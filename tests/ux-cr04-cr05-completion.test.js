@@ -35,6 +35,7 @@ const glossaryTerms = [
   'Kapitalwert/NPV',
   'Diskontsatz',
   'Cashflow',
+  'wirtschaftliche Brücke / wirtschaftliche Überleitung',
   'CAPEX',
   'OPEX',
   'AfA/Abschreibung',
@@ -104,6 +105,9 @@ describe('CR-05 language and glossary', () => {
     }
     expect(ui).toContain("aliases: ['Sidecar', 'Evidenzobjekt']");
     expect(ui).toContain("aliases: ['Qualitätselement', 'Q-Element']");
+    expect(ui).toContain("aliases: ['wirtschaftliche Brücke', 'wirtschaftliche Überleitung', 'Brücke', 'Überleitung']");
+    expect(ui).toContain('function sortedGlossaryEntries');
+    expect(ui).toContain("localeCompare(b.term, 'de'");
     expect(ui).toContain('Auch auffindbar als');
     expect(ui).toContain("type: 'Glossar'");
   });
@@ -138,6 +142,7 @@ describe('CR-05 language and glossary', () => {
   it('styles glossary and warning-safe danger menu states', () => {
     expect(css).toContain('.glossary-list');
     expect(css).toContain('.glossary-entry.active');
+    expect(css).toContain('.glossary-list button.active {\n  color: var(--ink);');
     expect(css).toContain('.menu-section-title.danger');
   });
 });

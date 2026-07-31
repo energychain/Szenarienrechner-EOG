@@ -192,6 +192,7 @@ const glossaryEntries = [
   { slug: 'kapitalwert-npv', term: 'Kapitalwert/NPV', aliases: ['NPV', 'Net Present Value'], definition: 'Barwert der modellierten Zahlungs- bzw. Wirkungssicht nach Abzinsung mit dem Diskontsatz.', calculator: 'Dient als indikative Tragfähigkeitsgröße neben IRR/MIRR; kein garantierter Zahlungsstrom.', source: 'Finanzplanung, Controlling, Szenariorechnung.' },
   { slug: 'diskontsatz', term: 'Diskontsatz', aliases: ['Abzinsungssatz'], definition: 'Zinssatz, mit dem künftige Effekte auf den heutigen Wert abgezinst werden.', calculator: 'Wirkt direkt auf Kapitalwert/NPV und konservative Szenarioprüfung; im Arbeitsstand oft am FK-Zins oder einer Mindestverzinsung orientiert.', source: 'Finanzierungsvorgaben, Controlling, Kapitalkostenannahmen.' },
   { slug: 'cashflow', term: 'Cashflow', definition: 'Indikative Zahlungs- bzw. Wirtschaftlichkeitssicht aus modellierten Wirkungen, Kosten und Zeitpunkten.', calculator: 'Die App trennt bewusst EOG-Wirkung und Cashflow; regulatorische Erlöse sind nicht automatisch liquide Zahlungsströme.', source: 'Finanzplanung, Wirtschaftsplan, Controlling.' },
+  { slug: 'wirtschaftliche-bruecke-ueberleitung', term: 'wirtschaftliche Brücke / wirtschaftliche Überleitung', aliases: ['wirtschaftliche Brücke', 'wirtschaftliche Überleitung', 'Brücke', 'Überleitung'], definition: 'Controlling- und Aktenbegriff für die nachvollziehbare Verbindung zwischen regulatorischer EOG-Wirkung, wirtschaftlichen Effekten und indikativer Cashflow-Sicht.', calculator: 'Bleibt getrennt von der regulatorischen EOG-Wirkung; sie erklärt CAPEX/OPEX-, Risiko- und Timing-Effekte, ohne daraus automatisch eine Anerkennung oder Zahlung abzuleiten.', source: 'Controlling, Report, Befassungsnotiz, wirtschaftliche Herleitung.' },
   { slug: 'capex', term: 'CAPEX', aliases: ['Investition', 'Investitionskosten'], definition: 'Investive Ausgaben bzw. aktivierbare Kosten einer Maßnahme.', calculator: 'CAPEX fließt in Kapitalbindung, AfA, Kapitalkosten und Portfolio-Summen ein; bei Strom-Flex kann OPEX eine CAPEX-Alternative ersetzen.', source: 'Investitionsplan, Anlagenbuchhaltung, Asset Management.' },
   { slug: 'opex', term: 'OPEX', aliases: ['Betriebskosten'], definition: 'Laufende Betriebs- oder Aufwandskosten einer Maßnahme.', calculator: 'OPEX wirkt als jährliche wirtschaftliche Belastung; in Flex-Szenarien kann OPEX-gegen-CAPEX-Substitution als prüfpflichtiger Vergleich geführt werden.', source: 'Wirtschaftsplan, Kostenstellen, Betriebsführung.' },
   { slug: 'abschreibung', term: 'AfA/Abschreibung', aliases: ['AfA'], definition: 'Planmäßige Verteilung aktivierter Kosten über die Nutzungsdauer.', calculator: 'Beeinflusst Jahresreihen, Restwerte und bei Gas KANU-/Transformationspfad-Prüfungen.', source: 'Anlagenbuchhaltung, HGB/Regulierungsrechnung, Nutzungsdauerannahmen.' },
@@ -3263,12 +3264,17 @@ function closeHelpModal() {
   closeModal(document.getElementById('helpModal'));
 }
 
+function sortedGlossaryEntries() {
+  return [...glossaryEntries].sort((a, b) => a.term.localeCompare(b.term, 'de', { sensitivity: 'base' }));
+}
+
 function renderGlossary(selectedSlug = 'eog') {
   const list = document.getElementById('glossaryList');
   const entry = document.getElementById('glossaryEntry');
   if (!list || !entry) return;
-  const selected = glossaryEntries.find(item => item.slug === selectedSlug) || glossaryEntries[0];
-  list.innerHTML = glossaryEntries.map(item => `
+  const sortedEntries = sortedGlossaryEntries();
+  const selected = glossaryEntries.find(item => item.slug === selectedSlug) || sortedEntries[0];
+  list.innerHTML = sortedEntries.map(item => `
     <button type="button" class="${item.slug === selected.slug ? 'active' : ''}" data-glossary-term="${esc(item.slug)}">${esc(item.term)}</button>
   `).join('');
   entry.classList.add('active');
@@ -4843,7 +4849,7 @@ function renderPlausibilityWarnings() {
 
 function buildCommandPaletteItems() {
   const items = Object.entries(viewSearchLabels).map(([view, label]) => ({ type: 'View', label, view, target: '' }));
-  glossaryEntries.forEach(item => items.push({
+  sortedGlossaryEntries().forEach(item => items.push({
     type: 'Glossar',
     label: `${item.term} ${(item.aliases || []).join(' ')} ${item.definition}`,
     view: 'basis',
