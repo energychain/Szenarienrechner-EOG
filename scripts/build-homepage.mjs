@@ -325,7 +325,7 @@ export function renderHomepage() {
     </div>
     <aside class="hero-card" aria-label="Kurzstatus">
       <div class="status-grid">
-        <div class="status"><strong>0.3.1</strong><span>aktueller Pilot-Release</span></div>
+        <div class="status"><strong>0.4.0</strong><span>aktueller Pilot-Release</span></div>
         <div class="status"><strong>TRL 5</strong><span>technisch pilotfähig, reale Validierung bleibt erforderlich</span></div>
         <div class="status"><strong>Single File</strong><span>offline nutzbar und mit Daten weitergebbar</span></div>
         <div class="status"><strong>Apache-2.0</strong><span>offen nutzbar, prüfbar, forkbar</span></div>
