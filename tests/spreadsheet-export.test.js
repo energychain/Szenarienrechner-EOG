@@ -72,6 +72,7 @@ describe('spreadsheet exports', () => {
       'Klaerpunkte_Priorisiert',
       'Systemreferenzen',
       'Risiko_Mapping',
+      'Massnahmen_Bruecke',
       'Sidecar_Ueberleitungslogik',
       'Strom_EEG2027_Netzanschluss',
       'Monitoring_Massnahmen',

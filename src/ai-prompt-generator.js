@@ -10,6 +10,7 @@ import { projectPlanEffectiveTaskStates, projectPlanTaskCounts } from './project
 import { normalizeGermanTeurText } from './render-utils.js';
 import { normalizeSidecar, sanitizeSidecarForExport, sidecarSummary } from './sidecar.js';
 import { stromEeg2027PortfolioSummary } from './strom-eeg2027.js';
+import { measureBridgePromptFields, measureBridgePromptSummary } from './measure-bridge.js';
 
 export const llmContextUrl = 'https://energychain.github.io/Szenarienrechner-EOG/llm.txt';
 
@@ -134,6 +135,7 @@ function baseMeasurePromptFields(measure, index, options) {
     directQTeurPa: roundTeur(measure.qDirect, options.roundAmounts),
     directEfficiencyTeurPa: roundTeur(measure.eDirect, options.roundAmounts),
     riskAvoidedTeurPa: roundTeur(measure.riskAvoided, options.roundAmounts),
+    measureBridge: measureBridgePromptFields(measure, index, options),
     note: options.omitNotes ? '' : normalizeGermanTeurText(measure.note || '')
   };
 }
@@ -703,6 +705,7 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
     } : null,
     portfolioSegmentation: params.sector === 'strom' ? segmentationForPrompt(basis.portfolioSegmentation, merged.roundAmounts) : null,
     sidecar: sidecarForPrompt(model, 'sanitized_external'),
+    measureBridge: measureBridgePromptSummary(candidateMeasures, merged),
     measures,
     flexibilityObjects: promptFlexibilityObjects,
     projectPlan: merged.includeProjectPlan ? summarizeProjectPlan(model?.projectPlan) : null
@@ -753,6 +756,17 @@ ${sidecar.caveat}
 Aggregat: ${sidecar.summary.total} Objekte; offene Prüfpunkte ${sidecar.summary.openQuestions || 0}; offene Überleitungslogik ${sidecar.summary.openBridgeLogic || 0}; quantifiziert, aber nicht aktiviert ${sidecar.summary.quantifiedNotActivated || 0}; aktiviert markiert ${sidecar.summary.activated || 0}; exporteingeschränkt ${sidecar.summary.exportRestricted || 0}.
 Überleitungslogik: Wirkbeziehungen sind Arbeits-/Prüfobjekte und haben keine automatische KPI-Wirkung.
 ${sidecar.objects.map(object => `- ${object.division} · ${object.sidecarType || 'context'} · ${object.type}: ${object.title}; Evidenz ${object.evidenceStatus}; Rechenwirkung ${object.calculationImpact}; Aktivierung ${object.activationStatus || 'not_activated'}; Überleitungslogik ${object.bridgeLogic?.economicRelation || 'none'} / ${object.bridgeLogic?.quantificationStatus || 'not_applicable'}; ${object.summary || ''}`).join('\n')}
+`;
+}
+
+function measureBridgePromptSection(snapshot) {
+  const bridge = snapshot.measureBridge || { total: 0, measures: [] };
+  if (!bridge.total) return '';
+  return `
+## Budget-, Accounting- und Ausführungsreife / Maßnahmen-Brücke
+${bridge.caveat}
+Aggregat: ${bridge.total} Maßnahmen mit Brückendaten; vollständig ${bridge.complete || 0}; offen ${bridge.open || 0}.
+${(bridge.measures || []).map(measure => `- ${measure.name}: Budgetstatus ${measure.budgetProcessStatus}; Zahltyp ${measure.numberType}; CAPEX/OPEX ${measure.capexOpexTreatment}; Aktivierung ${measure.activationStatus}; regulatorische/wirtschaftliche Wirkung ${measure.regulatoryEffect}; Timing ${measure.returnTiming}; Rechenwirkung ${measure.calculationImpact}; offene Fragen ${measure.openBridgeQuestions.join(' | ') || 'keine'}`).join('\n')}
 `;
 }
 
@@ -828,6 +842,7 @@ ${stromEeg2027PromptSection(snapshot)}
 ${governanceWorkbenchPromptSection(snapshot)}
 ${flexibilityPromptSection(snapshot)}
 ${sidecarPromptSection(snapshot)}
+${measureBridgePromptSection(snapshot)}
 ## Planungsdaten als JSON
 \`\`\`json
 ${JSON.stringify(snapshot, null, 2)}
