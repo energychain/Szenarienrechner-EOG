@@ -103,6 +103,13 @@ import {
 } from './sidecar.js';
 import { normalizeStromEeg2027Measure } from './strom-eeg2027.js';
 import {
+  hasMeasureBridge,
+  measureBridgeClarificationItems,
+  measureBridgeLabel,
+  measureBridgeSummary,
+  normalizeMeasureBridge,
+} from './measure-bridge.js';
+import {
   bulkImportSteps,
   committeeIds,
   confidenceLabels,
@@ -587,6 +594,7 @@ function normalizeMeasureForUi(measure, index = 0) {
     riskEvidenceStatus: String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || ''),
     riskOwnerRole: String(measure.riskOwnerRole || ''),
     riskAssessmentStatus: String(measure.riskAssessmentStatus || ''),
+    measureBridge: normalizeMeasureBridge(measure.measureBridge),
     objectiveIds: Array.isArray(measure.objectiveIds) ? measure.objectiveIds.map(String) : [],
     templateId: String(measure.templateId || ''),
     templateVersion: String(measure.templateVersion || ''),
@@ -795,6 +803,9 @@ function projectTaskForClarification(item = {}) {
 function clarificationTargetFor(item = {}) {
   if (item.type === 'sidecar') {
     return { fieldId: 'sidecarOpenQuestions', label: 'Kontextobjekt-Prüfpunkt', task: 'Evidenzobjekt, offene Prüffrage oder Überleitungslogik prüfen' };
+  }
+  if (item.type === 'measure_bridge') {
+    return { fieldId: 'mBridgeOpenQuestions', label: 'Maßnahmen-Brücke / wirtschaftliche Überleitung', task: 'Budget-, Accounting- oder Wirkungspfad der Maßnahme klären' };
   }
   if (item.type === 'system_reference') {
     return { fieldId: 'mSourceSystem', label: 'Quellsystem / Datensatz', task: 'Rückspielweg und Systemreferenz ergänzen' };
@@ -1093,7 +1104,8 @@ function clarificationItems() {
       measure: warning.measure,
       detail: warning.detail || 'mögliche Doppelzählung prüfen.'
     }));
-  return [...impactItems, ...warningItems, ...noteItems, ...measureEvidenceItems(), ...sidecarClarificationItems()]
+  const bridgeItems = measures.flatMap(measure => measureBridgeClarificationItems(measure));
+  return [...impactItems, ...warningItems, ...noteItems, ...bridgeItems, ...measureEvidenceItems(), ...sidecarClarificationItems()]
     .map(item => {
       const priority = clarificationPriorityFor(item);
       return {
@@ -3709,6 +3721,26 @@ function gasTransformationForMeasure(measure, p = currentParams()) {
   return gasTransformationHelper(gasTransformationInputForMeasure(measure, p));
 }
 
+function renderMeasureBridgeLayer(measure) {
+  const node = document.getElementById('measureBridgeSummary');
+  if (!node) return;
+  if (!measure || !hasMeasureBridge(measure.measureBridge)) {
+    node.innerHTML = '<p class="hint">Keine Maßnahmen-Brücke erfasst. Budget-/Accounting-/Ausführungsfragen können hier optional dokumentiert werden.</p>';
+    return;
+  }
+  const bridge = normalizeMeasureBridge(measure.measureBridge);
+  const openItems = measureBridgeClarificationItems(measure);
+  node.innerHTML = `
+    <div class="meta">KPI-neutral · ${esc(measureBridgeLabel('bridgeStatus', bridge.bridgeStatus))}</div>
+    <strong>${openItems.length ? `${openItems.length} Klärpunkte aus der Maßnahmen-Brücke` : 'Brücke vollständig dokumentiert oder ohne offene Klärlogik'}</strong>
+    <p class="hint">Rechenwirkung: ${esc(measureBridgeLabel('calculationImpact', bridge.calculationImpact))}. Die Angaben ändern keine EOG-, RAB-, Risiko-, IRR-/NPV- oder Szenariowerte.</p>
+    <div class="grid2">
+      <div><strong>Budget / Zahl</strong><p>${esc(measureBridgeLabel('budgetProcessStatus', bridge.budgetProcessStatus))} · ${esc(measureBridgeLabel('numberType', bridge.numberType))}${bridge.budgetYear ? ` · ${esc(bridge.budgetYear)}` : ''}</p></div>
+      <div><strong>Accounting / Wirkung</strong><p>${esc(measureBridgeLabel('capexOpexTreatment', bridge.capexOpexTreatment))} · ${esc(measureBridgeLabel('activationStatus', bridge.activationStatus))} · ${esc(measureBridgeLabel('regulatoryEffect', bridge.regulatoryEffect))}</p></div>
+    </div>
+  `;
+}
+
 function renderGasTransformationLayer(measure) {
   const node = document.getElementById('gasTransformationSummary');
   if (!node) return;
@@ -5857,6 +5889,7 @@ function renderDetail() {
 	        }
         renderImpactAssumptions({ impactAssumptions: [] });
         renderHelperCalculators({ cost: 0, secure: 0, uncertain: 0, probability: 0, opexRecognition: 0, impactAssumptions: [] });
+        renderMeasureBridgeLayer(null);
         updateMeasureStepper();
         renderMeasureClarificationAuditBanner(null);
         const timeline = document.getElementById('lifecycleTimeline');
@@ -5890,6 +5923,21 @@ function renderDetail() {
   el.mRiskEvidenceStatus.value = measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '';
   el.mRiskOwnerRole.value = measure.riskOwnerRole || '';
   el.mRiskAssessmentStatus.value = measure.riskAssessmentStatus || '';
+  const measureBridge = normalizeMeasureBridge(measure.measureBridge);
+  el.mBridgeNumberType.value = measureBridge.numberType;
+  el.mBridgeBudgetProcessStatus.value = measureBridge.budgetProcessStatus;
+  el.mBridgeBudgetYear.value = measureBridge.budgetYear;
+  el.mBridgeBudgetBucket.value = measureBridge.budgetBucket;
+  el.mBridgeBudgetOwner.value = measureBridge.budgetOwner;
+  el.mBridgeCapexOpexTreatment.value = measureBridge.capexOpexTreatment;
+  el.mBridgeActivationStatus.value = measureBridge.activationStatus;
+  el.mBridgeRegulatoryEffect.value = measureBridge.regulatoryEffect;
+  el.mBridgeReturnTiming.value = measureBridge.returnTiming;
+  el.mBridgeOperationalCriticality.value = measureBridge.operationalCriticality;
+  el.mBridgeDeferrability.value = measureBridge.deferrability;
+  el.mBridgeStatus.value = measureBridge.bridgeStatus;
+  el.mBridgeOwnerRole.value = measureBridge.ownerRole;
+  el.mBridgeOpenQuestions.value = measureBridge.openBridgeQuestions.join('\n');
   el.mType.value = measure.type;
   el.mEffectType.value = measure.effectType || 'classic';
   el.mFlexibilityUseCase.value = measure.flexibilityUseCase || 'netzfahrplan';
@@ -5975,6 +6023,7 @@ function renderDetail() {
 	      document.getElementById('selectedPills').innerHTML = pills.map(([text, cls]) => `<span class="pill ${cls}">${text}</span>`).join('');
 	      renderMeasureValidation(measure);
       renderGasTransformationLayer(measure);
+      renderMeasureBridgeLayer(measure);
       renderFlexibilityLayer(measure);
       renderStromEeg2027Layer(measure);
       renderHelperCalculators(measure);
@@ -6661,6 +6710,7 @@ function systemIntegrationReportHtml(result) {
   const riskMeasures = active.filter(measure => Number(measure.riskAvoided || 0) > 0);
   const incompleteRisk = riskMeasures.filter(measure => !(String(measure.riskDbRef || '').trim() || String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '').trim()));
   const linkedBack = active.length - missingSources.length;
+  const bridge = measureBridgeSummary(active);
   return `
     <section class="report-section">
       <h2>Arbeitsakte und Systemrückspielweg</h2>
@@ -6668,6 +6718,7 @@ function systemIntegrationReportHtml(result) {
       <div class="report-summary">
         <div class="report-box"><strong>Systemreferenzen</strong><p>${linkedBack} von ${active.length} aktiven Maßnahmen mit Quellsystem und Datensatz-/PSP-Bezug.</p></div>
         <div class="report-box"><strong>Risiko-Mapping</strong><p>${riskMeasures.length - incompleteRisk.length} von ${riskMeasures.length} Risikowerten mit Datenbank-/Evidenzbezug.</p></div>
+        <div class="report-box"><strong>Maßnahmen-Brücke</strong><p>${bridge.total} Maßnahmen mit Budget-/Accounting-Brücke; ${bridge.open} offen. KPI-neutral, keine automatische Ergebniswirkung.</p></div>
         <div class="report-box"><strong>Nutzungsmodus</strong><p>Kontextobjekte zu bestehenden Systemen / Import-Export-Überleitung; keine Vollintegration und keine führende Stammdatenhaltung.</p></div>
       </div>
     </section>
@@ -7122,6 +7173,22 @@ function updateSelectedFromDetail() {
 	        riskEvidenceStatus: el.mRiskEvidenceStatus.value,
 	        riskOwnerRole: el.mRiskOwnerRole.value.trim(),
 	        riskAssessmentStatus: el.mRiskAssessmentStatus.value.trim(),
+	        measureBridge: normalizeMeasureBridge({
+	          numberType: el.mBridgeNumberType.value,
+	          budgetProcessStatus: el.mBridgeBudgetProcessStatus.value,
+	          budgetYear: el.mBridgeBudgetYear.value,
+	          budgetBucket: el.mBridgeBudgetBucket.value,
+	          budgetOwner: el.mBridgeBudgetOwner.value,
+	          capexOpexTreatment: el.mBridgeCapexOpexTreatment.value,
+	          activationStatus: el.mBridgeActivationStatus.value,
+	          regulatoryEffect: el.mBridgeRegulatoryEffect.value,
+	          returnTiming: el.mBridgeReturnTiming.value,
+	          operationalCriticality: el.mBridgeOperationalCriticality.value,
+	          deferrability: el.mBridgeDeferrability.value,
+	          bridgeStatus: el.mBridgeStatus.value,
+	          ownerRole: el.mBridgeOwnerRole.value,
+	          openBridgeQuestions: el.mBridgeOpenQuestions.value,
+	        }),
 	        effectType: el.mEffectType.value === 'flexibility' ? 'flexibility' : 'classic',
         flexibilityUseCase: el.mFlexibilityUseCase.value,
         flexibilityStatus: el.mFlexibilityStatus.value,

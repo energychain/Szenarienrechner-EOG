@@ -8,6 +8,7 @@ import {
 import { projectPlanEffectiveTaskStates, projectPlanMilestoneDate, projectPlanRoles } from './project-plan.js';
 import { normalizeSidecar, sidecarSummary } from './sidecar.js';
 import { normalizeStromEeg2027Measure, stromEeg2027PortfolioSummary } from './strom-eeg2027.js';
+import { hasMeasureBridge, measureBridgeClarificationItems, measureBridgeSummary, normalizeMeasureBridge } from './measure-bridge.js';
 
 const scenarioLabels = {
   basis: 'Basis',
@@ -286,6 +287,18 @@ export function spreadsheetTables(model, options = {}) {
     ]));
   });
   measures.forEach(measure => {
+    measureBridgeClarificationItems(measure).forEach(item => warningRows.push([
+      item.type,
+      item.area || '',
+      measure.id,
+      measure.name,
+      item.title || '',
+      item.detail || '',
+      item.targetPhase || '',
+      'offen'
+    ]));
+  });
+  measures.forEach(measure => {
     impactAssumptionsFor(measure).forEach(impact => {
       if (impact.confidence === 'review' || impact.governance === 'sensitivity') {
         warningRows.push([
@@ -553,6 +566,39 @@ export function spreadsheetTables(model, options = {}) {
     ]);
   });
 
+  const measureBridgeRows = [[
+    'measureId', 'externalId', 'name', 'numberType', 'budgetProcessStatus', 'budgetYear', 'budgetBucket',
+    'budgetOwner', 'capexOpexTreatment', 'activationStatus', 'regulatoryEffect', 'returnTiming',
+    'operationalCriticality', 'deferrability', 'bridgeStatus', 'ownerRole', 'calculationImpact',
+    'openBridgeQuestions', 'nextStatus'
+  ]];
+  measures.filter(measure => hasMeasureBridge(measure.measureBridge)).forEach(measure => {
+    const bridge = normalizeMeasureBridge(measure.measureBridge);
+    const openItems = measureBridgeClarificationItems(measure);
+    measureBridgeRows.push([
+      measure.id || '',
+      externalMeasureId(measure),
+      measure.name || '',
+      bridge.numberType,
+      bridge.budgetProcessStatus,
+      bridge.budgetYear,
+      bridge.budgetBucket,
+      bridge.budgetOwner,
+      bridge.capexOpexTreatment,
+      bridge.activationStatus,
+      bridge.regulatoryEffect,
+      bridge.returnTiming,
+      bridge.operationalCriticality,
+      bridge.deferrability,
+      bridge.bridgeStatus,
+      bridge.ownerRole,
+      bridge.calculationImpact,
+      bridge.openBridgeQuestions.join(' | '),
+      openItems.length ? 'bruecke_pruefen' : 'dokumentiert'
+    ]);
+  });
+  const measureBridgeAggregate = measureBridgeSummary(measures);
+
   const provenanceRows = [
     ['Feld', 'Wert'],
     ['Export erstellt am', new Date().toISOString()],
@@ -567,6 +613,10 @@ export function spreadsheetTables(model, options = {}) {
     ['Sidecars offene Überleitungslogik', sidecarBridgeSummary.openBridgeLogic],
     ['Sidecars quantifiziert aber nicht aktiviert', sidecarBridgeSummary.quantifiedNotActivated],
     ['Sidecars aktiviert markiert', sidecarBridgeSummary.activated],
+    ['Maßnahmen-Brücken gesamt', measureBridgeAggregate.total],
+    ['Maßnahmen-Brücken offen', measureBridgeAggregate.open],
+    ['Maßnahmen-Brücken vollständig', measureBridgeAggregate.complete],
+    ['Maßnahmen-Brücken Hinweis', measureBridgeAggregate.caveat],
     ['Datenschutz', 'Tabellenexport wird lokal im Browser erzeugt; kein Upload, kein Backend, kein Netzzugriff.']
   ];
 
@@ -580,6 +630,7 @@ export function spreadsheetTables(model, options = {}) {
     { name: 'Klaerpunkte_Priorisiert', rows: prioritizedClarificationRows },
     { name: 'Systemreferenzen', rows: systemReferenceRows },
     { name: 'Risiko_Mapping', rows: riskMappingRows },
+    { name: 'Massnahmen_Bruecke', rows: measureBridgeRows },
     { name: 'Sidecar_Ueberleitungslogik', rows: sidecarRows },
     ...(stromEeg2027Summary?.applicable ? [{ name: 'Strom_EEG2027_Netzanschluss', rows: stromEeg2027Rows }] : []),
     { name: 'Monitoring_Massnahmen', rows: monitoringMeasureRows },
