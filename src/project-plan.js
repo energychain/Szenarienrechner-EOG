@@ -1,4 +1,5 @@
 import { appDeepLinkForMilestone, storyMilestoneById } from './story-navigation.js';
+import { neutralizeRestrictedSystemTerms } from './public-term-sanitizer.js';
 
 export const projectPlanRoles = {
   modellverantwortung: 'Modellverantwortung',
@@ -227,15 +228,15 @@ function normalizeTask(seed, incoming = {}) {
     ownerRole,
     status,
     evidenceRequired,
-    note: String(incoming.note ?? seed.note ?? ''),
-    resultArtifact: String(incoming.resultArtifact || seed.resultArtifact || ''),
+    note: neutralizeRestrictedSystemTerms(String(incoming.note ?? seed.note ?? '')),
+    resultArtifact: neutralizeRestrictedSystemTerms(String(incoming.resultArtifact || seed.resultArtifact || '')),
     dueOffsetDays: Number.isFinite(Number(incoming.dueOffsetDays)) ? Number(incoming.dueOffsetDays) : seed.dueOffsetDays,
     dependsOn: normalizeDependsOn(incoming.dependsOn ?? seed.dependsOn, seed.id)
   };
 }
 
 function normalizeUserTask(incoming = {}, milestone) {
-  const title = String(incoming.title || '').trim();
+  const title = neutralizeRestrictedSystemTerms(String(incoming.title || '').trim());
   if (!title) return null;
   const id = String(incoming.id || '').startsWith('user-') ? String(incoming.id) : `user-${uid()}`;
   const deepLinkKey = storyKeys.has(incoming.deepLinkKey) ? incoming.deepLinkKey : milestone.storyKey;
@@ -250,8 +251,8 @@ function normalizeUserTask(incoming = {}, milestone) {
     dependsOn: normalizeDependsOn(incoming.dependsOn, id),
     status: projectPlanStatuses.includes(incoming.status) ? incoming.status : 'open',
     evidenceRequired: evidenceIds.has(incoming.evidenceRequired) ? incoming.evidenceRequired : null,
-    resultArtifact: String(incoming.resultArtifact || 'ergänzter Arbeitsschritt'),
-    note: String(incoming.note || ''),
+    resultArtifact: neutralizeRestrictedSystemTerms(String(incoming.resultArtifact || 'ergänzter Arbeitsschritt')),
+    note: neutralizeRestrictedSystemTerms(String(incoming.note || '')),
     source: 'user',
     templateSkipped: false,
     createdAt: incoming.createdAt ? String(incoming.createdAt) : isoNow(),
@@ -455,10 +456,10 @@ export function updateProjectPlanTask(plan, taskId, patch = {}) {
   nextTask.deepLinkKey = storyKeys.has(nextTask.deepLinkKey) ? nextTask.deepLinkKey : task.deepLinkKey;
   nextTask.dependsOn = normalizeDependsOn(nextTask.dependsOn, task.id);
   nextTask.templateSkipped = task.source === 'template' ? Boolean(nextTask.templateSkipped) : false;
-  nextTask.title = String(nextTask.title || task.title);
-  nextTask.resultArtifact = String(nextTask.resultArtifact || task.resultArtifact || '');
-  nextTask.note = String(nextTask.note || '');
-  nextTask.origin = nextTask.origin === undefined ? undefined : String(nextTask.origin || '');
+  nextTask.title = neutralizeRestrictedSystemTerms(String(nextTask.title || task.title));
+  nextTask.resultArtifact = neutralizeRestrictedSystemTerms(String(nextTask.resultArtifact || task.resultArtifact || ''));
+  nextTask.note = neutralizeRestrictedSystemTerms(String(nextTask.note || ''));
+  nextTask.origin = nextTask.origin === undefined ? undefined : neutralizeRestrictedSystemTerms(String(nextTask.origin || ''));
   if (projectPlanWouldCreateCycle(plan, taskId, nextTask.dependsOn)) {
     throw new Error('Abhängigkeit würde einen Zyklus erzeugen.');
   }
