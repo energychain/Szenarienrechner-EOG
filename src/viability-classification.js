@@ -10,49 +10,53 @@ const categoryIds = new Set([
 const sourceIds = new Set(['manual', 'derived', 'imported', 'unset']);
 const bridgeStatuses = new Set(['present', 'partial', 'missing', 'not_applicable']);
 
+function viabilityCategory(id, label, shortLabel, steeringQuestion, budgetMeaning) {
+  return { id, label, shortLabel, steeringQuestion, budgetMeaning };
+}
+
 export const VIABILITY_CATEGORIES = [
-  {
-    id: 'regulatory_must',
-    label: 'Regulatorisches Muss',
-    shortLabel: 'Regulatorisch',
-    steeringQuestion: 'Was muss bis wann getan werden und welche Folge hat Nichtumsetzung?',
-    budgetMeaning: 'Nicht als frei disponierbare Entwicklung lesen; Timing, Nachweis und Risikohandhabung klären.'
-  },
-  {
-    id: 'asset_preservation_must',
-    label: 'Substanzerhalt / Versorgungssicherheit',
-    shortLabel: 'Substanzerhalt',
-    steeringQuestion: 'Welches Asset- oder Zuverlässigkeitsrisiko wird vermieden und wie ist es belegt?',
-    budgetMeaning: 'Faktisches Muss zur Erhaltung der regulierten Substanz und Betriebsfähigkeit.'
-  },
-  {
-    id: 'transformation_must_no_regret',
-    label: 'Transformation / No-Regret',
-    shortLabel: 'No-Regret',
-    steeringQuestion: 'Unter welchen Zukunftspfaden bleibt die Maßnahme robust?',
-    budgetMeaning: 'Schärft die No-Regret-Logik; Begründung und Pfadannahmen müssen sichtbar bleiben.'
-  },
-  {
-    id: 'strategic_option',
-    label: 'Strategische Option',
-    shortLabel: 'Option',
-    steeringQuestion: 'Welche künftige Fähigkeit, Option oder Engpassvermeidung entsteht?',
-    budgetMeaning: 'Braucht klare Optionswert- und Tragfähigkeitsevidenz, sonst wird sie im knappen Budget verdrängt.'
-  },
-  {
-    id: 'synergy_timing',
-    label: 'Synergie / Timing',
-    shortLabel: 'Timing',
-    steeringQuestion: 'Welches Zeitfenster oder Bündelungsrisiko geht bei Verschiebung verloren?',
-    budgetMeaning: 'Kann isoliert verschiebbar wirken, wird aber bei verpasstem Zeitfenster teurer oder riskanter.'
-  },
-  {
-    id: 'unclassified',
-    label: 'Noch nicht klassifiziert',
-    shortLabel: 'Offen',
-    steeringQuestion: 'Welche Tragfähigkeitslogik soll diese Maßnahme tragen?',
-    budgetMeaning: 'Nicht als Muss oder Option einordnen, bevor Tragfähigkeitslogik und Evidenz dokumentiert sind.'
-  }
+  viabilityCategory(
+    'regulatory_must',
+    'Regulatorisches Muss',
+    'Regulatorisch',
+    'Was muss bis wann getan werden und welche Folge hat Nichtumsetzung?',
+    'Nicht als frei disponierbare Entwicklung lesen; Timing, Nachweis und Risikohandhabung klären.'
+  ),
+  viabilityCategory(
+    'asset_preservation_must',
+    'Substanzerhalt / Versorgungssicherheit',
+    'Substanzerhalt',
+    'Welches Asset- oder Zuverlässigkeitsrisiko wird vermieden und wie ist es belegt?',
+    'Faktisches Muss zur Erhaltung der regulierten Substanz und Betriebsfähigkeit.'
+  ),
+  viabilityCategory(
+    'transformation_must_no_regret',
+    'Transformation / No-Regret',
+    'No-Regret',
+    'Unter welchen Zukunftspfaden bleibt die Maßnahme robust?',
+    'Schärft die No-Regret-Logik; Begründung und Pfadannahmen müssen sichtbar bleiben.'
+  ),
+  viabilityCategory(
+    'strategic_option',
+    'Strategische Option',
+    'Option',
+    'Welche künftige Fähigkeit, Option oder Engpassvermeidung entsteht?',
+    'Braucht klare Optionswert- und Tragfähigkeitsevidenz, sonst wird sie im knappen Budget verdrängt.'
+  ),
+  viabilityCategory(
+    'synergy_timing',
+    'Synergie / Timing',
+    'Timing',
+    'Welches Zeitfenster oder Bündelungsrisiko geht bei Verschiebung verloren?',
+    'Kann isoliert verschiebbar wirken, wird aber bei verpasstem Zeitfenster teurer oder riskanter.'
+  ),
+  viabilityCategory(
+    'unclassified',
+    'Noch nicht klassifiziert',
+    'Offen',
+    'Welche Tragfähigkeitslogik soll diese Maßnahme tragen?',
+    'Nicht als Muss oder Option einordnen, bevor Tragfähigkeitslogik und Evidenz dokumentiert sind.'
+  )
 ];
 
 export const VIABILITY_CATEGORY_LABELS = Object.fromEntries(VIABILITY_CATEGORIES.map(category => [category.id, category.label]));
