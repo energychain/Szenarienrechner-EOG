@@ -191,7 +191,7 @@ function flexibilityPromptSummary(flexibilityObjects = []) {
       ? `AGNeS-Relevanz: ${agnesRelevant} Flexibilitätsobjekt${agnesRelevant === 1 ? '' : 'e'} prüfpflichtig; ${activeEffects} aktive Flexibilitätswirkungen.`
       : 'AGNeS-Relevanz: keine als AGNeS-relevant markierten Flexibilitätsobjekte.',
     caveat: flexibilityObjects.length > 0
-      ? 'AGNeS ist nur bei Flexibilitäts-/Netzfahrplanobjekten als Prüfpunkt zu berücksichtigen. Klassische CAPEX-Maßnahmen ohne AGNeS-Relevanz wurden nicht einzeln mit AGNeS-Feldern exportiert.'
+      ? 'AGNeS ist nur bei Flexibilitäts-/Netzfahrplanobjekten als Klärpunkt zu berücksichtigen. Klassische CAPEX-Maßnahmen ohne AGNeS-Relevanz wurden nicht einzeln mit AGNeS-Feldern exportiert.'
       : '',
     klärpunkte: needsReview ? ['strom_flexibility_review'] : [],
     reviewDetail: needsReview
@@ -422,7 +422,7 @@ function sidecarPromptWorkItems(model = {}) {
     .filter(object => object.status !== 'archived')
     .map(object => {
       const reasons = [];
-      if (object.openQuestions?.length) reasons.push(`${object.openQuestions.length} offene Prüffrage(n)`);
+      if (object.openQuestions?.length) reasons.push(`${object.openQuestions.length} offene Klärfrage(n)`);
       if (object.bridgeLogic?.openQuestions?.length) reasons.push(`${object.bridgeLogic.openQuestions.length} offene Überleitungsfrage(n)`);
       if (weakPromptEvidenceStatus(object.evidenceStatus)) reasons.push(`Evidenzstatus ${object.evidenceStatus}`);
       if (object.type === 'data_quality' && object.evidenceStatus !== 'validated') reasons.push('Datenqualitätsobjekt nicht validiert');
@@ -437,7 +437,7 @@ function sidecarPromptWorkItems(model = {}) {
         key: `sidecar:${object.id}`,
         column: 'evidence',
         type: 'sidecar',
-        title: 'Evidenz-/Sidecar-Prüfpunkt klären',
+        title: 'Evidenz-/Sidecar-Klärpunkt klären',
         subject: object.title,
         detail: reasons.join(' · '),
         target: 'Evidenz & Systeme'
@@ -511,7 +511,7 @@ function governanceWorkbenchForPrompt(model = {}, warnings = [], options = {}) {
       key: warning.key || warning.type,
       column: warning.type === 'conservative_case_missing' ? 'high' : 'evidence',
       type: warning.type,
-      title: warning.title || 'Prüfpunkt',
+      title: warning.title || 'Klärpunkt',
       subject: warning.measure || warning.area || 'Arbeitsstand',
       detail: warning.detail || '',
       target: warning.type === 'conservative_case_missing' ? 'Grundlagen · Stresstest-Parameter' : 'Prüfen & Klären'
@@ -542,7 +542,7 @@ function governanceWorkbenchForPrompt(model = {}, warnings = [], options = {}) {
     byStatus,
     sampleItems: items.slice(0, 12),
     befassungen,
-    caveat: 'Kanban-Karten entstehen deterministisch aus Wirkannahmen/Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Prüffragen. Befassungen dokumentieren Zwischenstände; Abschluss nur bei hinreichend geklärtem Punkt.'
+    caveat: 'Kanban-Karten entstehen deterministisch aus Wirkannahmen/Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Klärfragen. Befassungen dokumentieren Zwischenstände; Abschluss nur bei hinreichend geklärtem Punkt.'
   };
 }
 
@@ -770,8 +770,8 @@ function sidecarPromptSection(snapshot) {
   return `
 ## Kontext & Evidenz / Sidecar
 ${sidecar.caveat}
-Aggregat: ${sidecar.summary.total} Objekte; offene Prüfpunkte ${sidecar.summary.openQuestions || 0}; offene Überleitungslogik ${sidecar.summary.openBridgeLogic || 0}; quantifiziert, aber nicht aktiviert ${sidecar.summary.quantifiedNotActivated || 0}; aktiviert markiert ${sidecar.summary.activated || 0}; exporteingeschränkt ${sidecar.summary.exportRestricted || 0}.
-Überleitungslogik: Wirkbeziehungen sind Arbeits-/Prüfobjekte und haben keine automatische KPI-Wirkung.
+Aggregat: ${sidecar.summary.total} Objekte; offene Klärpunkte ${sidecar.summary.openQuestions || 0}; offene Überleitungslogik ${sidecar.summary.openBridgeLogic || 0}; quantifiziert, aber nicht aktiviert ${sidecar.summary.quantifiedNotActivated || 0}; aktiviert markiert ${sidecar.summary.activated || 0}; exporteingeschränkt ${sidecar.summary.exportRestricted || 0}.
+Überleitungslogik: Wirkbeziehungen sind Arbeitsobjekte und haben keine automatische KPI-Wirkung.
 ${sidecar.objects.map(object => `- ${object.division} · ${object.sidecarType || 'context'} · ${object.type}: ${object.title}; Evidenz ${object.evidenceStatus}; Rechenwirkung ${object.calculationImpact}; Aktivierung ${object.activationStatus || 'not_activated'}; Überleitungslogik ${object.bridgeLogic?.economicRelation || 'none'} / ${object.bridgeLogic?.quantificationStatus || 'not_applicable'}; ${object.summary || ''}`).join('\n')}
 `;
 }
@@ -843,7 +843,7 @@ ${outputFormat}
 - EOG-Wirkung ist nicht gleich Cashflow. IRR/MIRR und Kapitalwert beruhen auf einer indikativen Cashflow-Sicht.
 - Basis vs. konservativ ist entscheidend: Wenn der Basiscase trägt, der konservative Case aber kippt oder nicht parametrisiert ist, ist das kein robuster Arbeitsstand, sondern ein offener Stresstest mit Befassungsbedarf.
 - Prüfpflichtige Annahmen, Q/E-Wirkungen, Risikoannahmen und Attribution nicht als bestätigte Fakten darstellen.
-- Flexibilitätsobjekte sind nicht als klassische CAPEX-Maßnahmen zu interpretieren. Sie bilden mögliche OPEX-gegen-CAPEX-Substitutionen ab; ohne validierten Netzfahrplan, quantifizierte vermiedene/verschobene CAPEX und jährliche Flex-OPEX keine automatische Ergebniswirkung. AGNeS-Relevanz ist als eigener Prüfpunkt zu führen.
+- Flexibilitätsobjekte sind nicht als klassische CAPEX-Maßnahmen zu interpretieren. Sie bilden mögliche OPEX-gegen-CAPEX-Substitutionen ab; ohne validierten Netzfahrplan, quantifizierte vermiedene/verschobene CAPEX und jährliche Flex-OPEX keine automatische Ergebniswirkung. AGNeS-Relevanz ist als eigener Klärpunkt zu führen.
 - Keine regulatorische, steuerliche oder rechtliche Anerkennungszusage formulieren.
 - Klärpunkte, Befassungen und Auflagen sichtbar machen, statt sie durch glatte Formulierungen zu verdecken.
 

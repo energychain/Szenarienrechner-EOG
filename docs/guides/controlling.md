@@ -2,7 +2,7 @@
 
 Controlling nutzt die App, um technische Maßnahmen in Wirtschaftsplan, Budget, Liquidität und Ergebniswirkung zu übersetzen.
 
-## Prüffragen
+## Klärfragen
 
 - Stimmen Planjahr und Inbetriebnahme?
 - Sind CAPEX und OPEX getrennt?

@@ -282,9 +282,9 @@ describe('AI prompt generator', () => {
     expect(snapshot.governanceWorkbench.byColumn.evidence).toBeGreaterThanOrEqual(2);
     expect(snapshot.governanceWorkbench.byColumn.documentation).toBeGreaterThanOrEqual(2);
     expect(snapshot.governanceWorkbench.sampleItems.map(item => item.title)).toContain('Störungs-/Risikowirkung belegen');
-    expect(snapshot.governanceWorkbench.sampleItems.map(item => item.title)).toContain('Evidenz-/Sidecar-Prüfpunkt klären');
+    expect(snapshot.governanceWorkbench.sampleItems.map(item => item.title)).toContain('Evidenz-/Sidecar-Klärpunkt klären');
     expect(prompt).toContain('## Prüfen & Klären / Befassungs-Workbench');
     expect(prompt).toContain('Störungs-/Risikowirkung belegen');
-    expect(prompt).toContain('Evidenz-/Sidecar-Prüfpunkt klären');
+    expect(prompt).toContain('Evidenz-/Sidecar-Klärpunkt klären');
   });
 });

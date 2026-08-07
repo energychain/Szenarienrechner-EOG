@@ -25,7 +25,7 @@ Ein Projektstand kann enthalten:
 - Historienereignisse,
 - Prozessstatus mit kurzer Arbeitsstandnotiz und nächstem Abstimmungsschritt,
 - Projektplan der Planungsrunde mit Meilensteinen, Aufgaben, Rollen, Fristen und Deep-Links,
-- Sidecar-Kontext für Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit und offene Prüfpunkte,
+- Sidecar-Kontext für Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit und offene Klärpunkte,
 - Aktualitäts-/Release-Kontext (`lastReleaseCheck`) und Build-/Ruleset-Provenienz,
 - Report- und Gremienvorlagenzustand.
 
@@ -84,7 +84,7 @@ Beispiel je Maßnahme:
 }
 ```
 
-Sidecar-Objekte sind keine klassischen Maßnahmen. Sie dokumentieren Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit, Transformationspfade oder offene Prüfpunkte. Sie können zusätzlich eine Überleitungslogik tragen, wenn aus Kontext eine wirtschaftliche Wirkbeziehung oder Sensitivität werden könnte. Leitprinzip: Sidecar sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung. Sie gehen nicht automatisch in CAPEX, OPEX, RAB, Q-Komponente, EOG-Wirkung oder Portfolio-KPIs ein. `calculationImpact = none`, `scenario_only` und `indirect` sind nicht KPI-wirksam; `active` bleibt ohne explizit implementierte und fachlich freigegebene Mapping-Logik ebenfalls nur ein Audit-/Governance-Status.
+Sidecar-Objekte sind keine klassischen Maßnahmen. Sie dokumentieren Evidenz, Datenqualität, Quellen, Abhängigkeiten, Steuerungsfähigkeit, Transformationspfade oder offene Klärpunkte. Sie können zusätzlich eine Überleitungslogik tragen, wenn aus Kontext eine wirtschaftliche Wirkbeziehung oder Sensitivität werden könnte. Leitprinzip: Sidecar sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung. Sie gehen nicht automatisch in CAPEX, OPEX, RAB, Q-Komponente, EOG-Wirkung oder Portfolio-KPIs ein. `calculationImpact = none`, `scenario_only` und `indirect` sind nicht KPI-wirksam; `active` bleibt ohne explizit implementierte und fachlich freigegebene Mapping-Logik ebenfalls nur ein Audit-/Governance-Status.
 
 Mindestfelder je Objekt:
 

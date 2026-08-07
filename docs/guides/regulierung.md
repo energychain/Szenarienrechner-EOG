@@ -2,7 +2,7 @@
 
 Regulierungsmanagement achtet darauf, dass die App keine automatische regulatorische Wahrheit erzeugt.
 
-## Prüffragen
+## Klärfragen
 
 - Welches Verfahren gilt?
 - Welche Parameter haben Quellenstand?

@@ -181,7 +181,7 @@ describe('project plan', () => {
   });
 
   it('excludes skipped template tasks from progress and preserves or removes user tasks on reset', () => {
-    let plan = addUserProjectPlanTask(createDefaultProjectPlan(2027), 'm3', { id: 'user-reset', title: 'Eigener Prüfpunkt' });
+    let plan = addUserProjectPlanTask(createDefaultProjectPlan(2027), 'm3', { id: 'user-reset', title: 'Eigener Klärpunkt' });
     plan = updateProjectPlanTask(plan, 'm0-t1', { templateSkipped: true });
 
     expect(projectPlanTaskCounts(plan).total).toBe(allTasks(createDefaultProjectPlan(2027)).length);

@@ -158,7 +158,7 @@ Vertrauensstufen und Governance-Status sind entscheidend:
 
 - Belegte Effekte können in der Basisrechnung geführt werden.
 - Annahmen können mit Vorsicht in der Basis oder Sensitivität erscheinen.
-- Prüfpunkte gehören nicht automatisch in eine Freigabe.
+- Klärpunkte gehören nicht automatisch in eine Freigabe.
 - Ausgeschlossene Effekte bleiben dokumentiert, aber ohne Ergebniswirkung.
 
 Bei vereinfachtem Regulierungsverfahren werden individuelle Q- und Effizienzeffekte dokumentiert, aber nicht als individueller Erlösbeitrag angesetzt.

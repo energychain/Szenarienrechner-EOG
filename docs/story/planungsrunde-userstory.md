@@ -128,7 +128,7 @@ Die aktuelle Anwendung ist als digitale Akte organisiert. Der Einstieg zeigt nic
 - **Grundlagen:** Stammdaten, Modellrahmen, Szenarioannahmen und konservative Stresstest-Parameter pflegen.
 - **Bearbeiten:** Maßnahmenwerte, Wirkannahmen, Systemreferenzen, Budget-Tragfähigkeit und fachliche Notizen bearbeiten.
 - **Evidenz & Systeme:** Sidecar-Objekte, Systemreferenzen, Rückspielwege, Datenqualität und wirtschaftliche Überleitung bearbeiten.
-- **Prüfen & Klären:** deterministische Kanban-Karten aus Wirkannahmen, Warnungen, Maßnahmen-Evidenz, Dokumentationslücken, Tragfähigkeitslogik und Sidecar-Prüffragen abarbeiten.
+- **Prüfen & Klären:** deterministische Kanban-Karten aus Wirkannahmen, Warnungen, Maßnahmen-Evidenz, Dokumentationslücken, Tragfähigkeitslogik und Sidecar-Klärfragen abarbeiten.
 - **Präsentation:** eine fokussierte Start- und Befassungsansicht mit Arbeitsstand-Score, Kontext und nächsten Klärfragen öffnen.
 - **Export:** JSON, HTML mit Daten, Tabellenexport, Report und KI-Prompt bewusst erzeugen.
 
@@ -161,7 +161,7 @@ Die fünf Klassen sind:
 Offene Punkte werden nicht mehr nur als lange Liste geführt. Die App erzeugt Kanban-Karten deterministisch aus verschiedenen Ursachen:
 
 - **Hohe Steuerungswirkung:** Wirkannahmen, Gas-Transformationswarnungen, konservativer Stresstest, Nutzungsdauer-/KANU-Fragen oder Maßnahmennotizen mit hoher fachlicher Wirkung.
-- **Evidenz / Systeme:** fehlende Systemreferenzen, unklare Rückspielwege, nicht belegte Störungs-/Risikowirkung, schwache Evidenz, offene Sidecar-Prüffragen oder offene wirtschaftliche Überleitung.
+- **Evidenz / Systeme:** fehlende Systemreferenzen, unklare Rückspielwege, nicht belegte Störungs-/Risikowirkung, schwache Evidenz, offene Sidecar-Klärfragen oder offene wirtschaftliche Überleitung.
 - **Dokumentation:** fehlende Akten-/Ziel-Zuordnung, fehlende Maßnahmendokumentation, nicht dokumentierte Befassung oder unklare Provenienz.
 - **Geklärt:** Punkte, die mit Befassungsnotiz nachvollziehbar abgeschlossen wurden.
 
@@ -181,7 +181,7 @@ Nicht jedes bewertungsrelevante Wissen ist eine Maßnahme. In einer Planungsrund
 
 **Situation im EVU:** Während der Datenerhebung stellt sich heraus, dass eine Maßnahme von einer Lastanfrage, einem GIS-/Anlagenbuchhaltungs-Mapping, einem Netzfahrplan, einem Stilllegungsgebiet oder einer externen Quelle abhängt. Die Information ist entscheidungsrelevant, aber noch keine Investitionsmaßnahme.
 
-**Fachliche Frage:** Ist dieser Punkt eine Maßnahme oder ein Kontext-/Evidenzobjekt? Wird daraus sofort eine Rechenwirkung, oder ist es zunächst ein Prüfauftrag für Datenqualität, Quelle, Steuerungsfähigkeit oder Szenarioannahme?
+**Fachliche Frage:** Ist dieser Punkt eine Maßnahme oder ein Kontext-/Evidenzobjekt? Wird daraus sofort eine Rechenwirkung, oder ist es zunächst ein Arbeitsauftrag für Datenqualität, Quelle, Steuerungsfähigkeit oder Szenarioannahme?
 
 **App-Beitrag:** Der Bereich **„Evidenz & Systeme“** führt solche Sidecar-Objekte getrennt von der Maßnahmenliste. Jedes Objekt erhält Sparte, Objektklasse, Status, Evidenzstatus, Rechenwirkung, Sensitivität, Exportstatus, Quellenreferenzen, offene Fragen und optionale Verknüpfungen zu Maßnahmen oder Szenarien. Strom nutzt andere Einstiegskategorien als Gas: Bei Strom stehen zum Beispiel Netzkoppelung, Lastanfragen, Steuerbarkeit, Redispatch, iMSys/CLS, Netzfahrplan oder Datenqualität im Vordergrund; bei Gas eher Kunden-/Lastpfade, Stilllegung/Rückbau, Wärmeplanung, Umwidmung/Wasserstofffähigkeit, No-Regret-Kontext oder Asset-Mapping.
 
@@ -199,13 +199,13 @@ Typische Nutzung in dieser Story:
 
 ## Gas-Transformationspfad: Stilllegung, Rückbau und Rückstellungen strukturieren
 
-Bei Gasnetzen reicht eine klassische Reinvestitionssicht nicht aus. Eine Maßnahme kann Weiterbetrieb sichern, eine Stilllegung vorbereiten, physischen Rückbau auslösen, im Boden belassen werden oder als H2-/Umwidmungsoption offen bleiben. Gleichzeitig entstehen bilanzielle und regulatorische Prüffragen: Rückstellungsfähigkeit, Wegfall der sogenannten Ewigkeitsvermutung, Kostenabgrenzung zwischen Stilllegung und Rückbau, KANU-/AfA-Wirkung, KAnEu-/Ist-Kosten-Behandlung und spätere Netzentgeltwirkung.
+Bei Gasnetzen reicht eine klassische Reinvestitionssicht nicht aus. Eine Maßnahme kann Weiterbetrieb sichern, eine Stilllegung vorbereiten, physischen Rückbau auslösen, im Boden belassen werden oder als H2-/Umwidmungsoption offen bleiben. Gleichzeitig entstehen bilanzielle und regulatorische Klärfragen: Rückstellungsfähigkeit, Wegfall der sogenannten Ewigkeitsvermutung, Kostenabgrenzung zwischen Stilllegung und Rückbau, KANU-/AfA-Wirkung, KAnEu-/Ist-Kosten-Behandlung und spätere Netzentgeltwirkung.
 
 **Situation im EVU:** In einer Gas-Planungsrunde wird eine Maßnahme nicht nur als Kostenposition bewertet. Bilanzierung fragt, ob eine Verpflichtung und ein belastbarer Erfüllungszeitpunkt vorliegen. Regulierungsmanagement fragt, ob ein Kostenpfad, KAnEu-/Ist-Kosten-Behandlung oder ein noch unsicherer Ruleset-Stand betroffen ist. Asset Management fragt, ob technisch weiterbetrieben, stillgelegt, zurückgebaut oder umgewidmet werden soll.
 
 **Fachliche Frage:** Welche Herleitung ist erforderlich, bevor ein Wert in Befassungsvorlage, Wirtschaftsplan oder Rückstellungsdiskussion auftauchen darf?
 
-**App-Beitrag:** Bei Sparte Gas zeigt die App im Maßnahmenformular den **Gas-Transformationspfad**. Dort werden Pfad, Objektart, Pflicht-/Anspruchsgrund, Ewigkeitsvermutung, Rückstellungs-Check, regulatorische Behandlung und Evidenz dokumentiert. Die App formuliert daraus HGB-/Rückstellungsfragen und regulatorische Prüffragen, trifft aber keine automatische Rückstellungs-, Rückbaupflicht- oder Anerkennungsentscheidung. Wenn eine lange Gas-Nutzungsdauer nach Wegfall der Ewigkeitsvermutung über den KANU-/Transformationshorizont hinausläuft, zeigt sie zusätzlich **„Nutzungsdauer-Entscheid erforderlich“** und verlangt eine bewusste fachliche Einordnung, bevor Kennzahlen unkritisch verwendet werden.
+**App-Beitrag:** Bei Sparte Gas zeigt die App im Maßnahmenformular den **Gas-Transformationspfad**. Dort werden Pfad, Objektart, Pflicht-/Anspruchsgrund, Ewigkeitsvermutung, Rückstellungs-Check, regulatorische Behandlung und Evidenz dokumentiert. Die App formuliert daraus HGB-/Rückstellungsfragen und regulatorische Klärfragen, trifft aber keine automatische Rückstellungs-, Rückbaupflicht- oder Anerkennungsentscheidung. Wenn eine lange Gas-Nutzungsdauer nach Wegfall der Ewigkeitsvermutung über den KANU-/Transformationshorizont hinausläuft, zeigt sie zusätzlich **„Nutzungsdauer-Entscheid erforderlich“** und verlangt eine bewusste fachliche Einordnung, bevor Kennzahlen unkritisch verwendet werden.
 
 **Ergebnis:** Stilllegung, Rückbau, Reinvestition, H2-/Umwidmung und Belassen im Boden werden nicht als freie Notiz versteckt, sondern als prüfpflichtige Fachschicht im Arbeitsstand geführt. Bei Strom bleibt diese Ebene ausgeblendet und ohne Wirkung.
 

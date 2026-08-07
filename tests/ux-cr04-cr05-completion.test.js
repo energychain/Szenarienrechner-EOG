@@ -4,6 +4,13 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync('index.html', 'utf8');
 const ui = readFileSync('src/ui.js', 'utf8');
 const css = readFileSync('src/styles.css', 'utf8');
+const promptGenerator = readFileSync('src/ai-prompt-generator.js', 'utf8');
+const engine = readFileSync('src/engine.js', 'utf8');
+const contextualHelp = readFileSync('src/contextual-help.js', 'utf8');
+const llmContext = readFileSync('llm.txt', 'utf8');
+const aiPromptDocs = readFileSync('docs/ai-prompts.md', 'utf8');
+const userStory = readFileSync('docs/story/planungsrunde-userstory.md', 'utf8');
+const publicTerminologyText = [html, ui, promptGenerator, engine, contextualHelp, llmContext, aiPromptDocs, userStory].join('\n');
 
 const teurFields = [
   'deductionCapital',
@@ -148,5 +155,22 @@ describe('CR-05 language and glossary', () => {
     expect(css).toContain('.glossary-entry.active');
     expect(css).toContain('.glossary-list button.active {\n  color: var(--ink);');
     expect(css).toContain('.menu-section-title.danger');
+  });
+
+  it('uses Klärpunkt/Klärfrage instead of the older wording in visible artifacts', () => {
+    const oldPrefix = 'Pr' + 'üf';
+    const outdatedTerms = [
+      `${oldPrefix}punkt`,
+      `${oldPrefix}punkte`,
+      `${oldPrefix}frage`,
+      `${oldPrefix}fragen`,
+      `${oldPrefix}auftrag`,
+    ];
+    for (const outdatedTerm of outdatedTerms) {
+      expect(publicTerminologyText).not.toContain(outdatedTerm);
+    }
+    expect(ui).toContain("term: 'Klärpunkt'");
+    expect(ui).toContain('Kontextobjekt-Klärpunkt');
+    expect(promptGenerator).toContain('Sidecar-Klärfragen');
   });
 });

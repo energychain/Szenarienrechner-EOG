@@ -33,7 +33,7 @@ Der Prompt enthält inzwischen zusätzlich die expliziten Stresstest-Parameter d
 
 ## Prüfen & Klären / Befassungs-Workbench
 
-Der Prompt-Export übernimmt einen aggregierten Auszug der aktuellen Klärfall-Logik. Kanban-Karten entstehen deterministisch aus Wirkannahmen/Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Prüffragen. Die Auswertung nennt die Verteilung auf „Hohe Steuerungswirkung“, „Evidenz / Systeme“ und „Dokumentation“, zeigt exemplarische Klärfälle mit Bearbeitungsziel und führt vorhandene Befassungsnotizen als Statusauszug. Befassungsnotizen sind Zwischenstände; ein Klärpunkt gilt erst nach explizitem Abschluss als erledigt.
+Der Prompt-Export übernimmt einen aggregierten Auszug der aktuellen Klärfall-Logik. Kanban-Karten entstehen deterministisch aus Wirkannahmen/Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Klärfragen. Die Auswertung nennt die Verteilung auf „Hohe Steuerungswirkung“, „Evidenz / Systeme“ und „Dokumentation“, zeigt exemplarische Klärfälle mit Bearbeitungsziel und führt vorhandene Befassungsnotizen als Statusauszug. Befassungsnotizen sind Zwischenstände; ein Klärpunkt gilt erst nach explizitem Abschluss als erledigt.
 
 Für Strom-Flexibilitäten enthält der Prompt zusätzlich eine feste Abgrenzung: Flexibilitätsobjekte, Netzfahrpläne, Speicher-/Laststeuerung und AGNeS-Bezüge sind nicht automatisch klassische Netz-CAPEX. Sie beschreiben mögliche OPEX-gegen-CAPEX-Substitutionen. Eine rechnerische Wirkung soll erst interpretiert werden, wenn Netzfahrplan, vermiedene oder verschobene CAPEX, jährliche Flex-OPEX und Steuerungs-/Nachweislogik belastbar dokumentiert sind.
 
@@ -41,7 +41,7 @@ Für Strom-Maßnahmen mit EEG-2027-/Netzanschluss-Entwurfsfeldern enthält der P
 
 Anlagenscharfe PV-, Speicher-, negative-Preise- oder CfD-Rechnungen sind nicht Teil des Prompt-Kontexts der Akte. Sie sind als separates Modul `CR-FLEXCALC-001` geschnitten; in der Akte und im Prompt erscheinen daraus nur aggregierte TEUR-Wirkungen p.a. und Evidenz-/Annahmenverweise.
 
-Flexibilitäts- und AGNeS-Daten werden im Prompt dedupliziert: Klassische CAPEX-Maßnahmen enthalten keine leeren Default-Felder wie `agnesRelevant=false` oder `agnesRole=offen`. Flexibilitäts-/Netzfahrplanobjekte erscheinen stattdessen in einem eigenen Abschnitt „Strom-Flexibilitätsobjekte / Netzfahrplan / AGNeS“ — auch dann, wenn sie als Kontext- oder Prüfobjekt nicht rechenwirksam sind. Wenn ein Flexibilitätsobjekt wegen fehlendem Netzfahrplan, fehlender Quantifizierung oder ungeklärter AGNeS-/Nachweislogik nicht wirkt, wird der Klärpunkt `strom_flexibility_review` ausgegeben.
+Flexibilitäts- und AGNeS-Daten werden im Prompt dedupliziert: Klassische CAPEX-Maßnahmen enthalten keine leeren Default-Felder wie `agnesRelevant=false` oder `agnesRole=offen`. Flexibilitäts-/Netzfahrplanobjekte erscheinen stattdessen in einem eigenen Abschnitt „Strom-Flexibilitätsobjekte / Netzfahrplan / AGNeS“ — auch dann, wenn sie als Kontextobjekt nicht rechenwirksam sind. Wenn ein Flexibilitätsobjekt wegen fehlendem Netzfahrplan, fehlender Quantifizierung oder ungeklärter AGNeS-/Nachweislogik nicht wirkt, wird der Klärpunkt `strom_flexibility_review` ausgegeben.
 
 ## Kontext & Evidenz / Sidecar im Prompt
 
@@ -53,7 +53,7 @@ Der Prompt berücksichtigt dabei die Export- und Sensitivitätslogik der Sidecar
 - `exportStatus=sanitized_only` entfernt Detailzusammenfassungen und Quellenreferenzen und hält nur die entscheidungsrelevante Struktur.
 - Sidecar-Objekte bleiben als nicht KPI-wirksam gekennzeichnet, solange keine explizite Rechenwirkung definiert ist.
 - Überleitungslogik wird separat ausgewiesen: Sidecar sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung. `sidecarType`, `activationStatus`, `calculationImpact` und `bridgeLogic.quantificationStatus` werden exportiert, damit ein KI-System Kontext, Sensitivität, Wirkannahme und wirtschaftliche Überleitung nicht mit klassischen Maßnahmen verwechselt.
-- Offene Fragen werden als Arbeits-/Prüfauftrag formuliert, nicht als Beschluss- oder Freigabeaussage.
+- Offene Fragen werden als Arbeitsauftrag formuliert, nicht als Beschluss- oder Freigabeaussage.
 
 Für den Prompt-Typ **„Arbeitsstand hinterfragen“** ist der Sidecar besonders relevant: Das KI-System soll prüfen, ob Datenqualität, Quellenlage, Steuerungsfähigkeit oder externe Abhängigkeiten ausreichend dokumentiert sind und welche Fragen an Regulierung, Bilanzierung, Technik, Datenmanagement oder Management zurückgespielt werden müssen.
 
