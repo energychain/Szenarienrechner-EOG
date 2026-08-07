@@ -888,7 +888,7 @@
 
     .info-popover {
       position: fixed;
-      z-index: 30;
+      z-index: 90;
       width: min(460px, calc(100vw - 28px));
       padding: 12px 14px;
       border: 1px solid var(--line);

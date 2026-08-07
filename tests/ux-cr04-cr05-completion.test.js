@@ -123,12 +123,14 @@ describe('CR-05 language and glossary', () => {
     expect(ui).toContain("type: 'Glossar'");
   });
 
-  it('links info-dot popovers to matching glossary entries', () => {
+  it('links info-dot popovers to matching glossary entries and keeps them above modals', () => {
     expect(ui).toContain('function glossarySlugForHelp');
     expect(ui).toContain('data-open-glossary');
     expect(ui).toContain('Im Glossar öffnen');
     expect(ui).toContain("window.addEventListener('hashchange', applyGlossaryDeepLink)");
     expect(css).toContain('.popover-glossary-link');
+    expect(css).toMatch(/\.info-popover\s*\{[\s\S]*?z-index:\s*90;/);
+    expect(css).toMatch(/\.modal\s*\{[\s\S]*?z-index:\s*60;/);
   });
 
   it('keeps the Mehr menu to the three CR-05 sections', () => {
