@@ -89,6 +89,8 @@ describe('AI prompt generator', () => {
     expect(prompt).toContain('Regulierungsstand: regulatory-parameters-2026-07');
     expect(prompt).toContain('EOG-Wirkung ist nicht gleich Cashflow');
     expect(prompt).toContain('Basis vs. konservativ');
+    expect(prompt).toContain('Budget-Tragfähigkeit / Maßnahmenklassifikation');
+    expect(prompt).toContain('Kontextobjekte bleiben sichtbar, aber nicht automatisch KPI-wirksam');
     expect(prompt).toContain('Diese App sendet nichts an eine KI');
     expect(prompt).toContain('Interne Befassung Controlling');
     expect(prompt).not.toContain('Budgetrunde intern');
@@ -104,6 +106,8 @@ describe('AI prompt generator', () => {
     }, { buildInfo: build, ruleset: regulatoryParameterSet });
 
     expect(redacted.measures[0].name).toBe('Maßnahme 1');
+    expect(redacted.viabilityOverview.totalCount).toBeGreaterThan(0);
+    expect(redacted.viabilityOverview.categories.asset_preservation_must).toBeTruthy();
     expect(JSON.stringify(redacted)).not.toContain('Netzautomatisierung Demogebiet Alpha');
     expect(JSON.stringify(redacted)).not.toContain('Budgetrunde intern');
   });

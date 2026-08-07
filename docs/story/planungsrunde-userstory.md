@@ -121,17 +121,40 @@ Typische Nutzung in dieser Story:
 
 Damit wird die App zum wiederaufnahmefähigen Arbeitsstand: Kennzahlen, Annahmen, Report, Befassungen und Projektsteuerung bleiben in einer Datei verbunden.
 
-## Aktueller Arbeitsmodus: Akte, Bearbeiten, Evidenz, Klärung, Präsentation, Export
+## Aktueller Arbeitsmodus: Akte, Grundlagen, Bearbeiten, Evidenz, Klärung, Präsentation, Export
 
-Die aktuelle Anwendung ist als digitale Akte organisiert. Der Einstieg zeigt nicht mehr möglichst viele Eingabefelder, sondern einen kompakten Arbeitsstand: Sparte, Phase, Entscheidungsreife, aktive Maßnahmen, offene Klärpunkte, Evidenzlage und nächster Schritt. Von dort führt die Navigation in die fünf operativen Arbeitsräume:
+Die aktuelle Anwendung ist als digitale Akte organisiert. Der Einstieg zeigt nicht mehr möglichst viele Eingabefelder, sondern einen kompakten Arbeitsstand: Sparte, Phase, Entscheidungsreife, aktive Maßnahmen, offene Klärpunkte, Evidenzlage und nächster Schritt. Von dort führt die Navigation in die operativen Arbeitsräume:
 
-- **Bearbeiten:** Stammdaten, Szenarioannahmen, Stresstest-Parameter und Maßnahmenwerte pflegen.
+- **Grundlagen:** Stammdaten, Modellrahmen, Szenarioannahmen und konservative Stresstest-Parameter pflegen.
+- **Bearbeiten:** Maßnahmenwerte, Wirkannahmen, Systemreferenzen, Budget-Tragfähigkeit und fachliche Notizen bearbeiten.
 - **Evidenz & Systeme:** Sidecar-Objekte, Systemreferenzen, Rückspielwege, Datenqualität und wirtschaftliche Überleitung bearbeiten.
-- **Prüfen & Klären:** deterministische Kanban-Karten aus Wirkannahmen, Warnungen, Maßnahmen-Evidenz, Dokumentationslücken und Sidecar-Prüffragen abarbeiten.
+- **Prüfen & Klären:** deterministische Kanban-Karten aus Wirkannahmen, Warnungen, Maßnahmen-Evidenz, Dokumentationslücken, Tragfähigkeitslogik und Sidecar-Prüffragen abarbeiten.
 - **Präsentation:** eine fokussierte Start- und Befassungsansicht mit Arbeitsstand-Score, Kontext und nächsten Klärfragen öffnen.
 - **Export:** JSON, HTML mit Daten, Tabellenexport, Report und KI-Prompt bewusst erzeugen.
 
 Der wichtigste Unterschied zur früheren Rechnerlogik: Die App zeigt nicht nur, was rechnerisch herauskommt, sondern auch, welche Evidenz, Dokumentation und Befassung noch fehlen. Ein guter Arbeitsstand ist daher nicht automatisch der Stand mit dem höchsten Kapitalwert, sondern der Stand, dessen Annahmen, Quellen, offenen Punkte und nächsten Arbeitsschritte nachvollziehbar sind.
+
+## Budget-Tragfähigkeit: Maßnahmen für knappe Budgetrunden klassifizieren
+
+<a id="budget-tragfaehigkeit"></a>
+
+Neben Kosten und Kennzahlen braucht eine Planungsrunde eine Management-Sprache dafür, warum eine Maßnahme im knappen Budgetrahmen tragfähig ist. Die App führt deshalb je Sparte eine zusätzliche, KPI-neutrale Maßnahmenklassifikation. Strom und Gas werden nicht gemischt aggregiert.
+
+Die fünf Klassen sind:
+
+- **Regulatorisches Muss:** rechtliche, regulatorische, vertragliche, Sicherheits- oder Compliance-Gründe.
+- **Substanzerhalt / Versorgungssicherheit:** Erhalt der Netzsubstanz, Zustandsrisiko, Störungsvermeidung oder Betriebsfähigkeit.
+- **Transformation / No-Regret:** robuste Maßnahme über mehrere Transformationspfade hinweg.
+- **Strategische Option:** zukünftige Anschluss-, Steuerungs-, Zielnetz- oder Flexibilitätsfähigkeit.
+- **Synergie / Timing:** Maßnahme hängt an einem Bau-, Koordinations- oder Bündelungsfenster.
+
+**Situation im EVU:** In der Budgetrunde reicht die Aussage „alles ist Muss“ nicht. Management und Controlling müssen erkennen, ob ein Posten gesetzlich gebunden, substanzerhaltend, transformationsrobust, strategisch optional oder zeitfensterkritisch ist.
+
+**App-Beitrag:** Die Ansicht **Budget-Tragfähigkeit** verdichtet pro Sparte Anzahl, CAPEX, offene Klärungen und abgeleitete Einordnungen je Kategorie. Im Maßnahmeneditor kann die Kategorie manuell gesetzt oder konservativ aus vorhandenen Feldern abgeleitet werden. Abgeleitete Klassifikationen bleiben reviewpflichtig und erzeugen Klärpunkte, wenn Tragfähigkeits- oder Refinanzierungsbrücken fehlen.
+
+**Ergebnis:** Aus der Maßnahmenliste wird keine automatische Priorisierungsentscheidung. Sie erhält aber eine nachvollziehbare Einordnung: Welche Maßnahmen sind Pflicht, welche bewahren Substanz, welche sind Optionen, welche hängen am Timing und wo fehlt noch die wirtschaftliche Überleitung.
+
+**Beraterhinweis:** Ein Senior Consultant würde diese Schicht nicht als neue Rechenlogik verwenden. Sie ist eine Befassungs- und Budgetsteuerungsschicht. EOG, RAB, IRR, Kapitalwert und Risikowerte bleiben unverändert; die Klassifikation erklärt nur, welche Tragfähigkeitslogik zu prüfen oder zu dokumentieren ist.
 
 ## Prüfen & Klären: Kanban und Befassungs-Workbench
 
