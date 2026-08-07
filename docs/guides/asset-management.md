@@ -2,7 +2,7 @@
 
 Asset Management bringt technische Bedarfe in eine finanzielle Entscheidungslogik.
 
-## Prüffragen
+## Klärfragen
 
 - Welcher technische Anlass ist belegt?
 - Welche Maßnahme ist Muss, Option oder Strategiebaustein?

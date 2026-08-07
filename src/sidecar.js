@@ -206,12 +206,12 @@ function sanitizeObject(object) {
     ...object,
     summary: sanitized ? 'Details sanitisiert; interne Quelle im vollständigen Arbeitsstand prüfen.' : object.summary,
     sourceRefs: sanitized ? [] : object.sourceRefs,
-    openQuestions: object.openQuestions.map(question => sanitized ? 'Prüffrage sanitisiert' : question),
+    openQuestions: object.openQuestions.map(question => sanitized ? 'Klärfrage sanitisiert' : question),
     bridgeLogic: {
       ...object.bridgeLogic,
       sourceRefs: sanitized ? [] : object.bridgeLogic.sourceRefs,
       assumptions: object.bridgeLogic.assumptions.map(item => sanitized ? 'Annahme sanitisiert' : item),
-      openQuestions: object.bridgeLogic.openQuestions.map(item => sanitized ? 'Brücken-Prüffrage sanitisiert' : item)
+      openQuestions: object.bridgeLogic.openQuestions.map(item => sanitized ? 'Brücken-Klärfrage sanitisiert' : item)
     }
   };
 }

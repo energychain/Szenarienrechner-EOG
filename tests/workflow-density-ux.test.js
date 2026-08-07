@@ -8,7 +8,7 @@ const css = readFileSync('src/styles.css', 'utf8');
 describe('workflow density and clarification UX fixes', () => {
   it('keeps sidecar summary counters actionable and uses one clear edit action', () => {
     expect(ui).toContain('data-sidecar-summary-filter="open_questions"');
-    expect(html).toContain('<option value="open_questions">offene Prüfpunkte</option>');
+    expect(html).toContain('<option value="open_questions">offene Klärpunkte</option>');
     expect(ui).toContain('sidecarModeFilter = button.dataset.sidecarSummaryFilter');
     expect(ui).toContain('Bearbeiten/Verknüpfen');
     expect(ui).not.toContain('Felder, Maßnahmenbezug und Überleitungslogik öffnen</small>');

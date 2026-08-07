@@ -42,7 +42,7 @@ Am Ende des Workshops liegt vor:
 | --- | --- | --- |
 | Freigeben | Basis und konservativ tragen, keine kritischen Klärpunkte | Quelle und Beschlussstand archivieren |
 | Freigeben mit Auflage | Basis trägt, konservativ kippt oder Wirkannahmen sind prüfpflichtig | werttragende Annahmen und Fristen benennen |
-| Zurückstellen | Basiscase trägt nicht oder Datenlage unvollständig | Grund und nächster Prüfpunkt festhalten |
+| Zurückstellen | Basiscase trägt nicht oder Datenlage unvollständig | Grund und nächster Klärpunkt festhalten |
 | Strategisch entscheiden | Maßnahme ist technisch/politisch notwendig, aber wirtschaftlich schwach | Entscheidung außerhalb reiner Wirtschaftlichkeit klar begründen |
 
 ## Beraterhinweis

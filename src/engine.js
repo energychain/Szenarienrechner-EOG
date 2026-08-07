@@ -1300,7 +1300,7 @@ export function workstandReliabilityFor(model = {}, result = null) {
       : '0 Objekte',
     severity: sidecar.weakEvidence || sidecar.openQuestions || sidecar.dataQualityOpen ? 'warn' : 'good',
     detail: sidecar.total
-      ? `${sidecar.openQuestions} offene Kontextobjekt-Prüffrage(n), ${sidecar.dataQualityOpen} Datenqualitätsobjekt(e) offen.`
+      ? `${sidecar.openQuestions} offene Kontextobjekt-Klärfrage(n), ${sidecar.dataQualityOpen} Datenqualitätsobjekt(e) offen.`
       : 'Noch keine Kontext-/Evidenzobjekte erfasst.'
   });
 
@@ -1309,7 +1309,7 @@ export function workstandReliabilityFor(model = {}, result = null) {
     title: 'Belastbarkeit des Arbeitsstands',
     verdict: warnCount ? 'prüfpflichtig' : 'belastbar dokumentiert',
     caveat: warnCount
-      ? 'Diese Kachel operationalisiert Nicht-Aussagen: positive KPIs bleiben als Arbeitsstand zu lesen, solange Evidenz, Zielbezug, Typisierung oder Kontextobjekt-Prüfpunkte offen sind.'
+      ? 'Diese Kachel operationalisiert Nicht-Aussagen: positive KPIs bleiben als Arbeitsstand zu lesen, solange Evidenz, Zielbezug, Typisierung oder Kontextobjekt-Klärpunkte offen sind.'
       : 'Keine aggregierten Belastbarkeitswarnungen in den geprüften Feldern.',
     systemReferences: { totalActive: activeMeasures.length, incomplete: systemReferenceIncomplete.length },
     riskMapping: { riskMeasures: riskMeasures.length, incomplete: riskMappingIncomplete.length },

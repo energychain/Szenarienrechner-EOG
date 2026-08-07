@@ -60,7 +60,7 @@ describe('presentation focus window and clarification kanban', () => {
     expect(ui).toContain("title: 'Störungs-/Risikowirkung belegen'");
     expect(ui).toContain("title: 'Ziel-Zuordnung dokumentieren'");
     expect(ui).toContain('function sidecarClarificationItems()');
-    expect(ui).toContain("title: 'Evidenz-/Kontextobjekt-Prüfpunkt klären'");
+    expect(ui).toContain("title: 'Evidenz-/Kontextobjekt-Klärpunkt klären'");
     expect(ui).toContain("if (['high', 'evidence', 'normal'].includes(item.column)) return item.column;");
     expect(ui).toContain('openSidecarWorkItem');
   });

@@ -220,13 +220,13 @@ const glossaryEntries = [
   { slug: 'vereinfachtes-verfahren', term: 'vereinfachtes Verfahren', definition: 'Regulierungsvereinfachung nach § 24 ARegV.', calculator: 'Ändert die Einordnung einzelner Q-/E-Komponenten und wird als Verfahren dokumentiert.', source: 'ARegV, Bescheid, Regulierungsmanagement.' },
   { slug: 'no-regret', term: 'No-Regret', definition: 'Maßnahme, die auch unter Unsicherheit fachlich naheliegt.', calculator: 'Kennzeichnet Maßnahmen mit strategischer oder Risiko-Begründung trotz offener Details.', source: 'Strategie, Asset Management, Risikoanalyse.' },
   { slug: 'kontextobjekt', term: 'Kontextobjekt', aliases: ['Sidecar', 'Evidenzobjekt'], definition: 'Evidenz-, System- oder Kontextinformation außerhalb klassischer Maßnahmen; Sidecar ist der technische Alias in Datenmodell und Doku.', calculator: 'Bleibt grundsätzlich KPI-neutral; Rechenwirkung nur bei expliziter Aktivierung und Mapping.', source: 'Quellen, Systeme, Evidenzprüfung, Modulimporte.' },
-  { slug: 'sidecar', term: 'Sidecar', aliases: ['Kontextobjekt', 'Evidenzobjekt'], definition: 'Technischer Begriff für ein Kontextobjekt neben der eigentlichen Maßnahmenliste. Ein Sidecar hält Quellen, Datenqualität, Systembezüge, offene Prüffragen oder wirtschaftliche Überleitungsannahmen fest, ohne selbst automatisch Maßnahme oder KPI-Beitrag zu sein.', calculator: 'In der UI wird meist „Kontextobjekt“ verwendet; im Datenmodell, in Modulimporten und in älterer Doku kann „Sidecar“ stehen. KPI-Wirkung entsteht nur bei expliziter Aktivierung und definierter Mapping-Logik.', source: 'Kontextobjekt-/Sidecar-Import, Evidenz & Systeme, Modul-B-Ergebnis, Datenqualitätsprüfung.' },
+  { slug: 'sidecar', term: 'Sidecar', aliases: ['Kontextobjekt', 'Evidenzobjekt'], definition: 'Technischer Begriff für ein Kontextobjekt neben der eigentlichen Maßnahmenliste. Ein Sidecar hält Quellen, Datenqualität, Systembezüge, offene Klärfragen oder wirtschaftliche Überleitungsannahmen fest, ohne selbst automatisch Maßnahme oder KPI-Beitrag zu sein.', calculator: 'In der UI wird meist „Kontextobjekt“ verwendet; im Datenmodell, in Modulimporten und in älterer Doku kann „Sidecar“ stehen. KPI-Wirkung entsteht nur bei expliziter Aktivierung und definierter Mapping-Logik.', source: 'Kontextobjekt-/Sidecar-Import, Evidenz & Systeme, Modul-B-Ergebnis, Datenqualitätsprüfung.' },
   { slug: 'entscheidungsreife', term: 'Entscheidungsreife', definition: 'Arbeitsstand-Score zur Einordnung von Daten-, Evidenz- und Klärpunktreife.', calculator: 'Trennt rechnerische Indikation von fachlicher Befassungsgrundlage.', source: 'Akte, Projektplan, Klärpunkte, Kontextobjekte.' },
-  { slug: 'agnes', term: 'AGNeS', definition: 'Arbeitsbegriff für steuerbare Netz-/Flexibilitätsobjekte im Stromkontext.', calculator: 'AGNeS-Relevanz wird als eigener Prüfpunkt geführt; ohne validierten Netzfahrplan entsteht keine automatische Ergebniswirkung.', source: 'Netzplanung, Steuerbarkeitskonzept, Strom-Flexibilitätsprüfung.' },
+  { slug: 'agnes', term: 'AGNeS', definition: 'Arbeitsbegriff für steuerbare Netz-/Flexibilitätsobjekte im Stromkontext.', calculator: 'AGNeS-Relevanz wird als eigener Klärpunkt geführt; ohne validierten Netzfahrplan entsteht keine automatische Ergebniswirkung.', source: 'Netzplanung, Steuerbarkeitskonzept, Strom-Flexibilitätsprüfung.' },
   { slug: 'netzfahrplan', term: 'Netzfahrplan', definition: 'Planungs- oder Betriebsrahmen, der Steuerbarkeit, Einspeisung, Last oder Flexibilität netzdienlich einordnet.', calculator: 'Er stützt Strom-Flexibilitätsobjekte und die Prüfung vermiedener oder verschobener CAPEX.', source: 'Netzplanung, Anschlusskonzept, Betriebsführung.' },
   { slug: 'flexibilitaetsobjekt', term: 'Flexibilität(sobjekt)', aliases: ['Flexibilität', 'Flexibilitätsobjekt'], definition: 'Strom-Kontextobjekt oder Maßnahmentyp für steuerbare Last, Einspeisung, Speicher oder netzdienliche Betriebsweise.', calculator: 'Kann OPEX-gegen-CAPEX-Substitution oder vermiedene/verschobene CAPEX als prüfpflichtige TEUR-Wirkung dokumentieren.', source: 'Netzplanung, Redispatch-/Steuerbarkeitsdaten, Modulrechnung.' },
   { slug: 'eeg-2027-netzanschlusspaket', term: 'EEG 2027 / Netzanschlusspaket', aliases: ['Kabinettsentwurf 29.07.2026'], definition: 'Entwurfsbasierter Strom-Regelstand für EEG- und Netzanschlussannahmen; kein endgültiges geltendes Recht.', calculator: 'Kennzeichnet Strom-Annahmen, Entwurfswarnungen und Klärpunkte; Gas-Akten bleiben davon unberührt.', source: 'Kabinettsentwürfe, parlamentarischer Stand, BNetzA-Folgefestlegungen.' },
-  { slug: 'kapazitaetslimitiertes-netzgebiet', term: 'kapazitätslimitiertes Netzgebiet', definition: 'Strom-Netzgebiet, in dem Anschluss- oder Einspeisekapazität planerisch begrenzt oder bewirtschaftet wird.', calculator: 'Markiert Redispatch-/Anschlussrisiken, Erlösrisiko und Nachweisbedarf als Strom-only Prüfpunkte.', source: 'Netzplanung, Anschlussprüfung, Entwurfsregelstand.' },
+  { slug: 'kapazitaetslimitiertes-netzgebiet', term: 'kapazitätslimitiertes Netzgebiet', definition: 'Strom-Netzgebiet, in dem Anschluss- oder Einspeisekapazität planerisch begrenzt oder bewirtschaftet wird.', calculator: 'Markiert Redispatch-/Anschlussrisiken, Erlösrisiko und Nachweisbedarf als Strom-only Klärpunkte.', source: 'Netzplanung, Anschlussprüfung, Entwurfsregelstand.' },
   { slug: 'erloesrisiko', term: 'Erlösrisiko', definition: 'Möglicher jährlicher Erlösverlust oder wirtschaftlicher Nachteil aus Abregelung, Redispatch, Anschluss- oder Marktrisiken.', calculator: 'Wird in TEUR p.a. dokumentiert und kann als Risikowert in die bestehende Portfolio-Logik einfließen.', source: 'Modulrechnung, Netzplanung, Direktvermarktung, Controlling.' },
   { slug: 'risk-avoided', term: 'Risikowert (RiskAvoided)', aliases: ['RiskAvoided', 'Risiko-/Vermeidungseffekt'], definition: 'Arbeitswert für vermiedene Risiken oder Störungskosten durch eine Maßnahme.', calculator: 'Erhöht nicht automatisch Evidenzqualität; Herleitung, Quelle und Mapping bleiben prüfpflichtig.', source: 'Risikoregister, Störungsdaten, fachliche Bewertung.' },
   { slug: 'ewigkeitsvermutung', term: 'Ewigkeitsvermutung', definition: 'Annahme, dass ein Gasnetz dauerhaft weiterbetrieben wird.', calculator: 'Wenn sie entfällt, werden Nutzungsdauer, AfA, Restwerte, Stilllegung und Rückbau prüfpflichtig.', source: 'Gas-Transformationsplanung, Bilanzierung, Regulierung.' },
@@ -806,7 +806,7 @@ function projectTaskForClarification(item = {}) {
 
 function clarificationTargetFor(item = {}) {
   if (item.type === 'sidecar') {
-    return { fieldId: 'sidecarOpenQuestions', label: 'Kontextobjekt-Prüfpunkt', task: 'Evidenzobjekt, offene Prüffrage oder Überleitungslogik prüfen' };
+    return { fieldId: 'sidecarOpenQuestions', label: 'Kontextobjekt-Klärpunkt', task: 'Evidenzobjekt, offene Klärfrage oder Überleitungslogik prüfen' };
   }
   if (item.type === 'system_reference') {
     return { fieldId: 'mSourceSystem', label: 'Quellsystem / Datensatz', task: 'Rückspielweg und Systemreferenz ergänzen' };
@@ -983,7 +983,7 @@ function sidecarClarificationItems() {
     .filter(object => object.status !== 'archived')
     .map(object => {
       const reasons = [];
-      if (object.openQuestions?.length) reasons.push(`${object.openQuestions.length} offene Prüffrage(n)`);
+      if (object.openQuestions?.length) reasons.push(`${object.openQuestions.length} offene Klärfrage(n)`);
       if (weakEvidenceStatus(object.evidenceStatus)) reasons.push(`Evidenzstatus: ${sidecarEvidenceLabel(object)}`);
       if (object.type === 'data_quality' && object.evidenceStatus !== 'validated') reasons.push('Datenqualitätsobjekt nicht validiert');
       if (sidecarHasOpenBridgeLogic(object)) reasons.push('wirtschaftliche Überleitungslogik offen');
@@ -996,7 +996,7 @@ function sidecarClarificationItems() {
         area: 'Kontextobjekt',
         column: 'evidence',
         targetPhase: 'konsolidierung',
-        title: 'Evidenz-/Kontextobjekt-Prüfpunkt klären',
+        title: 'Evidenz-/Kontextobjekt-Klärpunkt klären',
         measure: object.title,
         detail: reasons.join(' · ')
       };
@@ -3229,7 +3229,7 @@ const storyResumeText = {
     dueDate: '2027-05-09'
   },
   entscheidungsvorlage: {
-    statusNote: 'Entscheidungsvorlage: priorisierte Maßnahmen, Kennzahlen und offene Prüfpunkte sind im Report zusammengeführt.',
+    statusNote: 'Entscheidungsvorlage: priorisierte Maßnahmen, Kennzahlen und offene Klärpunkte sind im Report zusammengeführt.',
     nextStep: 'Befassungsvorschlag mit Auflagen finalisieren und an den Befassungskreis geben.',
     owner: 'Modellverantwortung / Geschäftsführung',
     dueDate: '2027-06-20'
@@ -4628,10 +4628,10 @@ function presentationSlides(result, first, decision, metrics) {
     },
     { title: decision.title, eyebrow: 'Entscheidungslage', view: 'results', body: decision.text, visual: `<div class="metric-strip large"><span><strong>${fmtTeur(metrics.recurringRegulatoryEog, 1)}</strong>EOG</span><span><strong>${Number.isFinite(result.irr) ? fmtPct(result.irr * 100, 1) : '-'}</strong>IRR</span><span><strong>${fmtTeur(result.npv, 1)}</strong>NPV</span></div>` },
     { title: 'EOG ≠ Cashflow', eyebrow: 'Überleitung', view: 'results', body: `${fmtTeur(waterfall.firstFollowYear.regulatoryEogEffect, 1)} regulatorische EOG plus ${fmtTeur(waterfall.firstFollowYear.economicBridge, 1)} wirtschaftliche Überleitung.`, visual: `<div class="presentation-flow"><span>Basis-EOG</span><span>→</span><span>Maßnahmen</span><span>→</span><span>Cashflow-Überleitung</span></div>` },
-    { title: `${openItems.length} offene Klärpunkte`, eyebrow: 'Prüfauftrag', view: 'expertWork', body: openItems.slice(0, 4).map(item => `${item.priority?.label || 'normal'}: ${item.measure} · ${item.title}`).join(' | ') || 'Keine offenen Klärpunkte.', visual: kanbanCountHtml(openItems) },
+    { title: `${openItems.length} offene Klärpunkte`, eyebrow: 'Arbeitsauftrag', view: 'expertWork', body: openItems.slice(0, 4).map(item => `${item.priority?.label || 'normal'}: ${item.measure} · ${item.title}`).join(' | ') || 'Keine offenen Klärpunkte.', visual: kanbanCountHtml(openItems) },
     { title: 'Belastbarkeit des Arbeitsstands', eyebrow: 'Governance', view: 'results', body: `${reliability.verdict}. ${reliability.caveat}`, visual: `<div class="reliability-mini large">${reliability.items.slice(0, 4).map(item => `<span class="${item.severity === 'warn' ? 'amber' : 'green'}"><strong>${esc(item.value)}</strong>${esc(item.label)}</span>`).join('')}</div>` },
     { title: 'Evidenz & Systeme', eyebrow: 'Kontextobjekte', view: 'sidecar', body: 'Kontextobjekte, Systemreferenzen und Überleitungslogik bleiben sichtbar, aber ohne automatische KPI-Wirkung.', visual: `<div class="presentation-flow violet"><span>Quelle</span><span>→</span><span>Evidenz</span><span>→</span><span>Überleitung</span><span>→</span><span>Prüfung</span></div>` },
-    { title: 'Nächster Schritt', eyebrow: 'Befassung', view: 'projectPlan', body: processState.resume?.nextStep || projectPlanNextReadyTask(projectPlan)?.task?.title || 'Nächsten Prüfauftrag festlegen.', visual: `<div class="meeting-closeout">Arbeitsstand sichern · Report/Export erzeugen · nächste Befassung vorbereiten</div>` }
+    { title: 'Nächster Schritt', eyebrow: 'Befassung', view: 'projectPlan', body: processState.resume?.nextStep || projectPlanNextReadyTask(projectPlan)?.task?.title || 'Nächsten Arbeitsauftrag festlegen.', visual: `<div class="meeting-closeout">Arbeitsstand sichern · Report/Export erzeugen · nächste Befassung vorbereiten</div>` }
   ];
 }
 
@@ -6360,7 +6360,7 @@ function renderSidecar() {
   if (cards) {
     cards.innerHTML = `
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="all"><strong>${summary.total}</strong><span>Kontextobjekte</span></button>
-      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_questions"><strong>${summary.openQuestions}</strong><span>offene Prüfpunkte</span></button>
+      <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_questions"><strong>${summary.openQuestions}</strong><span>offene Klärpunkte</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="open_bridge_logic"><strong>${summary.openBridgeLogic}</strong><span>offene Überleitungslogik</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="quantified_effect"><strong>${summary.quantifiedNotActivated}</strong><span>quantifiziert, aber nicht aktiviert</span></button>
       <button type="button" class="summary-card summary-card-button" data-sidecar-summary-filter="activated"><strong>${summary.activated}</strong><span>aktiviert markiert</span></button>
@@ -6409,7 +6409,7 @@ function renderSidecar() {
           <div><label data-help-id="sidecarExportStatus">Exportstatus<select data-sidecar-field="exportStatus" data-sidecar-id="${esc(object.id)}"><option value="allowed" ${object.exportStatus === 'allowed' ? 'selected' : ''}>erlaubt</option><option value="sanitized_only" ${object.exportStatus === 'sanitized_only' ? 'selected' : ''}>nur sanitisiert</option><option value="excluded" ${object.exportStatus === 'excluded' ? 'selected' : ''}>ausgeschlossen</option></select></label></div>
           <div class="wide-field"><label data-help-id="sidecarTitle">Kurzbeschreibung<textarea data-sidecar-field="summary" data-sidecar-id="${esc(object.id)}" rows="2">${esc(object.summary)}</textarea></label></div>
           <div class="wide-field"><label data-help-id="sidecarLinkedMeasures">Verknüpfte Maßnahmen-IDs<input data-sidecar-field="linkedMeasures" data-sidecar-id="${esc(object.id)}" value="${esc(object.linkedMeasures.join(', '))}"></label></div>
-          <div class="wide-field"><label data-help-id="sidecarOpenQuestions">Offene Prüfpunkte<input data-sidecar-field="openQuestions" data-sidecar-id="${esc(object.id)}" value="${esc(object.openQuestions.join('; '))}"></label></div>
+          <div class="wide-field"><label data-help-id="sidecarOpenQuestions">Offene Klärpunkte<input data-sidecar-field="openQuestions" data-sidecar-id="${esc(object.id)}" value="${esc(object.openQuestions.join('; '))}"></label></div>
           <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Überleitungslogik Beschreibung<textarea data-sidecar-field="bridgeLogic.description" data-sidecar-id="${esc(object.id)}" rows="2" placeholder="Welche wirtschaftliche Beziehung ist gemeint?">${esc(object.bridgeLogic?.description || '')}</textarea></label></div>
           <div><label data-help-id="sidecarBridgeLogic">Wirkbeziehung<select data-sidecar-field="bridgeLogic.economicRelation" data-sidecar-id="${esc(object.id)}"><option value="none" ${object.bridgeLogic?.economicRelation === 'none' ? 'selected' : ''}>keine</option><option value="opex_effect" ${object.bridgeLogic?.economicRelation === 'opex_effect' ? 'selected' : ''}>OPEX-Effekt</option><option value="capex_dependency" ${object.bridgeLogic?.economicRelation === 'capex_dependency' ? 'selected' : ''}>CAPEX-Abhängigkeit</option><option value="revenue_effect" ${object.bridgeLogic?.economicRelation === 'revenue_effect' ? 'selected' : ''}>Erlöseffekt</option><option value="risk_effect" ${object.bridgeLogic?.economicRelation === 'risk_effect' ? 'selected' : ''}>Risikoeffekt</option><option value="timing_effect" ${object.bridgeLogic?.economicRelation === 'timing_effect' ? 'selected' : ''}>Timing-Effekt</option><option value="avoided_cost" ${object.bridgeLogic?.economicRelation === 'avoided_cost' ? 'selected' : ''}>vermiedene Kosten</option></select></label></div>
           <div><label data-help-id="sidecarQuantificationStatus">Quantifizierungsstatus<select data-sidecar-field="bridgeLogic.quantificationStatus" data-sidecar-id="${esc(object.id)}"><option value="not_applicable" ${object.bridgeLogic?.quantificationStatus === 'not_applicable' ? 'selected' : ''}>nicht anwendbar</option><option value="open" ${object.bridgeLogic?.quantificationStatus === 'open' ? 'selected' : ''}>offen</option><option value="described" ${object.bridgeLogic?.quantificationStatus === 'described' ? 'selected' : ''}>beschrieben</option><option value="working_value" ${object.bridgeLogic?.quantificationStatus === 'working_value' ? 'selected' : ''}>Arbeitswert</option><option value="validated" ${object.bridgeLogic?.quantificationStatus === 'validated' ? 'selected' : ''}>validiert</option></select></label></div>
@@ -6418,7 +6418,7 @@ function renderSidecar() {
           <div><label data-help-id="sidecarBridgeLogic">Einheit<input data-sidecar-field="bridgeLogic.amountUnit" data-sidecar-id="${esc(object.id)}" placeholder="z.B. TEUR/a" value="${esc(object.bridgeLogic?.amountUnit || '')}"></label></div>
           <div><label data-help-id="sidecarBridgeLogic">Zeithorizont<input data-sidecar-field="bridgeLogic.timeHorizon" data-sidecar-id="${esc(object.id)}" value="${esc(object.bridgeLogic?.timeHorizon || '')}"></label></div>
           <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Methode / Annahmen<input data-sidecar-field="bridgeLogic.quantificationMethod" data-sidecar-id="${esc(object.id)}" value="${esc(object.bridgeLogic?.quantificationMethod || '')}"></label></div>
-          <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Überleitungs-Prüffragen<input data-sidecar-field="bridgeLogic.openQuestions" data-sidecar-id="${esc(object.id)}" value="${esc((object.bridgeLogic?.openQuestions || []).join('; '))}"></label></div>
+          <div class="wide-field"><label data-help-id="sidecarBridgeLogic">Überleitungs-Klärfragen<input data-sidecar-field="bridgeLogic.openQuestions" data-sidecar-id="${esc(object.id)}" value="${esc((object.bridgeLogic?.openQuestions || []).join('; '))}"></label></div>
         </div>
       </details>
     </article>
@@ -6436,11 +6436,11 @@ function sidecarReportSummaryHtml() {
       <p class="hint">Kontextobjekte sind Kontext-, Evidenz-, Sensitivitäts- oder Wirkobjekte. Kontextobjekte sichtbar, Überleitungslogik prüfpflichtig, keine automatische KPI-Wirkung: Sie sind nicht als klassische Maßnahmen zu lesen und gehen nicht in CAPEX-/EOG-/KPI-Summen ein.</p>
       <div class="report-summary">
         <div class="report-box"><strong>Evidenzlage</strong><p>${summary.total} Objekte, davon ${summary.byEvidenceStatus.validated || 0} validiert und ${summary.byEvidenceStatus.missing || 0} ohne Evidenz.</p></div>
-        <div class="report-box"><strong>Datenqualität</strong><p>${summary.dataQualityOpen} offene Datenqualitätsobjekte; ${summary.openQuestions} offene Prüfpunkte.</p></div>
+        <div class="report-box"><strong>Datenqualität</strong><p>${summary.dataQualityOpen} offene Datenqualitätsobjekte; ${summary.openQuestions} offene Klärpunkte.</p></div>
         <div class="report-box"><strong>Rechenwirkung</strong><p>${summary.withoutCalculationImpact} ohne Rechenwirkung, ${summary.calculationImpact.indirect || 0} indirekt, ${summary.calculationImpact.scenario_only || 0} nur Szenario, ${summary.calculationImpact.active || 0} aktiv markiert.</p></div>
         <div class="report-box"><strong>Überleitungslogik</strong><p>${summary.openBridgeLogic} offene Überleitungslogik, ${summary.quantifiedNotActivated} quantifiziert, aber nicht aktiviert; ${summary.activated} aktiviert markiert.</p></div>
       </div>
-      ${open.length ? `<div class="report-sidecar-list">${open.slice(0, 8).map(object => `<article class="report-sidecar-item"><span>${esc(object.division)} · ${esc(object.sidecarType)} · ${esc(sidecarTypeLabel(object))}</span><strong>${esc(object.title)}</strong><p>${esc(sidecarBridgeWarning(object))}</p></article>`).join('')}</div>` : '<p class="hint">Keine offenen Kontextobjekt-Prüfpunkte im sanitisierten Exportprofil.</p>'}
+      ${open.length ? `<div class="report-sidecar-list">${open.slice(0, 8).map(object => `<article class="report-sidecar-item"><span>${esc(object.division)} · ${esc(object.sidecarType)} · ${esc(sidecarTypeLabel(object))}</span><strong>${esc(object.title)}</strong><p>${esc(sidecarBridgeWarning(object))}</p></article>`).join('')}</div>` : '<p class="hint">Keine offenen Kontextobjekt-Klärpunkte im sanitisierten Exportprofil.</p>'}
     </section>
   `;
 }

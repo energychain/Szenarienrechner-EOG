@@ -77,7 +77,7 @@ export const fieldHelp = {
   sidecarSensitivity: 'Sensitivität des Kontextobjekts. Öffentlich, intern, privat oder vertraulich steuert, wie vorsichtig Inhalte in Report, Prompt und Export behandelt werden sollen.',
   sidecarExportStatus: 'Exportregel des Kontextobjekts. Erlaubt kann vollständig erscheinen, sanitized_only wird sanitisiert und gekürzt, excluded wird aus externen Übergaben ausgelassen.',
   sidecarLinkedMeasures: 'Verknüpfung zu Maßnahmen-IDs. So bleibt erkennbar, welche Maßnahme durch eine Quelle, Datenqualitätsfrage oder Abhängigkeit gestützt wird, ohne das Kontextobjekt in die Maßnahmenliste zu verschieben.',
-  sidecarOpenQuestions: 'Offene Arbeits- und Prüfpunkte, getrennt mit Semikolon. Sie erscheinen verdichtet im Management Report und helfen, die nächste Befassung vorzubereiten.'
+  sidecarOpenQuestions: 'Offene Arbeits- und Klärpunkte, getrennt mit Semikolon. Sie erscheinen verdichtet im Management Report und helfen, die nächste Befassung vorzubereiten.'
 };
 
 export function hasFieldHelp(id) {

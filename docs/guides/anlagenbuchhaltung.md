@@ -2,7 +2,7 @@
 
 Anlagenbuchhaltung und Rechnungswesen prüfen, ob Aktivierung, Nutzungsdauer und Abschreibung sauber als Annahmen geführt werden.
 
-## Prüffragen
+## Klärfragen
 
 - Welcher Anteil ist aktivierbar?
 - Welche HGB-Nutzungsdauer wird angenommen?

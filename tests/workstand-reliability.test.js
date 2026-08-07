@@ -102,7 +102,7 @@ describe('workstand reliability dashboard', () => {
     expect(sidecarItem).toMatchObject({
       severity: 'warn',
       value: '3 von 6',
-      detail: '3 offene Kontextobjekt-Prüffrage(n), 0 Datenqualitätsobjekt(e) offen.'
+      detail: '3 offene Kontextobjekt-Klärfrage(n), 0 Datenqualitätsobjekt(e) offen.'
     });
   });
 });
