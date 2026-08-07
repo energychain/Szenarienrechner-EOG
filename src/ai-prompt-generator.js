@@ -578,12 +578,7 @@ ${warnings.includes('project_maturity_review') ? 'Klärpunkt project_maturity_re
 
 function anonymizeWarningMeasures(warnings = [], measures = [], options = {}) {
   if (!options.anonymizeMeasures && options.dataScope !== 'summary') return warnings;
-  const aliases = new Map();
-  measures.forEach((measure, index) => {
-    const alias = `Maßnahme ${index + 1}`;
-    if (measure.id) aliases.set(String(measure.id), alias);
-    if (measure.name) aliases.set(String(measure.name), alias);
-  });
+  const aliases = measureAliasMap(measures);
   return warnings.map(warning => ({
     ...warning,
     measure: aliases.get(String(warning.measureId || '')) || aliases.get(String(warning.measure || '')) || warning.measure
