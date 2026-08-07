@@ -103,6 +103,12 @@ import {
 } from './sidecar.js';
 import { normalizeStromEeg2027Measure } from './strom-eeg2027.js';
 import {
+  VIABILITY_CATEGORIES,
+  classifyMeasureViability,
+  viabilityClarificationItems,
+  viabilityOverviewFor
+} from './viability-classification.js';
+import {
   bulkImportSteps,
   committeeIds,
   confidenceLabels,
@@ -587,6 +593,12 @@ function normalizeMeasureForUi(measure, index = 0) {
     riskEvidenceStatus: String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || ''),
     riskOwnerRole: String(measure.riskOwnerRole || ''),
     riskAssessmentStatus: String(measure.riskAssessmentStatus || ''),
+    viabilityCategory: String(measure.viabilityCategory || ''),
+    viabilityCategorySource: String(measure.viabilityCategorySource || ''),
+    viabilityRationale: String(measure.viabilityRationale || ''),
+    refinancingBridgeStatus: String(measure.refinancingBridgeStatus || ''),
+    refinancingBridgeRefs: Array.isArray(measure.refinancingBridgeRefs) ? measure.refinancingBridgeRefs.map(String) : parseTags(measure.refinancingBridgeRefs),
+    openViabilityQuestions: Array.isArray(measure.openViabilityQuestions) ? measure.openViabilityQuestions.map(String) : parseTags(measure.openViabilityQuestions),
     objectiveIds: Array.isArray(measure.objectiveIds) ? measure.objectiveIds.map(String) : [],
     templateId: String(measure.templateId || ''),
     templateVersion: String(measure.templateVersion || ''),
@@ -992,6 +1004,15 @@ function sidecarClarificationItems() {
     .filter(Boolean);
 }
 
+function viabilityWorkItems() {
+  return viabilityClarificationItems(portfolioModel(), currentInputs()).map(item => ({
+    ...item,
+    area: 'Evidenz',
+    column: item.priority === 'mittel' ? 'evidence' : 'normal',
+    targetPhase: 'konsolidierung'
+  }));
+}
+
 function renderExpertWorkList() {
   const node = document.getElementById('expertWorkList');
   if (!node) return;
@@ -1093,7 +1114,7 @@ function clarificationItems() {
       measure: warning.measure,
       detail: warning.detail || 'mögliche Doppelzählung prüfen.'
     }));
-  return [...impactItems, ...warningItems, ...noteItems, ...measureEvidenceItems(), ...sidecarClarificationItems()]
+  return [...impactItems, ...warningItems, ...noteItems, ...measureEvidenceItems(), ...sidecarClarificationItems(), ...viabilityWorkItems()]
     .map(item => {
       const priority = clarificationPriorityFor(item);
       return {
@@ -3775,6 +3796,60 @@ function renderStromEeg2027Layer(measure) {
   `;
 }
 
+function renderViabilityMeasureSummary(measure) {
+  const node = document.getElementById('viabilityMeasureSummary');
+  if (!node || !measure) return;
+  const classification = classifyMeasureViability(measure, currentInputs());
+  node.innerHTML = `
+    <div class="meta">${esc(classification.sourceLabel)} · ${esc(classification.refinancingBridgeLabel)} · KPI-neutral</div>
+    <strong>${esc(classification.label)}</strong>
+    <p class="hint">${esc(classification.rationale)}</p>
+    <div class="pill-row compact">
+      ${classification.refinancingBridgeRefs.length ? classification.refinancingBridgeRefs.map(ref => `<span class="pill">${esc(ref)}</span>`).join('') : '<span class="pill warn">keine Brückenbelege</span>'}
+      ${classification.openQuestions.length ? `<span class="pill warn">${classification.openQuestions.length} offene Frage(n)</span>` : ''}
+    </div>
+  `;
+}
+
+function renderViabilityOverview() {
+  const node = document.getElementById('viabilityOverview');
+  if (!node) return;
+  const overview = viabilityOverviewFor(portfolioModel(), currentInputs());
+  const sectorLabel = overview.sector === 'strom' ? 'Strom' : 'Gas';
+  node.innerHTML = `
+    <div class="summary-card-grid viability-summary-cards">
+      <div class="summary-card"><span>Spartenkontext</span><strong>${esc(sectorLabel)}</strong><small>keine gemischte Aggregation</small></div>
+      <div class="summary-card"><span>aktive Maßnahmen</span><strong>${overview.totalCount}</strong><small>${fmtTeur(overview.totalCapexTeur, 1)} CAPEX</small></div>
+      <div class="summary-card"><span>Prüfbedarf</span><strong>${overview.classifications.filter(item => item.reviewRequired).length}</strong><small>abgeleitet, offen oder Brücke fehlt</small></div>
+    </div>
+    ${overview.warnings.length ? `<div class="warning-card compact"><strong>Warnhinweise</strong><ul>${overview.warnings.map(warning => `<li>${esc(warning.title)}: ${esc(warning.detail)}</li>`).join('')}</ul></div>` : ''}
+    <div class="viability-matrix">
+      ${VIABILITY_CATEGORIES.map(category => {
+        const bucket = overview.categories[category.id];
+        const bridgeRefs = Object.entries(bucket.bridgeRefs || {}).sort((a, b) => b[1] - a[1]).slice(0, 4);
+        return `
+          <article class="viability-card ${bucket.count ? '' : 'empty'}">
+            <div class="card-kicker">${esc(category.shortLabel)}</div>
+            <h3>${esc(category.label)}</h3>
+            <div class="metric-strip compact">
+              <span><strong>${bucket.count}</strong>Maßnahmen</span>
+              <span><strong>${fmtTeur(bucket.capexTeur, 1)}</strong>CAPEX</span>
+              <span><strong>${bucket.openClarifications}</strong>offen</span>
+            </div>
+            <p>${esc(category.steeringQuestion)}</p>
+            <div class="pill-row compact">
+              ${bucket.derived ? `<span class="pill warn">${bucket.derived} abgeleitet</span>` : ''}
+              ${bucket.bridgeMissing ? `<span class="pill warn">${bucket.bridgeMissing} Brücke prüfen</span>` : ''}
+              ${bridgeRefs.map(([ref, count]) => `<span class="pill">${esc(ref)} ${count}</span>`).join('')}
+            </div>
+            ${bucket.measures.length ? `<ul class="compact-list">${bucket.measures.slice(0, 4).map(item => `<li><button type="button" data-action="select" data-id="${esc(item.measureId)}">${esc(item.measureName)}</button> <small>${esc(item.sourceLabel)}</small></li>`).join('')}</ul>` : '<p class="hint">Keine Maßnahme in dieser Kategorie.</p>'}
+          </article>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 function renderGlobalValidation() {
   const node = document.getElementById('globalValidation');
   if (!node) return;
@@ -5890,6 +5965,12 @@ function renderDetail() {
   el.mRiskEvidenceStatus.value = measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '';
   el.mRiskOwnerRole.value = measure.riskOwnerRole || '';
   el.mRiskAssessmentStatus.value = measure.riskAssessmentStatus || '';
+  el.mViabilityCategory.value = measure.viabilityCategory || '';
+  el.mViabilityCategorySource.value = measure.viabilityCategorySource || '';
+  el.mViabilityRationale.value = measure.viabilityRationale || '';
+  el.mRefinancingBridgeStatus.value = measure.refinancingBridgeStatus || '';
+  el.mRefinancingBridgeRefs.value = Array.isArray(measure.refinancingBridgeRefs) ? measure.refinancingBridgeRefs.join(', ') : (measure.refinancingBridgeRefs || '');
+  el.mOpenViabilityQuestions.value = Array.isArray(measure.openViabilityQuestions) ? measure.openViabilityQuestions.join('; ') : (measure.openViabilityQuestions || '');
   el.mType.value = measure.type;
   el.mEffectType.value = measure.effectType || 'classic';
   el.mFlexibilityUseCase.value = measure.flexibilityUseCase || 'netzfahrplan';
@@ -5977,6 +6058,7 @@ function renderDetail() {
       renderGasTransformationLayer(measure);
       renderFlexibilityLayer(measure);
       renderStromEeg2027Layer(measure);
+      renderViabilityMeasureSummary(measure);
       renderHelperCalculators(measure);
       renderMeasureDrilldown(measure);
       renderImpactAssumptions(measure);
@@ -7014,6 +7096,7 @@ function renderPortfolio() {
 	      renderManagementSummary(result, first, spread, decision, metrics);
 	      renderEogCashflowBridge(result, metrics);
       renderWorkstandReliability(result);
+      renderViabilityOverview();
       renderPortfolioWaterfall(result);
       renderSensitivityTornado();
       renderEogDecomposition(result);
@@ -7122,6 +7205,12 @@ function updateSelectedFromDetail() {
 	        riskEvidenceStatus: el.mRiskEvidenceStatus.value,
 	        riskOwnerRole: el.mRiskOwnerRole.value.trim(),
 	        riskAssessmentStatus: el.mRiskAssessmentStatus.value.trim(),
+	        viabilityCategory: el.mViabilityCategory.value,
+	        viabilityCategorySource: el.mViabilityCategorySource.value,
+	        viabilityRationale: el.mViabilityRationale.value.trim(),
+	        refinancingBridgeStatus: el.mRefinancingBridgeStatus.value,
+	        refinancingBridgeRefs: parseTags(el.mRefinancingBridgeRefs.value),
+	        openViabilityQuestions: el.mOpenViabilityQuestions.value.split(/[;\n]/).map(part => part.trim()).filter(Boolean),
 	        effectType: el.mEffectType.value === 'flexibility' ? 'flexibility' : 'classic',
         flexibilityUseCase: el.mFlexibilityUseCase.value,
         flexibilityStatus: el.mFlexibilityStatus.value,

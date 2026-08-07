@@ -3882,6 +3882,58 @@ body[data-view="akte"] main {
   font-weight: 700;
 }
 
+.viability-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.viability-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 220px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, .28);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, .06);
+}
+
+.viability-card.empty {
+  opacity: .72;
+  background: #f8fafc;
+}
+
+.viability-card h3,
+.viability-card p {
+  margin: 0;
+}
+
+.compact-list {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.compact-list button {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  text-align: left;
+  font-weight: 700;
+}
+
+@media (max-width: 980px) {
+  .viability-matrix {
+    grid-template-columns: 1fr;
+  }
+}
+
 .kanban-mini,
 .kanban-board.mini-board,
 .governance-flow,

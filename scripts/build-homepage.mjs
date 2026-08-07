@@ -26,8 +26,8 @@ const workflowDemos = [
     image: 'assets/homepage/02-massnahmen-herleitung.jpg',
     title: 'Maßnahmen und Annahmen herleiten',
     label: 'So wird aus Bauchzahl eine Quelle',
-    text: 'Herleitungshelfer erklären Aktivierbarkeit, Risiko, Qualität, Nutzungsdauer und Finanzierungsspread.',
-    alt: 'Maßnahmenbewertung mit Herleitungshelfern für Aktivierung, Risiko, Qualität, AfA und Finanzierungsspread'
+    text: 'Herleitungshelfer erklären Aktivierbarkeit, Risiko, Qualität, Nutzungsdauer, Finanzierungsspread und Budget-Tragfähigkeit.',
+    alt: 'Maßnahmenbewertung mit Herleitungshelfern für Aktivierung, Risiko, Qualität, AfA, Finanzierungsspread und Budget-Tragfähigkeit'
   },
   {
     image: 'assets/homepage/03-eog-cashflow.jpg',
@@ -314,7 +314,7 @@ export function renderHomepage() {
     <div>
       <span class="eyebrow">Offline-first · Open Source · regulierte Sparten Strom/Gas</span>
       <h1>Regulierte Finanzplanung verständlich, prüfbar und entscheidungsreif machen.</h1>
-      <p class="lead">Der Szenarienrechner-EOG ist ein browserbasiertes Open-Source-Werkzeug für Stadtwerke, EVUs und Verteilnetzbetreiber. Die App strukturiert Maßnahmenportfolios, regulatorische Wirkungen, Cashflow-Sichten, Projektplan, Gremienvorlagen und Exportartefakte — ohne Backend, Telemetrie oder automatische Datenübertragung.</p>
+      <p class="lead">Der Szenarienrechner-EOG ist ein browserbasiertes Open-Source-Werkzeug für Stadtwerke, EVUs und Verteilnetzbetreiber. Die App strukturiert Maßnahmenportfolios, Budget-Tragfähigkeit, regulatorische Wirkungen, Cashflow-Sichten, Projektplan, Befassungsvorlagen und Exportartefakte — ohne Backend, Telemetrie oder automatische Datenübertragung.</p>
       <div class="actions">
         ${link('app.html', 'App starten', 'button primary')}
         ${externalLink(arcadeDemoUrl, 'Interaktive Demo ansehen')}
@@ -340,7 +340,7 @@ export function renderHomepage() {
       <p>Kleine und mittlere VNBs müssen technische Maßnahmen, Wirtschaftsplanung, HGB-/Controlling-Sicht, regulatorische Logik, Finanzierung und Gremienkommunikation zusammenbringen. Genau dafür liefert die App Struktur, Sprache und exportierbare Artefakte.</p>
     </div>
     <div class="grid three">
-      <article class="card"><h3>Für Stadtwerke und VNBs</h3><p>Maßnahmen, Budgets, Aktivierung, Wirkannahmen und Beschlussfähigkeit in einem wiederaufnahmefähigen Arbeitsstand.</p></article>
+      <article class="card"><h3>Für Stadtwerke und VNBs</h3><p>Maßnahmen, Budgets, Aktivierung, Wirkannahmen, Tragfähigkeitsklassen und Befassungsfähigkeit in einem wiederaufnahmefähigen Arbeitsstand.</p></article>
       <article class="card"><h3>Für Regulierung und Finanzen</h3><p>Klare Trennung von EOG-Wirkung, indikativer Cashflow-Sicht, laufenden Effekten, Einmaleffekten und prüfpflichtigen Annahmen.</p></article>
       <article class="card"><h3>Für Management und Gremien</h3><p>Reports, Gremienvorlagen, Projektplan, Auflagenlogik und KI-Prompt-Export übersetzen komplexe Planung in entscheidbare Sprache.</p></article>
     </div>
@@ -358,6 +358,7 @@ export function renderHomepage() {
           <div class="feature"><span class="check">✓</span><div><strong>Maßnahmenportfolio Strom/Gas</strong><br>CAPEX/OPEX, Aktivierbarkeit, Nutzungsdauer, Reinvestition, Rückbau und Wirkungsverzüge.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Governance-Ampel</strong><br>Robust tragfähig, tragfähig mit Auflage, nicht tragfähig oder nicht entscheidungsreif — inklusive konservativem Urteil.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>EOG-/Cashflow-Überleitung</strong><br>Regulatorische EOG-Wirkung, wirtschaftliche Überleitung, laufende Effekte und Einmaleffekte getrennt.</div></div>
+          <div class="feature"><span class="check">✓</span><div><strong>Budget-Tragfähigkeit</strong><br>Spartengetrennte Maßnahmenklassifikation nach regulatorischem Muss, Substanzerhalt, No-Regret, strategischer Option und Synergie-/Timing-Effekt.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Herleitungshelfer</strong><br>Q-Wirkung, Risiko-Erwartungswert, CAPEX/OPEX-Split, Nutzungsdauer/AfA und Finanzierungsspread.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Kontext & Evidenz</strong><br>Sidecar-Schicht für Datenqualität, Quellen, Steuerungsfähigkeit und Abhängigkeiten — sichtbar im Report, aber standardmäßig nicht KPI-wirksam.</div></div>
           <div class="feature"><span class="check">✓</span><div><strong>Projektplan</strong><br>Meilensteine, Rollen-Swimlanes, Abhängigkeiten, eigene Aufgaben, nächste fällige Aufgabe je Rolle.</div></div>
@@ -403,9 +404,10 @@ export function renderHomepage() {
     </div>
     <div class="grid">
       <article class="card"><h3>30-Minuten-Selbsttest</h3><p>Demodaten laden, Projektplan ansehen, Entscheidungsampel lesen, XLSX exportieren und die Offline-HTML mit Daten speichern.</p><p>${link('docs/pilot-program.html', 'Pilotprogramm ansehen')}</p></article>
-      <article class="card"><h3>Planungsrunde vorbereiten</h3><p>Rollen, Klärpunkte, Datenquellen, Aufgaben, Fälligkeiten und Beschlussartefakte werden im Arbeitsstand dokumentiert.</p><p>${link('docs/project-plan.html', 'Projektplan verstehen')}</p></article>
+      <article class="card"><h3>Planungsrunde vorbereiten</h3><p>Rollen, Klärpunkte, Datenquellen, Aufgaben, Fälligkeiten und Befassungsartefakte werden im Arbeitsstand dokumentiert.</p><p>${link('docs/project-plan.html', 'Projektplan verstehen')}</p></article>
+      <article class="card"><h3>Budget-Tragfähigkeit einordnen</h3><p>Die Akte klassifiziert Maßnahmen je Sparte nach Pflicht, Substanzerhalt, Transformation, Option oder Timing — KPI-neutral und mit Klärpunkten für abgeleitete Logik.</p><p>${link('story/planungsrunde-userstory.html#budget-tragfaehigkeit', 'User-Story lesen')}</p></article>
       <article class="card"><h3>Kontext & Evidenz nutzen</h3><p>Sidecar-Objekte halten Datenqualität, Quellen, Steuerungsfähigkeit und offene Abhängigkeiten neben der Maßnahmenliste fest, ohne sie automatisch KPI-wirksam zu machen.</p><p>${link('docs/handbook/regulierte-finanzplanung-vnb.html#kontext-evidenz-sidecar-neben-der-maßnahmenliste', 'Sidecar-Methodik lesen')}</p></article>
-      <article class="card"><h3>Gremium erklären</h3><p>Management-Report, Gremienvorlage und KI-Prompt-Export übersetzen technische und regulatorische Details in Beschlusslogik.</p><p>${link('story/planungsrunde-userstory.html', 'User-Story lesen')}</p></article>
+      <article class="card"><h3>Befassung erklären</h3><p>Management-Report, Befassungsvorlage und KI-Prompt-Export übersetzen technische und regulatorische Details in Einordnung, Tragfähigkeit und Klärpunkte.</p><p>${link('story/planungsrunde-userstory.html', 'User-Story lesen')}</p></article>
     </div>
   </section>
 

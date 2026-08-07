@@ -38,8 +38,37 @@ Aktueller Modellstand (`version: 8`) führt zusätzlich fachlich freigegebene De
 - Strom-Flexibilitätsfelder wie `flexibilityStatus`, `networkScheduleStatus`, `networkConstraintRef`, `avoidedCapexTeur`, `deferredCapexTeur`, `flexOpexPaTeur`, `agnesRelevant`, `agnesRole` und `agnesIntegrationStatus` dokumentieren OPEX-gegen-CAPEX-Substitutionen. Ohne validierten Netzfahrplan und quantifizierte Werte bleibt die Wirkung nicht rechenwirksam.
 - Strom-Entwurfsfelder zu EEG 2027 / Netzanschluss sind optional und nur bei `inputs.sector = strom` zulässig: `regulatoryStatus`, `regulatoryStatusDate`, `assumptionStatus`, `capacityLimitedGridArea`, `redispatchCompensationWaiverEnabled`, `annualRevenueAtRiskTeur`, `connectionRequestPowerKw`, `connectionRequestStatus`, `reservationExpiryDate`, `nextRequiredEvidence`, `generationConnectionCostContributionEnabled` und `connectionCostContributionTeur`. Gas-Akten serialisieren diese Felder nicht.
 - `annualRevenueAtRiskTeur` wird bei Strom als Risikowert in der bestehenden TEUR-Portfolio-Logik berücksichtigt; `connectionCostContributionTeur` erhöht die bestehende CAPEX-Sicht. Rohdaten aus Anlagenrechnungen (kWh, Stunden, Preisprofile) gehören nicht in das Aktenmodell, sondern in das separate Modul nach `docs/change-requests/CR-FLEXCALC-001.md` und werden nur aggregiert zurückgespielt.
+- Optionale Felder zur Budget-Tragfähigkeit je Maßnahme: `viabilityCategory`, `viabilityCategorySource`, `viabilityRationale`, `refinancingBridgeStatus`, `refinancingBridgeRefs` und `openViabilityQuestions`. Sie erklären die Management-Einordnung in einer einzelnen Sparte (`strom` oder `gas`) und bleiben KPI-neutral; fehlende Felder werden aus bestehenden Hinweisen konservativ abgeleitet oder als prüfpflichtig markiert.
 
 Die fachlich freigegebene Vorbelegung für neue Modelle lautet `capexLagYears = 0`, `opexLagYears = 3`, `qeLagYears = 2`. Diese Werte sind prüfpflichtige Startannahmen; importierte Altmodelle können sie überschreiben oder bei Migration die aktuellen Defaults übernehmen.
+
+## Budget-Tragfähigkeit / Maßnahmenklassifikation
+
+Die Budget-Tragfähigkeit ist eine zusätzliche Management-Sicht für die jeweils aktuell ausgewählte regulierte Sparte. Strom und Gas werden nicht gemischt aggregiert. Die Klassifikation ersetzt keine regulatorische Rechnung und macht Kontextobjekte nicht automatisch RAB-, EOG-, Cashflow-, IRR- oder NPV-wirksam.
+
+Unterstützte Kategorien:
+
+- `regulatory_must`: regulatorisches, gesetzliches, vertragliches, Konzessions-, Sicherheits- oder Compliance-Muss.
+- `asset_preservation_must`: Substanzerhalt, Versorgungssicherheit, Störungs-/Schadens-/Risikovermeidung.
+- `transformation_must_no_regret`: Transformations-/No-Regret-Maßnahme mit belastbarer Pfadrobustheit.
+- `strategic_option`: strategische Option, Zielnetz-, Anschluss-, Kapazitäts- oder Flexibilitätsfähigkeit.
+- `synergy_timing`: Synergie-, Zeitfenster-, Bündelungs- oder Koordinationsmaßnahme.
+- `unclassified`: keine belastbare Einordnung.
+
+Beispiel je Maßnahme:
+
+```json
+{
+  "viabilityCategory": "asset_preservation_must",
+  "viabilityCategorySource": "manual",
+  "viabilityRationale": "Substanzerhalt und belegte Störungsvermeidung",
+  "refinancingBridgeStatus": "partial",
+  "refinancingBridgeRefs": ["riskAvoided", "rab"],
+  "openViabilityQuestions": ["Risiko-Evidenz aktualisieren"]
+}
+```
+
+`viabilityCategorySource = derived` kennzeichnet eine automatisch aus bestehenden Feldern abgeleitete, reviewpflichtige Einordnung. `refinancingBridgeStatus = missing` oder offene Fragen erzeugen Klärpunkte in „Prüfen & Klären“ und ein eigenes Exportblatt `Budget_Tragfaehigkeit`.
 
 ## Sidecar: Kontext & Evidenz
 

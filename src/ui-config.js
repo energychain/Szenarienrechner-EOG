@@ -42,6 +42,8 @@ export const detailIds = [
   'mInvestmentDecisionDate', 'mAlternativesChecked', 'mFlexibilityNeed',
   'mSourceSystem', 'mSourceRecordId', 'mScoringRef', 'mAssetSystemRef', 'mErpRef', 'mRiskDbRef',
   'mSourceStatus', 'mRiskEvidenceStatus', 'mRiskOwnerRole', 'mRiskAssessmentStatus',
+  'mViabilityCategory', 'mViabilityCategorySource', 'mViabilityRationale', 'mRefinancingBridgeStatus',
+  'mRefinancingBridgeRefs', 'mOpenViabilityQuestions',
   'mProbability', 'mOpexRecognition', 'mLife', 'mDepr', 'mQDirect',
   'mEDirect', 'mRiskAvoided', 'mPortfolioShare', 'mOpexPa',
   'mOpexDeltaPa', 'mReinvestCost', 'mReinvestMode', 'mReinvestLife', 'mDecommissionCost', 'mHgbLife',

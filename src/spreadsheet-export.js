@@ -8,6 +8,7 @@ import {
 import { projectPlanEffectiveTaskStates, projectPlanMilestoneDate, projectPlanRoles } from './project-plan.js';
 import { normalizeSidecar, sidecarSummary } from './sidecar.js';
 import { normalizeStromEeg2027Measure, stromEeg2027PortfolioSummary } from './strom-eeg2027.js';
+import { viabilityOverviewFor } from './viability-classification.js';
 
 const scenarioLabels = {
   basis: 'Basis',
@@ -553,6 +554,28 @@ export function spreadsheetTables(model, options = {}) {
     ]);
   });
 
+  const viabilityOverview = viabilityOverviewFor({ measures }, inputs);
+  const viabilityRows = [[
+    'sector', 'category', 'categoryLabel', 'measureId', 'measureName', 'source', 'rationale',
+    'refinancingBridgeStatus', 'refinancingBridgeRefs', 'openQuestions', 'capexTeur', 'riskTeurPa'
+  ]];
+  viabilityOverview.classifications.forEach(item => {
+    viabilityRows.push([
+      viabilityOverview.sector,
+      item.category,
+      item.label,
+      item.measureId,
+      item.measureName,
+      item.source,
+      item.rationale,
+      item.refinancingBridgeStatus,
+      item.refinancingBridgeRefs.join(', '),
+      item.openQuestions.join(' | '),
+      round(item.capexTeur, 2),
+      round(item.riskTeurPa, 2)
+    ]);
+  });
+
   const provenanceRows = [
     ['Feld', 'Wert'],
     ['Export erstellt am', new Date().toISOString()],
@@ -581,6 +604,7 @@ export function spreadsheetTables(model, options = {}) {
     { name: 'Systemreferenzen', rows: systemReferenceRows },
     { name: 'Risiko_Mapping', rows: riskMappingRows },
     { name: 'Sidecar_Ueberleitungslogik', rows: sidecarRows },
+    { name: 'Budget_Tragfaehigkeit', rows: viabilityRows },
     ...(stromEeg2027Summary?.applicable ? [{ name: 'Strom_EEG2027_Netzanschluss', rows: stromEeg2027Rows }] : []),
     { name: 'Monitoring_Massnahmen', rows: monitoringMeasureRows },
     { name: 'Monitoring_Aggregat', rows: monitoringAggregateRows },

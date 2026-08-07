@@ -73,6 +73,7 @@ describe('spreadsheet exports', () => {
       'Systemreferenzen',
       'Risiko_Mapping',
       'Sidecar_Ueberleitungslogik',
+      'Budget_Tragfaehigkeit',
       'Strom_EEG2027_Netzanschluss',
       'Monitoring_Massnahmen',
       'Monitoring_Aggregat',
@@ -86,6 +87,8 @@ describe('spreadsheet exports', () => {
     expect(tables.find(table => table.name === 'Monitoring_Aggregat')?.rows.flat()).toContain('Neubau/Ausbau/Erweiterung');
     expect(tables.find(table => table.name === 'Netzausbauplan_14d')?.rows[0]).not.toContain('id');
     expect(tables.find(table => table.name === 'Sidecar_Ueberleitungslogik')?.rows[0]).toContain('sidecarType');
+    expect(tables.find(table => table.name === 'Budget_Tragfaehigkeit')?.rows[0]).toContain('refinancingBridgeStatus');
+    expect(tables.find(table => table.name === 'Budget_Tragfaehigkeit')?.rows.flat()).toContain('asset_preservation_must');
     expect(tables.find(table => table.name === 'Projektplan')?.rows.length).toBeGreaterThan(60);
     expect(tables.find(table => table.name === 'Provenienz')?.rows.flat()).toContain(regulatoryParameterSet.id);
   });

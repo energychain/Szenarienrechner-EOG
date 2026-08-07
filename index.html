@@ -740,6 +740,17 @@
         <p id="workstandReliabilityCaveat" class="hint"></p>
       </section>
 
+      <section id="viabilityOverviewPanel" class="panel" aria-label="Budget-Tragfähigkeit je Sparte">
+        <div class="section-head-row">
+          <div>
+            <h2>Budget-Tragfähigkeit</h2>
+            <p class="hint">Klassifiziert aktive Maßnahmen der aktuell gewählten Sparte nach Steuerungslogik: Pflicht, Substanzerhalt, No-Regret, Option oder Timing. Kontextobjekte bleiben sichtbar, aber nicht automatisch KPI-wirksam.</p>
+          </div>
+          <button type="button" data-jump-view="measures">Maßnahmen einordnen</button>
+        </div>
+        <div id="viabilityOverview" class="viability-overview"></div>
+      </section>
+
       <section id="portfolioWaterfallPanel" class="panel" aria-label="Größenordnung einordnen">
         <div class="section-head-row">
           <div>
@@ -1336,6 +1347,19 @@
             <div><label for="mRiskOwnerRole">Risikoverantwortung</label><input id="mRiskOwnerRole" type="text" placeholder="z.B. Technik, Controlling, Risikomanagement"></div>
             <div><label for="mRiskAssessmentStatus">Bewertungsstatus</label><input id="mRiskAssessmentStatus" type="text" placeholder="offen, prüfpflichtig, validiert"></div>
           </div>
+        </div>
+        <div class="group viability-classification-group">
+          <h3>Budget-Tragfähigkeit</h3>
+          <p class="hint">Optionale Management-Einordnung je Maßnahme: Warum ist diese Maßnahme im knappen Budget tragfähig? Ableitungen bleiben prüfbar und ändern keine EOG-, RAB-, IRR- oder NPV-Rechnung.</p>
+          <div class="grid2">
+            <div><label for="mViabilityCategory">Kategorie</label><select id="mViabilityCategory"><option value="">automatisch ableiten</option><option value="regulatory_must">Regulatorisches Muss</option><option value="asset_preservation_must">Substanzerhalt / Versorgungssicherheit</option><option value="transformation_must_no_regret">Transformation / No-Regret</option><option value="strategic_option">Strategische Option</option><option value="synergy_timing">Synergie / Timing</option><option value="unclassified">nicht klassifiziert</option></select></div>
+            <div><label for="mViabilityCategorySource">Quelle der Einordnung</label><select id="mViabilityCategorySource"><option value="">automatisch</option><option value="manual">manuell</option><option value="derived">abgeleitet</option><option value="imported">importiert</option><option value="unset">offen</option></select></div>
+            <div><label for="mRefinancingBridgeStatus">Tragfähigkeits-/Refinanzierungsbrücke</label><select id="mRefinancingBridgeStatus"><option value="">automatisch bewerten</option><option value="present">vorhanden</option><option value="partial">teilweise</option><option value="missing">fehlt</option><option value="not_applicable">nicht anwendbar</option></select></div>
+            <div><label for="mRefinancingBridgeRefs">Belege / Wirkpfade</label><input id="mRefinancingBridgeRefs" type="text" placeholder="rab, eog, riskAvoided, option, timing"></div>
+            <div class="wide-field"><label for="mViabilityRationale">Kurzbegründung</label><input id="mViabilityRationale" type="text" placeholder="Warum ist die Maßnahme im Budget tragfähig?"></div>
+            <div class="wide-field"><label for="mOpenViabilityQuestions">Offene Tragfähigkeitsfragen</label><input id="mOpenViabilityQuestions" type="text" placeholder="Fragen mit Semikolon trennen"></div>
+          </div>
+          <div id="viabilityMeasureSummary" class="gas-transformation-summary"></div>
         </div>
         <div id="stromFlexibilityLayer" class="group strom-only">
           <h3>Flexibilität / Netzfahrplan</h3>

@@ -10,6 +10,7 @@ import { projectPlanEffectiveTaskStates, projectPlanTaskCounts } from './project
 import { normalizeGermanTeurText } from './render-utils.js';
 import { normalizeSidecar, sanitizeSidecarForExport, sidecarSummary } from './sidecar.js';
 import { stromEeg2027PortfolioSummary } from './strom-eeg2027.js';
+import { viabilityOverviewFor } from './viability-classification.js';
 
 export const llmContextUrl = 'https://energychain.github.io/Szenarienrechner-EOG/llm.txt';
 
@@ -600,20 +601,43 @@ function stromEeg2027SummaryForPrompt(model = {}, sector = 'strom', options = {}
   };
 }
 
-function riskSummaryForPrompt(summary = {}, measures = [], options = {}) {
-  if (!summary || (!options.anonymizeMeasures && options.dataScope !== 'summary')) return summary;
+function measureAliasMap(measures = []) {
   const aliases = new Map();
   measures.forEach((measure, index) => {
     const alias = `Maßnahme ${index + 1}`;
     if (measure.id) aliases.set(String(measure.id), alias);
     if (measure.name) aliases.set(String(measure.name), alias);
   });
+  return aliases;
+}
+
+function riskSummaryForPrompt(summary = {}, measures = [], options = {}) {
+  if (!summary || (!options.anonymizeMeasures && options.dataScope !== 'summary')) return summary;
+  const aliases = measureAliasMap(measures);
   return {
     ...summary,
     examples: (summary.examples || []).map(example => ({
       ...example,
       measure: aliases.get(String(example.measureId || '')) || aliases.get(String(example.measure || '')) || example.measure
     }))
+  };
+}
+
+function viabilityOverviewForPrompt(overview = {}, measures = [], options = {}) {
+  if (!overview || (!options.anonymizeMeasures && options.dataScope !== 'summary')) return overview;
+  const aliases = measureAliasMap(measures);
+  const anonymizeItem = item => ({
+    ...item,
+    measureName: aliases.get(String(item.measureId || '')) || aliases.get(String(item.measureName || '')) || item.measureName
+  });
+  const categories = Object.fromEntries(Object.entries(overview.categories || {}).map(([key, category]) => [key, {
+    ...category,
+    measures: options.dataScope === 'summary' ? [] : (category.measures || []).map(anonymizeItem)
+  }]));
+  return {
+    ...overview,
+    categories,
+    classifications: options.dataScope === 'summary' ? [] : (overview.classifications || []).map(anonymizeItem)
   };
 }
 
@@ -702,6 +726,7 @@ export function redactModelForPrompt(model, options = defaultAiPromptOptions, co
       riskAvoided: riskSummaryForPrompt(compactedPromptWarnings.riskSummary, candidateMeasures, merged)
     } : null,
     portfolioSegmentation: params.sector === 'strom' ? segmentationForPrompt(basis.portfolioSegmentation, merged.roundAmounts) : null,
+    viabilityOverview: viabilityOverviewForPrompt(viabilityOverviewFor({ measures: activeMeasures(model) }, inputs), candidateMeasures, merged),
     sidecar: sidecarForPrompt(model, 'sanitized_external'),
     measures,
     flexibilityObjects: promptFlexibilityObjects,
@@ -785,6 +810,19 @@ ${befassungen.length ? `Bisherige Befassungen / Statusauszug:\n${befassungen.map
 `;
 }
 
+function viabilityPromptSection(snapshot) {
+  const overview = snapshot.viabilityOverview;
+  if (!overview?.totalCount) return '';
+  const categories = Object.values(overview.categories || {}).filter(category => category.count > 0);
+  return `
+## Budget-Tragfähigkeit / Maßnahmenklassifikation
+Spartenkontext: ${overview.sector}. Keine gemischte Strom-/Gas-Aggregation. Kontextobjekte bleiben sichtbar, aber nicht automatisch KPI-wirksam.
+Aggregat: ${overview.totalCount} aktive Maßnahmen; ${overview.totalCapexTeur} TEUR CAPEX; Warnungen ${overview.warnings?.length || 0}.
+${categories.map(category => `- ${category.label}: ${category.count} Maßnahme(n), ${Math.round(category.capexTeur * 10) / 10} TEUR CAPEX, ${category.openClarifications} offene Klärung(en), ${category.derived} abgeleitet.`).join('\n')}
+${(overview.warnings || []).map(warning => `Warnung: ${warning.title} — ${warning.detail}`).join('\n')}
+`;
+}
+
 export function buildAiPrompt(model, options = defaultAiPromptOptions, context = {}) {
   const merged = { ...defaultAiPromptOptions, ...options };
   const role = roleFor(merged.roleId);
@@ -826,6 +864,7 @@ ${stromReviewSection(snapshot)}
 ${stressTestPromptSection(snapshot)}
 ${stromEeg2027PromptSection(snapshot)}
 ${governanceWorkbenchPromptSection(snapshot)}
+${viabilityPromptSection(snapshot)}
 ${flexibilityPromptSection(snapshot)}
 ${sidecarPromptSection(snapshot)}
 ## Planungsdaten als JSON

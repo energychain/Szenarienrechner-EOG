@@ -44,7 +44,8 @@ describe('story HTML rendering', () => {
     expect(story).toContain('VNB-Portfolios');
     expect(story).toContain('Öffentliche Quellen zum Weiterlesen');
     expect(story).toContain('Projektplan als Struktur-Element');
-    expect(story).toContain('Aktueller Arbeitsmodus: Akte, Bearbeiten, Evidenz, Klärung, Präsentation, Export');
+    expect(story).toContain('Aktueller Arbeitsmodus: Akte, Grundlagen, Bearbeiten, Evidenz, Klärung, Präsentation, Export');
+    expect(story).toContain('Budget-Tragfähigkeit: Maßnahmen für knappe Budgetrunden klassifizieren');
     expect(story).toContain('Prüfen & Klären: Kanban und Befassungs-Workbench');
     expect(story).toContain('Konservativer Stresstest: Parameter statt Scheinsensitivität');
     expect(story).toContain('Befassungsnotiz speichern');
