@@ -1,3 +1,5 @@
+import { neutralizeRestrictedSystemTerms, neutralizeRestrictedSystemTermList } from './public-term-sanitizer.js';
+
 const sidecarTypes = new Set([
   'grid_coupling', 'load_request', 'third_party_storage_request', 'flexibility', 'controllability',
   'redispatch_process', 'network_schedule', 'gas_load_path', 'gas_customer_cluster',
@@ -52,14 +54,17 @@ export const sidecarProfiles = {
 };
 
 function text(value, fallback = '') {
-  const normalized = String(value ?? '').trim();
+  const normalized = neutralizeRestrictedSystemTerms(String(value ?? '').trim());
   return normalized || fallback;
 }
 
 function list(value) {
-  if (Array.isArray(value)) return value.map(item => String(item)).filter(Boolean);
-  if (value === null || value === undefined || value === '') return [];
-  return String(value).split(',').map(item => item.trim()).filter(Boolean);
+  const items = Array.isArray(value)
+    ? value.map(item => String(item)).filter(Boolean)
+    : value === null || value === undefined || value === ''
+      ? []
+      : String(value).split(',').map(item => item.trim()).filter(Boolean);
+  return neutralizeRestrictedSystemTermList(items);
 }
 
 function enumValue(value, allowed, fallback) {
