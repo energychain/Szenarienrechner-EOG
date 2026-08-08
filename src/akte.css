@@ -229,6 +229,18 @@ button {
 .akte-object-title { font-size: 1.5em; font-weight: 700; margin: 0 0 4px; }
 .akte-object-subtitle { color: var(--akte-text-muted); margin: 0 0 18px; }
 
+.akte-object-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.akte-delete-button {
+  flex-shrink: 0;
+  border: 1px solid #dc2626;
+  background: var(--akte-surface);
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85em;
+}
+.akte-delete-button:hover { background: #dc2626; color: #fff; }
+
 .akte-sentence-block {
   background: var(--akte-surface);
   border: 1px solid var(--akte-border);

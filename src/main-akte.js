@@ -773,9 +773,9 @@ function renderMeasureDetail(measure, clarifications, p) {
       const shouldOpen = isCore || openCount > 0 || hasNonDefault;
       return blockHtml(group, measureGroupTitles[group] || group, openCount, shouldOpen, sentence);
     }).join('');
+  const titleHtml = esc(measure.name || 'Maßnahme ohne Namen') + provisionalBadgeHtml('measure', measure.id);
   return `
-    <h2 class="akte-object-title">${esc(measure.name || 'Maßnahme ohne Namen')}</h2>
-    <p class="akte-object-subtitle">Maßnahme · ${esc(measure.orgUnit || 'ohne Bereich')} · ${measure.active ? 'aktiv' : 'inaktiv'}</p>
+    ${objectDetailHeaderHtml('measure', measure.id, titleHtml, `Maßnahme · ${measure.orgUnit || 'ohne Bereich'} · ${measure.active ? 'aktiv' : 'inaktiv'}`)}
     ${blocksHtml}
     ${renderRechenpfad(measure, p)}
   `;
@@ -785,11 +785,30 @@ function provisionalBadgeHtml(objectType, objectId) {
   return isProvisional(objectType, objectId) ? '<span class="akte-provisional-badge">vorläufig</span>' : '';
 }
 
+// Symmetrisch zu addNewObject(): nur die vier direkt anlegbaren Objekttypen
+// zeigen einen Löschen-Button (kein Rahmen/Szenario, kein Klärpunkt — beide
+// sind nicht eigenständig löschbar).
+function objectDeleteButtonHtml(objectType, objectId) {
+  if (!creatableObjectTypes[objectType]) return '';
+  return `<button type="button" class="akte-delete-button" data-delete-object-type="${esc(objectType)}" data-delete-object-id="${esc(objectId)}">Löschen</button>`;
+}
+
+function objectDetailHeaderHtml(objectType, objectId, titleHtml, subtitleText) {
+  return `
+    <div class="akte-object-detail-header">
+      <div>
+        <h2 class="akte-object-title">${titleHtml}</h2>
+        <p class="akte-object-subtitle">${esc(subtitleText)}</p>
+      </div>
+      ${objectDeleteButtonHtml(objectType, objectId)}
+    </div>
+  `;
+}
+
 function renderFlatDetail(objectType, objectId, group, object, title, subtitle) {
   const sentence = renderSentenceForGroup(objectType, objectId, group, object);
   return `
-    <h2 class="akte-object-title">${esc(title)}${provisionalBadgeHtml(objectType, objectId)}</h2>
-    <p class="akte-object-subtitle">${esc(subtitle)}</p>
+    ${objectDetailHeaderHtml(objectType, objectId, esc(title) + provisionalBadgeHtml(objectType, objectId), subtitle)}
     <div class="akte-sentence-block akte-sentence-block--flat">
       <div class="akte-sentence-body">${sentence}</div>
     </div>
@@ -1063,6 +1082,27 @@ function addNewObject(objectType) {
   searchText = '';
   afterMutation();
   showToast(`${def.label} angelegt.`);
+}
+
+// Alles, was angelegt werden kann, muss auch wieder gelöscht werden können —
+// dieselben vier Objekttypen wie addNewObject(). Referenzen auf ein
+// gelöschtes Objekt (z. B. sidecarObject.linkedMeasures auf eine gelöschte
+// Maßnahme) werden nicht aufgeräumt, sondern laufen bewusst in die bereits
+// vorhandene Lückenart 3 ("fehlendes Objekt") — dieselbe Erkennung, die auch
+// eine von Anfang an falsche Referenz meldet.
+function deleteObject(objectType, objectId) {
+  const def = creatableObjectTypes[objectType];
+  if (!def) return;
+  const collection = referenceCollection(objectType);
+  const object = collection.find(item => item.id === objectId);
+  if (!object) return;
+  const label = object[referenceLabelKeys[objectType]] || def.defaultTitle;
+  if (!window.confirm(`${def.label} "${label}" wirklich löschen?`)) return;
+  collection.splice(collection.indexOf(object), 1);
+  clearProvisional(objectType, objectId);
+  if (model.openDecisions) delete model.openDecisions[objectId];
+  afterMutation();
+  showToast(`${def.label} gelöscht.`);
 }
 
 function isProvisional(objectType, id) {
@@ -1540,6 +1580,11 @@ function wireEvents() {
     const addButton = event.target.closest('[data-add-object-type]');
     if (addButton) {
       addNewObject(addButton.dataset.addObjectType);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-delete-object-type]');
+    if (deleteButton) {
+      deleteObject(deleteButton.dataset.deleteObjectType, deleteButton.dataset.deleteObjectId);
       return;
     }
     const listItem = event.target.closest('.akte-object-list-item');

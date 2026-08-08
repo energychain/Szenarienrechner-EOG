@@ -118,3 +118,69 @@ describe('initiale Datenerfassung: "+ Neu" legt Objekte direkt an (nicht nur üb
     expect(debug.getModel().provisionalIds.measure).toContain(measures[0].id);
   });
 });
+
+describe('was angelegt werden kann, kann auch wieder gelöscht werden', () => {
+  it('a freshly created measure carries a "Löschen" button in its own detail pane', () => {
+    click(document.querySelector('[data-filter="measure"]'));
+    click(document.querySelector('[data-add-object-type="measure"]'));
+    const deleteButton = /** @type {HTMLElement} */ (document.querySelector('[data-delete-object-type="measure"]'));
+    expect(deleteButton).toBeTruthy();
+    expect(deleteButton.dataset.deleteObjectId).toBe(debug.getModel().measures[0].id);
+  });
+
+  it('clicking "Löschen" asks for confirmation and removes the measure on confirm', () => {
+    click(document.querySelector('[data-filter="measure"]'));
+    click(document.querySelector('[data-add-object-type="measure"]'));
+    click(document.querySelector('[data-delete-object-type="measure"]'));
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(debug.getModel().measures).toEqual([]);
+    // the empty filter's own empty state (with its add button) comes back,
+    // not a silent fallback to some unrelated object.
+    expect(document.getElementById('akteObjectSurface').textContent).toContain('Keine Objekte in diesem Filter.');
+  });
+
+  it('declining the confirmation dialog keeps the measure', () => {
+    confirmSpy.mockReturnValue(false);
+    click(document.querySelector('[data-filter="measure"]'));
+    click(document.querySelector('[data-add-object-type="measure"]'));
+    click(document.querySelector('[data-delete-object-type="measure"]'));
+    expect(debug.getModel().measures.length).toBe(1);
+  });
+
+  it.each([
+    ['objective', 'strategy.objectives'],
+    ['sidecarObject', 'sidecar.objects'],
+    ['sidecarSource', 'sidecar.sources']
+  ])('%s objects created via "+ Neu" can also be deleted again', (objectType, path) => {
+    const [scope, key] = path.split('.');
+    // the skeleton already seeds default objectives (Stufe 6), so this
+    // compares before/after counts rather than assuming an empty start.
+    const before = debug.getModel()[scope][key].length;
+    click(document.querySelector(`[data-filter="${objectType}"]`));
+    click(document.querySelector(`[data-add-object-type="${objectType}"]`));
+    const createdId = debug.getSelectedId();
+    expect(debug.getModel()[scope][key].length).toBe(before + 1);
+
+    click(document.querySelector(`[data-delete-object-type="${objectType}"]`));
+    expect(debug.getModel()[scope][key].length).toBe(before);
+    expect(debug.getModel()[scope][key].some(item => item.id === createdId)).toBe(false);
+  });
+
+  it('deleting the selected object hands selection to something that still exists, instead of leaving it dangling', () => {
+    click(document.querySelector('[data-filter="measure"]'));
+    click(document.querySelector('[data-add-object-type="measure"]'));
+    const deletedId = debug.getModel().measures[0].id;
+    click(document.querySelector('[data-delete-object-type="measure"]'));
+
+    expect(debug.getSelectedId()).not.toBe(deletedId);
+    // whatever the fallback selection is, it must actually resolve to a
+    // real, rendered object — not a blank/broken detail pane.
+    expect(document.querySelector('.akte-object-title, .akte-empty-state')).toBeTruthy();
+  });
+
+  it('no "Löschen" button appears for Rahmen/Szenario (model.inputs) or Klärpunkt objects — those are not directly deletable', () => {
+    click(document.querySelector('[data-filter="rahmen"]'));
+    expect(document.querySelector('[data-delete-object-type]')).toBeFalsy();
+  });
+});
