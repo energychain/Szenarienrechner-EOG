@@ -30,6 +30,7 @@ import {
 } from './engine.js';
 import { clarificationItems } from './clarifications.js';
 import { maturityScore } from './maturity.js';
+import { linearScale, tornadoModel } from './chart-model.js';
 import { defaultCommittee, defaultProcessState, defaultStrategy, normalizeMeasure, normalizeProcessState } from './model-normalize.js';
 import { fieldDescriptorsFor } from './field-registry.js';
 import { evidenceGaps, missingValueFields, referenceFieldsFor, suggestedEdges, valueState } from './value-state.js';
@@ -71,6 +72,11 @@ let searchText = '';
 let previousModelForHistory = null;
 let previousKpis = null;
 let author = 'Akte';
+// Diagramm-Zustand je Filter (Abschnitt 4.2/7.3 der Visualisierungs-
+// Spezifikation): ob das Diagramm ein-/ausgeklappt bzw. als Tabelle gezeigt
+// wird, gilt pro Filter, nicht global.
+let chartCollapsed = {};
+let chartAsTable = {};
 
 // Rahmen/Szenario sind vier feste Pseudo-Objekte über model.inputs (siehe
 // Spezifikation 4.4) statt eigener Modellobjekte — dieselben 31 Felder aus
@@ -286,7 +292,7 @@ function currentModelData() {
     clarificationStatus: structuredClone(model.clarificationStatus),
     openDecisions: structuredClone(model.openDecisions),
     provisionalIds: structuredClone(model.provisionalIds || emptyProvisionalIds()),
-    ui2: { filterKey, selectedType, selectedId }
+    ui2: { filterKey, selectedType, selectedId, chartCollapsed, chartAsTable }
   };
 }
 
@@ -318,6 +324,8 @@ function applyIncomingState(state) {
   selectedType = incomingModel.ui2?.selectedType || 'measure';
   selectedId = incomingModel.ui2?.selectedId || model.measures[0]?.id || '';
   filterKey = incomingModel.ui2?.filterKey || 'all';
+  chartCollapsed = incomingModel.ui2?.chartCollapsed || {};
+  chartAsTable = incomingModel.ui2?.chartAsTable || {};
   previousModelForHistory = currentModelData();
   previousKpis = null;
 }
@@ -347,6 +355,8 @@ function bootstrap() {
     filterKey = stored.model.ui2?.filterKey || 'all';
     selectedType = stored.model.ui2?.selectedType || 'measure';
     selectedId = stored.model.ui2?.selectedId || model.measures[0]?.id || '';
+    chartCollapsed = stored.model.ui2?.chartCollapsed || {};
+    chartAsTable = stored.model.ui2?.chartAsTable || {};
   } else {
     model = emptySkeletonModel();
     modelPassthrough = {};
@@ -939,6 +949,154 @@ function renderObjectListHtml(visible) {
   `;
 }
 
+// ---------------------------------------------------------------------------
+// Diagramme (Visualisierungs-Spezifikation Abschnitt 4-8): "Ein Diagramm ist
+// keine Ansicht, sondern die Bildform einer Objektmenge" — genau ein
+// Diagrammtyp je Filter, fest zugeordnet, kein eigener Filtereintrag, keine
+// Umschaltung des Diagrammtyps (Regel 1-3, Kriterien V1-V3). Stufe V-2 liefert
+// den Renderer und den ersten Diagrammtyp (Tornado auf "clarification");
+// weitere Zuordnungen kommen in V-3..V-5 hinzu (Diagrammkatalog Abschnitt 5).
+const chartTypeByFilter = {
+  clarification: 'tornado'
+};
+
+const chartTypeLabels = {
+  tornado: 'Wirkungsrangliste'
+};
+
+// Baut das Diagrammmodell für den aktuellen Filter, sofern einer zugeordnet
+// ist. Regel 3 / Kriterium V2: Objektbezüge, die nicht in der sichtbaren
+// Filtermenge liegen, werden gekappt — das Diagramm zeigt nie mehr als die
+// Liste darunter.
+function chartModelForCurrentFilter(visible) {
+  const type = chartTypeByFilter[filterKey];
+  if (!type) return null;
+  const p = currentParams();
+  const context = { history, openDecisions: model.openDecisions };
+  if (type === 'tornado') {
+    const visibleIds = new Set(visible.filter(entry => entry.objectType === 'clarification').map(entry => entry.id));
+    const visibleClarifications = currentClarifications(currentPortfolio()).filter(item => visibleIds.has(item.key));
+    const chart = tornadoModel({ measures: model.measures, inputs: model.inputs }, p, visibleClarifications, context);
+    chart.elements.forEach(element => {
+      if (element.objectId && !visibleIds.has(element.objectId)) element.objectId = null;
+    });
+    return chart;
+  }
+  return null;
+}
+
+function chartChromeButtonsHtml(collapsed, asTable) {
+  return `
+    <div class="akte-chart-header">
+      <button type="button" class="akte-chart-toggle" data-chart-toggle-collapse>${collapsed ? 'Diagramm einblenden' : 'Diagramm ausblenden'}</button>
+      ${collapsed ? '' : `<button type="button" class="akte-chart-table-toggle" data-chart-toggle-table>${asTable ? 'als Diagramm' : 'als Tabelle'}</button>`}
+    </div>
+  `;
+}
+
+// Wirkungsrangliste / Tornado (Kriterium V9: <title> je Element mit Name,
+// Wert und Zustand im Klartext; Größenberechnung rein aus den Daten, kein
+// getBoundingClientRect — siehe Abschnitt 8).
+function renderTornadoSvg(chart, selectedObjectType, selectedObjectId) {
+  const width = 560;
+  const height = 220;
+  const labelWidth = 150;
+  const plotLeft = labelWidth + 8;
+  const plotRight = width - 12;
+  const rowHeight = Math.min(30, (height - 16) / Math.max(1, chart.elements.length));
+  const barHeight = Math.max(6, rowHeight - 8);
+  const scale = linearScale(chart.xAxis.min, chart.xAxis.max, plotLeft, plotRight);
+  const zeroX = scale(0);
+  const bars = chart.elements.map((element, index) => {
+    const y = 8 + index * rowHeight;
+    const lowX = scale(Math.min(element.low, element.high));
+    const highX = scale(Math.max(element.low, element.high));
+    const isSelected = element.objectType && element.objectId && element.objectType === selectedObjectType && element.objectId === selectedObjectId;
+    const classes = ['akte-chart-element', `akte-chart-mark--${element.valueState}`];
+    if (element.hasEvidenceGap) classes.push('akte-chart-mark--no-evidence');
+    if (isSelected) classes.push('selected');
+    const stateLabel = { set: 'geprüft', default: 'Vorbelegung', derived: 'abgeleitet', openByDecision: 'bewusst offen' }[element.valueState] || element.valueState;
+    const titleText = `${element.label}: Δ Kapitalwert ${fmtTeur(element.low, 1)} bis ${fmtTeur(element.high, 1)}, Zustand ${stateLabel}${element.hasEvidenceGap ? ', Evidenz fehlt' : ''}`;
+    return `
+      <g class="${classes.join(' ')}" tabindex="${index === 0 ? '0' : '-1'}" role="button"
+         data-chart-element-index="${index}"
+         ${element.objectType ? `data-object-type="${esc(element.objectType)}"` : ''}
+         ${element.objectId ? `data-object-id="${esc(element.objectId)}"` : ''}
+         aria-label="${esc(titleText)}">
+        <title>${esc(titleText)}</title>
+        <rect x="${Math.min(lowX, highX)}" y="${y}" width="${Math.max(1, Math.abs(highX - lowX))}" height="${barHeight}"></rect>
+        <text x="4" y="${y + barHeight / 2 + 4}" class="akte-chart-label">${esc(element.label)}</text>
+      </g>
+    `;
+  }).join('');
+  return `
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
+      <line x1="${zeroX}" y1="4" x2="${zeroX}" y2="${height - 4}" class="akte-chart-zero-line"></line>
+      ${bars}
+    </svg>
+  `;
+}
+
+function renderTornadoTable(chart) {
+  const stateLabel = { set: 'geprüft', default: 'Vorbelegung', derived: 'abgeleitet', openByDecision: 'bewusst offen' };
+  return `
+    <table class="akte-chart-table">
+      <thead><tr><th>Treiber</th><th>Δ Kapitalwert von</th><th>Δ Kapitalwert bis</th><th>Zustand</th></tr></thead>
+      <tbody>
+        ${chart.elements.map(element => `
+          <tr class="akte-chart-element" ${element.objectType ? `data-object-type="${esc(element.objectType)}"` : ''} ${element.objectId ? `data-object-id="${esc(element.objectId)}"` : ''}>
+            <td>${esc(element.label)}</td>
+            <td>${esc(fmtTeur(Math.min(element.low, element.high), 1))}</td>
+            <td>${esc(fmtTeur(Math.max(element.low, element.high), 1))}</td>
+            <td>${esc(stateLabel[element.valueState] || element.valueState)}${element.hasEvidenceGap ? ' · Evidenz fehlt' : ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+const chartRenderers = {
+  tornado: { svg: renderTornadoSvg, table: renderTornadoTable }
+};
+
+function renderChartSectionHtml(visible) {
+  const chart = chartModelForCurrentFilter(visible);
+  if (!chart) return '';
+  const collapsed = Boolean(chartCollapsed[filterKey]);
+  const asTable = Boolean(chartAsTable[filterKey]);
+  const renderer = chartRenderers[chart.type];
+  let body = '';
+  if (!collapsed) {
+    if (chart.emptyReason) {
+      body = `<div class="akte-chart-empty">${esc(chart.emptyReason)}</div>`;
+    } else if (asTable) {
+      body = renderer.table(chart);
+    } else {
+      body = renderer.svg(chart, selectedType, selectedId);
+    }
+  }
+  return `
+    <section class="akte-chart" data-chart-type="${esc(chart.type)}">
+      ${chartChromeButtonsHtml(collapsed, asTable)}
+      ${body}
+    </section>
+  `;
+}
+
+// Klick/Enter auf ein Diagrammelement wählt exakt dasselbe Objekt wie ein
+// Klick auf die entsprechende Listenzeile (Kriterium V4). Elemente ohne
+// Objektbezug (z. B. ein nicht zugeordneter Sensitivitätstreiber) wählen
+// nichts aus — Abschnitt 7.2.
+function selectChartElement(node) {
+  const objectType = node.dataset.objectType;
+  const objectId = node.dataset.objectId;
+  if (!objectType || !objectId) return;
+  selectedType = objectType;
+  selectedId = objectId;
+  renderAll();
+}
+
 // Initiale Datenerfassung: der aktuelle Filter bestimmt eindeutig, welcher
 // Objekttyp entstehen würde (Kriterium 6: ein Filter zeigt genau einen
 // Objekttyp) — der Button erscheint daher nur bei einem der vier
@@ -961,12 +1119,13 @@ function renderObjectSurface(visible, clarifications, kpiExcludedCount = 0) {
   const node = document.getElementById('akteObjectSurface');
   const addBar = addObjectBarHtml();
   const exclusionNote = kpiExclusionNoteHtml(kpiExcludedCount);
+  const chartSection = renderChartSectionHtml(visible);
   if (!visible.length) {
-    node.innerHTML = renderPhaseWarningHtml() + addBar + exclusionNote + '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
+    node.innerHTML = renderPhaseWarningHtml() + addBar + exclusionNote + chartSection + '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
     return;
   }
   const p = currentParams();
-  node.innerHTML = renderPhaseWarningHtml() + addBar + exclusionNote + renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
+  node.innerHTML = renderPhaseWarningHtml() + addBar + exclusionNote + chartSection + renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
 }
 
 // ---------------------------------------------------------------------------
@@ -1652,6 +1811,23 @@ function wireEvents() {
       deleteObject(deleteButton.dataset.deleteObjectType, deleteButton.dataset.deleteObjectId);
       return;
     }
+    const chartCollapseToggle = event.target.closest('[data-chart-toggle-collapse]');
+    if (chartCollapseToggle) {
+      chartCollapsed[filterKey] = !chartCollapsed[filterKey];
+      renderAll();
+      return;
+    }
+    const chartTableToggle = event.target.closest('[data-chart-toggle-table]');
+    if (chartTableToggle) {
+      chartAsTable[filterKey] = !chartAsTable[filterKey];
+      renderAll();
+      return;
+    }
+    const chartElement = event.target.closest('.akte-chart-element');
+    if (chartElement) {
+      selectChartElement(chartElement);
+      return;
+    }
     const listItem = event.target.closest('.akte-object-list-item');
     if (listItem) {
       selectedType = listItem.dataset.objectType;
@@ -1662,6 +1838,31 @@ function wireEvents() {
     const valueButton = event.target.closest('.akte-value');
     if (valueButton) {
       openPopover(valueButton);
+    }
+  });
+
+  // Tastaturbedienung des Diagramms (Abschnitt 7.3, Kriterium V9): das
+  // Diagramm ist ein einziges Tab-Ziel (roving tabindex), Pfeil links/rechts
+  // wandert zwischen Elementen, Enter wählt aus, Esc verlässt es.
+  document.getElementById('akteObjectSurface').addEventListener('keydown', event => {
+    const chartElement = event.target.closest?.('.akte-chart-element');
+    if (!chartElement) return;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const items = [...chartElement.closest('svg, table').querySelectorAll('.akte-chart-element')];
+      const currentIndex = items.indexOf(chartElement);
+      const nextIndex = event.key === 'ArrowRight'
+        ? Math.min(items.length - 1, currentIndex + 1)
+        : Math.max(0, currentIndex - 1);
+      if (nextIndex === currentIndex) return;
+      items[currentIndex].setAttribute('tabindex', '-1');
+      items[nextIndex].setAttribute('tabindex', '0');
+      items[nextIndex].focus();
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      selectChartElement(chartElement);
+    } else if (event.key === 'Escape') {
+      chartElement.blur();
     }
   });
 
@@ -1717,6 +1918,8 @@ function wireEvents() {
     selectedId = model.measures[0]?.id || '';
     filterKey = 'all';
     searchText = '';
+    chartCollapsed = {};
+    chartAsTable = {};
     previousModelForHistory = currentModelData();
     previousKpis = null;
     afterMutation();
