@@ -85,6 +85,22 @@ describe('Stufe 5: jedes fachliche Objekt in derselben Liste, derselben Detailfl
     expect(debug.getModel().inputs.sector).toBe('gas');
   });
 
+  it('confirming a Rahmen field with its pre-filled value (no actual change) still clears the "Vorbelegung, bitte prüfen" state', () => {
+    click(document.querySelector('[data-filter="rahmen"]'));
+    const sectorButton = document.querySelector('[data-edit-key="sector"]');
+    expect(debug.getModel().inputs.sector).toBe('gas');
+    expect(sectorButton.classList.contains('akte-value--default')).toBe(true);
+
+    click(sectorButton);
+    /** @type {HTMLSelectElement} */ (document.getElementById('akteFieldInput')).value = 'gas';
+    click(document.getElementById('aktePopoverSave'));
+
+    const confirmedButton = document.querySelector('[data-edit-key="sector"]');
+    expect(debug.getModel().inputs.sector).toBe('gas');
+    expect(confirmedButton.classList.contains('akte-value--set')).toBe(true);
+    expect(confirmedButton.classList.contains('akte-value--default')).toBe(false);
+  });
+
   it('recording openByDecision on a sidecarObject field persists under model.openDecisions keyed by the object id', () => {
     click(document.querySelector('[data-filter="sidecarObject"]'));
     const button = document.querySelector('[data-edit-key="evidenceStatus"]');

@@ -13,11 +13,13 @@
 //   2. derived, wenn eine feldspezifische Ableitungsregel greift (aktuell nur
 //      measure.viabilityCategory über classifyMeasureViability).
 //   3. set, wenn history.js ein Änderungsereignis für genau dieses Feld
-//      kennt. history.js protokolliert Maßnahmen- und Inputfelder je Feld,
-//      Strategie/Ziele und Befassung dagegen nur objektweise und Kontext-
-//      objekte/Quellen aktuell gar nicht (diffModelEvents diff't sidecar
-//      nicht) — für diese Objekttypen liefert dieser Schritt daher nie einen
-//      Treffer und die Herkunft fällt auf Schritt 4 zurück.
+//      kennt. history.js protokolliert Maßnahmen- und Inputfelder sowie
+//      Kontextobjekte/Quellen je Feld, Strategie/Ziele und Befassung dagegen
+//      nur objektweise. Das gilt auch, wenn der Nutzer eine Vorbelegung im
+//      Popover ausdrücklich bestätigt hat, ohne den Wert zu ändern (siehe
+//      main-akte.js confirmFieldIfStillDefault) — sonst bliebe ein korrekt
+//      geprüfter, aber zufällig mit der Vorbelegung übereinstimmender Wert
+//      für immer als "bitte prüfen" markiert.
 //   4. Vergleich mit der Vorbelegung aus dem Felddeskriptor: Gleichheit (oder
 //      ein leerer Wert ohne definierte Vorbelegung) ergibt default, jede
 //      Abweichung ergibt set.
@@ -85,8 +87,15 @@ export function historyIndicatesChange(history, objectType, objectId, key) {
     // history can confirm "something in strategy changed", not which objective/field.
     return events.some(event => event.subject?.scope === 'strategy');
   }
-  // sidecarObject / sidecarSource / sidecarBridgeLogic: diffModelEvents does not
-  // diff sidecar today, so there is no history signal at any granularity yet.
+  if (objectType === 'sidecarObject' || objectType === 'sidecarSource') {
+    // diffModelEvents does not diff sidecar on real changes (see comment
+    // above), but the popover's explicit "bestätigt" event (see main-akte.js
+    // confirmFieldIfStillDefault) still uses this shape, so a reviewed field
+    // is recognized even though it was never diffed.
+    return events.some(event => event.subject?.scope === 'sidecar' && event.subject?.sidecarId === objectId && event.field === key);
+  }
+  // sidecarBridgeLogic: diffModelEvents does not diff sidecar today, so there
+  // is no history signal at any granularity yet.
   return false;
 }
 

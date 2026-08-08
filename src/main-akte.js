@@ -474,12 +474,39 @@ function objectIdForState(objectType, id) {
   return objectType === 'input' ? inputsObjectId : id;
 }
 
+function historySubjectFor(objectType, stateObjectId) {
+  if (objectType === 'measure') return { measureId: stateObjectId };
+  if (objectType === 'input') return { scope: 'inputs' };
+  if (objectType === 'objective') return { scope: 'strategy' };
+  if (objectType === 'sidecarObject' || objectType === 'sidecarSource') return { scope: 'sidecar', sidecarId: stateObjectId };
+  return null;
+}
+
+// Ein im Popover gespeicherter Wert gilt als geprüft, auch wenn er dabei
+// unverändert bleibt (Beispiel: Sparte ist mit "Gas" vorbelegt, der Nutzer
+// prüft das und speichert erneut "Gas") — ohne dieses Signal bliebe das Feld
+// dauerhaft als "Vorbelegung, bitte prüfen" markiert, weil diffModelEvents
+// nur tatsächliche Wertänderungen protokolliert (Abschnitt 6.1, Schritt 3).
+function confirmFieldIfStillDefault(objectType, stateObjectId, key, value, object) {
+  const subject = historySubjectFor(objectType, stateObjectId);
+  if (!subject) return;
+  const state = valueState(objectType, key, value, { object, objectId: stateObjectId, history, openDecisions: model.openDecisions });
+  if (state.state !== 'default') return;
+  history = appendHistoryEvents(history, [{
+    type: 'fieldConfirmed',
+    subject,
+    field: key,
+    oldValue: value,
+    newValue: value,
+    note: 'Vorbelegung im Popover geprüft und bestätigt.'
+  }], author);
+}
+
 function historyEventsFor(objectType, id) {
   if (objectType === 'measure') return history.events.filter(event => event.subject?.measureId === id && !event.subject?.impactId);
   if (objectType === 'input') return history.events.filter(event => event.subject?.scope === 'inputs');
   if (objectType === 'objective') return history.events.filter(event => event.subject?.scope === 'strategy');
-  // sidecarObject/sidecarSource: diffModelEvents diff't sidecar heute nicht
-  // (siehe src/value-state.js) — es gibt kein history-Signal auf dieser Ebene.
+  if (objectType === 'sidecarObject' || objectType === 'sidecarSource') return history.events.filter(event => event.subject?.scope === 'sidecar' && event.subject?.sidecarId === id);
   return [];
 }
 
@@ -1100,6 +1127,7 @@ function openPopover(button) {
     }
     if (model.openDecisions?.[stateObjectId]) delete model.openDecisions[stateObjectId][key];
     clearProvisional(objectType, stateObjectId);
+    confirmFieldIfStillDefault(objectType, stateObjectId, key, object[key], object);
     afterMutation();
     closePopover();
   });

@@ -67,6 +67,23 @@ describe('value-state: Zustandsklassifikation (Kriterium 7)', () => {
     expect(VALUE_STATES).toContain(result.state);
   });
 
+  it('recognizes set for a sidecar field once a confirmation event is recorded for it (main-akte.js confirmFieldIfStillDefault)', () => {
+    const confirmedHistory = {
+      ...history,
+      events: [
+        ...history.events,
+        { id: 'ev_confirm', type: 'fieldConfirmed', subject: { scope: 'sidecar', sidecarId: 'ctx_1' }, field: 'evidenceStatus', oldValue: 'missing', newValue: 'missing' }
+      ]
+    };
+    expect(historyIndicatesChange(confirmedHistory, 'sidecarObject', 'ctx_1', 'evidenceStatus')).toBe(true);
+    const object = referenceModel.model.sidecar.objects[0];
+    const result = valueState('sidecarObject', 'evidenceStatus', object.evidenceStatus, { object, objectId: 'ctx_1', history: confirmedHistory });
+    expect(result.state).toBe('set');
+    // a different sidecar object/field must stay unaffected
+    expect(historyIndicatesChange(confirmedHistory, 'sidecarObject', 'ctx_1', 'title')).toBe(false);
+    expect(historyIndicatesChange(confirmedHistory, 'sidecarObject', 'ctx_2', 'evidenceStatus')).toBe(false);
+  });
+
   it('always returns one of the four defined states for every descriptor, for every reference measure', () => {
     const seen = new Set();
     measures.forEach(measure => {
