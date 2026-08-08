@@ -30,7 +30,7 @@ import {
 } from './engine.js';
 import { clarificationItems } from './clarifications.js';
 import { maturityScore } from './maturity.js';
-import { eogFlowModel, linearScale, tornadoModel } from './chart-model.js';
+import { eogFlowModel, linearScale, riskMatrixModel, tornadoModel } from './chart-model.js';
 import { defaultCommittee, defaultProcessState, defaultStrategy, normalizeMeasure, normalizeProcessState } from './model-normalize.js';
 import { fieldDescriptorsFor } from './field-registry.js';
 import { evidenceGaps, missingValueFields, referenceFieldsFor, suggestedEdges, valueState } from './value-state.js';
@@ -962,12 +962,14 @@ function renderObjectListHtml(visible) {
 // den Renderer und den ersten Diagrammtyp (Tornado auf "clarification");
 // weitere Zuordnungen kommen in V-3..V-5 hinzu (Diagrammkatalog Abschnitt 5).
 const chartTypeByFilter = {
+  measure: 'riskMatrix',
   clarification: 'tornado',
   'kpi:eogYear1': 'eogFlow',
   'kpi:eogFollow': 'eogFlow'
 };
 
 const chartTypeLabels = {
+  riskMatrix: 'Risikomatrix',
   tornado: 'Wirkungsrangliste',
   eogFlow: 'Liquiditäts-/EOG-Verlauf'
 };
@@ -981,6 +983,13 @@ function chartModelForCurrentFilter(visible) {
   if (!type) return null;
   const p = currentParams();
   const context = { history, openDecisions: model.openDecisions };
+  if (type === 'riskMatrix') {
+    // Nur Maßnahmen aus der aktiven Filtermenge fließen ein (Regel 3 /
+    // Kriterium V2) — der Aufrufkontext (Suche, "Aktiv" etc.) bestimmt schon
+    // vorher, welche Maßnahmen überhaupt in `visible` stehen.
+    const visibleMeasures = visible.filter(entry => entry.objectType === 'measure').map(entry => resolveObject('measure', entry.id)).filter(Boolean);
+    return riskMatrixModel(visibleMeasures, context);
+  }
   if (type === 'tornado') {
     const visibleIds = new Set(visible.filter(entry => entry.objectType === 'clarification').map(entry => entry.id));
     const visibleClarifications = currentClarifications(currentPortfolio()).filter(item => visibleIds.has(item.key));
@@ -1175,7 +1184,89 @@ function renderEogFlowTable(chart) {
   `;
 }
 
+// Risikomatrix (Filter "measure"): eine Blase je Risiko-Wirkannahme, x =
+// Eintrittswahrscheinlichkeit nachher, y = Schadenshöhe, Blasenfläche =
+// erwarteter vermiedener Risikowert, Pfeil von vorher nach nachher entlang
+// der x-Achse (Abschnitt 5). Blase → Maßnahme (mehrere Risiko-Wirkannahmen
+// derselben Maßnahme wählen beim Klick dieselbe Maßnahme aus).
+function riskBubbleRadius(size, maxSize) {
+  const minR = 4;
+  const maxR = 22;
+  if (!maxSize) return minR;
+  return minR + Math.sqrt(Math.abs(size) / maxSize) * (maxR - minR);
+}
+
+function renderRiskMatrixSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId }) {
+  const width = 560;
+  const height = 220;
+  const leftMargin = 20;
+  const rightMargin = 16;
+  const topMargin = 12;
+  const bottomMargin = 20;
+  const xScale = linearScale(chart.xAxis.min, chart.xAxis.max, leftMargin, width - rightMargin);
+  const yScale = linearScale(chart.yAxis.min, chart.yAxis.max || 1, height - bottomMargin, topMargin);
+  const maxSize = Math.max(0, ...chart.elements.map(element => Math.abs(element.size)));
+  const bubbles = chart.elements.map((element, index) => {
+    const cx = xScale(element.xAfter);
+    const cxBefore = xScale(element.xBefore);
+    const cy = yScale(element.y);
+    const radius = riskBubbleRadius(element.size, maxSize);
+    const isSelected = element.objectType === selectedObjectType && element.objectId === selectedObjectId;
+    const classes = ['akte-chart-element', `akte-chart-mark--${element.valueState}`];
+    if (element.hasEvidenceGap) classes.push('akte-chart-mark--no-evidence');
+    if (isSelected) classes.push('selected');
+    const stateLabel = valueStateLabelDe[element.valueState] || element.valueState;
+    const label = `${element.label}: ${fmtPct(element.xBefore, 0)} → ${fmtPct(element.xAfter, 0)} Eintrittswahrscheinlichkeit, Schadenshöhe ${fmtTeur(element.y, 1)}, erwarteter vermiedener Risikowert ${fmtTeur(element.size, 1)}, Zustand ${stateLabel}${element.hasEvidenceGap ? ', Evidenz fehlt' : ''}`;
+    const arrow = Math.abs(cxBefore - cx) > 0.5
+      ? `<line x1="${cxBefore}" y1="${cy}" x2="${cx}" y2="${cy}" class="akte-chart-risk-arrow" marker-end="url(#akteRiskArrowHead)"></line>`
+      : '';
+    const hitRadius = Math.max(radius, 12);
+    return `
+      <g class="${classes.join(' ')}" tabindex="${index === 0 ? '0' : '-1'}" role="button"
+         data-chart-element-index="${index}" data-object-type="${esc(element.objectType)}" data-object-id="${esc(element.objectId)}"
+         aria-label="${esc(label)}">
+        <title>${esc(label)}</title>
+        ${arrow}
+        <circle class="akte-chart-hit-area" cx="${cx}" cy="${cy}" r="${hitRadius}"></circle>
+        <circle cx="${cx}" cy="${cy}" r="${radius}"></circle>
+      </g>
+    `;
+  }).join('');
+  return `
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
+      <defs>
+        <marker id="akteRiskArrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" class="akte-chart-risk-arrowhead"></path>
+        </marker>
+      </defs>
+      <line x1="${leftMargin}" y1="${height - bottomMargin}" x2="${width - rightMargin}" y2="${height - bottomMargin}" class="akte-chart-zero-line"></line>
+      ${bubbles}
+    </svg>
+  `;
+}
+
+function renderRiskMatrixTable(chart) {
+  return `
+    <table class="akte-chart-table">
+      <thead><tr><th>Maßnahme</th><th>Wahrscheinlichkeit vorher</th><th>Wahrscheinlichkeit nachher</th><th>Schadenshöhe</th><th>Erwarteter vermiedener Risikowert</th><th>Zustand</th></tr></thead>
+      <tbody>
+        ${chart.elements.map(element => `
+          <tr class="akte-chart-element" data-object-type="${esc(element.objectType)}" data-object-id="${esc(element.objectId)}">
+            <td>${esc(element.label)}</td>
+            <td>${esc(fmtPct(element.xBefore, 0))}</td>
+            <td>${esc(fmtPct(element.xAfter, 0))}</td>
+            <td>${esc(fmtTeur(element.y, 1))}</td>
+            <td>${esc(fmtTeur(element.size, 1))}</td>
+            <td>${esc(valueStateLabelDe[element.valueState] || element.valueState)}${element.hasEvidenceGap ? ' · Evidenz fehlt' : ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
 const chartRenderers = {
+  riskMatrix: { svg: renderRiskMatrixSvg, table: renderRiskMatrixTable },
   tornado: { svg: renderTornadoSvg, table: renderTornadoTable },
   eogFlow: { svg: renderEogFlowSvg, table: renderEogFlowTable }
 };
@@ -1196,10 +1287,17 @@ function renderChartSectionHtml(visible) {
       body = renderer.svg(chart, { selectedType, selectedId, yearMarker: chartYearMarker });
     }
   }
+  // Skalierung > 60 Elemente (Abschnitt 9.2): die größten bleiben einzeln
+  // sichtbar, der Rest wird als ein Sammelwert benannt statt stillschweigend
+  // abgeschnitten.
+  const collapsedNote = (!collapsed && !chart.emptyReason && chart.collapsedCount)
+    ? `<p class="akte-chart-note">+ ${chart.collapsedCount} weitere, zusammengefasst (${esc(fmtTeur(chart.collapsedValue, 1))}).</p>`
+    : '';
   return `
     <section class="akte-chart" data-chart-type="${esc(chart.type)}">
       ${chartChromeButtonsHtml(collapsed, asTable)}
       ${body}
+      ${collapsedNote}
     </section>
   `;
 }

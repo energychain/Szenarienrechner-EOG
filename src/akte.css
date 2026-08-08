@@ -360,20 +360,24 @@ button {
 .akte-chart-hit-area { fill: transparent; pointer-events: all; cursor: pointer; }
 
 .akte-chart-element rect:not(.akte-chart-hit-area),
-.akte-chart-element circle { fill: var(--akte-accent); stroke: var(--akte-accent); stroke-width: 1; cursor: pointer; }
+.akte-chart-element circle:not(.akte-chart-hit-area) { fill: var(--akte-accent); stroke: var(--akte-accent); stroke-width: 1; cursor: pointer; }
 .akte-chart-mark--derived rect:not(.akte-chart-hit-area),
-.akte-chart-mark--derived circle { stroke-dasharray: 1 2; }
+.akte-chart-mark--derived circle:not(.akte-chart-hit-area) { stroke-dasharray: 1 2; }
 .akte-chart-mark--default rect:not(.akte-chart-hit-area),
-.akte-chart-mark--default circle { fill: none; stroke-dasharray: 4 3; }
+.akte-chart-mark--default circle:not(.akte-chart-hit-area) { fill: none; stroke-dasharray: 4 3; }
 .akte-chart-mark--openByDecision rect:not(.akte-chart-hit-area),
-.akte-chart-mark--openByDecision circle { fill: none; stroke: var(--akte-text-muted); }
-.akte-chart-mark--no-evidence rect,
-.akte-chart-mark--no-evidence circle { fill: none; }
-.akte-chart-element.selected rect,
-.akte-chart-element.selected circle { stroke-width: 3; }
+.akte-chart-mark--openByDecision circle:not(.akte-chart-hit-area) { fill: none; stroke: var(--akte-text-muted); }
+.akte-chart-mark--no-evidence rect:not(.akte-chart-hit-area),
+.akte-chart-mark--no-evidence circle:not(.akte-chart-hit-area) { fill: none; }
+.akte-chart-element.selected rect:not(.akte-chart-hit-area),
+.akte-chart-element.selected circle:not(.akte-chart-hit-area) { stroke-width: 3; }
 .akte-chart-element:focus-visible { outline: none; }
-.akte-chart-element:focus-visible rect,
-.akte-chart-element:focus-visible circle { stroke-width: 3; }
+.akte-chart-element:focus-visible rect:not(.akte-chart-hit-area),
+.akte-chart-element:focus-visible circle:not(.akte-chart-hit-area) { stroke-width: 3; }
+
+.akte-chart-risk-arrow { stroke: var(--akte-text-muted); stroke-width: 1; pointer-events: none; }
+.akte-chart-risk-arrowhead { fill: var(--akte-text-muted); }
+.akte-chart-note { color: var(--akte-text-muted); font-size: 0.8em; margin: 6px 0 0; }
 
 .akte-chart-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
 .akte-chart-table th, .akte-chart-table td { border-bottom: 1px solid var(--akte-border); padding: 5px 8px; text-align: left; }
