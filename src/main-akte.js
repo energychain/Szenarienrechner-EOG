@@ -15,7 +15,9 @@ import {
   calcPortfolio,
   measureDrilldownFor,
   params as engineParams,
+  portfolioDecisionMetrics,
   portfolioEffectFor,
+  regulatoryParameterSet,
   scenarioParams as engineScenarioParams,
   workstandReliabilityFor,
   activationSplitHelper,
@@ -36,6 +38,11 @@ import { normalizeSidecar, normalizeSidecarObject, normalizeSidecarSource } from
 import { demoMeasures, demoSidecar } from './demo-data.js';
 import { appendHistoryEvents, diffModelEvents, emptyHistory, eventSummary } from './history.js';
 import { inputDefaults, inputIds, processPhases } from './ui-config.js';
+import { buildInfo } from './build-info.js';
+import { downloadBlob, exportStamp } from './export-utils.js';
+import { spreadsheetTables, tablesToCsvZip, tablesToXlsx } from './spreadsheet-export.js';
+import { buildAiPrompt, defaultAiPromptOptions, promptRoles } from './ai-prompt-generator.js';
+import { rulesetInfo, supportContext, supportPackage } from './release-awareness.js';
 
 const storageKey = 'regulierte-sparten-szenario-rechner-akte-v1';
 const modelVersion = 8;
@@ -146,6 +153,31 @@ function demoModel() {
   };
 }
 
+// Verlustfreier Datenvertrag (Spezifikation 7.1/7.2): main-akte.js bearbeitet
+// nur einen Teil der Modellfelder (inputs/measures/sidecar/strategy/
+// committee/process/clarificationStatus) plus seine eigenen additiven
+// Schlüssel (openDecisions, provisionalIds, ui2). Alles andere — activeView,
+// reportMode, meetingFocus, scenario, selectedId, role, projectPlan,
+// activeProjectTaskId, selectedSidecarId, importMapping, catalogGroupBy,
+// resultViewMode, meetingTextOverrides, model.lastReleaseCheck — liest die
+// alte Oberfläche und schreibt sie; die neue liest sie nicht, interpretiert
+// sie nicht, gibt sie aber beim Export unverändert durch. Dasselbe gilt für
+// Envelope-Felder außerhalb von model (buildCommit, regulatoryParameterSetId
+// usw.). modelPassthrough/envelopePassthrough halten genau diese Reste fest.
+const managedModelKeys = new Set(['inputs', 'measures', 'sidecar', 'strategy', 'committee', 'process', 'clarificationStatus', 'openDecisions', 'provisionalIds', 'ui2']);
+const managedEnvelopeKeys = new Set(['app', 'version', 'appVersion', 'savedAt', 'model', 'history']);
+
+let modelPassthrough = {};
+let envelopePassthrough = {};
+
+function extractPassthrough(source, managedKeys) {
+  const passthrough = {};
+  Object.keys(source || {}).forEach(key => {
+    if (!managedKeys.has(key)) passthrough[key] = source[key];
+  });
+  return passthrough;
+}
+
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(storageKey);
@@ -153,11 +185,24 @@ function loadFromStorage() {
     const state = JSON.parse(raw);
     return {
       model: state.model,
-      history: state.history && Array.isArray(state.history.events) ? state.history : emptyHistory()
+      history: state.history && Array.isArray(state.history.events) ? state.history : emptyHistory(),
+      envelope: state
     };
   } catch (_error) {
     return null;
   }
+}
+
+function collectModelState() {
+  return {
+    ...envelopePassthrough,
+    app: 'regulierte-sparten-szenario-rechner',
+    version: modelVersion,
+    appVersion,
+    savedAt: new Date().toISOString(),
+    model: currentModelData(),
+    history
+  };
 }
 
 function saveToStorage(silent = true) {
@@ -175,14 +220,7 @@ function saveToStorage(silent = true) {
       }
     }
     previousModelForHistory = structuredClone(currentModel);
-    localStorage.setItem(storageKey, JSON.stringify({
-      app: 'regulierte-sparten-szenario-rechner',
-      version: modelVersion,
-      appVersion,
-      savedAt: new Date().toISOString(),
-      model: currentModel,
-      history
-    }));
+    localStorage.setItem(storageKey, JSON.stringify(collectModelState()));
     if (!silent) showToast('Im Browser gespeichert (eigener Akte-Speicherstand).');
   } catch (_error) {
     if (!silent) showToast('Speichern nicht möglich.');
@@ -191,6 +229,7 @@ function saveToStorage(silent = true) {
 
 function currentModelData() {
   return {
+    ...modelPassthrough,
     inputs: structuredClone(model.inputs),
     measures: structuredClone(model.measures),
     sidecar: structuredClone(model.sidecar),
@@ -205,6 +244,7 @@ function currentModelData() {
 }
 
 function modelFromStoredData(storedModel) {
+  modelPassthrough = extractPassthrough(storedModel, managedModelKeys);
   return {
     inputs: storedModel.inputs || skeletonInputs(),
     measures: (storedModel.measures || []).map((measure, index) => normalizeMeasure(measure, index, {})),
@@ -225,12 +265,15 @@ function bootstrap() {
   const stored = loadFromStorage();
   if (stored?.model) {
     model = modelFromStoredData(stored.model);
+    envelopePassthrough = extractPassthrough(stored.envelope, managedEnvelopeKeys);
     history = stored.history || emptyHistory();
     filterKey = stored.model.ui2?.filterKey || 'all';
     selectedType = stored.model.ui2?.selectedType || 'measure';
     selectedId = stored.model.ui2?.selectedId || model.measures[0]?.id || '';
   } else {
     model = emptySkeletonModel();
+    modelPassthrough = {};
+    envelopePassthrough = {};
     selectedType = 'input';
     selectedId = 'rahmen-sparte';
   }
@@ -1123,6 +1166,194 @@ function showToast(text) {
 }
 
 // ---------------------------------------------------------------------------
+// Ausgaben (Abschnitt 4.5) — Aktionen im Kopfbereich, kein eigener View.
+// Report/Befassungsvorlage sind ein neuer, kompakter Textbaustein (die
+// Objektfläche hat kein Äquivalent zu ui.js' renderReport); KI-Prompt,
+// Tabellenexport und Support-Paket nutzen spreadsheet-export.js,
+// ai-prompt-generator.js, export-utils.js und release-awareness.js
+// unverändert, wie in Abschnitt 4.5 gefordert.
+// ---------------------------------------------------------------------------
+
+let outputTab = 'report';
+
+function activeRulesetInfo() {
+  return rulesetInfo(regulatoryParameterSet);
+}
+
+function localReleaseContext() {
+  const ruleset = activeRulesetInfo();
+  return {
+    appVersion,
+    buildCommit: buildInfo.buildCommit,
+    buildTime: buildInfo.buildTime,
+    rulesetId: ruleset.id,
+    rulesetEffectiveMonth: ruleset.effectiveMonth,
+    rulesetConfidence: ruleset.confidence,
+    rulesetSourceRef: ruleset.sourceRef
+  };
+}
+
+function currentSupportContext() {
+  return supportContext({
+    ...localReleaseContext(),
+    ruleset: activeRulesetInfo(),
+    lastReleaseCheck: null,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+  });
+}
+
+function currentSpreadsheetTables() {
+  return spreadsheetTables(currentModelData(), { buildInfo, ruleset: activeRulesetInfo() });
+}
+
+function aiPromptOptionsFromUi() {
+  return {
+    ...defaultAiPromptOptions,
+    roleId: document.getElementById('akteAiPromptRole')?.value || defaultAiPromptOptions.roleId
+  };
+}
+
+function currentAiPrompt() {
+  return buildAiPrompt(currentModelData(), aiPromptOptionsFromUi(), { buildInfo, ruleset: activeRulesetInfo() });
+}
+
+function reportSegmentationRowsHtml(segmentation) {
+  const labels = {
+    corePortfolio: 'Kernportfolio',
+    scopeCandidate: 'Scope-Kandidat',
+    optionSensitive: 'Optionssensitiv',
+    contextObject: 'Kontextobjekt',
+    flexibilityObject: 'Flexibilitätsobjekt',
+    excluded: 'Ausgeschlossen'
+  };
+  return Object.entries(labels).map(([key, label]) => {
+    const bucket = segmentation[key] || { count: 0, invest: 0, yearOneRegulatoryEog: 0 };
+    return `<tr><td>${esc(label)}</td><td>${bucket.count}</td><td>${esc(fmtTeur(bucket.invest || 0, 0))}</td><td>${esc(fmtTeur(bucket.yearOneRegulatoryEog || 0, 1))}</td></tr>`;
+  }).join('');
+}
+
+function buildReportHtml() {
+  const portfolio = currentPortfolio();
+  const clarifications = currentClarifications(portfolio);
+  const decision = portfolioDecisionMetrics(portfolio);
+  const openClarifications = clarifications.filter(item => item.status !== 'closed').sort((a, b) => a.priority.level - b.priority.level);
+  const p = currentParams();
+  return `
+    <h3>${esc(p.sector === 'gas' ? 'Gas' : 'Strom')} · Report / Befassungsvorlage</h3>
+    <p class="akte-object-subtitle">Stand ${esc(new Date().toLocaleDateString('de-DE'))} · Phase ${esc(processPhases.find(([id]) => id === model.process.phase)?.[1] || model.process.phase)}</p>
+    <table class="akte-output-table">
+      <tbody>
+        ${kpiDefinitions.map(def => `<tr><td>${esc(def.label)}</td><td>${esc(def.format(def.compute(portfolio)))}</td></tr>`).join('')}
+        <tr><td>Entscheidungstendenz</td><td>${esc(decision.governanceDecision.title)}</td></tr>
+      </tbody>
+    </table>
+    <p>${esc(decision.governanceDecision.text)} ${esc(decision.governanceDecision.recommendation)}</p>
+    <h3>Segmentierung</h3>
+    <table class="akte-output-table">
+      <thead><tr><th>Klasse</th><th>Anzahl</th><th>Invest</th><th>EOG Jahr 1</th></tr></thead>
+      <tbody>${reportSegmentationRowsHtml(portfolio.portfolioSegmentation)}</tbody>
+    </table>
+    <h3>Wichtigste offene Punkte (${openClarifications.length})</h3>
+    <table class="akte-output-table">
+      <thead><tr><th>Titel</th><th>Bereich</th><th>Priorität</th></tr></thead>
+      <tbody>${openClarifications.slice(0, 10).map(item => `<tr><td>${esc(item.title)}</td><td>${esc(item.area || '')}</td><td>${esc(item.priority.label)}</td></tr>`).join('') || '<tr><td colspan="3">Keine offenen Punkte.</td></tr>'}</tbody>
+    </table>
+    <h3>Beschlussvorschlag (${esc(model.committee.body || 'Gremium')})</h3>
+    <p>${esc(model.committee.proposalText || 'Noch kein Beschlussvorschlag hinterlegt (Rahmen: Befassung).')}</p>
+  `;
+}
+
+function outputTabs() {
+  return [
+    { key: 'report', label: 'Report' },
+    { key: 'ai-prompt', label: 'KI-Prompt' },
+    { key: 'tables', label: 'Tabellen' },
+    { key: 'support', label: 'Support-Paket' }
+  ];
+}
+
+function renderOutputBody() {
+  const body = document.getElementById('akteOutputBody');
+  if (outputTab === 'report') {
+    body.innerHTML = `${buildReportHtml()}<div class="akte-output-actions"><button type="button" id="akteReportPrint">Report drucken</button></div>`;
+    document.getElementById('akteReportPrint')?.addEventListener('click', () => window.print());
+    return;
+  }
+  if (outputTab === 'ai-prompt') {
+    body.innerHTML = `
+      <label class="akte-output-field" for="akteAiPromptRole">Zielgruppe</label>
+      <select id="akteAiPromptRole" class="akte-output-select">${promptRoles.map(role => `<option value="${esc(role.id)}">${esc(role.title)}</option>`).join('')}</select>
+      <div class="akte-output-actions"><button type="button" id="akteAiPromptCopy">In Zwischenablage kopieren</button></div>
+      <textarea id="akteAiPromptOutput" readonly></textarea>
+    `;
+    const select = document.getElementById('akteAiPromptRole');
+    select.value = defaultAiPromptOptions.roleId;
+    const refresh = () => { document.getElementById('akteAiPromptOutput').value = currentAiPrompt(); };
+    refresh();
+    select.addEventListener('change', refresh);
+    document.getElementById('akteAiPromptCopy').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(document.getElementById('akteAiPromptOutput').value);
+        showToast('Prompt in Zwischenablage kopiert.');
+      } catch (_error) {
+        showToast('Kopieren nicht möglich; Text manuell markieren.');
+      }
+    });
+    return;
+  }
+  if (outputTab === 'tables') {
+    body.innerHTML = `
+      <p>Maßnahmen, KPIs, Segmentierung und Provenienz als Arbeitsmappe oder CSV-Archiv (spreadsheet-export.js, unverändert).</p>
+      <div class="akte-output-actions">
+        <button type="button" id="akteExportXlsx">Als XLSX exportieren</button>
+        <button type="button" id="akteExportCsvZip">Als CSV-ZIP exportieren</button>
+      </div>
+    `;
+    document.getElementById('akteExportXlsx').addEventListener('click', () => {
+      const state = collectModelState();
+      const workbook = tablesToXlsx(currentSpreadsheetTables());
+      downloadBlob(new Blob([workbook], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'digitale-akte-tabellen-' + exportStamp(state) + '.xlsx');
+      showToast('XLSX-Arbeitsmappe vorbereitet.');
+    });
+    document.getElementById('akteExportCsvZip').addEventListener('click', () => {
+      const state = collectModelState();
+      const archive = tablesToCsvZip(currentSpreadsheetTables());
+      downloadBlob(new Blob([archive], { type: 'application/zip' }), 'digitale-akte-tabellen-csv-' + exportStamp(state) + '.zip');
+      showToast('CSV-ZIP vorbereitet.');
+    });
+    return;
+  }
+  if (outputTab === 'support') {
+    body.innerHTML = `
+      <p>Support-Paket enthält nur App-/Ruleset-/Browser-Kontext, keine Modell- oder Maßnahmenwerte.</p>
+      <div class="akte-output-actions"><button type="button" id="akteExportSupport">Support-Paket herunterladen</button></div>
+    `;
+    document.getElementById('akteExportSupport').addEventListener('click', () => {
+      const payload = supportPackage(currentSupportContext());
+      downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), 'digitale-akte-support-kontext-' + payload.createdAt.slice(0, 19).replaceAll(':', '').replace('T', '-') + '.json');
+      showToast('Support-Paket ohne Modelldaten vorbereitet.');
+    });
+  }
+}
+
+function renderOutputTabs() {
+  document.getElementById('akteOutputTabs').innerHTML = outputTabs().map(tab => `
+    <button type="button" class="${tab.key === outputTab ? 'active' : ''}" data-output-tab="${esc(tab.key)}">${esc(tab.label)}</button>
+  `).join('');
+}
+
+function openOutputWindow() {
+  outputTab = 'report';
+  renderOutputTabs();
+  renderOutputBody();
+  document.getElementById('akteOutputOverlay').classList.remove('hidden');
+}
+
+function closeOutputWindow() {
+  document.getElementById('akteOutputOverlay').classList.add('hidden');
+}
+
+// ---------------------------------------------------------------------------
 // Ereignisse
 // ---------------------------------------------------------------------------
 
@@ -1173,11 +1404,25 @@ function wireEvents() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       closePopover();
+      closeOutputWindow();
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault();
       document.getElementById('akteSearch').focus();
     }
+  });
+
+  document.getElementById('akteOutputButton').addEventListener('click', openOutputWindow);
+  document.getElementById('akteOutputClose').addEventListener('click', closeOutputWindow);
+  document.getElementById('akteOutputOverlay').addEventListener('click', event => {
+    if (event.target.id === 'akteOutputOverlay') closeOutputWindow();
+  });
+  document.getElementById('akteOutputTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-output-tab]');
+    if (!button) return;
+    outputTab = button.dataset.outputTab;
+    renderOutputTabs();
+    renderOutputBody();
   });
 
   document.getElementById('akteSearch').addEventListener('input', event => {
@@ -1194,6 +1439,8 @@ function wireEvents() {
   document.getElementById('akteLoadDemoButton').addEventListener('click', () => {
     if (!window.confirm('Demodaten laden? Der aktuelle Arbeitsstand in dieser Oberfläche wird ersetzt. Vorher exportieren, wenn er erhalten bleiben soll.')) return;
     model = demoModel();
+    modelPassthrough = {};
+    envelopePassthrough = {};
     history = emptyHistory();
     selectedType = 'measure';
     selectedId = model.measures[0]?.id || '';
@@ -1206,14 +1453,7 @@ function wireEvents() {
   });
 
   document.getElementById('akteExportButton').addEventListener('click', () => {
-    const state = {
-      app: 'regulierte-sparten-szenario-rechner',
-      version: modelVersion,
-      appVersion,
-      savedAt: new Date().toISOString(),
-      model: currentModelData(),
-      history
-    };
+    const state = collectModelState();
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -1237,6 +1477,7 @@ function wireEvents() {
         const state = JSON.parse(String(reader.result));
         const incomingModel = state.model || state;
         model = modelFromStoredData(incomingModel);
+        envelopePassthrough = extractPassthrough(state, managedEnvelopeKeys);
         history = state.history && Array.isArray(state.history.events) ? state.history : emptyHistory();
         selectedType = incomingModel.ui2?.selectedType || 'measure';
         selectedId = incomingModel.ui2?.selectedId || model.measures[0]?.id || '';
@@ -1258,7 +1499,15 @@ function wireEvents() {
 // Start
 // ---------------------------------------------------------------------------
 
+function refreshBuildMeta() {
+  const commitNode = document.querySelector('meta[name="build-commit"]');
+  const timeNode = document.querySelector('meta[name="build-time"]');
+  if (commitNode) commitNode.setAttribute('content', buildInfo.buildCommit);
+  if (timeNode) timeNode.setAttribute('content', buildInfo.buildTime);
+}
+
 function boot() {
+  refreshBuildMeta();
   bootstrap();
   wireEvents();
   renderAll();
@@ -1288,6 +1537,10 @@ if (typeof window !== 'undefined') {
     clarificationItems: () => currentClarifications(currentPortfolio()),
     maturityScore: () => currentMaturity(currentPortfolio()),
     portfolioSegmentation: () => currentPortfolio().portfolioSegmentation,
-    measureDrilldownFor: measureId => measureDrilldownFor(model.measures.find(measure => measure.id === measureId), currentParams())
+    measureDrilldownFor: measureId => measureDrilldownFor(model.measures.find(measure => measure.id === measureId), currentParams()),
+    // Kriterium 2 (verlustfreier Datenvertrag), siehe tests/akte-data-contract.test.js.
+    collectModelState: () => collectModelState(),
+    saveNow: () => saveToStorage(true),
+    getHistory: () => history
   };
 }

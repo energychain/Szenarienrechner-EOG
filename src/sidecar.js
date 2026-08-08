@@ -84,7 +84,12 @@ export function normalizeBridgeLogic(bridgeLogic = {}) {
     direction: enumValue(input.direction, bridgeDirections, 'none'),
     quantificationStatus: enumValue(input.quantificationStatus, quantificationStatuses, 'not_applicable'),
     quantificationMethod: text(input.quantificationMethod),
-    amount: Number.isFinite(Number(input.amount)) ? Number(input.amount) : '',
+    // Number('') is 0 in JS, so a plain Number.isFinite(Number(...)) check
+    // is not idempotent: an already-normalized empty amount would turn into
+    // 0 on a second pass. Treat empty/nullish input as "no amount" first.
+    amount: input.amount === '' || input.amount === null || input.amount === undefined
+      ? ''
+      : (Number.isFinite(Number(input.amount)) ? Number(input.amount) : ''),
     amountUnit: text(input.amountUnit),
     timeHorizon: text(input.timeHorizon),
     sourceRefs: list(input.sourceRefs),

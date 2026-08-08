@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<meta name="build-commit" content="dev">
-<meta name="build-time" content="dev">
+<meta name="build-commit" content="%VITE_BUILD_COMMIT%">
+<meta name="build-time" content="%VITE_BUILD_TIME%">
 <title>Digitale Akte — Szenarienrechner EOG</title>
 <link rel="stylesheet" href="/src/akte.css">
 </head>
@@ -27,6 +27,7 @@
     <input id="akteImportFile" type="file" accept="application/json" hidden>
     <button type="button" id="akteSaveButton">Speichern</button>
     <button type="button" id="akteExportButton">Exportieren</button>
+    <button type="button" id="akteOutputButton">Ausgaben</button>
   </div>
 </header>
 
@@ -40,6 +41,17 @@
 
 <div id="akteToast" class="akte-toast hidden" role="status" aria-live="polite"></div>
 <div id="akteValuePopover" class="akte-value-popover hidden" role="dialog" aria-label="Wert bearbeiten"></div>
+
+<div id="akteOutputOverlay" class="akte-output-overlay hidden" role="dialog" aria-label="Ausgaben">
+  <div class="akte-output-panel">
+    <div class="akte-output-header">
+      <h2>Ausgaben</h2>
+      <button type="button" id="akteOutputClose">Schließen</button>
+    </div>
+    <nav id="akteOutputTabs" class="akte-output-tabs"></nav>
+    <div id="akteOutputBody" class="akte-output-body"></div>
+  </div>
+</div>
 
 <script type="module" src="/src/main-akte.js"></script>
 </body>

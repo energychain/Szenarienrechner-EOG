@@ -90,4 +90,38 @@ for (const section of imprintSections) {
   }
 }
 
+// --- Zweite Oberfläche ("digitale Akte") — Kriterium 15 --------------------
+// Kein Netzwerkfunktion (Spezifikation Abschnitt 2/8): connect-src 'none',
+// keine Release-Manifest-Prüfung, kein Update-Check.
+const akteExpectedCsp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+const akteHtml = readFileSync('dist/akte.html', 'utf8');
+
+assert(
+  akteHtml.includes(`<meta http-equiv="Content-Security-Policy" content="${akteExpectedCsp}">`),
+  'Built akte artifact is missing the expected (network-free) CSP meta tag.'
+);
+assert(!/https?:\/\//i.test(akteHtml
+  // Reine Textliterale (llm.txt-Verweis im KI-Prompt, Repository-Verweis im
+  // Support-Paket) — CSP connect-src 'none' verhindert trotzdem jeden
+  // tatsächlichen Netzwerkzugriff; dieselben Domains sind im Hauptartefakt
+  // ebenfalls freigegeben.
+  .replaceAll('https://energychain.github.io', '')
+  .replaceAll('https://github.com/energychain/Szenarienrechner-EOG', '')
+  .replaceAll('http://schemas.openxmlformats.org', '')
+  .replaceAll('http://purl.org/dc/elements/1.1/', '')
+  .replaceAll('http://purl.org/dc/terms/', '')
+  .replaceAll('http://purl.org/dc/dcmitype/', '')
+  .replaceAll('http://www.w3.org/2001/XMLSchema-instance', '')), 'Built akte artifact must not contain any external http(s) URL.');
+assert(!/\beval\s*\(/.test(akteHtml), 'Built akte artifact must not contain eval(.');
+assert(!/\b(XMLHttpRequest|WebSocket|EventSource|fetch)\s*\(/.test(akteHtml), 'Built akte artifact must not contain network APIs.');
+assert((akteHtml.match(/<script[^>]*>/g) || []).length === 1, 'Built akte artifact must inline into exactly one script tag.');
+assert(!/<link[^>]+href="(?!#)/.test(akteHtml), 'Built akte artifact must not reference external stylesheets.');
+const akteBuiltCommit = akteHtml.match(/<meta name="build-commit" content="([^"]+)"/)?.[1];
+assert(akteBuiltCommit, 'Built akte artifact must include a build-commit meta tag.');
+assert(akteBuiltCommit !== 'dev', 'Built akte artifact must carry the real build commit, not the dev placeholder.');
+assert(akteBuiltCommit === builtCommit, `Akte artifact commit ${akteBuiltCommit} must match built app commit ${builtCommit}.`);
+for (const term of restrictedSystemTerms) {
+  assert(!akteHtml.includes(term), `Built akte artifact must not contain restricted system term: ${term}.`);
+}
+
 console.log('Distribution checks passed.');

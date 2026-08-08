@@ -7523,6 +7523,9 @@ if (typeof window !== 'undefined') {
     portfolioSegmentation: () => currentPortfolio().portfolioSegmentation,
     // Kriterium 3 (Parität der Rechenpfade zwischen den Oberflächen),
     // siehe tests/akte-parity.test.js.
-    measureDrilldownFor: measureId => measureDrilldownFor(measures.find(measure => measure.id === measureId), currentParams())
+    measureDrilldownFor: measureId => measureDrilldownFor(measures.find(measure => measure.id === measureId), currentParams()),
+    // Kriterium 2 (verlustfreier Datenvertrag), siehe tests/akte-data-contract.test.js.
+    collectModelState: () => collectModelState(),
+    applyModelState: state => applyModelState(state)
   };
 }

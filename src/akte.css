@@ -396,6 +396,88 @@ button {
 
 .akte-empty-state { color: var(--akte-text-muted); padding: 40px 0; text-align: center; }
 
+/* Ausgabefenster (Abschnitt 4.5) ------------------------------------------ */
+
+.akte-output-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 25, 35, 0.45);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.akte-output-overlay.hidden { display: none; }
+.akte-output-panel {
+  background: var(--akte-surface);
+  border-radius: var(--akte-radius);
+  width: min(860px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(20, 25, 35, 0.3);
+}
+.akte-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--akte-border);
+}
+.akte-output-header h2 { margin: 0; font-size: 1.15em; }
+.akte-output-header button {
+  border: 1px solid var(--akte-border);
+  background: var(--akte-surface);
+  border-radius: 6px;
+  padding: 5px 12px;
+}
+.akte-output-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 20px 0;
+  border-bottom: 1px solid var(--akte-border);
+}
+.akte-output-tabs button {
+  border: none;
+  background: none;
+  padding: 8px 14px;
+  border-radius: 6px 6px 0 0;
+  color: var(--akte-text-muted);
+  font-weight: 600;
+}
+.akte-output-tabs button.active { background: var(--akte-accent-weak); color: var(--akte-accent); }
+.akte-output-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+.akte-output-body h3 { margin-top: 0; }
+.akte-output-body textarea {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid var(--akte-border);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+.akte-output-actions { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.akte-output-actions button {
+  border: 1px solid var(--akte-border);
+  background: var(--akte-accent-weak);
+  border-radius: 6px;
+  padding: 7px 14px;
+}
+.akte-output-table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 0.9em; }
+.akte-output-table th, .akte-output-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--akte-border); }
+.akte-output-field { display: block; margin: 10px 0 4px; font-size: 0.8em; color: var(--akte-text-muted); }
+.akte-output-select { padding: 5px 8px; border: 1px solid var(--akte-border); border-radius: 6px; }
+
+@media print {
+  body > *:not(#akteOutputOverlay) { display: none !important; }
+  .akte-output-overlay { position: static; background: none; padding: 0; }
+  .akte-output-panel { box-shadow: none; max-height: none; width: 100%; }
+  .akte-output-header, .akte-output-tabs, .akte-output-actions { display: none !important; }
+}
+
 @media (max-width: 1000px) {
   .akte-columns { grid-template-columns: 200px minmax(0, 1fr); }
   .akte-context-column { display: none; }

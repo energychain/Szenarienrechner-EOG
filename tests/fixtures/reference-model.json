@@ -1836,7 +1836,8 @@
         "nextRequiredEvidence": "",
         "generationConnectionCostContributionEnabled": false,
         "connectionCostContributionTeur": 0,
-        "connectionCostContributionMode": "none"
+        "connectionCostContributionMode": "none",
+        "importStatus": ""
       },
       {
         "id": "measure_2",
@@ -1973,7 +1974,8 @@
         "nextRequiredEvidence": "",
         "generationConnectionCostContributionEnabled": false,
         "connectionCostContributionTeur": 0,
-        "connectionCostContributionMode": "none"
+        "connectionCostContributionMode": "none",
+        "importStatus": ""
       },
       {
         "id": "measure_3",
@@ -2093,7 +2095,8 @@
         "nextRequiredEvidence": "",
         "generationConnectionCostContributionEnabled": false,
         "connectionCostContributionTeur": 0,
-        "connectionCostContributionMode": "none"
+        "connectionCostContributionMode": "none",
+        "importStatus": ""
       },
       {
         "id": "measure_4",
@@ -2213,7 +2216,8 @@
         "nextRequiredEvidence": "",
         "generationConnectionCostContributionEnabled": false,
         "connectionCostContributionTeur": 0,
-        "connectionCostContributionMode": "none"
+        "connectionCostContributionMode": "none",
+        "importStatus": ""
       },
       {
         "id": "measure_5",
@@ -2351,7 +2355,8 @@
         "nextRequiredEvidence": "",
         "generationConnectionCostContributionEnabled": false,
         "connectionCostContributionTeur": 0,
-        "connectionCostContributionMode": "none"
+        "connectionCostContributionMode": "none",
+        "importStatus": ""
       },
       {
         "id": "measure_6",
@@ -2490,7 +2495,8 @@
         "nextRequiredEvidence": "",
         "generationConnectionCostContributionEnabled": false,
         "connectionCostContributionTeur": 0,
-        "connectionCostContributionMode": "none"
+        "connectionCostContributionMode": "none",
+        "importStatus": ""
       }
     ],
     "meetingTextOverrides": {},
