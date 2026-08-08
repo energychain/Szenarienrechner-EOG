@@ -39,7 +39,7 @@ import { demoMeasures, demoSidecar } from './demo-data.js';
 import { appendHistoryEvents, diffModelEvents, emptyHistory, eventSummary } from './history.js';
 import { inputDefaults, inputIds, processPhases } from './ui-config.js';
 import { buildInfo } from './build-info.js';
-import { downloadBlob, exportStamp } from './export-utils.js';
+import { downloadBlob, exportStamp, htmlWithEmbeddedModelState } from './export-utils.js';
 import { spreadsheetTables, tablesToCsvZip, tablesToXlsx } from './spreadsheet-export.js';
 import { buildAiPrompt, defaultAiPromptOptions, promptRoles } from './ai-prompt-generator.js';
 import { rulesetInfo, supportContext, supportPackage } from './release-awareness.js';
@@ -205,6 +205,53 @@ function collectModelState() {
   };
 }
 
+function exportSnapshotLabel() {
+  return `Stand wie versendet · ${new Date().toLocaleString('de-DE')} · ${author}`;
+}
+
+// Wie ui.js: JSON- und HTML-Exporte hinterlassen ein history-Ereignis und
+// einen Snapshot, damit spätere Vergleiche einen Bezugspunkt haben.
+function createExportSnapshot() {
+  const timestamp = new Date().toISOString();
+  history = appendHistoryEvents(history, [{
+    type: 'modelExported',
+    subject: { scope: 'model' },
+    field: 'export',
+    oldValue: null,
+    newValue: timestamp,
+    note: 'Snapshot beim Export erzeugt.'
+  }], author);
+  history.snapshots = [...(history.snapshots || []), {
+    id: 'snap_export_' + Date.now().toString(36),
+    eventId: history.headId,
+    label: exportSnapshotLabel(),
+    author,
+    timestamp,
+    phase: model.process.phase
+  }];
+  previousModelForHistory = currentModelData();
+}
+
+function refreshBuildMeta() {
+  const commitNode = document.querySelector('meta[name="build-commit"]');
+  const timeNode = document.querySelector('meta[name="build-time"]');
+  if (commitNode) commitNode.setAttribute('content', buildInfo.buildCommit);
+  if (timeNode) timeNode.setAttribute('content', buildInfo.buildTime);
+}
+
+// "HTML mit Daten speichern" (Terminologie wie ui.js, Abschnitt 8): erzeugt
+// eine eigenständige, offline lauffähige Kopie dieser Oberfläche inklusive
+// des aktuellen Datenstands, ohne jede Netzwerkfunktion.
+function exportSelfContainedHtml() {
+  createExportSnapshot();
+  refreshBuildMeta();
+  const state = collectModelState();
+  const html = '<!DOCTYPE html>\n' + htmlWithEmbeddedModelState(document.documentElement.outerHTML, state);
+  const blob = new Blob([html], { type: 'text/html' });
+  downloadBlob(blob, 'digitale-akte-mit-daten-' + exportStamp(state) + '.html');
+  showToast('HTML-Datei mit eingebettetem Datenstand wurde zum Download vorbereitet.');
+}
+
 function saveToStorage(silent = true) {
   try {
     const currentModel = currentModelData();
@@ -261,7 +308,37 @@ function modelFromStoredData(storedModel) {
   };
 }
 
+// Übernimmt einen vollständigen Envelope-Zustand (aus Datei-Import oder aus
+// einer selbstenthaltenen HTML-mit-Daten-Datei) als aktuelles Modell.
+function applyIncomingState(state) {
+  const incomingModel = state.model || state;
+  model = modelFromStoredData(incomingModel);
+  envelopePassthrough = extractPassthrough(state, managedEnvelopeKeys);
+  history = state.history && Array.isArray(state.history.events) ? state.history : emptyHistory();
+  selectedType = incomingModel.ui2?.selectedType || 'measure';
+  selectedId = incomingModel.ui2?.selectedId || model.measures[0]?.id || '';
+  filterKey = incomingModel.ui2?.filterKey || 'all';
+  previousModelForHistory = currentModelData();
+  previousKpis = null;
+}
+
+// Selbstenthaltene "HTML mit Daten"-Datei (siehe exportSelfContainedHtml):
+// ein eingebetteter <script id="embedded-model-state"> im selben Format wie
+// bei ui.js — dasselbe Exportformat funktioniert für beide Oberflächen.
+function loadEmbeddedModelState() {
+  const node = document.getElementById('embedded-model-state');
+  if (!node?.textContent?.trim()) return false;
+  try {
+    applyIncomingState(JSON.parse(node.textContent));
+    saveToStorage(true);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
 function bootstrap() {
+  if (loadEmbeddedModelState()) return;
   const stored = loadFromStorage();
   if (stored?.model) {
     model = modelFromStoredData(stored.model);
@@ -1464,6 +1541,8 @@ function wireEvents() {
     showToast('JSON-Export vorbereitet.');
   });
 
+  document.getElementById('akteExportHtmlButton').addEventListener('click', () => exportSelfContainedHtml());
+
   document.getElementById('akteImportButton').addEventListener('click', () => {
     document.getElementById('akteImportFile').click();
   });
@@ -1474,16 +1553,7 @@ function wireEvents() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const state = JSON.parse(String(reader.result));
-        const incomingModel = state.model || state;
-        model = modelFromStoredData(incomingModel);
-        envelopePassthrough = extractPassthrough(state, managedEnvelopeKeys);
-        history = state.history && Array.isArray(state.history.events) ? state.history : emptyHistory();
-        selectedType = incomingModel.ui2?.selectedType || 'measure';
-        selectedId = incomingModel.ui2?.selectedId || model.measures[0]?.id || '';
-        filterKey = incomingModel.ui2?.filterKey || 'all';
-        previousModelForHistory = currentModelData();
-        previousKpis = null;
+        applyIncomingState(JSON.parse(String(reader.result)));
         renderAll();
         showToast('Modell geladen.');
       } catch (_error) {
@@ -1498,13 +1568,6 @@ function wireEvents() {
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
-
-function refreshBuildMeta() {
-  const commitNode = document.querySelector('meta[name="build-commit"]');
-  const timeNode = document.querySelector('meta[name="build-time"]');
-  if (commitNode) commitNode.setAttribute('content', buildInfo.buildCommit);
-  if (timeNode) timeNode.setAttribute('content', buildInfo.buildTime);
-}
 
 function boot() {
   refreshBuildMeta();

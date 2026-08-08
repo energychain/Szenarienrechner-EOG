@@ -114,7 +114,20 @@ assert(!/https?:\/\//i.test(akteHtml
   .replaceAll('http://www.w3.org/2001/XMLSchema-instance', '')), 'Built akte artifact must not contain any external http(s) URL.');
 assert(!/\beval\s*\(/.test(akteHtml), 'Built akte artifact must not contain eval(.');
 assert(!/\b(XMLHttpRequest|WebSocket|EventSource|fetch)\s*\(/.test(akteHtml), 'Built akte artifact must not contain network APIs.');
-assert((akteHtml.match(/<script[^>]*>/g) || []).length === 1, 'Built akte artifact must inline into exactly one script tag.');
+{
+  // Naives Zählen von "<script...>"-Vorkommen liefert falsch-positive Treffer,
+  // seit main-akte.js htmlWithEmbeddedModelState() nutzt ("HTML mit Daten
+  // speichern") — dessen Regex- und Template-Quelltext enthält den Text
+  // '<script id="embedded-model-state" ...>' selbst als JS-String, nicht als
+  // echtes HTML-Tag. Stattdessen wird geprüft, dass außerhalb der Spanne vom
+  // ersten <script> bis zum letzten </script> kein weiteres Script-Tag steht.
+  const firstScriptOpen = akteHtml.indexOf('<script');
+  const lastScriptClose = akteHtml.lastIndexOf('</script>');
+  assert(firstScriptOpen !== -1 && lastScriptClose !== -1, 'Built akte artifact must contain a script tag.');
+  const before = akteHtml.slice(0, firstScriptOpen);
+  const after = akteHtml.slice(lastScriptClose + '</script>'.length);
+  assert(!before.includes('<script') && !after.includes('<script'), 'Built akte artifact must inline into exactly one script tag.');
+}
 assert(!/<link[^>]+href="(?!#)/.test(akteHtml), 'Built akte artifact must not reference external stylesheets.');
 const akteBuiltCommit = akteHtml.match(/<meta name="build-commit" content="([^"]+)"/)?.[1];
 assert(akteBuiltCommit, 'Built akte artifact must include a build-commit meta tag.');
