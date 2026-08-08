@@ -111,7 +111,8 @@ export function normalizeTemplateImpact(template, index, year) {
   };
 }
 
-export function measureFromTemplate(template, { baseYear, sector, defaults = {} } = {}) {
+export function measureFromTemplate(template, options = {}) {
+  const { baseYear, sector, defaults = {} } = options;
   const year = Math.max(Math.round(baseYear) || new Date().getFullYear(), new Date().getFullYear());
   const typicalCost = template.costRange?.[1] || 0;
   const checkNote = template.checkHints?.length
