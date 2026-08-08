@@ -30,7 +30,7 @@ import {
 } from './engine.js';
 import { clarificationItems } from './clarifications.js';
 import { maturityScore } from './maturity.js';
-import { eogFlowModel, linearScale, riskMatrixModel, tornadoModel } from './chart-model.js';
+import { contributionBarsModel, eogFlowModel, linearScale, riskMatrixModel, tornadoModel, viabilitySegmentsModel, waterfallModel } from './chart-model.js';
 import { defaultCommittee, defaultProcessState, defaultStrategy, normalizeMeasure, normalizeProcessState } from './model-normalize.js';
 import { fieldDescriptorsFor } from './field-registry.js';
 import { evidenceGaps, missingValueFields, referenceFieldsFor, suggestedEdges, valueState } from './value-state.js';
@@ -44,6 +44,7 @@ import { downloadBlob, exportStamp, htmlWithEmbeddedModelState, stripForeignScri
 import { spreadsheetTables, tablesToCsvZip, tablesToXlsx } from './spreadsheet-export.js';
 import { buildAiPrompt, defaultAiPromptOptions, promptRoles } from './ai-prompt-generator.js';
 import { rulesetInfo, supportContext, supportPackage } from './release-awareness.js';
+import { viabilityOverviewFor } from './viability-classification.js';
 
 const storageKey = 'regulierte-sparten-szenario-rechner-akte-v1';
 const modelVersion = 8;
@@ -663,6 +664,18 @@ function filteredEntries(entries, portfolio) {
       .filter(item => item.value)
       .sort((a, b) => b.value - a.value)
       .map(item => item.entry);
+  } else if (filterKey.startsWith('viability:')) {
+    // Vom Segmentbalken gesetzter Filter (Abschnitt 5: "Segment → setzt
+    // Filter auf die Kategorie") — dieselbe "measure"-Objektfläche, aber nur
+    // die Maßnahmen dieser Tragfähigkeitskategorie. Dieselbe Quelle wie das
+    // Segment selbst (viabilityOverviewFor via viabilitySegmentsModel), statt
+    // die Klassifikation hier redundant und potenziell abweichend erneut zu
+    // berechnen (u. a. schließt viabilityOverviewFor inaktive Maßnahmen aus).
+    const category = filterKey.slice('viability:'.length);
+    const bucketMeasureIds = new Set(
+      (viabilityOverviewFor({ measures: model.measures }, model.inputs).categories[category]?.measures || []).map(item => item.measureId)
+    );
+    list = entries.filter(entry => entry.objectType === 'measure' && bucketMeasureIds.has(entry.id));
   } else {
     const def = allFilterDefs.find(item => item.key === filterKey);
     list = def ? entries.filter(def.match) : entries;
@@ -965,13 +978,19 @@ const chartTypeByFilter = {
   measure: 'riskMatrix',
   clarification: 'tornado',
   'kpi:eogYear1': 'eogFlow',
-  'kpi:eogFollow': 'eogFlow'
+  'kpi:eogFollow': 'eogFlow',
+  'kpi:npv': 'waterfall',
+  'kpi:irr': 'contributionBars',
+  rahmen: 'viabilitySegments'
 };
 
 const chartTypeLabels = {
   riskMatrix: 'Risikomatrix',
   tornado: 'Wirkungsrangliste',
-  eogFlow: 'Liquiditäts-/EOG-Verlauf'
+  eogFlow: 'Liquiditäts-/EOG-Verlauf',
+  waterfall: 'Wasserfall',
+  contributionBars: 'Beitragsbalken',
+  viabilitySegments: 'Segmentbalken'
 };
 
 // Baut das Diagrammmodell für den aktuellen Filter, sofern einer zugeordnet
@@ -1003,6 +1022,31 @@ function chartModelForCurrentFilter(visible) {
     // Jahressäulen tragen ohnehin nie einen Objektbezug (Abschnitt 7.2) — die
     // Regel-3-Kappung entfällt hier, es gibt nichts zu kappen.
     return eogFlowModel(currentPortfolio(), context);
+  }
+  if (type === 'waterfall') {
+    const visibleIds = new Set(visible.filter(entry => entry.objectType === 'measure').map(entry => entry.id));
+    const chart = waterfallModel(currentPortfolio(), context);
+    chart.elements.forEach(element => {
+      if (element.objectId && !visibleIds.has(element.objectId)) element.objectId = null;
+    });
+    return chart;
+  }
+  if (type === 'contributionBars') {
+    const visibleIds = new Set(visible.filter(entry => entry.objectType === 'measure').map(entry => entry.id));
+    const chart = contributionBarsModel(currentPortfolio(), context);
+    chart.elements.forEach(element => {
+      if (element.objectId && !visibleIds.has(element.objectId)) element.objectId = null;
+    });
+    return chart;
+  }
+  if (type === 'viabilitySegments') {
+    // Ein Segment ist keine Referenz auf ein Objekt aus der sichtbaren Liste
+    // (die "rahmen"-Liste zeigt Rahmen-/Szenario-Pseudoobjekte, keine
+    // Kategorien) — es setzt stattdessen selbst einen neuen Filter (Abschnitt
+    // 5: "Segment → setzt Filter auf die Kategorie"). Regel-3-Kappung entfällt
+    // aus demselben Grund wie bei Jahressäulen: es gibt keine Objektidentität
+    // zu kappen.
+    return viabilitySegmentsModel({ measures: model.measures }, model.inputs, context);
   }
   return null;
 }
@@ -1265,10 +1309,180 @@ function renderRiskMatrixTable(chart) {
   `;
 }
 
+// Wasserfall (Filter "kpi:npv"): Basis-EOG → Wirkungsbeiträge → Ergebnis, ein
+// schwebender Balken je Schritt (Abschnitt 5). "Balken → beitragende
+// Maßnahme, wo eindeutig" — waterfallModel() setzt den Objektbezug nur, wenn
+// genau eine aktive Maßnahme existiert (siehe chart-model.js).
+function renderVerticalBarChart({ chart, leftMargin = 12, rightMargin = 12, labelEvery = 1, xLabel, xLabelFor = element => element.label, selectedObjectType, selectedObjectId, overlayFraction, connectSteps }) {
+  const width = 560;
+  const height = 220;
+  const topMargin = 10;
+  const bottomMargin = xLabel ? 20 : 8;
+  const n = Math.max(1, chart.elements.length);
+  const colWidth = (width - leftMargin - rightMargin) / n;
+  const barWidth = Math.max(4, colWidth * 0.6);
+  const yScale = linearScale(chart.yAxis.min, chart.yAxis.max || 1, height - bottomMargin, topMargin);
+  const zeroY = yScale(0);
+  const columnX = index => leftMargin + colWidth * index + colWidth / 2;
+  let previousEndY = null;
+  const bars = chart.elements.map((element, index) => {
+    const cx = columnX(index);
+    const start = element.start ?? 0;
+    const end = element.end ?? element.value ?? 0;
+    // yScale kehrt die Richtung um (größerer Datenwert → kleinerer Pixelwert)
+    // — pixelTop ist deshalb nicht einfach yScale(min(start,end)).
+    const pixelStart = yScale(start);
+    const pixelEnd = yScale(end);
+    const pixelTop = Math.min(pixelStart, pixelEnd);
+    const barHeight = Math.max(1, Math.abs(pixelEnd - pixelStart));
+    const isSelected = element.objectType && element.objectId && element.objectType === selectedObjectType && element.objectId === selectedObjectId;
+    const classes = ['akte-chart-element', `akte-chart-mark--${element.valueState}`];
+    if (element.hasEvidenceGap) classes.push('akte-chart-mark--no-evidence');
+    if (isSelected) classes.push('selected');
+    const stateLabel = valueStateLabelDe[element.valueState] || element.valueState;
+    const labelText = `${element.label}: ${fmtTeur(element.value, 1)}, Zustand ${stateLabel}${element.hasEvidenceGap ? ', Evidenz fehlt' : ''}`;
+    const overlay = overlayFraction && overlayFraction(element) > 0
+      ? `<rect class="akte-chart-overlay" x="${cx - barWidth / 2}" y="${pixelTop}" width="${barWidth}" height="${Math.max(1, barHeight * overlayFraction(element))}"></rect>`
+      : '';
+    const connector = connectSteps && previousEndY !== null
+      ? `<line x1="${cx - colWidth / 2}" y1="${previousEndY}" x2="${cx - barWidth / 2}" y2="${yScale(start)}" class="akte-chart-connector"></line>`
+      : '';
+    previousEndY = yScale(end);
+    const xLabelText = xLabel && index % labelEvery === 0
+      ? `<text x="${cx}" y="${height - 4}" class="akte-chart-label" text-anchor="middle">${esc(xLabelFor(element))}</text>`
+      : '';
+    return `
+      <g class="${classes.join(' ')}" tabindex="${index === 0 ? '0' : '-1'}" role="button"
+         data-chart-element-index="${index}"
+         ${element.objectType ? `data-object-type="${esc(element.objectType)}"` : ''}
+         ${element.objectId ? `data-object-id="${esc(element.objectId)}"` : ''}
+         aria-label="${esc(labelText)}">
+        <title>${esc(labelText)}</title>
+        ${connector}
+        <rect class="akte-chart-hit-area" x="${cx - colWidth / 2}" y="${topMargin}" width="${colWidth}" height="${height - topMargin - bottomMargin}"></rect>
+        <rect x="${cx - barWidth / 2}" y="${pixelTop}" width="${barWidth}" height="${barHeight}"></rect>
+        ${overlay}
+        ${xLabelText}
+      </g>
+    `;
+  }).join('');
+  return `
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
+      <line x1="${leftMargin}" y1="${zeroY}" x2="${width - rightMargin}" y2="${zeroY}" class="akte-chart-zero-line"></line>
+      ${bars}
+    </svg>
+  `;
+}
+
+// Kurzbeschriftung nur für die x-Achse — die vollständige Bezeichnung bleibt
+// in <title> und Tabelle erhalten (Abschnitt 7.4: keine Information nur im
+// Diagramm, aber auch keine überlappende Achsenbeschriftung bei fünf langen
+// Schrittnamen auf 560 px Breite).
+const waterfallShortLabels = {
+  base_eog: 'Basis-EOG',
+  measure_effect: 'Wirkung',
+  regulatory_eog: 'EOG Folgejahr',
+  economic_bridge: 'Überleitung',
+  indicative_cashflow: 'Cashflow'
+};
+
+function renderWaterfallSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId }) {
+  return renderVerticalBarChart({
+    chart,
+    xLabel: true,
+    xLabelFor: element => waterfallShortLabels[element.key] || element.label,
+    selectedObjectType,
+    selectedObjectId,
+    connectSteps: true
+  });
+}
+
+function renderWaterfallTable(chart) {
+  return `
+    <table class="akte-chart-table">
+      <thead><tr><th>Schritt</th><th>Wert</th><th>Stand danach</th><th>Zustand</th></tr></thead>
+      <tbody>
+        ${chart.elements.map(element => `
+          <tr class="akte-chart-element" ${element.objectType ? `data-object-type="${esc(element.objectType)}"` : ''} ${element.objectId ? `data-object-id="${esc(element.objectId)}"` : ''}>
+            <td>${esc(element.label)}</td>
+            <td>${esc(fmtTeur(element.value, 1))}</td>
+            <td>${esc(fmtTeur(element.end, 1))}</td>
+            <td>${esc(valueStateLabelDe[element.valueState] || element.valueState)}${element.hasEvidenceGap ? ' · Evidenz fehlt' : ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Beitragsbalken (Filter "kpi:irr"): ein Balken je Maßnahme mit
+// Kapitalwertbeitrag, absteigend sortiert, Vorzeichen getrennt durch die
+// Nulllinie (Abschnitt 5). Keine Balkenbeschriftung — bei bis zu 60 Balken
+// nicht mehr lesbar; Name/Wert/Zustand stehen im <title> und in der Liste
+// darunter.
+function renderContributionBarsSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId }) {
+  return renderVerticalBarChart({ chart, selectedObjectType, selectedObjectId });
+}
+
+function renderContributionBarsTable(chart) {
+  return `
+    <table class="akte-chart-table">
+      <thead><tr><th>Maßnahme</th><th>Kapitalwertbeitrag</th><th>Zustand</th></tr></thead>
+      <tbody>
+        ${chart.elements.map(element => `
+          <tr class="akte-chart-element" data-object-type="${esc(element.objectType)}" data-object-id="${esc(element.objectId)}">
+            <td>${esc(element.label)}</td>
+            <td>${esc(fmtTeur(element.value, 1))}</td>
+            <td>${esc(valueStateLabelDe[element.valueState] || element.valueState)}${element.hasEvidenceGap ? ' · Evidenz fehlt' : ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Segmentbalken (Filter "rahmen"): CAPEX je Tragfähigkeitskategorie, mit
+// einer Überlagerung für den Anteil offener Refinanzierungsbrücken
+// (Abschnitt 5). Ein Segment wählt kein Objekt, sondern setzt den Filter auf
+// die Kategorie (siehe activateChartElement) — data-object-type bleibt
+// trotzdem gesetzt, damit derselbe Diagramm-Mechanismus (Klick, Tastatur,
+// <title>) greift.
+function renderViabilitySegmentsSvg(chart) {
+  return renderVerticalBarChart({
+    chart,
+    xLabel: true,
+    overlayFraction: element => element.bridgeMissingShare,
+    selectedObjectType: null,
+    selectedObjectId: null
+  });
+}
+
+function renderViabilitySegmentsTable(chart) {
+  return `
+    <table class="akte-chart-table">
+      <thead><tr><th>Kategorie</th><th>CAPEX</th><th>Anzahl Maßnahmen</th><th>Anteil offener Refinanzierungsbrücken</th><th>Zustand</th></tr></thead>
+      <tbody>
+        ${chart.elements.map(element => `
+          <tr class="akte-chart-element" data-object-type="${esc(element.objectType)}" data-object-id="${esc(element.objectId)}">
+            <td>${esc(element.label)}</td>
+            <td>${esc(fmtTeur(element.value, 1))}</td>
+            <td>${esc(element.count)}</td>
+            <td>${esc(fmtPct(element.bridgeMissingShare * 100, 0))}</td>
+            <td>${esc(valueStateLabelDe[element.valueState] || element.valueState)}${element.hasEvidenceGap ? ' · Evidenz fehlt' : ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
 const chartRenderers = {
   riskMatrix: { svg: renderRiskMatrixSvg, table: renderRiskMatrixTable },
   tornado: { svg: renderTornadoSvg, table: renderTornadoTable },
-  eogFlow: { svg: renderEogFlowSvg, table: renderEogFlowTable }
+  eogFlow: { svg: renderEogFlowSvg, table: renderEogFlowTable },
+  waterfall: { svg: renderWaterfallSvg, table: renderWaterfallTable },
+  contributionBars: { svg: renderContributionBarsSvg, table: renderContributionBarsTable },
+  viabilitySegments: { svg: renderViabilitySegmentsSvg, table: renderViabilitySegmentsTable }
 };
 
 function renderChartSectionHtml(visible) {
@@ -1322,6 +1536,15 @@ function selectChartElement(node) {
 function activateChartElement(node) {
   if (node.dataset.chartYear) {
     chartYearMarker = Number(node.dataset.chartYear);
+    renderAll();
+    return;
+  }
+  // Segmentbalken (Diagrammkatalog Abschnitt 5): ein Segment wählt kein
+  // Objekt, es setzt den Filter auf die Tragfähigkeitskategorie — dieselbe
+  // Objektfläche, aber jetzt mit der "measure"-Liste dieser Kategorie.
+  if (node.dataset.objectType === 'viabilityCategory') {
+    filterKey = `viability:${node.dataset.objectId}`;
+    searchText = '';
     renderAll();
     return;
   }

@@ -219,14 +219,19 @@ export function waterfallModel(portfolio, context = {}) {
   const wirkungState = measures.length
     ? combinedValueState(['qDirect', 'eDirect', 'riskAvoided', 'portfolioShare'].map(key => aggregateMeasureFieldState(measures, key, context)))
     : 'default';
+  // "Balken → beitragende Maßnahme, wo eindeutig" (Diagrammkatalog Abschnitt
+  // 5): jeder Schritt außer Basis-EOG ist eine Portfoliosumme über alle
+  // aktiven Maßnahmen — nur bei genau einer aktiven Maßnahme ist das
+  // eindeutig dieser einen Maßnahme zurechenbar.
+  const soleMeasure = measures.length === 1 ? measures[0] : null;
   const steps = [...waterfall.baseEogWaterfall, ...waterfall.cashflowBridge];
   let cumulative = 0;
   const elements = steps.map((step, index) => {
     const start = cumulative;
     cumulative += step.valueTeur;
     return {
-      objectType: null,
-      objectId: null,
+      objectType: index > 0 && soleMeasure ? 'measure' : null,
+      objectId: index > 0 && soleMeasure ? soleMeasure.id : null,
       key: step.key,
       label: step.label,
       x: index,

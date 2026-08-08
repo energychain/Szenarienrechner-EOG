@@ -339,6 +339,8 @@ button {
 .akte-chart-line { fill: none; stroke-width: 1.5; pointer-events: none; }
 .akte-chart-line--cashflow { stroke: var(--akte-good); }
 .akte-chart-line--bridge { stroke: var(--akte-accent); stroke-dasharray: 3 2; }
+.akte-chart-connector { stroke: var(--akte-text-muted); stroke-width: 1; stroke-dasharray: 2 2; pointer-events: none; }
+.akte-chart-overlay { fill: var(--akte-warn); opacity: 0.55; pointer-events: none; }
 
 .akte-chart-year-clear {
   border: 1px solid var(--akte-border);
