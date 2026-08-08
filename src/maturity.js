@@ -59,7 +59,7 @@ export function metricsForModel(model) {
   try {
     const p = engineParams(model.inputs || {});
     const result = calcPortfolio({ measures: model.measures || [] }, engineScenarioParams(p, model.scenario || 'basis'));
-    const first = result.yearly[0] || { eog: 0 };
+    const first = result.yearly[0] || { regulatoryEogEffect: 0 };
     const impacts = (model.measures || []).filter(measure => measure.active).flatMap(measure => impactAssumptionsFor(measure));
     const reviewCount = impacts.filter(impact => impact.confidence === 'review' || impact.governance === 'sensitivity').length;
     const maturity = Math.max(0, Math.min(100, 40 + (result.activeMeasures.length ? 20 : 0) + (impacts.length ? Math.round((impacts.length - reviewCount) / impacts.length * 30) : 0)));
