@@ -32,6 +32,11 @@ assert(!/https?:\/\//i.test(appHtml
 assert(!/\b(XMLHttpRequest|WebSocket|EventSource)\s*\(/.test(appHtml), 'Built app artifact must not contain push or socket network APIs.');
 assert(appHtml.includes('release-manifest.json'), 'Built app artifact must expose the consent-driven release manifest check.');
 assert(appHtml.includes('KI-Prompt erstellen'), 'Built app artifact must expose the local AI prompt export.');
+// Anhang A4: der HTML-Export darf keine fremden, aus dem Live-DOM
+// mitgefangenen Skripte (z. B. von Browser-Erweiterungen) übernehmen.
+// Prüft den Regex-Quelltext von stripForeignScripts() selbst, nicht den
+// (minifizierten und daher umbenannten) Funktionsnamen.
+assert(appHtml.includes('<script\\b[^>]*\\ssrc='), 'Built app artifact must strip foreign scripts before exporting self-contained HTML.');
 const builtCommit = appHtml.match(/<meta name="build-commit" content="([^"]+)"/)?.[1];
 const appPageCommit = appPageHtml.match(/<meta name="build-commit" content="([^"]+)"/)?.[1];
 const appSha256 = createHash('sha256').update(appArtifact).digest('hex');
@@ -115,6 +120,7 @@ assert(!/https?:\/\//i.test(akteHtml
   .replaceAll('http://www.w3.org/2001/XMLSchema-instance', '')), 'Built akte artifact must not contain any external http(s) URL.');
 assert(!/\beval\s*\(/.test(akteHtml), 'Built akte artifact must not contain eval(.');
 assert(!/\b(XMLHttpRequest|WebSocket|EventSource|fetch)\s*\(/.test(akteHtml), 'Built akte artifact must not contain network APIs.');
+assert(akteHtml.includes('<script\\b[^>]*\\ssrc='), 'Built akte artifact must strip foreign scripts before exporting self-contained HTML.');
 {
   // Naives Zählen von "<script...>"-Vorkommen liefert falsch-positive Treffer,
   // seit main-akte.js htmlWithEmbeddedModelState() nutzt ("HTML mit Daten

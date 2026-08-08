@@ -9,8 +9,10 @@ import {
 } from '../src/ui-config.js';
 import { normalizeMeasure, newImpactAssumptionTemplate } from '../src/model-normalize.js';
 import { normalizeSidecarObject, normalizeSidecarSource } from '../src/sidecar.js';
+import { demoMeasures, demoSidecar } from '../src/demo-data.js';
 import {
   committeeFields,
+  fieldDescriptorsFor,
   fieldKeysFor,
   impactAssumptionFields,
   inputFields,
@@ -163,5 +165,43 @@ describe('field-registry Vollständigkeitspflicht (Spezifikation 5.1)', () => {
       const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
       expect(duplicates, `${objectType} has duplicate descriptor keys`).toEqual([]);
     });
+  });
+});
+
+// Gegenrichtung von 5.1 (Anhang A3, Visualisierungs-Spezifikation): nicht nur
+// jedes Modellfeld braucht einen Deskriptor, jeder in den Demodaten gesetzte
+// Select-Wert muss auch tatsächlich in dessen Optionsliste vorkommen — sonst
+// ist er im Popover nicht wählbar und erscheint als unbekannter Zustand.
+function invalidSelectValues(objectType, items) {
+  const descriptors = fieldDescriptorsFor(objectType).filter(descriptor => descriptor.type === 'select' && Array.isArray(descriptor.options));
+  const violations = [];
+  items.forEach(item => {
+    descriptors.forEach(descriptor => {
+      const value = item[descriptor.key];
+      if (value === undefined || value === null || value === '') return;
+      if (!descriptor.options.includes(value)) {
+        violations.push(`${objectType}.${descriptor.key} = ${JSON.stringify(value)} (${item.id || item.title || 'ohne Id'})`);
+      }
+    });
+  });
+  return violations;
+}
+
+describe('field-registry Gegenrichtung: Demodatenwerte müssen in den Optionslisten der Registry existieren (Anhang A3)', () => {
+  it('every select-type field value in demoMeasures is a valid registry option', () => {
+    expect(invalidSelectValues('measure', demoMeasures)).toEqual([]);
+  });
+
+  it('every select-type field value in demoMeasures impactAssumptions is a valid registry option', () => {
+    const allImpacts = demoMeasures.flatMap(measure => measure.impactAssumptions || []);
+    expect(invalidSelectValues('impactAssumption', allImpacts)).toEqual([]);
+  });
+
+  it('every select-type field value in demoSidecar.objects is a valid registry option', () => {
+    expect(invalidSelectValues('sidecarObject', demoSidecar.objects)).toEqual([]);
+  });
+
+  it('every select-type field value in demoSidecar.sources is a valid registry option', () => {
+    expect(invalidSelectValues('sidecarSource', demoSidecar.sources)).toEqual([]);
   });
 });

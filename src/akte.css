@@ -168,6 +168,7 @@ button {
 .akte-kpi-delta.showing { opacity: 1; }
 .akte-kpi-delta.up { color: var(--akte-good); }
 .akte-kpi-delta.down { color: var(--akte-bad); }
+.akte-kpi-reliability { font-size: 0.72em; color: var(--akte-warn); }
 .akte-kpi-tile.reliability .akte-kpi-value { color: var(--akte-warn); }
 .akte-kpi-tile.reliability.good .akte-kpi-value { color: var(--akte-good); }
 .akte-kpi-tile.open-items .akte-kpi-value { color: var(--akte-bad); }
@@ -420,6 +421,7 @@ button {
 .akte-toast.hidden { display: none; }
 
 .akte-empty-state { color: var(--akte-text-muted); padding: 40px 0; text-align: center; }
+.akte-filter-note { color: var(--akte-text-muted); font-size: 0.85em; margin: 0 0 10px; }
 
 /* Ausgabefenster (Abschnitt 4.5) ------------------------------------------ */
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { downloadBlob, exportStamp, htmlWithEmbeddedModelState, jsonForHtmlScript } from '../src/export-utils.js';
+import { downloadBlob, exportStamp, htmlWithEmbeddedModelState, jsonForHtmlScript, stripForeignScripts } from '../src/export-utils.js';
 
 describe('export utilities', () => {
   afterEach(() => {
@@ -57,6 +57,20 @@ describe('export utilities', () => {
     expect(result).toContain('const template = `<script id="embedded-model-state"');
     expect(result).toContain('console.log(template);</script>');
     expect(result.match(/embedded-model-state/g)).toHaveLength(2);
+  });
+
+  it('strips foreign src-bearing scripts injected into the live DOM by a browser extension (Anhang A4)', () => {
+    const html = '<html><body><script src="chrome-extension://abcdefg/inject.js"></script><main>App</main><script type="module">const x = 1;</script></body></html>';
+    const result = stripForeignScripts(html);
+    expect(result).not.toContain('chrome-extension://');
+    expect(result).toContain('<main>App</main>');
+    expect(result).toContain('<script type="module">const x = 1;</script>');
+  });
+
+  it('leaves the bundle\'s own inline script and the embedded-model-state script untouched', () => {
+    const html = '<html><body><main>App</main><script id="embedded-model-state" type="application/json">{"a":1}</script><script type="module">const bundled = true;</script></body></html>';
+    const result = stripForeignScripts(html);
+    expect(result).toBe(html);
   });
 
   it('replaces stale embedded model state with the current state', () => {

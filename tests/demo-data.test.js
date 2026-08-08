@@ -38,7 +38,7 @@ describe('synthetic demo data module', () => {
     expect(gasExamples.some(measure => measure.gasTransformationPath === 'physicalDismantling')).toBe(true);
     expect(gasExamples.some(measure => measure.gasEternityAssumption === 'removed')).toBe(true);
     expect(gasExamples.some(measure => measure.gasProvisionAssessment === 'checkProvision')).toBe(true);
-    expect(gasExamples.some(measure => measure.gasRegulatoryTreatment === 'kaneuIstCostsReview')).toBe(true);
+    expect(gasExamples.some(measure => measure.gasRegulatoryTreatment === 'kanuOrActualCostReview')).toBe(true);
     expect(gasExamples.every(measure => String(measure.gasTransformationEvidence || '').includes('Synthetisch'))).toBe(true);
   });
 

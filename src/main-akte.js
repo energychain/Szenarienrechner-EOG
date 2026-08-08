@@ -39,7 +39,7 @@ import { demoMeasures, demoSidecar } from './demo-data.js';
 import { appendHistoryEvents, diffModelEvents, emptyHistory, eventSummary } from './history.js';
 import { inputDefaults, inputIds, processPhases } from './ui-config.js';
 import { buildInfo } from './build-info.js';
-import { downloadBlob, exportStamp, htmlWithEmbeddedModelState } from './export-utils.js';
+import { downloadBlob, exportStamp, htmlWithEmbeddedModelState, stripForeignScripts } from './export-utils.js';
 import { spreadsheetTables, tablesToCsvZip, tablesToXlsx } from './spreadsheet-export.js';
 import { buildAiPrompt, defaultAiPromptOptions, promptRoles } from './ai-prompt-generator.js';
 import { rulesetInfo, supportContext, supportPackage } from './release-awareness.js';
@@ -246,7 +246,7 @@ function exportSelfContainedHtml() {
   createExportSnapshot();
   refreshBuildMeta();
   const state = collectModelState();
-  const html = '<!DOCTYPE html>\n' + htmlWithEmbeddedModelState(document.documentElement.outerHTML, state);
+  const html = '<!DOCTYPE html>\n' + htmlWithEmbeddedModelState(stripForeignScripts(document.documentElement.outerHTML), state);
   const blob = new Blob([html], { type: 'text/html' });
   downloadBlob(blob, 'digitale-akte-mit-daten-' + exportStamp(state) + '.html');
   showToast('HTML-Datei mit eingebettetem Datenstand wurde zum Download vorbereitet.');
@@ -382,14 +382,57 @@ function currentMaturity(portfolio) {
   return maturityScore({ measures: model.measures, sidecar: model.sidecar }, currentParams(), portfolio, resultsByScenario(), model.clarificationStatus);
 }
 
-function measureYear1Eog(measure, p) {
+function measureEogAtYearIndex(measure, p, yearIndex) {
   try {
     const effect = portfolioEffectFor(measure, p);
     const result = calcMeasure(measure, p, effect);
-    return result.rows?.[0]?.regulatoryEogEffect || 0;
+    return result.rows?.[yearIndex]?.regulatoryEogEffect || 0;
   } catch (_error) {
     return 0;
   }
+}
+
+// Anhang A2: der Beitrag je Maßnahme zur angeklickten Kennzahl — dieselbe
+// Größe, aus der die Kennzahl selbst entsteht (kpiDefinitions), nicht ein
+// Näherungswert wie zuvor die Investitionssumme. kpi:irr zeigt bewusst den
+// Kapitalwertbeitrag (siehe Diagrammkatalog Abschnitt 5 der
+// Visualisierungs-Spezifikation): Portfolio-IRR ist nicht additiv über
+// Maßnahmen, Kapitalwert ist es.
+function measureKpiContribution(measure, p, kpiKey, portfolioResults) {
+  if (kpiKey === 'eogYear1') return measureEogAtYearIndex(measure, p, 0);
+  if (kpiKey === 'eogFollow') return measureEogAtYearIndex(measure, p, 1);
+  const result = portfolioResults.find(item => item.measure.id === measure.id);
+  return result?.npv || 0;
+}
+
+// Anhang A1: "aus unbelegten Annahmen" heißt hier — dieselbe Maßnahme trägt
+// zur Kennzahl bei UND mindestens eines ihrer wirkungsrelevanten Felder
+// (Gruppe "wirkung": qDirect/eDirect/riskAvoided/portfolioShare/
+// impactAssumptions) steht noch auf Vorbelegung ODER hat eine offene
+// Evidenzlücke (evidenceGaps). Der Anteil ist wertgewichtet, nicht
+// stückzahlgewichtet: eine kleine unbelegte Maßnahme verzerrt die Kennzahl
+// weniger als eine große.
+const wirkungFieldKeys = new Set(fieldDescriptorsFor('measure').filter(descriptor => descriptor.group === 'wirkung').map(descriptor => descriptor.key));
+
+function measureContributionIsUnreliable(measure) {
+  const stateContext = { object: measure, objectId: measure.id, history, openDecisions: model.openDecisions };
+  const hasDefaultWirkungField = missingValueFields('measure', measure, stateContext).some(entry => wirkungFieldKeys.has(entry.key));
+  return hasDefaultWirkungField || evidenceGaps('measure', measure).length > 0;
+}
+
+// Wertgewichteter Belastbarkeitsanteil je Kennzahl (nicht der globale,
+// stückzahlbasierte workstandReliabilityFor-Wert der "Belastbarkeit"-Kachel).
+function kpiReliabilityShare(kpiKey, p, portfolioResults) {
+  const activeMeasures = model.measures.filter(measure => measure.active);
+  let total = 0;
+  let unreliable = 0;
+  activeMeasures.forEach(measure => {
+    const value = Math.abs(measureKpiContribution(measure, p, kpiKey, portfolioResults));
+    if (!value) return;
+    total += value;
+    if (measureContributionIsUnreliable(measure)) unreliable += value;
+  });
+  return total > 0 ? unreliable / total : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -413,6 +456,7 @@ function renderKpiStrip(portfolio, clarifications) {
 
   const nextKpis = {};
   kpiDefinitions.forEach(def => { nextKpis[def.key] = def.compute(portfolio); });
+  const p = currentParams();
 
   const node = document.getElementById('akteKpiStrip');
   node.innerHTML = kpiDefinitions.map(def => {
@@ -423,11 +467,16 @@ function renderKpiStrip(portfolio, clarifications) {
     const showDelta = delta !== null && Math.abs(delta) > 0.0001;
     const deltaCls = showDelta ? (delta > 0 ? 'up' : 'down') : '';
     const deltaText = showDelta ? `${delta > 0 ? '+' : ''}${fmtPlain(delta, 1)}` : '';
+    const reliabilityShare = kpiReliabilityShare(def.key, p, portfolio.results || []);
+    const reliabilityHtml = reliabilityShare === null
+      ? ''
+      : `<span class="akte-kpi-reliability">davon ${Math.round(reliabilityShare * 100)} % aus unbelegten Annahmen</span>`;
     return `
       <button type="button" class="akte-kpi-tile" data-kpi="${esc(def.key)}" aria-label="${esc(def.label)}: auf zugrundeliegende Maßnahmen filtern">
         <span class="akte-kpi-label">${esc(def.label)}</span>
         <span class="akte-kpi-value">${esc(def.format(value))}</span>
         <span class="akte-kpi-delta ${deltaCls} ${showDelta ? 'showing' : ''}">${esc(deltaText)}</span>
+        ${reliabilityHtml}
       </button>
     `;
   }).join('') + `
@@ -581,17 +630,24 @@ function filterCounts(entries) {
   return counts;
 }
 
-function filteredEntries(entries) {
+// Anhang A2: eine Kennzahlkachel führt "auf die Objekte, aus denen sie
+// entsteht" (Kriterium 5) — Maßnahmen ohne Beitrag zu genau dieser Kennzahl
+// gehören nicht in diese Menge. kpiExcludedCount zählt sie für den Hinweis im
+// Filterkopf (renderObjectSurface), damit das Ausblenden sichtbar bleibt.
+function filteredEntries(entries, portfolio) {
   let list;
+  let kpiExcludedCount = 0;
   if (filterKey.startsWith('kpi:')) {
-    list = entries.filter(entry => entry.objectType === 'measure');
     const kpiKey = filterKey.slice(4);
     const p = currentParams();
-    if (kpiKey === 'eogYear1' || kpiKey === 'eogFollow') {
-      list = [...list].sort((a, b) => measureYear1Eog(resolveObject('measure', b.id), p) - measureYear1Eog(resolveObject('measure', a.id), p));
-    } else {
-      list = [...list].sort((a, b) => Number(resolveObject('measure', b.id)?.cost || 0) - Number(resolveObject('measure', a.id)?.cost || 0));
-    }
+    const withContribution = entries
+      .filter(entry => entry.objectType === 'measure')
+      .map(entry => ({ entry, value: measureKpiContribution(resolveObject('measure', entry.id), p, kpiKey, portfolio?.results || []) }));
+    kpiExcludedCount = withContribution.filter(item => !item.value).length;
+    list = withContribution
+      .filter(item => item.value)
+      .sort((a, b) => b.value - a.value)
+      .map(item => item.entry);
   } else {
     const def = allFilterDefs.find(item => item.key === filterKey);
     list = def ? entries.filter(def.match) : entries;
@@ -600,7 +656,7 @@ function filteredEntries(entries) {
     const needle = searchText.trim().toLowerCase();
     list = list.filter(entry => entry.title.toLowerCase().includes(needle));
   }
-  return list;
+  return { list, kpiExcludedCount };
 }
 
 function filterButtonHtml(def, counts) {
@@ -893,15 +949,24 @@ function addObjectBarHtml() {
   return `<div class="akte-add-bar"><button type="button" class="akte-add-button" data-add-object-type="${esc(filterKey)}">+ ${esc(def.label)} anlegen</button></div>`;
 }
 
-function renderObjectSurface(visible, clarifications) {
+// Anhang A2: macht das Ausblenden beitragsloser Maßnahmen sichtbar, statt es
+// stillschweigend zu tun — sonst wirkt die Kennzahlkachel wie ein Filter, der
+// weniger Maßnahmen kennt, als tatsächlich existieren.
+function kpiExclusionNoteHtml(kpiExcludedCount) {
+  if (!filterKey.startsWith('kpi:') || !kpiExcludedCount) return '';
+  return `<p class="akte-filter-note">${kpiExcludedCount} Maßnahme${kpiExcludedCount === 1 ? '' : 'n'} ohne Beitrag zu dieser Kennzahl ausgeblendet.</p>`;
+}
+
+function renderObjectSurface(visible, clarifications, kpiExcludedCount = 0) {
   const node = document.getElementById('akteObjectSurface');
   const addBar = addObjectBarHtml();
+  const exclusionNote = kpiExclusionNoteHtml(kpiExcludedCount);
   if (!visible.length) {
-    node.innerHTML = renderPhaseWarningHtml() + addBar + '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
+    node.innerHTML = renderPhaseWarningHtml() + addBar + exclusionNote + '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
     return;
   }
   const p = currentParams();
-  node.innerHTML = renderPhaseWarningHtml() + addBar + renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
+  node.innerHTML = renderPhaseWarningHtml() + addBar + exclusionNote + renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
 }
 
 // ---------------------------------------------------------------------------
@@ -1333,7 +1398,7 @@ function renderAll() {
   const portfolio = currentPortfolio();
   const clarifications = currentClarifications(portfolio);
   const entries = listEntries(clarifications);
-  const visible = filteredEntries(entries);
+  const { list: visible, kpiExcludedCount } = filteredEntries(entries, portfolio);
   // Wenn der aktuelle Filter (noch) nichts zeigt, bleibt die Auswahl trotzdem
   // gültig — sie fällt auf irgendein vorhandenes Objekt zurück, damit sie
   // nicht auf eine gelöschte ID zeigt. Angezeigt wird dabei aber weiterhin
@@ -1349,7 +1414,7 @@ function renderAll() {
   renderPhaseSelect();
   renderKpiStrip(portfolio, clarifications);
   renderFilterColumn(entries);
-  renderObjectSurface(visible, clarifications);
+  renderObjectSurface(visible, clarifications, kpiExcludedCount);
   renderContextColumn(clarifications);
 }
 
@@ -1733,6 +1798,8 @@ if (typeof window !== 'undefined') {
     // Kriterium 2 (verlustfreier Datenvertrag), siehe tests/akte-data-contract.test.js.
     collectModelState: () => collectModelState(),
     saveNow: () => saveToStorage(true),
-    getHistory: () => history
+    getHistory: () => history,
+    // Anhang A1 (Visualisierungs-Spezifikation), siehe tests/akte-v0-anhang-a.test.js.
+    kpiReliabilityShare: kpiKey => kpiReliabilityShare(kpiKey, currentParams(), currentPortfolio().results || [])
   };
 }

@@ -25,6 +25,15 @@ export function jsonForHtmlScript(value) {
     .replaceAll('&', '\\u0026');
 }
 
+// Der eigene Build fügt Skripte immer ohne src ein (vite-plugin-singlefile
+// bündelt alles inline); jedes <script src="…"> im live DOM stammt daher von
+// außen (z. B. eine Browser-Erweiterung) und wird beim HTML-Export entfernt,
+// damit ein prüfbares Deliverable keine fremden Skripte enthält, die es nie
+// selbst geladen hat (Anhang A4).
+export function stripForeignScripts(html) {
+  return String(html).replace(/<script\b[^>]*\ssrc=[^>]*>[\s\S]*?<\/script>\s*/gi, '');
+}
+
 export function htmlWithEmbeddedModelState(html, state) {
   const cleaned = String(html).replace(/\n?\s*<script id="embedded-model-state" type="application\/json">[\s\S]*?<\/script>\s*(?=<\/body>)/g, '');
   const embeddedStateScript = `\n  <script id="embedded-model-state" type="application/json">${jsonForHtmlScript(state)}</script>\n`;

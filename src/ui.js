@@ -112,7 +112,7 @@ import {
 } from './release-awareness.js';
 import { imprintSections } from './trust-content.js';
 import { demoClarificationStatus, demoMeasures, demoSidecar, initialMeasures } from './demo-data.js';
-import { downloadBlob, exportStamp, htmlWithEmbeddedModelState } from './export-utils.js';
+import { downloadBlob, exportStamp, htmlWithEmbeddedModelState, stripForeignScripts } from './export-utils.js';
 import {
   esc,
   formatDateShort,
@@ -2161,7 +2161,7 @@ function exportSelfContainedHtml() {
   createExportSnapshot();
   refreshBuildMeta();
   const state = collectModelState();
-  const html = '<!DOCTYPE html>\n' + htmlWithEmbeddedModelState(document.documentElement.outerHTML, state);
+  const html = '<!DOCTYPE html>\n' + htmlWithEmbeddedModelState(stripForeignScripts(document.documentElement.outerHTML), state);
   const blob = new Blob([html], { type: 'text/html' });
   downloadBlob(blob, 'szenarienrechner-eog-mit-daten-' + exportStamp(state) + '.html');
   setStorageStatus('HTML-Datei mit eingebettetem Datenstand wurde zum Download vorbereitet.');
