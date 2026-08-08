@@ -15,6 +15,11 @@ describe('static homepage', () => {
     expect(homepage).toContain('Methodik & Vorlagen');
   });
 
+  it('links to the digitale Akte (second UI, same calculation core) from the homepage', () => {
+    expect(homepage).toContain('href="akte.html"');
+    expect(homepage).toContain('Digitale Akte');
+  });
+
   it('separates fachliche and technical features', () => {
     expect(homepage).toContain('Fachliche Features');
     expect(homepage).toContain('Governance-Ampel');

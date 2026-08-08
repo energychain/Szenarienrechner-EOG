@@ -306,6 +306,7 @@ export function renderHomepage() {
         <a href="#vertrauen">Vertrauen</a>
         <a href="#kontakt">Kontakt</a>
         <a href="app.html">App starten</a>
+        <a href="akte.html">Digitale Akte</a>
       </div>
     </nav>
   </div>
@@ -317,11 +318,13 @@ export function renderHomepage() {
       <p class="lead">Der Szenarienrechner-EOG ist ein browserbasiertes Open-Source-Werkzeug für Stadtwerke, EVUs und Verteilnetzbetreiber. Die App strukturiert Maßnahmenportfolios, Budget-Tragfähigkeit, regulatorische Wirkungen, Cashflow-Sichten, Projektplan, Befassungsvorlagen und Exportartefakte — ohne Backend, Telemetrie oder automatische Datenübertragung.</p>
       <div class="actions">
         ${link('app.html', 'App starten', 'button primary')}
+        ${link('akte.html', 'Digitale Akte öffnen')}
         ${externalLink(arcadeDemoUrl, 'Interaktive Demo ansehen')}
         ${link('szenarienrechner-eog.html', 'Offline-HTML öffnen')}
         ${link('story/planungsrunde-userstory.html', 'User-Story lesen')}
         ${link('docs/index.html', 'Methodik & Vorlagen', 'button ghost')}
       </div>
+      <p class="proof-note">„Digitale Akte" ist eine zweite Oberfläche mit anderem Screenlayout für denselben Rechenkern und dieselben Modelldaten — ein akten- statt formularorientierter Arbeitsstil, kein separates Werkzeug.</p>
     </div>
     <aside class="hero-card" aria-label="Kurzstatus">
       <div class="status-grid">

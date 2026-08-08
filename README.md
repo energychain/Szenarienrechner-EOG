@@ -10,6 +10,7 @@ Die App ist kein reiner EOG-Rechner. Sie ist ein geführter Arbeitsraum für reg
 
 - Mini-Homepage: https://energychain.github.io/Szenarienrechner-EOG/
 - Live-App: https://energychain.github.io/Szenarienrechner-EOG/app.html
+- Digitale Akte (zweite Oberfläche, gleicher Rechenkern): https://energychain.github.io/Szenarienrechner-EOG/akte.html
 - Geführte Arcade-Demo: https://app.arcade.software/share/ZlZVVMORTrNI4FxeSxlB
 - Pilotprogramm: https://energychain.github.io/Szenarienrechner-EOG/docs/pilot-program.html
 - User-Story als HTML/PDF-Handout: https://energychain.github.io/Szenarienrechner-EOG/story/planungsrunde-userstory.html

@@ -59,6 +59,7 @@ assert(homepage.includes('id="demoModal"'), 'Homepage must provide a modal for o
 assert(homepage.includes('Screenshot groß ansehen'), 'Homepage must clearly invite users to open screenshots at readable size.');
 assert(homepage.includes('STROMDAO GmbH'), 'Homepage must provide STROMDAO contact context.');
 assert(homepage.includes('app.html'), 'Homepage must link to the browser app.');
+assert(homepage.includes('href="akte.html"'), 'Homepage must link to the digitale Akte (second UI).');
 [
   '01-planungsstart.jpg',
   '02-massnahmen-herleitung.jpg',
