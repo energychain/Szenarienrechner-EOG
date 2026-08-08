@@ -235,6 +235,57 @@ button {
 .akte-rechenpfad { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--akte-border); color: var(--akte-text-muted); }
 .akte-rechenpfad strong { color: var(--akte-text); }
 
+/* Objektliste (Kriterium 6: alle Objekttypen in derselben Liste) --------- */
+
+.akte-object-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--akte-surface);
+  border: 1px solid var(--akte-border);
+  border-radius: var(--akte-radius);
+  padding: 6px;
+  margin-bottom: 18px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.akte-object-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--akte-text);
+}
+.akte-object-list-item:hover { background: var(--akte-accent-weak); }
+.akte-object-list-item.active { background: var(--akte-accent); color: #fff; }
+.akte-object-list-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.akte-object-list-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.akte-object-list-type { font-size: 0.72em; color: var(--akte-text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.akte-object-list-item.active .akte-object-list-type { color: #dbe6ff; }
+.akte-object-list-gap {
+  background: var(--akte-warn);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.72em;
+  font-weight: 700;
+  padding: 1px 7px;
+}
+
+.akte-sentence-block--flat { border: 1px solid var(--akte-border); }
+.akte-sentence-block--flat .akte-sentence-body { padding: 16px 18px; }
+
+.akte-clarification-target {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--akte-border);
+}
+.akte-clarification-target > h3 { font-size: 0.9em; color: var(--akte-text-muted); margin: 0 0 10px; }
+
 /* Context column --------------------------------------------------------- */
 
 .akte-context-section { margin-bottom: 18px; }

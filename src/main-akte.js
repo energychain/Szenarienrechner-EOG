@@ -1,8 +1,10 @@
 // Zweite, eigenständige Oberfläche ("digitale Akte") für dasselbe Modell-JSON
 // und denselben Rechenkern wie src/ui.js — siehe UX_AKTE_REDESIGN-Spezifikation.
-// Stufe 4: Layout-Gerüst (Ergebnisstreifen, Filterspalte, Objektfläche) mit
-// vollständiger Satzdarstellung für Maßnahmen. Rahmen/Szenario/Ziel/Kontext/
-// Quelle folgen in Stufe 5.
+// Stufe 4 lieferte das Layout-Gerüst mit vollständiger Satzdarstellung für
+// Maßnahmen. Stufe 5 macht alle übrigen fachlichen Objekte (Rahmen, Szenario,
+// Ziel, Kontext, Quelle, Klärpunkt) zu Objekten derselben Liste, bearbeitbar
+// in derselben Detailfläche (Kriterium 6), und macht jede Lücke über einen
+// Filter erreichbar (Kriterium 9).
 //
 // Eigenständiger Zustand: main-akte.js teilt keinen Modulzustand mit ui.js.
 // Es schreibt UI-Zustand ausschließlich unter model.ui2 (Spezifikation 7.2)
@@ -29,8 +31,8 @@ import { fieldDescriptorsFor } from './field-registry.js';
 import { evidenceGaps, valueState } from './value-state.js';
 import { esc, fmtPct, fmtPlain, fmtTeur } from './render-utils.js';
 import { normalizeSidecar } from './sidecar.js';
-import { demoMeasures } from './demo-data.js';
-import { appendHistoryEvents, emptyHistory, eventSummary } from './history.js';
+import { demoMeasures, demoSidecar } from './demo-data.js';
+import { appendHistoryEvents, diffModelEvents, emptyHistory, eventSummary } from './history.js';
 import { inputDefaults, inputIds } from './ui-config.js';
 
 const storageKey = 'regulierte-sparten-szenario-rechner-akte-v1';
@@ -53,12 +55,26 @@ const helperFunctions = {
 
 let model = null;
 let history = emptyHistory();
+let selectedType = 'measure';
 let selectedId = '';
 let filterKey = 'all';
 let searchText = '';
 let previousModelForHistory = null;
 let previousKpis = null;
 let author = 'Akte';
+
+// Rahmen/Szenario sind vier feste Pseudo-Objekte über model.inputs (siehe
+// Spezifikation 4.4) statt eigener Modellobjekte — dieselben 31 Felder aus
+// field-registry.js 'input', nur nach .group aufgeteilt dargestellt.
+const inputPseudoObjects = [
+  { id: 'rahmen-sparte', group: 'rahmenSparte', title: 'Rahmen: Sparte', badge: 'Rahmen' },
+  { id: 'rahmen-kapitalkosten', group: 'rahmenKapitalkosten', title: 'Rahmen: Kapitalkosten', badge: 'Rahmen' },
+  { id: 'szenario-basis', group: 'szenarioBasis', title: 'Szenario: Basis', badge: 'Szenario' },
+  { id: 'szenario-konservativ', group: 'szenarioKonservativ', title: 'Szenario: Konservativ', badge: 'Szenario' }
+];
+// Value-state/history/openDecisions behandeln alle Inputfelder als ein
+// Objekt (subject.scope === 'inputs'), unabhängig von der Pseudo-Gruppe.
+const inputsObjectId = 'inputs';
 
 function skeletonInputs() {
   const base = {
@@ -96,13 +112,13 @@ function skeletonModel() {
   return {
     inputs,
     measures,
-    sidecar: normalizeSidecar(),
+    sidecar: normalizeSidecar(demoSidecar),
     strategy: defaultStrategy(),
     committee: defaultCommittee(),
     process: defaultProcessState(),
     clarificationStatus: {},
     openDecisions: {},
-    ui2: { filterKey: 'all', selectedId: measures[0]?.id || '' }
+    ui2: { filterKey: 'all', selectedType: 'measure', selectedId: measures[0]?.id || '' }
   };
 }
 
@@ -124,7 +140,12 @@ function saveToStorage(silent = true) {
   try {
     const currentModel = currentModelData();
     if (previousModelForHistory) {
-      const drafts = diffMeasureFields(previousModelForHistory, currentModel);
+      // diffModelEvents deckt inputs/measures/impactAssumptions/strategy
+      // (Ziele) feldweise bzw. objektweise ab. sidecar wird bislang nicht
+      // diff't (siehe src/value-state.js) — Kontextobjekt-/Quellenänderungen
+      // bleiben daher ohne history-Signal, value-state.js fällt dafür schon
+      // sauber auf den Vorbelegungsvergleich zurück.
+      const drafts = diffModelEvents(previousModelForHistory, currentModel);
       if (drafts.length) {
         history = appendHistoryEvents(history, drafts, author);
       }
@@ -144,26 +165,6 @@ function saveToStorage(silent = true) {
   }
 }
 
-// Nur die Maßnahmenfelder werden hier diff't (Stufe 4 bearbeitet nur
-// Maßnahmen); diffModelEvents aus history.js deckt das gesamte Modell ab und
-// wird ab Stufe 5 verwendet, sobald weitere Objekttypen bearbeitbar sind.
-function diffMeasureFields(previous, next) {
-  const drafts = [];
-  const previousById = new Map((previous.measures || []).map(measure => [measure.id, measure]));
-  (next.measures || []).forEach(measure => {
-    const before = previousById.get(measure.id);
-    if (!before) return;
-    Object.keys(measure).forEach(field => {
-      if (field === 'id' || field === 'impactAssumptions') return;
-      const oldValue = before[field];
-      const newValue = measure[field];
-      if (JSON.stringify(oldValue ?? null) === JSON.stringify(newValue ?? null)) return;
-      drafts.push({ type: 'measureFieldChanged', subject: { measureId: measure.id }, field, oldValue, newValue });
-    });
-  });
-  return drafts;
-}
-
 function currentModelData() {
   return {
     inputs: structuredClone(model.inputs),
@@ -174,7 +175,7 @@ function currentModelData() {
     process: structuredClone(model.process),
     clarificationStatus: structuredClone(model.clarificationStatus),
     openDecisions: structuredClone(model.openDecisions),
-    ui2: { filterKey, selectedId }
+    ui2: { filterKey, selectedType, selectedId }
   };
 }
 
@@ -193,9 +194,11 @@ function bootstrap() {
     };
     history = stored.history || emptyHistory();
     filterKey = stored.model.ui2?.filterKey || 'all';
+    selectedType = stored.model.ui2?.selectedType || 'measure';
     selectedId = stored.model.ui2?.selectedId || model.measures[0]?.id || '';
   } else {
     model = skeletonModel();
+    selectedType = 'measure';
     selectedId = model.measures[0]?.id || '';
   }
   previousModelForHistory = currentModelData();
@@ -228,7 +231,9 @@ function measureYear1Eog(measure, p) {
 }
 
 // ---------------------------------------------------------------------------
-// KPI-Streifen (Abschnitt 4.1)
+// KPI-Streifen (Abschnitt 4.1) — bleibt maßnahmenbezogen: Portfolio-KPIs
+// entstehen aus Maßnahmen, ihr Drilldown filtert daher auf den Objekttyp
+// 'measure' bzw. auf Klärpunkte (offene Punkte).
 // ---------------------------------------------------------------------------
 
 const kpiDefinitions = [
@@ -238,9 +243,7 @@ const kpiDefinitions = [
   { key: 'npv', label: 'Kapitalwert', compute: portfolio => portfolio.npv, format: v => fmtTeur(v, 1) }
 ];
 
-function renderKpiStrip() {
-  const portfolio = currentPortfolio();
-  const clarifications = currentClarifications(portfolio);
+function renderKpiStrip(portfolio, clarifications) {
   const reliability = workstandReliabilityFor({ measures: model.measures, sidecar: model.sidecar }, portfolio);
   const openCount = clarifications.filter(item => item.status !== 'closed').length;
   const warnCount = reliability.items.filter(item => item.severity === 'warn').length;
@@ -266,12 +269,12 @@ function renderKpiStrip() {
       </button>
     `;
   }).join('') + `
-    <button type="button" class="akte-kpi-tile reliability ${warnCount ? '' : 'good'}" data-kpi="reliability" aria-label="Belastbarkeit des Arbeitsstands: auf offene Maßnahmen filtern">
+    <button type="button" class="akte-kpi-tile reliability ${warnCount ? '' : 'good'}" data-kpi="reliability" aria-label="Belastbarkeit des Arbeitsstands: auf offene Klärpunkte filtern">
       <span class="akte-kpi-label">Belastbarkeit</span>
       <span class="akte-kpi-value">${reliabilityPct} % belegt</span>
       <span class="akte-kpi-delta"></span>
     </button>
-    <button type="button" class="akte-kpi-tile open-items ${openCount ? '' : 'zero'}" data-kpi="open" aria-label="Offene Punkte: auf offene Maßnahmen filtern">
+    <button type="button" class="akte-kpi-tile open-items ${openCount ? '' : 'zero'}" data-kpi="open" aria-label="Offene Punkte: auf offene Klärpunkte filtern">
       <span class="akte-kpi-label">Offene Punkte</span>
       <span class="akte-kpi-value">${openCount}</span>
       <span class="akte-kpi-delta"></span>
@@ -282,75 +285,162 @@ function renderKpiStrip() {
 }
 
 // ---------------------------------------------------------------------------
-// Filterspalte (Abschnitt 4.2) — Stufe 4: Maßnahmenfilter
+// Objektregister (Abschnitt 4.2/4.4) — jedes fachliche Objekt in einer Liste
+// (Kriterium 6): Maßnahme, Rahmen/Szenario (Pseudo-Objekte über
+// model.inputs), Ziel, Kontextobjekt, Quelle, Klärpunkt.
 // ---------------------------------------------------------------------------
 
-function measuresForFilter(key, portfolio, clarifications) {
-  const measures = model.measures;
-  if (key === 'active') return measures.filter(measure => measure.active);
-  if (key === 'open' || key === 'reliability') {
-    const openMeasureIds = new Set(clarifications.filter(item => item.status !== 'closed' && item.measureId).map(item => item.measureId));
-    return measures.filter(measure => openMeasureIds.has(measure.id));
-  }
-  if (key === 'without-objective') return measures.filter(measure => measure.active && !(measure.objectiveIds || []).length);
-  if (key.startsWith('kpi:')) {
-    const active = measures.filter(measure => measure.active);
-    const kpiKey = key.slice(4);
-    const p = currentParams();
-    if (kpiKey === 'eogYear1' || kpiKey === 'eogFollow') {
-      return [...active].sort((a, b) => measureYear1Eog(b, p) - measureYear1Eog(a, p));
-    }
-    return [...active].sort((a, b) => Number(b.cost || 0) - Number(a.cost || 0));
-  }
-  return measures;
-}
-
-function filterCounts(portfolio, clarifications) {
-  return {
-    all: model.measures.length,
-    active: model.measures.filter(measure => measure.active).length,
-    open: measuresForFilter('open', portfolio, clarifications).length,
-    'without-objective': measuresForFilter('without-objective', portfolio, clarifications).length
-  };
-}
-
-const filterLabels = {
-  all: 'Alle',
-  active: 'Aktiv',
-  open: 'Offen',
-  'without-objective': 'Ohne Ziel-Zuordnung'
+const objectTypeLabels = {
+  measure: 'Maßnahme',
+  input: 'Rahmen/Szenario',
+  objective: 'Ziel',
+  sidecarObject: 'Kontextobjekt',
+  sidecarSource: 'Quelle',
+  clarification: 'Klärpunkt'
 };
 
-function renderFilterColumn(portfolio, clarifications) {
-  const counts = filterCounts(portfolio, clarifications);
-  const node = document.getElementById('akteFilterColumn');
-  const items = ['all', 'active', 'open', 'without-objective'];
-  node.innerHTML = `
-    <div class="akte-filter-group">
-      <h3>Maßnahmen</h3>
-      ${items.map(key => `
-        <button type="button" class="akte-filter-item ${filterKey === key ? 'active' : ''}" data-filter="${esc(key)}">
-          <span>${esc(filterLabels[key])}</span>
-          <span class="count">${counts[key]}</span>
-        </button>
-      `).join('')}
-    </div>
-  `;
+function resolveObject(objectType, id) {
+  if (objectType === 'measure') return model.measures.find(item => item.id === id) || null;
+  if (objectType === 'input') return model.inputs;
+  if (objectType === 'objective') return (model.strategy.objectives || []).find(item => item.id === id) || null;
+  if (objectType === 'sidecarObject') return (model.sidecar.objects || []).find(item => item.id === id) || null;
+  if (objectType === 'sidecarSource') return (model.sidecar.sources || []).find(item => item.id === id) || null;
+  return null;
 }
 
-function visibleMeasures(portfolio, clarifications) {
-  let list = filterKey.startsWith('kpi:') || filterKey === 'reliability'
-    ? measuresForFilter(filterKey === 'reliability' ? 'open' : filterKey, portfolio, clarifications)
-    : measuresForFilter(filterKey, portfolio, clarifications);
+function objectIdForState(objectType, id) {
+  return objectType === 'input' ? inputsObjectId : id;
+}
+
+function historyEventsFor(objectType, id) {
+  if (objectType === 'measure') return history.events.filter(event => event.subject?.measureId === id && !event.subject?.impactId);
+  if (objectType === 'input') return history.events.filter(event => event.subject?.scope === 'inputs');
+  if (objectType === 'objective') return history.events.filter(event => event.subject?.scope === 'strategy');
+  // sidecarObject/sidecarSource: diffModelEvents diff't sidecar heute nicht
+  // (siehe src/value-state.js) — es gibt kein history-Signal auf dieser Ebene.
+  return [];
+}
+
+function listEntries(clarifications) {
+  const entries = [];
+  model.measures.forEach(measure => {
+    entries.push({
+      objectType: 'measure',
+      id: measure.id,
+      title: measure.name || 'Maßnahme ohne Namen',
+      subtitle: measure.orgUnit || '',
+      badge: measure.active ? 'aktiv' : 'inaktiv',
+      active: Boolean(measure.active),
+      hasObjectiveIds: Boolean((measure.objectiveIds || []).length),
+      gapCount: clarifications.filter(item => item.status !== 'closed' && item.measureId === measure.id).length
+    });
+  });
+  inputPseudoObjects.forEach(pseudo => {
+    const gapCount = fieldDescriptorsFor('input')
+      .filter(descriptor => descriptor.group === pseudo.group)
+      .filter(descriptor => valueState('input', descriptor.key, model.inputs[descriptor.key], { object: model.inputs, objectId: inputsObjectId, history, openDecisions: model.openDecisions }).state === 'default')
+      .length;
+    entries.push({ objectType: 'input', id: pseudo.id, title: pseudo.title, subtitle: pseudo.badge, badge: pseudo.badge, gapCount });
+  });
+  (model.strategy.objectives || []).forEach(objective => {
+    entries.push({ objectType: 'objective', id: objective.id, title: objective.label || 'Ziel', subtitle: 'Ziel', badge: 'Ziel', gapCount: 0 });
+  });
+  (model.sidecar.objects || []).forEach(object => {
+    entries.push({
+      objectType: 'sidecarObject',
+      id: object.id,
+      title: object.title || 'Kontextobjekt',
+      subtitle: object.division || '',
+      badge: 'Kontext',
+      gapCount: evidenceGaps('sidecarObject', object).length + clarifications.filter(item => item.status !== 'closed' && item.sidecarId === object.id).length
+    });
+  });
+  (model.sidecar.sources || []).forEach(source => {
+    entries.push({ objectType: 'sidecarSource', id: source.id, title: source.title || 'Quelle', subtitle: source.type || '', badge: 'Quelle', gapCount: 0 });
+  });
+  clarifications.filter(item => item.status !== 'closed').forEach(item => {
+    entries.push({ objectType: 'clarification', id: item.key, title: item.title, subtitle: item.measure || item.area || '', badge: item.priority?.label || '', gapCount: 1 });
+  });
+  return entries;
+}
+
+// ---------------------------------------------------------------------------
+// Filterspalte (Abschnitt 4.2)
+// ---------------------------------------------------------------------------
+
+const typeFilterDefs = [
+  { key: 'all', label: 'Alles', match: () => true },
+  { key: 'measure', label: 'Maßnahmen', match: entry => entry.objectType === 'measure' },
+  { key: 'clarification', label: 'Offen', match: entry => entry.objectType === 'clarification' },
+  { key: 'objective', label: 'Ziele', match: entry => entry.objectType === 'objective' },
+  { key: 'sidecarObject', label: 'Kontext', match: entry => entry.objectType === 'sidecarObject' },
+  { key: 'sidecarSource', label: 'Quellen', match: entry => entry.objectType === 'sidecarSource' },
+  { key: 'rahmen', label: 'Rahmen', match: entry => entry.objectType === 'input' && entry.badge === 'Rahmen' },
+  { key: 'szenario', label: 'Szenarien', match: entry => entry.objectType === 'input' && entry.badge === 'Szenario' }
+];
+
+const savedFilterDefs = [
+  { key: 'active', label: 'Aktiv', match: entry => entry.objectType === 'measure' && entry.active },
+  { key: 'without-objective', label: 'Ohne Ziel-Zuordnung', match: entry => entry.objectType === 'measure' && entry.active && !entry.hasObjectiveIds }
+];
+
+const allFilterDefs = [...typeFilterDefs, ...savedFilterDefs];
+
+function filterCounts(entries) {
+  const counts = {};
+  allFilterDefs.forEach(def => { counts[def.key] = entries.filter(def.match).length; });
+  return counts;
+}
+
+function filteredEntries(entries) {
+  let list;
+  if (filterKey.startsWith('kpi:')) {
+    list = entries.filter(entry => entry.objectType === 'measure');
+    const kpiKey = filterKey.slice(4);
+    const p = currentParams();
+    if (kpiKey === 'eogYear1' || kpiKey === 'eogFollow') {
+      list = [...list].sort((a, b) => measureYear1Eog(resolveObject('measure', b.id), p) - measureYear1Eog(resolveObject('measure', a.id), p));
+    } else {
+      list = [...list].sort((a, b) => Number(resolveObject('measure', b.id)?.cost || 0) - Number(resolveObject('measure', a.id)?.cost || 0));
+    }
+  } else {
+    const def = allFilterDefs.find(item => item.key === filterKey);
+    list = def ? entries.filter(def.match) : entries;
+  }
   if (searchText.trim()) {
     const needle = searchText.trim().toLowerCase();
-    list = list.filter(measure => String(measure.name || '').toLowerCase().includes(needle));
+    list = list.filter(entry => entry.title.toLowerCase().includes(needle));
   }
   return list;
 }
 
+function filterButtonHtml(def, counts) {
+  return `
+    <button type="button" class="akte-filter-item ${filterKey === def.key ? 'active' : ''}" data-filter="${esc(def.key)}">
+      <span>${esc(def.label)}</span>
+      <span class="count">${counts[def.key] || 0}</span>
+    </button>
+  `;
+}
+
+function renderFilterColumn(entries) {
+  const counts = filterCounts(entries);
+  const node = document.getElementById('akteFilterColumn');
+  node.innerHTML = `
+    <div class="akte-filter-group">
+      <h3>Objekte</h3>
+      ${typeFilterDefs.map(def => filterButtonHtml(def, counts)).join('')}
+    </div>
+    <div class="akte-filter-group">
+      <h3>Gespeicherte Filter</h3>
+      ${savedFilterDefs.map(def => filterButtonHtml(def, counts)).join('')}
+    </div>
+  `;
+}
+
 // ---------------------------------------------------------------------------
-// Objektfläche (Abschnitt 4.3) — Satzdarstellung für Maßnahmen
+// Objektfläche (Abschnitt 4.3) — Objektliste + Satzdarstellung, generisch
+// über alle Objekttypen (Kriterium 6).
 // ---------------------------------------------------------------------------
 
 const measureGroupTitles = {
@@ -367,7 +457,7 @@ const measureGroupTitles = {
   notiz: 'Notiz'
 };
 const alwaysOpenGroups = new Set(['identitaet', 'investitionAktivierung', 'wirkung']);
-const groupOrder = ['identitaet', 'investitionAktivierung', 'wirkung', 'lebenszyklus', 'gasTransformationspfad', 'flexibilitaetNetzfahrplan', 'eeg2027Netzanschluss', 'monitoring14d', 'herkunftEvidenz', 'tragfaehigkeit', 'notiz'];
+const measureGroupOrder = ['identitaet', 'investitionAktivierung', 'wirkung', 'lebenszyklus', 'gasTransformationspfad', 'flexibilitaetNetzfahrplan', 'eeg2027Netzanschluss', 'monitoring14d', 'herkunftEvidenz', 'tragfaehigkeit', 'notiz'];
 
 function formattedValue(descriptor, value) {
   if (descriptor.type === 'bool') return value ? 'ja' : 'nein';
@@ -387,52 +477,61 @@ function stateSuffix(state) {
 // Felder, die kein einfacher Skalar-/String-Array-Popover abbilden kann:
 // id ist ein Systemschlüssel (nicht Teil des Satzes, siehe Spezifikation
 // 5.2 — die Identität-Gruppe listet ihn nicht), impactAssumptions ist eine
-// verschachtelte Objektliste (eigene Objektfläche ab Stufe 5).
+// verschachtelte Objektliste (eigene Objektfläche, spätere Stufe).
 const nonEditableFieldKeys = new Set(['id']);
 const summaryOnlyFieldKeys = new Set(['impactAssumptions']);
 
-function renderFieldValue(objectType, descriptor, measure) {
-  const rawValue = measure[descriptor.key];
+function renderFieldValue(objectType, objectId, descriptor, object) {
+  const rawValue = object[descriptor.key];
   if (summaryOnlyFieldKeys.has(descriptor.key)) {
     const count = Array.isArray(rawValue) ? rawValue.length : 0;
     return `<span class="akte-value akte-value--summary">${esc(count)}</span>`;
   }
-  const state = valueState(objectType, descriptor.key, rawValue, { object: measure, objectId: measure.id, history, openDecisions: model.openDecisions });
+  const state = valueState(objectType, descriptor.key, rawValue, { object, objectId, history, openDecisions: model.openDecisions });
   if (state.state === 'openByDecision') {
-    return `<button type="button" class="akte-value akte-value--openByDecision" data-edit-key="${esc(descriptor.key)}" data-measure-id="${esc(measure.id)}">bewusst offen gelassen: ${esc(state.reason || 'ohne Begründung')}</button>`;
+    return `<button type="button" class="akte-value akte-value--openByDecision" data-edit-key="${esc(descriptor.key)}" data-object-type="${esc(objectType)}" data-object-id="${esc(objectId)}">bewusst offen gelassen: ${esc(state.reason || 'ohne Begründung')}</button>`;
   }
   const display = formattedValue(descriptor, rawValue);
-  return `<button type="button" class="akte-value akte-value--${esc(state.state)}" data-edit-key="${esc(descriptor.key)}" data-measure-id="${esc(measure.id)}">${esc(display)}</button>${stateSuffix(state)}`;
+  return `<button type="button" class="akte-value akte-value--${esc(state.state)}" data-edit-key="${esc(descriptor.key)}" data-object-type="${esc(objectType)}" data-object-id="${esc(objectId)}">${esc(display)}</button>${stateSuffix(state)}`;
 }
 
-function renderSentenceForGroup(objectType, group, measure) {
+function renderSentenceForGroup(objectType, objectId, group, object) {
   const descriptors = fieldDescriptorsFor(objectType)
     .filter(descriptor => descriptor.group === group)
     .filter(descriptor => !nonEditableFieldKeys.has(descriptor.key))
-    .filter(descriptor => !descriptor.appliesWhen || descriptor.appliesWhen(measure))
+    .filter(descriptor => !descriptor.appliesWhen || descriptor.appliesWhen(object))
     .sort((a, b) => a.order - b.order);
   if (!descriptors.length) return '';
   return descriptors.map(descriptor => {
-    const valueHtml = renderFieldValue(objectType, descriptor, measure);
+    const valueHtml = renderFieldValue(objectType, objectId, descriptor, object);
     return descriptor.sentence.replace('{v}', valueHtml) + '. ';
   }).join('');
 }
 
-function groupHasGapOrNonDefault(objectType, group, measure) {
+function groupHasGapOrNonDefault(objectType, objectId, group, object) {
   return fieldDescriptorsFor(objectType)
     .filter(descriptor => descriptor.group === group)
-    .filter(descriptor => !descriptor.appliesWhen || descriptor.appliesWhen(measure))
-    .some(descriptor => {
-      const state = valueState(objectType, descriptor.key, measure[descriptor.key], { object: measure, objectId: measure.id, history, openDecisions: model.openDecisions });
-      return state.state !== 'default';
-    });
+    .filter(descriptor => !descriptor.appliesWhen || descriptor.appliesWhen(object))
+    .some(descriptor => valueState(objectType, descriptor.key, object[descriptor.key], { object, objectId, history, openDecisions: model.openDecisions }).state !== 'default');
 }
 
-function groupOpenPointCount(objectType, group, measure, clarifications) {
+function measureGroupOpenPointCount(group, measure, clarifications) {
   const measureClarifications = clarifications.filter(item => item.measureId === measure.id);
-  const descriptorKeys = new Set(fieldDescriptorsFor(objectType).filter(d => d.group === group).map(d => d.key));
-  const evidence = evidenceGaps(objectType, measure).filter(gap => descriptorKeys.has(gap.key));
+  const descriptorKeys = new Set(fieldDescriptorsFor('measure').filter(d => d.group === group).map(d => d.key));
+  const evidence = evidenceGaps('measure', measure).filter(gap => descriptorKeys.has(gap.key));
   return measureClarifications.length && group === 'wirkung' ? measureClarifications.length : evidence.length;
+}
+
+function blockHtml(group, title, openCount, shouldOpen, sentence) {
+  return `
+    <details class="akte-sentence-block" ${shouldOpen ? 'open' : ''} data-group="${esc(group)}">
+      <summary>
+        <span>${esc(title)}</span>
+        ${openCount ? `<span class="badge">${openCount} offen</span>` : ''}
+      </summary>
+      <div class="akte-sentence-body">${sentence}</div>
+    </details>
+  `;
 }
 
 function renderRechenpfad(measure, p) {
@@ -454,39 +553,18 @@ function renderRechenpfad(measure, p) {
   }
 }
 
-function renderObjectSurface() {
-  const portfolio = currentPortfolio();
-  const clarifications = currentClarifications(portfolio);
-  const node = document.getElementById('akteObjectSurface');
-  const measure = model.measures.find(item => item.id === selectedId);
-  if (!measure) {
-    node.innerHTML = '<div class="akte-empty-state">Keine Maßnahme ausgewählt. Wählen Sie links ein Objekt.</div>';
-    return;
-  }
-  const p = currentParams();
-  const blocksHtml = groupOrder
-    .filter(group => {
-      const descriptors = fieldDescriptorsFor('measure').filter(d => d.group === group && (!d.appliesWhen || d.appliesWhen(measure)));
-      return descriptors.length > 0;
-    })
+function renderMeasureDetail(measure, clarifications, p) {
+  const blocksHtml = measureGroupOrder
+    .filter(group => fieldDescriptorsFor('measure').some(d => d.group === group && (!d.appliesWhen || d.appliesWhen(measure))))
     .map(group => {
-      const sentence = renderSentenceForGroup('measure', group, measure);
+      const sentence = renderSentenceForGroup('measure', measure.id, group, measure);
       const isCore = alwaysOpenGroups.has(group);
-      const openCount = groupOpenPointCount('measure', group, measure, clarifications);
-      const hasNonDefault = groupHasGapOrNonDefault('measure', group, measure);
+      const openCount = measureGroupOpenPointCount(group, measure, clarifications);
+      const hasNonDefault = groupHasGapOrNonDefault('measure', measure.id, group, measure);
       const shouldOpen = isCore || openCount > 0 || hasNonDefault;
-      return `
-        <details class="akte-sentence-block" ${shouldOpen ? 'open' : ''} data-group="${esc(group)}">
-          <summary>
-            <span>${esc(measureGroupTitles[group] || group)}</span>
-            ${openCount ? `<span class="badge">${openCount} offen</span>` : ''}
-          </summary>
-          <div class="akte-sentence-body">${sentence}</div>
-        </details>
-      `;
+      return blockHtml(group, measureGroupTitles[group] || group, openCount, shouldOpen, sentence);
     }).join('');
-
-  node.innerHTML = `
+  return `
     <h2 class="akte-object-title">${esc(measure.name || 'Maßnahme ohne Namen')}</h2>
     <p class="akte-object-subtitle">Maßnahme · ${esc(measure.orgUnit || 'ohne Bereich')} · ${measure.active ? 'aktiv' : 'inaktiv'}</p>
     ${blocksHtml}
@@ -494,24 +572,109 @@ function renderObjectSurface() {
   `;
 }
 
-// ---------------------------------------------------------------------------
-// Kontextspalte (Abschnitt 4.3, rechte Spalte)
-// ---------------------------------------------------------------------------
+function renderFlatDetail(objectType, objectId, group, object, title, subtitle) {
+  const sentence = renderSentenceForGroup(objectType, objectId, group, object);
+  return `
+    <h2 class="akte-object-title">${esc(title)}</h2>
+    <p class="akte-object-subtitle">${esc(subtitle)}</p>
+    <div class="akte-sentence-block akte-sentence-block--flat">
+      <div class="akte-sentence-body">${sentence}</div>
+    </div>
+  `;
+}
 
-function renderContextColumn() {
-  const node = document.getElementById('akteContextColumn');
-  const measure = model.measures.find(item => item.id === selectedId);
-  if (!measure) {
-    node.innerHTML = '<div class="akte-empty-state">Kein Objekt ausgewählt.</div>';
+function renderClarificationDetail(item, clarifications, p) {
+  const infoCard = `
+    <h2 class="akte-object-title">${esc(item.title)}</h2>
+    <p class="akte-object-subtitle">Klärpunkt · ${esc(item.area || '')} · Priorität ${esc(item.priority?.label || '')}</p>
+    <div class="akte-sentence-block akte-sentence-block--flat">
+      <div class="akte-sentence-body">${esc(item.detail || 'Kein weiterer Hinweistext.')}</div>
+    </div>
+  `;
+  let underlying = '';
+  if (item.measureId) {
+    const measure = model.measures.find(entry => entry.id === item.measureId);
+    if (measure) {
+      underlying = `<div class="akte-clarification-target"><h3>Betroffenes Objekt: ${esc(measure.name)}</h3>${renderMeasureDetail(measure, clarifications, p)}</div>`;
+    }
+  } else if (item.sidecarId) {
+    const object = (model.sidecar.objects || []).find(entry => entry.id === item.sidecarId);
+    if (object) {
+      underlying = `<div class="akte-clarification-target"><h3>Betroffenes Objekt: ${esc(object.title)}</h3>${renderFlatDetail('sidecarObject', object.id, 'kontext', object, object.title || 'Kontextobjekt', 'Kontextobjekt')}</div>`;
+    }
+  }
+  return infoCard + underlying;
+}
+
+function renderObjectDetailHtml(objectType, id, clarifications, p) {
+  if (objectType === 'measure') {
+    const measure = model.measures.find(item => item.id === id);
+    return measure ? renderMeasureDetail(measure, clarifications, p) : '<div class="akte-empty-state">Maßnahme nicht gefunden.</div>';
+  }
+  if (objectType === 'input') {
+    const pseudo = inputPseudoObjects.find(item => item.id === id);
+    return pseudo ? renderFlatDetail('input', inputsObjectId, pseudo.group, model.inputs, pseudo.title, `${pseudo.badge} · gilt für das gesamte Modell`) : '';
+  }
+  if (objectType === 'objective') {
+    const objective = (model.strategy.objectives || []).find(item => item.id === id);
+    return objective ? renderFlatDetail('objective', objective.id, 'ziel', objective, objective.label || 'Ziel', 'Ziel') : '<div class="akte-empty-state">Ziel nicht gefunden.</div>';
+  }
+  if (objectType === 'sidecarObject') {
+    const object = (model.sidecar.objects || []).find(item => item.id === id);
+    return object ? renderFlatDetail('sidecarObject', object.id, 'kontext', object, object.title || 'Kontextobjekt', `Kontextobjekt · ${object.division || ''}`) : '<div class="akte-empty-state">Kontextobjekt nicht gefunden.</div>';
+  }
+  if (objectType === 'sidecarSource') {
+    const source = (model.sidecar.sources || []).find(item => item.id === id);
+    return source ? renderFlatDetail('sidecarSource', source.id, 'quelle', source, source.title || 'Quelle', 'Quelle') : '<div class="akte-empty-state">Quelle nicht gefunden.</div>';
+  }
+  if (objectType === 'clarification') {
+    const item = clarifications.find(entry => entry.key === id);
+    return item ? renderClarificationDetail(item, clarifications, p) : '<div class="akte-empty-state">Klärpunkt nicht gefunden (evtl. bereits geschlossen).</div>';
+  }
+  return '<div class="akte-empty-state">Unbekannter Objekttyp.</div>';
+}
+
+function renderObjectListHtml(visible) {
+  if (visible.length <= 1) return '';
+  return `
+    <div class="akte-object-list" role="list" aria-label="Objekte im aktuellen Filter">
+      ${visible.map(entry => `
+        <button type="button" class="akte-object-list-item ${entry.objectType === selectedType && entry.id === selectedId ? 'active' : ''}" data-object-type="${esc(entry.objectType)}" data-object-id="${esc(entry.id)}">
+          <span class="akte-object-list-title">${esc(entry.title)}</span>
+          <span class="akte-object-list-meta">
+            <span class="akte-object-list-type">${esc(objectTypeLabels[entry.objectType] || entry.objectType)}</span>
+            ${entry.gapCount ? `<span class="akte-object-list-gap">${entry.gapCount}</span>` : ''}
+          </span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderObjectSurface(visible, clarifications) {
+  const node = document.getElementById('akteObjectSurface');
+  if (!visible.length) {
+    node.innerHTML = '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
     return;
   }
   const p = currentParams();
-  const portfolio = currentPortfolio();
-  const clarifications = currentClarifications(portfolio).filter(item => item.measureId === measure.id);
-  const drilldown = measureDrilldownFor(measure, p);
-  const evidence = evidenceGaps('measure', measure);
-  const measureEvents = history.events.filter(event => event.subject?.measureId === measure.id).slice(-6).reverse();
+  node.innerHTML = renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
+}
 
+// ---------------------------------------------------------------------------
+// Kontextspalte (Abschnitt 4.3, rechte Spalte) — generisch über alle
+// Objekttypen; nur Maßnahmen haben eine "Wirkung dieses Objekts"-Rechnung.
+// ---------------------------------------------------------------------------
+
+function emptyContextHtml() {
+  return '<div class="akte-empty-state">Kein Objekt ausgewählt.</div>';
+}
+
+function renderMeasureContext(node, measure, clarifications, p) {
+  const drilldown = measureDrilldownFor(measure, p);
+  const related = clarifications.filter(item => item.measureId === measure.id);
+  const evidence = evidenceGaps('measure', measure);
+  const events = historyEventsFor('measure', measure.id).slice(-6).reverse();
   node.innerHTML = `
     <div class="akte-context-section">
       <h3>Wirkung dieses Objekts</h3>
@@ -519,25 +682,74 @@ function renderContextColumn() {
       <div class="akte-context-metric"><span>${esc(drilldown.returnMetricLabel || 'IRR')}</span><strong>${Number.isFinite(drilldown.returnMetricValue) ? esc(fmtPct(drilldown.returnMetricValue * 100, 1)) : '–'}</strong></div>
       <div class="akte-context-metric"><span>Kapitalwert</span><strong>${esc(fmtTeur(drilldown.npvTeur || 0, 1))}</strong></div>
     </div>
+    ${contextSectionHtml('Offene Punkte', related, item => `${esc(item.title)} · ${esc(item.priority?.label || '')}`, 'Keine offenen Punkte für dieses Objekt.')}
+    ${contextSectionHtml('Herkunft', evidence, gap => `${esc(gap.key)}: Evidenz (${esc(gap.evidenceKey)}) fehlt`, 'Keine offenen Evidenzlücken erkannt.')}
+    ${historySectionHtml(events)}
+  `;
+}
+
+function contextSectionHtml(title, items, render, emptyText) {
+  return `
     <div class="akte-context-section">
-      <h3>Offene Punkte (${clarifications.length})</h3>
-      ${clarifications.length
-        ? clarifications.slice(0, 8).map(item => `<span class="akte-open-point">${esc(item.title)} · ${esc(item.priority?.label || '')}</span>`).join('')
-        : '<span class="akte-open-point">Keine offenen Punkte für dieses Objekt.</span>'}
+      <h3>${esc(title)} (${items.length})</h3>
+      ${items.length ? items.slice(0, 8).map(item => `<span class="akte-open-point">${render(item)}</span>`).join('') : `<span class="akte-open-point">${esc(emptyText)}</span>`}
     </div>
-    <div class="akte-context-section">
-      <h3>Herkunft</h3>
-      ${evidence.length
-        ? evidence.slice(0, 6).map(gap => `<span class="akte-open-point">${esc(gap.key)}: Evidenz (${esc(gap.evidenceKey)}) fehlt</span>`).join('')
-        : '<span class="akte-open-point">Keine offenen Evidenzlücken erkannt.</span>'}
-    </div>
+  `;
+}
+
+function historySectionHtml(events) {
+  return `
     <div class="akte-context-section">
       <h3>Verlauf</h3>
-      ${measureEvents.length
-        ? measureEvents.map(event => `<div class="akte-history-event">${esc(eventSummary(event))}</div>`).join('')
+      ${events.length
+        ? events.map(event => `<div class="akte-history-event">${esc(eventSummary(event))}</div>`).join('')
         : '<div class="akte-history-event">Noch keine Änderungen protokolliert.</div>'}
     </div>
   `;
+}
+
+function renderGenericContext(node, objectType, objectId, object, clarifications) {
+  const gaps = evidenceGaps(objectType, object);
+  const related = objectType === 'sidecarObject'
+    ? clarifications.filter(item => item.sidecarId === objectId)
+    : [];
+  const events = historyEventsFor(objectType, objectId).slice(-6).reverse();
+  node.innerHTML = `
+    ${contextSectionHtml('Offene Punkte', related, item => `${esc(item.title)} · ${esc(item.priority?.label || '')}`, 'Keine offenen Punkte für dieses Objekt.')}
+    ${contextSectionHtml('Herkunft', gaps, gap => `${esc(gap.key)}: Evidenz (${esc(gap.evidenceKey)}) fehlt`, 'Keine offenen Evidenzlücken erkannt.')}
+    ${historySectionHtml(events)}
+  `;
+}
+
+function renderClarificationContext(node, item) {
+  node.innerHTML = `
+    <div class="akte-context-section">
+      <h3>Klärpunkt</h3>
+      <div class="akte-context-metric"><span>Priorität</span><strong>${esc(item.priority?.label || '')}</strong></div>
+      <div class="akte-context-metric"><span>Treiber</span><strong>${esc(item.priority?.driver || '')}</strong></div>
+      <div class="akte-context-metric"><span>Zielphase</span><strong>${esc(item.targetPhase || '')}</strong></div>
+    </div>
+  `;
+}
+
+function renderContextColumn(clarifications) {
+  const node = document.getElementById('akteContextColumn');
+  const p = currentParams();
+  if (selectedType === 'measure') {
+    const measure = model.measures.find(item => item.id === selectedId);
+    if (!measure) { node.innerHTML = emptyContextHtml(); return; }
+    renderMeasureContext(node, measure, clarifications, p);
+    return;
+  }
+  if (selectedType === 'clarification') {
+    const item = clarifications.find(entry => entry.key === selectedId);
+    if (!item) { node.innerHTML = emptyContextHtml(); return; }
+    renderClarificationContext(node, item);
+    return;
+  }
+  const object = resolveObject(selectedType, selectedId);
+  if (!object) { node.innerHTML = emptyContextHtml(); return; }
+  renderGenericContext(node, selectedType, objectIdForState(selectedType, selectedId), object, clarifications);
 }
 
 // ---------------------------------------------------------------------------
@@ -554,11 +766,11 @@ function closePopover() {
   activePopoverTarget = null;
 }
 
-function helperNoteFor(descriptor, measure) {
+function helperNoteFor(descriptor, object) {
   const fn = descriptor.helper ? helperFunctions[descriptor.helper] : null;
   if (!fn) return '';
   try {
-    const result = fn(measure);
+    const result = fn(object);
     const text = result?.note || result?.chain || result?.clarification || '';
     return text ? `<div class="akte-popover-helper">${esc(text)}</div>` : '';
   } catch (_error) {
@@ -599,22 +811,24 @@ function parseControlValue(descriptor, rawOriginal) {
 
 function openPopover(button) {
   const key = button.dataset.editKey;
-  const measureId = button.dataset.measureId;
-  const measure = model.measures.find(item => item.id === measureId);
-  const descriptor = fieldDescriptorsFor('measure').find(item => item.key === key);
-  if (!measure || !descriptor) return;
+  const objectType = button.dataset.objectType;
+  const objectId = button.dataset.objectId;
+  const object = resolveObject(objectType, objectId);
+  const descriptor = fieldDescriptorsFor(objectType).find(item => item.key === key);
+  if (!object || !descriptor) return;
   activePopoverTarget = button;
   const popover = document.getElementById('akteValuePopover');
-  const currentValue = measure[key];
-  const state = valueState('measure', key, currentValue, { object: measure, objectId: measure.id, history, openDecisions: model.openDecisions });
+  const currentValue = object[key];
+  const stateObjectId = objectIdForState(objectType, objectId);
+  const state = valueState(objectType, key, currentValue, { object, objectId: stateObjectId, history, openDecisions: model.openDecisions });
 
   popover.innerHTML = `
     <div class="akte-popover-title">${esc(descriptor.label)}</div>
     <div class="akte-popover-state">Zustand: ${esc(state.state)}${descriptor.default !== undefined ? ` · Vorbelegung: ${esc(formattedValue(descriptor, descriptor.default))}` : ''}</div>
     <label for="akteFieldInput">${esc(descriptor.label)}${descriptor.unit ? ` (${esc(descriptor.unit)})` : ''}</label>
     ${inputControlFor(descriptor, currentValue)}
-    ${descriptor.evidenceKey ? `<label for="akteEvidenceInput">Quelle / Evidenz (${esc(descriptor.evidenceKey)})</label><input id="akteEvidenceInput" type="text" value="${esc(measure[descriptor.evidenceKey] ?? '')}">` : ''}
-    ${helperNoteFor(descriptor, measure)}
+    ${descriptor.evidenceKey ? `<label for="akteEvidenceInput">Quelle / Evidenz (${esc(descriptor.evidenceKey)})</label><input id="akteEvidenceInput" type="text" value="${esc(object[descriptor.evidenceKey] ?? '')}">` : ''}
+    ${helperNoteFor(descriptor, object)}
     <button type="button" class="akte-open-decision-toggle" id="akteOpenDecisionToggle">bewusst offen lassen …</button>
     <div id="akteOpenDecisionArea" class="hidden">
       <label for="akteOpenDecisionReason">Begründung (erforderlich)</label>
@@ -635,12 +849,12 @@ function openPopover(button) {
   document.getElementById('aktePopoverCancel').addEventListener('click', closePopover);
   document.getElementById('aktePopoverSave').addEventListener('click', () => {
     const nextValue = parseControlValue(descriptor, currentValue);
-    measure[key] = nextValue;
+    object[key] = nextValue;
     if (descriptor.evidenceKey) {
       const evidenceInput = document.getElementById('akteEvidenceInput');
-      if (evidenceInput) measure[descriptor.evidenceKey] = evidenceInput.value;
+      if (evidenceInput) object[descriptor.evidenceKey] = evidenceInput.value;
     }
-    if (model.openDecisions?.[measure.id]) delete model.openDecisions[measure.id][key];
+    if (model.openDecisions?.[stateObjectId]) delete model.openDecisions[stateObjectId][key];
     afterMutation();
     closePopover();
   });
@@ -653,8 +867,8 @@ function openPopover(button) {
   document.getElementById('akteOpenDecisionSave').addEventListener('click', () => {
     const reason = document.getElementById('akteOpenDecisionReason').value.trim();
     if (!reason) return;
-    model.openDecisions[measure.id] = model.openDecisions[measure.id] || {};
-    model.openDecisions[measure.id][key] = { reason, author, timestamp: new Date().toISOString() };
+    model.openDecisions[stateObjectId] = model.openDecisions[stateObjectId] || {};
+    model.openDecisions[stateObjectId][key] = { reason, author, timestamp: new Date().toISOString() };
     afterMutation();
     closePopover();
   });
@@ -685,11 +899,18 @@ function afterMutation() {
 function renderAll() {
   const portfolio = currentPortfolio();
   const clarifications = currentClarifications(portfolio);
+  const entries = listEntries(clarifications);
+  let visible = filteredEntries(entries);
+  if (!visible.length) visible = entries;
+  if (visible.length && !visible.some(entry => entry.objectType === selectedType && entry.id === selectedId)) {
+    selectedType = visible[0].objectType;
+    selectedId = visible[0].id;
+  }
   document.getElementById('akteSectorLabel').textContent = model.inputs.sector === 'gas' ? 'Gas' : 'Strom';
-  renderKpiStrip();
-  renderFilterColumn(portfolio, clarifications);
-  renderObjectSurface();
-  renderContextColumn();
+  renderKpiStrip(portfolio, clarifications);
+  renderFilterColumn(entries);
+  renderObjectSurface(visible, clarifications);
+  renderContextColumn(clarifications);
 }
 
 function showToast(text) {
@@ -709,11 +930,7 @@ function wireEvents() {
     const button = event.target.closest('[data-kpi]');
     if (!button) return;
     const kpi = button.dataset.kpi;
-    filterKey = kpi === 'open' || kpi === 'reliability' ? 'open' : `kpi:${kpi}`;
-    const portfolio = currentPortfolio();
-    const clarifications = currentClarifications(portfolio);
-    const list = visibleMeasures(portfolio, clarifications);
-    if (list[0]) selectedId = list[0].id;
+    filterKey = kpi === 'open' || kpi === 'reliability' ? 'clarification' : `kpi:${kpi}`;
     renderAll();
     document.getElementById('akteObjectSurface').focus();
   });
@@ -722,14 +939,17 @@ function wireEvents() {
     const button = event.target.closest('[data-filter]');
     if (!button) return;
     filterKey = button.dataset.filter;
-    const portfolio = currentPortfolio();
-    const clarifications = currentClarifications(portfolio);
-    const list = visibleMeasures(portfolio, clarifications);
-    if (list.length && !list.some(measure => measure.id === selectedId)) selectedId = list[0].id;
     renderAll();
   });
 
   document.getElementById('akteObjectSurface').addEventListener('click', event => {
+    const listItem = event.target.closest('.akte-object-list-item');
+    if (listItem) {
+      selectedType = listItem.dataset.objectType;
+      selectedId = listItem.dataset.objectId;
+      renderAll();
+      return;
+    }
     const valueButton = event.target.closest('.akte-value');
     if (valueButton) {
       openPopover(valueButton);
@@ -755,7 +975,9 @@ function wireEvents() {
 
   document.getElementById('akteSearch').addEventListener('input', event => {
     searchText = event.target.value;
-    renderMeasureListInFilterColumn();
+    // Suchtext filtert die aktuell sichtbaren Objekte, ohne den gewählten
+    // Filter zu ändern (siehe Abschnitt 5, Kommandosuche bleibt).
+    renderAll();
   });
 
   document.getElementById('akteSaveButton').addEventListener('click', () => saveToStorage(false));
@@ -802,6 +1024,7 @@ function wireEvents() {
           openDecisions: incomingModel.openDecisions || {}
         };
         history = state.history && Array.isArray(state.history.events) ? state.history : emptyHistory();
+        selectedType = incomingModel.ui2?.selectedType || 'measure';
         selectedId = incomingModel.ui2?.selectedId || model.measures[0]?.id || '';
         filterKey = incomingModel.ui2?.filterKey || 'all';
         previousModelForHistory = currentModelData();
@@ -815,12 +1038,6 @@ function wireEvents() {
     reader.readAsText(file);
     event.target.value = '';
   });
-}
-
-function renderMeasureListInFilterColumn() {
-  // Suchtext filtert die aktuell sichtbaren Objekte, ohne den gewählten
-  // Filter zu ändern (siehe Abschnitt 5, Kommandosuche bleibt).
-  renderObjectSurface();
 }
 
 // ---------------------------------------------------------------------------
@@ -841,13 +1058,15 @@ if (typeof document !== 'undefined') {
   }
 }
 
-// Test-Seam analog zu ui.js (siehe tests/akte-layout.test.js).
+// Test-Seam analog zu ui.js (siehe tests/akte-layout.test.js, tests/akte-objects.test.js).
 if (typeof window !== 'undefined') {
   window.__akte2Debug = {
     getModel: () => model,
     getSelectedId: () => selectedId,
+    getSelectedType: () => selectedType,
     getFilterKey: () => filterKey,
     setSelectedId: id => { selectedId = id; renderAll(); },
+    setSelectedObject: (type, id) => { selectedType = type; selectedId = id; renderAll(); },
     setFilterKey: key => { filterKey = key; renderAll(); }
   };
 }

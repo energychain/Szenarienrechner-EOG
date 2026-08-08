@@ -80,7 +80,7 @@ describe('Stufe 4: Ergebnisstreifen als einziger Drilldown (Kriterium 5)', () =>
     expect(debug.getFilterKey()).toBe('kpi:npv');
 
     click(document.querySelector('[data-kpi="open"]'));
-    expect(debug.getFilterKey()).toBe('open');
+    expect(debug.getFilterKey()).toBe('clarification');
   });
 
   it('has no second drilldown mechanism: only the KPI strip and the filter column ever set filterKey', () => {
