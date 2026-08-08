@@ -1055,6 +1055,49 @@ function chartModelForCurrentFilter(visible) {
 // Diagrammtypen einheitlich (Abschnitt 6).
 const valueStateLabelDe = { set: 'geprüft', default: 'Vorbelegung', derived: 'abgeleitet', openByDecision: 'bewusst offen' };
 
+// Große Fassung im Ausgabefenster (Abschnitt 4.3): "mit Achsen, Legende,
+// Werteachse und Quellenzeile" — im Objektflächen-Diagramm bewusst
+// weggelassen (Abschnitt 4.2), hier Pflicht, weil das die Beamer-/
+// Papiersituation ist. Achsen/Werteachse werden je Diagrammtyp aus derselben
+// Skala gezeichnet, die auch die Balken/Punkte positioniert (kein zweites,
+// potenziell abweichendes Koordinatensystem). Legende und Quellenzeile sind
+// gemeinsam für alle sechs Diagrammtypen (Abschnitt 6: "muss nur einmal
+// gelernt werden").
+function verticalAxisSvg(ticks, yScale, x) {
+  if (!ticks.length) return '';
+  const sorted = [...ticks].sort((a, b) => a - b);
+  const line = `<line x1="${x}" y1="${yScale(sorted[0])}" x2="${x}" y2="${yScale(sorted[sorted.length - 1])}" class="akte-chart-axis-line"></line>`;
+  const labels = sorted.map(tick => `<text x="${x - 5}" y="${yScale(tick) + 3}" class="akte-chart-axis-label" text-anchor="end">${esc(fmtPlain(tick, 0))}</text>`).join('');
+  return line + labels;
+}
+
+function horizontalAxisSvg(ticks, xScale, y) {
+  if (!ticks.length) return '';
+  const sorted = [...ticks].sort((a, b) => a - b);
+  const line = `<line x1="${xScale(sorted[0])}" y1="${y}" x2="${xScale(sorted[sorted.length - 1])}" y2="${y}" class="akte-chart-axis-line"></line>`;
+  const labels = sorted.map(tick => `<text x="${xScale(tick)}" y="${y + 13}" class="akte-chart-axis-label" text-anchor="middle">${esc(fmtPlain(tick, 0))}</text>`).join('');
+  return line + labels;
+}
+
+function chartValueStateLegendHtml() {
+  const items = [
+    ['set', 'geprüft'],
+    ['default', 'Vorbelegung'],
+    ['derived', 'abgeleitet'],
+    ['openByDecision', 'bewusst offen']
+  ];
+  return `
+    <div class="akte-chart-legend">
+      ${items.map(([state, label]) => `<span class="akte-chart-legend-item"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" class="akte-chart-mark--${state}"></rect></svg>${esc(label)}</span>`).join('')}
+      <span class="akte-chart-legend-item"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" class="akte-chart-mark--no-evidence"></rect></svg>Evidenz fehlt (Kontur ohne Füllfarbe)</span>
+    </div>
+  `;
+}
+
+function chartSourceLineHtml() {
+  return `<p class="akte-chart-source">Quelle: Szenarienrechner-EOG (digitale Akte) · Rechenkern engine.js/chart-model.js · Datenstand ${esc(new Date().toLocaleString('de-DE'))}</p>`;
+}
+
 function chartChromeButtonsHtml(collapsed, asTable) {
   return `
     <div class="akte-chart-header">
@@ -1067,13 +1110,12 @@ function chartChromeButtonsHtml(collapsed, asTable) {
 // Wirkungsrangliste / Tornado (Kriterium V9: <title> je Element mit Name,
 // Wert und Zustand im Klartext; Größenberechnung rein aus den Daten, kein
 // getBoundingClientRect — siehe Abschnitt 8).
-function renderTornadoSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId }) {
-  const width = 560;
-  const height = 220;
+function renderTornadoSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId, axis = false, width = 560, height = 220 }) {
   const labelWidth = 150;
   const plotLeft = labelWidth + 8;
   const plotRight = width - 12;
-  const rowHeight = Math.min(30, (height - 16) / Math.max(1, chart.elements.length));
+  const bottomMargin = axis ? 18 : 0;
+  const rowHeight = Math.min(30, (height - 16 - bottomMargin) / Math.max(1, chart.elements.length));
   const barHeight = Math.max(6, rowHeight - 8);
   const scale = linearScale(chart.xAxis.min, chart.xAxis.max, plotLeft, plotRight);
   const zeroX = scale(0);
@@ -1101,8 +1143,9 @@ function renderTornadoSvg(chart, { selectedType: selectedObjectType, selectedId:
     `;
   }).join('');
   return `
-    <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
-      <line x1="${zeroX}" y1="4" x2="${zeroX}" y2="${height - 4}" class="akte-chart-zero-line"></line>
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
+      <line x1="${zeroX}" y1="4" x2="${zeroX}" y2="${height - bottomMargin - 4}" class="akte-chart-zero-line"></line>
+      ${axis ? horizontalAxisSvg(chart.xAxis.ticks, scale, height - bottomMargin) : ''}
       ${bars}
     </svg>
   `;
@@ -1139,12 +1182,10 @@ const eogFlowStackOrder = [
   ['firstYearOpex', 'Einmal-OPEX']
 ];
 
-function renderEogFlowSvg(chart, { yearMarker }) {
-  const width = 560;
-  const height = 220;
+function renderEogFlowSvg(chart, { yearMarker, axis = false, width = 560, height = 220 }) {
   const topMargin = 6;
   const bottomMargin = 18;
-  const leftMargin = 8;
+  const leftMargin = axis ? 34 : 8;
   const rightMargin = 8;
   const elements = chart.elements;
   const n = Math.max(1, elements.length);
@@ -1200,8 +1241,9 @@ function renderEogFlowSvg(chart, { yearMarker }) {
   const linePoints = key => elements.map((element, index) => `${columnX(index)},${yScale(element[key])}`).join(' ');
 
   return `
-    <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
       <line x1="${leftMargin}" y1="${zeroY}" x2="${width - rightMargin}" y2="${zeroY}" class="akte-chart-zero-line"></line>
+      ${axis ? verticalAxisSvg(chart.yAxis.ticks, yScale, leftMargin) : ''}
       ${columns}
       <polyline points="${linePoints('indicativeCashflow')}" class="akte-chart-line akte-chart-line--cashflow"></polyline>
       <polyline points="${linePoints('bridgeCumulative')}" class="akte-chart-line akte-chart-line--bridge"></polyline>
@@ -1240,13 +1282,11 @@ function riskBubbleRadius(size, maxSize) {
   return minR + Math.sqrt(Math.abs(size) / maxSize) * (maxR - minR);
 }
 
-function renderRiskMatrixSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId }) {
-  const width = 560;
-  const height = 220;
-  const leftMargin = 20;
+function renderRiskMatrixSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId, axis = false, width = 560, height = 220 }) {
+  const leftMargin = axis ? 34 : 20;
   const rightMargin = 16;
   const topMargin = 12;
-  const bottomMargin = 20;
+  const bottomMargin = axis ? 32 : 20;
   const xScale = linearScale(chart.xAxis.min, chart.xAxis.max, leftMargin, width - rightMargin);
   const yScale = linearScale(chart.yAxis.min, chart.yAxis.max || 1, height - bottomMargin, topMargin);
   const maxSize = Math.max(0, ...chart.elements.map(element => Math.abs(element.size)));
@@ -1277,13 +1317,15 @@ function renderRiskMatrixSvg(chart, { selectedType: selectedObjectType, selected
     `;
   }).join('');
   return `
-    <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
       <defs>
         <marker id="akteRiskArrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 Z" class="akte-chart-risk-arrowhead"></path>
         </marker>
       </defs>
       <line x1="${leftMargin}" y1="${height - bottomMargin}" x2="${width - rightMargin}" y2="${height - bottomMargin}" class="akte-chart-zero-line"></line>
+      ${axis ? verticalAxisSvg(chart.yAxis.ticks, yScale, leftMargin) : ''}
+      ${axis ? horizontalAxisSvg(chart.xAxis.ticks, xScale, height - bottomMargin) : ''}
       ${bubbles}
     </svg>
   `;
@@ -1313,9 +1355,8 @@ function renderRiskMatrixTable(chart) {
 // schwebender Balken je Schritt (Abschnitt 5). "Balken → beitragende
 // Maßnahme, wo eindeutig" — waterfallModel() setzt den Objektbezug nur, wenn
 // genau eine aktive Maßnahme existiert (siehe chart-model.js).
-function renderVerticalBarChart({ chart, leftMargin = 12, rightMargin = 12, labelEvery = 1, xLabel, xLabelFor = element => element.label, selectedObjectType, selectedObjectId, overlayFraction, connectSteps }) {
-  const width = 560;
-  const height = 220;
+function renderVerticalBarChart({ chart, leftMargin = 12, rightMargin = 12, labelEvery = 1, xLabel, xLabelFor = element => element.label, selectedObjectType, selectedObjectId, overlayFraction, connectSteps, axis = false, width = 560, height = 220 }) {
+  if (axis) leftMargin = Math.max(leftMargin, 34);
   const topMargin = 10;
   const bottomMargin = xLabel ? 20 : 8;
   const n = Math.max(1, chart.elements.length);
@@ -1367,8 +1408,9 @@ function renderVerticalBarChart({ chart, leftMargin = 12, rightMargin = 12, labe
     `;
   }).join('');
   return `
-    <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
       <line x1="${leftMargin}" y1="${zeroY}" x2="${width - rightMargin}" y2="${zeroY}" class="akte-chart-zero-line"></line>
+      ${axis ? verticalAxisSvg(chart.yAxis.ticks, yScale, leftMargin) : ''}
       ${bars}
     </svg>
   `;
@@ -1386,14 +1428,17 @@ const waterfallShortLabels = {
   indicative_cashflow: 'Cashflow'
 };
 
-function renderWaterfallSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId }) {
+function renderWaterfallSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId, axis = false, width = 560, height = 220 }) {
   return renderVerticalBarChart({
     chart,
     xLabel: true,
     xLabelFor: element => waterfallShortLabels[element.key] || element.label,
     selectedObjectType,
     selectedObjectId,
-    connectSteps: true
+    connectSteps: true,
+    axis,
+    width,
+    height
   });
 }
 
@@ -1420,8 +1465,8 @@ function renderWaterfallTable(chart) {
 // Nulllinie (Abschnitt 5). Keine Balkenbeschriftung — bei bis zu 60 Balken
 // nicht mehr lesbar; Name/Wert/Zustand stehen im <title> und in der Liste
 // darunter.
-function renderContributionBarsSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId }) {
-  return renderVerticalBarChart({ chart, selectedObjectType, selectedObjectId });
+function renderContributionBarsSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId, axis = false, width = 560, height = 220 }) {
+  return renderVerticalBarChart({ chart, selectedObjectType, selectedObjectId, axis, width, height });
 }
 
 function renderContributionBarsTable(chart) {
@@ -1447,13 +1492,16 @@ function renderContributionBarsTable(chart) {
 // die Kategorie (siehe activateChartElement) — data-object-type bleibt
 // trotzdem gesetzt, damit derselbe Diagramm-Mechanismus (Klick, Tastatur,
 // <title>) greift.
-function renderViabilitySegmentsSvg(chart) {
+function renderViabilitySegmentsSvg(chart, { axis = false, width = 560, height = 220 } = {}) {
   return renderVerticalBarChart({
     chart,
     xLabel: true,
     overlayFraction: element => element.bridgeMissingShare,
     selectedObjectType: null,
-    selectedObjectId: null
+    selectedObjectId: null,
+    axis,
+    width,
+    height
   });
 }
 
@@ -2165,6 +2213,40 @@ function reportSegmentationRowsHtml(segmentation) {
   }).join('');
 }
 
+// Große Fassung aller sechs Diagramme (Abschnitt 4.3) für Bericht/Druck: mit
+// Achsen, gemeinsamer Legende und Quellenzeile. Zeigt bewusst den gesamten
+// Arbeitsstand (nicht die zuletzt gewählte Objektflächen-Filtermenge) — der
+// Bericht ist eine eigenständige Zusammenfassung, kein Abbild des gerade
+// aktiven Bildschirms.
+function buildChartsSectionHtml() {
+  const portfolio = currentPortfolio();
+  const p = currentParams();
+  const context = { history, openDecisions: model.openDecisions };
+  const clarifications = currentClarifications(portfolio);
+  const charts = [
+    { title: 'Risikomatrix', chart: riskMatrixModel(model.measures, context), svg: renderRiskMatrixSvg },
+    { title: 'Liquiditäts-/EOG-Verlauf', chart: eogFlowModel(portfolio, context), svg: renderEogFlowSvg },
+    { title: 'Wasserfall', chart: waterfallModel(portfolio, context), svg: renderWaterfallSvg },
+    { title: 'Beitragsbalken', chart: contributionBarsModel(portfolio, context), svg: renderContributionBarsSvg },
+    { title: 'Wirkungsrangliste', chart: tornadoModel({ measures: model.measures, inputs: model.inputs }, p, clarifications, context), svg: renderTornadoSvg },
+    { title: 'Segmentbalken', chart: viabilitySegmentsModel({ measures: model.measures }, model.inputs, context), svg: renderViabilitySegmentsSvg }
+  ];
+  const sections = charts.map(({ title, chart, svg }) => `
+    <div class="akte-output-chart">
+      <h4>${esc(title)}</h4>
+      ${chart.emptyReason
+        ? `<p class="akte-chart-empty">${esc(chart.emptyReason)}</p>`
+        : svg(chart, { selectedType, selectedId, yearMarker: null, axis: true, width: 720, height: 320 })}
+    </div>
+  `).join('');
+  return `
+    <h3>Diagramme</h3>
+    ${chartValueStateLegendHtml()}
+    ${sections}
+    ${chartSourceLineHtml()}
+  `;
+}
+
 function buildReportHtml() {
   const portfolio = currentPortfolio();
   const clarifications = currentClarifications(portfolio);
@@ -2186,6 +2268,7 @@ function buildReportHtml() {
       <thead><tr><th>Klasse</th><th>Anzahl</th><th>Invest</th><th>EOG Jahr 1</th></tr></thead>
       <tbody>${reportSegmentationRowsHtml(portfolio.portfolioSegmentation)}</tbody>
     </table>
+    ${buildChartsSectionHtml()}
     <h3>Wichtigste offene Punkte (${openClarifications.length})</h3>
     <table class="akte-output-table">
       <thead><tr><th>Titel</th><th>Bereich</th><th>Priorität</th></tr></thead>

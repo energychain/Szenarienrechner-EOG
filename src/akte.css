@@ -580,6 +580,23 @@ button {
 .akte-output-field { display: block; margin: 10px 0 4px; font-size: 0.8em; color: var(--akte-text-muted); }
 .akte-output-select { padding: 5px 8px; border: 1px solid var(--akte-border); border-radius: 6px; }
 
+/* Große Diagrammfassung im Ausgabefenster (Abschnitt 4.3) ----------------- */
+
+.akte-output-chart { margin: 8px 0 22px; page-break-inside: avoid; }
+.akte-output-chart h4 { margin: 0 0 6px; font-size: 0.95em; }
+.akte-output-chart svg { display: block; width: 100%; height: auto; }
+.akte-chart-axis-line { stroke: var(--akte-text-muted); stroke-width: 1; }
+.akte-chart-axis-label { font-size: 10px; fill: var(--akte-text-muted); }
+.akte-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 16px; font-size: 0.82em; color: var(--akte-text-muted); }
+.akte-chart-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.akte-chart-legend-item svg { flex-shrink: 0; }
+.akte-chart-legend-item .akte-chart-mark--set { fill: var(--akte-accent); stroke: var(--akte-accent); }
+.akte-chart-legend-item .akte-chart-mark--default { fill: none; stroke: var(--akte-accent); stroke-dasharray: 2 1.5; }
+.akte-chart-legend-item .akte-chart-mark--derived { fill: var(--akte-accent); stroke: var(--akte-accent); stroke-dasharray: 1 1; }
+.akte-chart-legend-item .akte-chart-mark--openByDecision { fill: none; stroke: var(--akte-text-muted); }
+.akte-chart-legend-item .akte-chart-mark--no-evidence { fill: none; stroke: var(--akte-text-muted); }
+.akte-chart-source { font-size: 0.75em; color: var(--akte-text-muted); margin: 4px 0 24px; }
+
 @media print {
   body > *:not(#akteOutputOverlay) { display: none !important; }
   .akte-output-overlay { position: static; background: none; padding: 0; }
