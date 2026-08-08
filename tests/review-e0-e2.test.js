@@ -9,6 +9,7 @@ import {
 } from '../src/engine.js';
 
 const uiSource = readFileSync(new URL('../src/ui.js', import.meta.url), 'utf8');
+const clarificationsSource = readFileSync(new URL('../src/clarifications.js', import.meta.url), 'utf8');
 const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
 const baseInputs = {
@@ -143,8 +144,8 @@ describe('review E-2 double counting guard', () => {
 
   it('surfaces engine double-counting warnings as UI clarification items', () => {
     expect(uiSource).toContain('result.warnings');
-    expect(uiSource).toContain('possible_double_counting');
-    expect(uiSource).toContain('mögliche Doppelzählung');
+    expect(clarificationsSource).toContain('possible_double_counting');
+    expect(clarificationsSource).toContain('mögliche Doppelzählung');
   });
 });
 

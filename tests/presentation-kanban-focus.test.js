@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync('index.html', 'utf8');
 const ui = readFileSync('src/ui.js', 'utf8');
 const css = readFileSync('src/styles.css', 'utf8');
+const clarifications = readFileSync('src/clarifications.js', 'utf8');
 
 describe('presentation focus window and clarification kanban', () => {
   it('renders presentation as a closeable focused meeting window', () => {
@@ -29,7 +30,7 @@ describe('presentation focus window and clarification kanban', () => {
 
   it('shows Prüfen & Klären as an actual kanban board instead of a long homogeneous list', () => {
     expect(html).toContain('Klärpunkt-Kanban');
-    expect(ui).toContain('function workItemColumn');
+    expect(clarifications).toContain('function workItemColumn');
     expect(ui).toContain('function renderWorkItemCard');
     expect(ui).toContain('work-kanban-board');
     expect(ui).toContain('Hohe Steuerungswirkung');
@@ -51,17 +52,17 @@ describe('presentation focus window and clarification kanban', () => {
   });
 
   it('derives deterministic evidence and documentation cards from measures and sidecars', () => {
-    expect(ui).toContain('const impactItems = reviewRequiredImpacts(true).map');
-    expect(ui).toContain('const noteItems = measures');
-    expect(ui).toContain("title: 'Maßnahmennotiz klären'");
-    expect(ui).toContain("warning.type === 'possible_double_counting'");
-    expect(ui).toContain('function measureEvidenceItems()');
-    expect(ui).toContain("title: 'Systemreferenz / Rückspielweg ergänzen'");
-    expect(ui).toContain("title: 'Störungs-/Risikowirkung belegen'");
-    expect(ui).toContain("title: 'Ziel-Zuordnung dokumentieren'");
-    expect(ui).toContain('function sidecarClarificationItems()');
-    expect(ui).toContain("title: 'Evidenz-/Kontextobjekt-Klärpunkt klären'");
-    expect(ui).toContain("if (['high', 'evidence', 'normal'].includes(item.column)) return item.column;");
+    expect(clarifications).toContain('const impactItems = reviewRequiredImpacts(measures, true).map');
+    expect(clarifications).toContain('const noteItems = measures');
+    expect(clarifications).toContain("title: 'Maßnahmennotiz klären'");
+    expect(clarifications).toContain("warning.type === 'possible_double_counting'");
+    expect(clarifications).toContain('function measureEvidenceItems(');
+    expect(clarifications).toContain("title: 'Systemreferenz / Rückspielweg ergänzen'");
+    expect(clarifications).toContain("title: 'Störungs-/Risikowirkung belegen'");
+    expect(clarifications).toContain("title: 'Ziel-Zuordnung dokumentieren'");
+    expect(clarifications).toContain('function sidecarClarificationItems(');
+    expect(clarifications).toContain("title: 'Evidenz-/Kontextobjekt-Klärpunkt klären'");
+    expect(clarifications).toContain("if (['high', 'evidence', 'normal'].includes(item.column)) return item.column;");
     expect(ui).toContain('openSidecarWorkItem');
   });
 });

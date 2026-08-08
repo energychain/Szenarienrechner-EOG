@@ -41,6 +41,37 @@ import {
 } from './planning-resume.js';
 import { fieldHelp } from './contextual-help.js';
 import {
+  allImpactAssumptions as allImpactAssumptionsFor,
+  clarificationItems as clarificationItemsFor,
+  expertWorkItems as expertWorkItemsFor,
+  findClarificationItem as findClarificationItemFor,
+  hasOpenMeasureItem,
+  measureHasRiskEvidence,
+  measureHasSystemReference,
+  reviewRequiredImpacts as reviewRequiredImpactsFor,
+  sidecarEvidenceLabel,
+  sidecarHasOpenBridgeLogic,
+  workItemColumn
+} from './clarifications.js';
+import {
+  impactCounts,
+  maturityScore as maturityScoreFor,
+  metricsForModel
+} from './maturity.js';
+import {
+  defaultCommittee,
+  defaultProcessState,
+  defaultStrategy,
+  measureFromTemplate as measureFromTemplateFor,
+  newImpactAssumptionTemplate as newImpactAssumptionTemplateFor,
+  normalizeCommittee,
+  normalizeMeasure,
+  normalizeProcessState,
+  normalizeStrategy,
+  parseTags,
+  tagsText
+} from './model-normalize.js';
+import {
   appStateForStoryMilestone,
   storyMilestoneForPhase,
   storyMilestoneFromUrl,
@@ -105,7 +136,6 @@ import { normalizeStromEeg2027Measure } from './strom-eeg2027.js';
 import {
   VIABILITY_CATEGORIES,
   classifyMeasureViability,
-  viabilityClarificationItems,
   viabilityOverviewFor
 } from './viability-classification.js';
 import {
@@ -255,57 +285,8 @@ function defaultCatalogFilters() {
   };
 }
 
-function parseTags(value) {
-  if (Array.isArray(value)) return value.map(item => String(item).trim()).filter(Boolean);
-  return String(value || '').split(/[;,]/).map(item => item.trim()).filter(Boolean);
-}
-
-function tagsText(tags) {
-  return parseTags(tags).join(', ');
-}
-
 function orgUnitValues() {
   return [...new Set(measures.map(measure => String(measure.orgUnit || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
-}
-
-function hasOpenMeasureItem(measure) {
-  return impactCounts(measure).review > 0 || String(measure.note || '').trim().length > 0;
-}
-
-function defaultCommittee() {
-  return {
-    body: 'Gemeinderat',
-    audience: 'kommunal',
-    meetingDate: '',
-    proposalText: ''
-  };
-}
-
-function defaultProcessState() {
-  const phaseTargets = Object.fromEntries(processPhases.map(([id]) => [id, '']));
-  return {
-    phase: 'massnahmenbewertung',
-    phaseTargets,
-    resume: normalizePlanningResume(),
-    startedAt: new Date().toISOString()
-  };
-}
-
-function defaultStrategy() {
-  return {
-    sampReference: '',
-    objectives: structuredClone(defaultObjectives)
-  };
-}
-
-function normalizeCommittee(value = {}) {
-  const defaults = defaultCommittee();
-  return {
-    body: String(value.body || defaults.body),
-    audience: value.audience === 'vorstand' ? 'vorstand' : 'kommunal',
-    meetingDate: String(value.meetingDate || ''),
-    proposalText: String(value.proposalText || '')
-  };
 }
 
 function syncCommitteeFields() {
@@ -324,32 +305,6 @@ function collectCommitteeFields() {
     meetingDate: el.committeeMeetingDate.value,
     proposalText: el.committeeProposalText.value
   });
-}
-
-function normalizeStrategy(value = {}) {
-  const objectives = Array.isArray(value.objectives) && value.objectives.length
-    ? value.objectives
-    : defaultObjectives;
-  return {
-    sampReference: String(value.sampReference || ''),
-    objectives: objectives.map((objective, index) => ({
-      id: String(objective.id || `obj_${index + 1}`),
-      label: String(objective.label || `Ziel ${index + 1}`),
-      note: String(objective.note || '')
-    }))
-  };
-}
-
-function normalizeProcessState(value = {}) {
-  const defaults = defaultProcessState();
-  const phaseIds = new Set(processPhases.map(([id]) => id));
-  return {
-    ...defaults,
-    ...value,
-    phase: phaseIds.has(value.phase) ? value.phase : defaults.phase,
-    phaseTargets: { ...defaults.phaseTargets, ...(value.phaseTargets || {}) },
-    resume: normalizePlanningResume(value.resume)
-  };
 }
 
 function phaseLabel(phase = processState.phase) {
@@ -493,174 +448,19 @@ function currentPortfolio(p = currentParams()) {
 }
 
 function newImpactAssumptionTemplate(measure = selectedMeasure()) {
-  return {
-    id: 'impact_' + Date.now().toString(36),
-    area: 'qElement',
-    title: 'Neue Wirkannahme',
-    amount: 0,
-    confidence: 'review',
-    governance: 'sensitivity',
-    startYear: Number(measure?.year) || Math.round(num('baseYear')),
-    endYear: '',
-    attribution: 100,
-    chain: '',
-    evidence: '',
-    evidenceType: 'open',
-    legacyFlat: false,
-    riskProbabilityBefore: 0,
-    riskProbabilityAfter: 0,
-    riskImpact: 0,
-    note: ''
-  };
+  return newImpactAssumptionTemplateFor(measure, num('baseYear'));
 }
 
 function normalizeMeasureForUi(measure, index = 0) {
-  const impacts = Array.isArray(measure.impactAssumptions) ? structuredClone(measure.impactAssumptions) : [];
-  return {
-    ...newMeasureTemplate(index + 1),
-    ...measure,
-    id: String(measure.id || 'import_' + Date.now().toString(36) + '_' + index),
-    externalId: String(measure.externalId || ''),
-    orgUnit: String(measure.orgUnit || ''),
-    monitoringProfile: String(measure.monitoringProfile || 'none'),
-    monitoringCategory: String(measure.monitoringCategory || ''),
-    networkLevel: String(measure.networkLevel || ''),
-    reportingRegion: String(measure.reportingRegion || ''),
-    reportingStatus: String(measure.reportingStatus || ''),
-    capacityImpact: String(measure.capacityImpact || ''),
-    bottleneckRef: String(measure.bottleneckRef || ''),
-    permitRequired: String(measure.permitRequired || 'unknown'),
-    permitStatus: String(measure.permitStatus || ''),
-    investmentDecisionStatus: String(measure.investmentDecisionStatus || 'unknown'),
-    investmentDecisionDate: String(measure.investmentDecisionDate || ''),
-    alternativesChecked: String(measure.alternativesChecked || ''),
-    flexibilityNeed: String(measure.flexibilityNeed || ''),
-    effectType: measure.effectType === 'flexibility' ? 'flexibility' : 'classic',
-    flexibilityUseCase: String(measure.flexibilityUseCase || 'netzfahrplan'),
-    flexibilityStatus: ['context', 'pruefpflichtig', 'quantified', 'active'].includes(measure.flexibilityStatus) ? measure.flexibilityStatus : 'context',
-    regulatoryTreatment: String(measure.regulatoryTreatment || 'unknown'),
-    networkScheduleRequired: measure.networkScheduleRequired !== false,
-    networkScheduleStatus: String(measure.networkScheduleStatus || 'missing'),
-    networkConstraintRef: String(measure.networkConstraintRef || ''),
-    affectedNetworkLevel: String(measure.affectedNetworkLevel || ''),
-    activationWindow: String(measure.activationWindow || ''),
-    dispatchLogic: String(measure.dispatchLogic || ''),
-    avoidedCapexTeur: Number(measure.avoidedCapexTeur) || 0,
-    avoidedCapexConfidence: String(measure.avoidedCapexConfidence || 'none'),
-    deferredCapexTeur: Number(measure.deferredCapexTeur) || 0,
-    deferredCapexFromYear: measure.deferredCapexFromYear ?? '',
-    deferredCapexToYear: measure.deferredCapexToYear ?? '',
-    capexAvoidanceEvidenceRef: String(measure.capexAvoidanceEvidenceRef || ''),
-    flexOpexPaTeur: Number(measure.flexOpexPaTeur) || 0,
-    flexOpexStartYear: measure.flexOpexStartYear ?? '',
-    flexOpexDurationYears: Number(measure.flexOpexDurationYears) || 0,
-    opexRecognitionStatus: String(measure.opexRecognitionStatus || 'unknown'),
-    opexEvidenceRef: String(measure.opexEvidenceRef || ''),
-    agnesRelevant: Boolean(measure.agnesRelevant),
-    agnesRole: String(measure.agnesRole || 'offen'),
-    agnesIntegrationStatus: String(measure.agnesIntegrationStatus || 'not_assessed'),
-    agnesDataNeeded: Array.isArray(measure.agnesDataNeeded) ? measure.agnesDataNeeded.map(String) : parseTags(measure.agnesDataNeeded),
-    regulatoryStatus: String(measure.regulatoryStatus || 'current_law'),
-    regulatoryStatusLabel: String(measure.regulatoryStatusLabel || ''),
-    regulatoryStatusDate: String(measure.regulatoryStatusDate || ''),
-    assumptionStatus: String(measure.assumptionStatus || 'confirmed'),
-    capacityLimitedGridArea: Boolean(measure.capacityLimitedGridArea),
-    capacityLimitedTechnology: String(measure.capacityLimitedTechnology || 'none'),
-    redispatchCompensationWaiverEnabled: Boolean(measure.redispatchCompensationWaiverEnabled),
-    redispatchCompensationWaiverLimitPct: Number(measure.redispatchCompensationWaiverLimitPct) || 20,
-    windPriorityArea: Boolean(measure.windPriorityArea),
-    redispatchRiskClass: String(measure.redispatchRiskClass || 'low'),
-    annualRevenueAtRiskTeur: Number(measure.annualRevenueAtRiskTeur) || 0,
-    connectionRequestPowerKw: Number(measure.connectionRequestPowerKw) || 0,
-    voltageLevel: String(measure.voltageLevel || 'low_voltage'),
-    connectionRequestStatus: String(measure.connectionRequestStatus || 'draft'),
-    queueRiskClass: String(measure.queueRiskClass || 'low'),
-    reservationExpiryDate: String(measure.reservationExpiryDate || ''),
-    nextRequiredEvidence: String(measure.nextRequiredEvidence || ''),
-    generationConnectionCostContributionEnabled: Boolean(measure.generationConnectionCostContributionEnabled),
-    connectionCostContributionTeur: Number(measure.connectionCostContributionTeur) || 0,
-    connectionCostContributionMode: String(measure.connectionCostContributionMode || 'none'),
-    tags: parseTags(measure.tags),
-    hgbLife: Number(measure.hgbLife) || Number(measure.life) || 1,
-    importStatus: String(measure.importStatus || ''),
-    sourceSystem: String(measure.sourceSystem || ''),
-    sourceRecordId: String(measure.sourceRecordId || ''),
-    scoringRef: String(measure.scoringRef || ''),
-    assetSystemRef: String(measure.assetSystemRef || ''),
-    erpRef: String(measure.erpRef || ''),
-    riskDbRef: String(measure.riskDbRef || ''),
-    sourceStatus: String(measure.sourceStatus || ''),
-    riskEvidenceStatus: String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || ''),
-    riskOwnerRole: String(measure.riskOwnerRole || ''),
-    riskAssessmentStatus: String(measure.riskAssessmentStatus || ''),
-    viabilityCategory: String(measure.viabilityCategory || ''),
-    viabilityCategorySource: String(measure.viabilityCategorySource || ''),
-    viabilityRationale: String(measure.viabilityRationale || ''),
-    refinancingBridgeStatus: String(measure.refinancingBridgeStatus || ''),
-    refinancingBridgeRefs: Array.isArray(measure.refinancingBridgeRefs) ? measure.refinancingBridgeRefs.map(String) : parseTags(measure.refinancingBridgeRefs),
-    openViabilityQuestions: Array.isArray(measure.openViabilityQuestions) ? measure.openViabilityQuestions.map(String) : parseTags(measure.openViabilityQuestions),
-    objectiveIds: Array.isArray(measure.objectiveIds) ? measure.objectiveIds.map(String) : [],
-    templateId: String(measure.templateId || ''),
-    templateVersion: String(measure.templateVersion || ''),
-    opexPa: Number(measure.opexPa) || 0,
-    opexDeltaPa: Number(measure.opexDeltaPa) || 0,
-    reinvestCost: Number(measure.reinvestCost) || 0,
-    reinvestMode: measure.reinvestMode === 'assetAddition' ? 'assetAddition' : 'oneOff',
-    reinvestLife: Math.max(1, Math.round(Number(measure.reinvestLife) || Number(measure.life) || 1)),
-    decommissionCost: Number(measure.decommissionCost) || 0,
-    decommissionYear: measure.decommissionYear ?? '',
-    impactAssumptions: impacts.map(impact => ({
-      ...impact,
-      evidenceType: impact.evidenceType || 'open',
-      legacyFlat: impact.area === 'risk' && impact.legacyFlat !== false && !Number(impact.riskImpact)
-    }))
-  };
-}
-
-function normalizeTemplateImpact(template, index, year) {
-  const impact = structuredClone(template);
-  return {
-    ...newImpactAssumptionTemplate({ year }),
-    ...impact,
-    id: 'impact_tpl_' + Date.now().toString(36) + '_' + index,
-    confidence: impact.confidence || 'review',
-    governance: impact.governance || 'sensitivity',
-    startYear: year,
-    endYear: '',
-    evidence: impact.evidence || '',
-    evidenceType: impact.evidenceType || 'open',
-    note: impact.note || 'Richtwert aus Vorlage lokal prüfen und bestätigen.',
-    legacyFlat: false
-  };
+  return normalizeMeasure(measure, index, newMeasureTemplate(index + 1));
 }
 
 function measureFromTemplate(template) {
-  const year = Math.max(Math.round(num('baseYear')) || new Date().getFullYear(), new Date().getFullYear());
-  const typicalCost = template.costRange?.[1] || 0;
-  const checkNote = template.checkHints?.length
-    ? 'Aus Vorlage angelegt. Lokal prüfen: ' + template.checkHints.join(' · ')
-    : 'Aus Vorlage angelegt. Richtwerte lokal prüfen.';
-  return {
-    ...newMeasureTemplate(measures.length + 1),
-    id: 'measure_' + Date.now().toString(36),
-    active: true,
-    name: template.name,
-    cost: typicalCost,
-    year,
-    secure: template.secure,
-    uncertain: template.uncertain,
-    probability: template.probability,
-    opexRecognition: template.opexRecognition,
-    life: template.life,
-    hgbLife: template.hgbLife || template.life,
-    depr: el.sector.value === 'strom' ? 'normal' : template.depr,
-    orgUnit: template.orgUnit || '',
-    tags: ['Vorlage'],
-    templateId: template.templateId,
-    templateVersion: template.templateVersion,
-    impactAssumptions: (template.impactSkeletons || []).map((impact, index) => normalizeTemplateImpact(impact, index, year)),
-    note: checkNote
-  };
+  return measureFromTemplateFor(template, {
+    baseYear: num('baseYear'),
+    sector: el.sector.value,
+    defaults: newMeasureTemplate(measures.length + 1)
+  });
 }
 
 function confidenceBadge(confidence) {
@@ -763,29 +563,11 @@ function renderBasisSummaryCards() {
 }
 
 function allImpactAssumptions(filterActive = false) {
-  return measures
-    .filter(measure => !filterActive || measure.active)
-    .flatMap(measure => impactAssumptionsFor(measure).map(impact => ({ ...impact, measure })));
+  return allImpactAssumptionsFor(measures, filterActive);
 }
 
 function reviewRequiredImpacts(filterActive = false) {
-  return allImpactAssumptions(filterActive)
-    .filter(item => item.confidence === 'review' || item.governance === 'sensitivity');
-}
-
-function impactWorkArea(impact) {
-  if (impact.area === 'risk' || impact.area === 'qElement') return 'technik';
-  if (impact.area === 'costBase' || impact.area === 'portfolio') return 'vnb';
-  return 'controlling';
-}
-
-function workItemColumn(item) {
-  if (item.status === 'closed') return 'closed';
-  if (['high', 'evidence', 'normal'].includes(item.column)) return item.column;
-  const label = item.priority?.label || 'normal';
-  if (label === 'hoch') return 'high';
-  if (label === 'mittel') return 'evidence';
-  return 'normal';
+  return reviewRequiredImpactsFor(measures, filterActive);
 }
 
 function projectTaskIdForClarification(key = '') {
@@ -890,127 +672,7 @@ function renderWorkItemCard(item) {
 }
 
 function expertWorkItems() {
-  const impactItems = reviewRequiredImpacts(true).map(item => ({
-    key: item.measure.id + ':' + item.id,
-    measureId: item.measure.id,
-    impactId: item.id,
-    title: item.title,
-    measure: item.measure.name,
-    area: impactWorkArea(item),
-    detail: `${impactAreaLabel(item.area)} · ${confidenceLabels[item.confidence]} · ${impactGovernanceLabel(item.governance)}${item.note ? ' · ' + item.note : ''}`,
-    priority: clarificationPriorityFor({ area: item.area, title: item.title, detail: item.note, type: 'impact' }),
-    status: clarificationStatus[item.measure.id + ':' + item.id]?.status || 'open',
-    type: 'impact'
-  }));
-  const clarificationWork = clarificationItems().map(item => ({
-    ...item,
-    area: item.area === 'Risiko' || item.area === 'Q-Element' ? 'technik' : item.area === 'Portfolio' || item.area === 'Kostenbasis' ? 'vnb' : item.area === 'Evidenz' || item.area === 'Kontextobjekt' ? 'vnb' : 'controlling',
-    type: item.type || 'clarification'
-  }));
-  return [...impactItems, ...clarificationWork];
-}
-
-function textPresent(value) {
-  return Boolean(String(value ?? '').trim());
-}
-
-function weakEvidenceStatus(status = '') {
-  return ['missing', 'stated', 'conflicting', 'stale'].includes(String(status || 'missing'));
-}
-
-function measureEvidenceItems() {
-  const active = measures.filter(measure => measure.active);
-  const items = [];
-  active.forEach(measure => {
-    if (!measureHasSystemReference(measure)) {
-      items.push({
-        key: `system-reference:${measure.id}`,
-        type: 'system_reference',
-        measureId: measure.id,
-        area: 'Evidenz',
-        column: 'evidence',
-        targetPhase: 'konsolidierung',
-        title: 'Systemreferenz / Rückspielweg ergänzen',
-        measure: measure.name,
-        detail: 'Quellsystem und Datensatz-/PSP-/Objektreferenz fehlen oder sind nicht vollständig dokumentiert.'
-      });
-    }
-    if (Number(measure.riskAvoided || 0) > 0 && !measureHasRiskEvidence(measure)) {
-      items.push({
-        key: `risk-evidence:${measure.id}`,
-        type: 'risk_evidence',
-        measureId: measure.id,
-        area: 'Evidenz',
-        column: 'evidence',
-        targetPhase: 'massnahmenbewertung',
-        title: 'Störungs-/Risikowirkung belegen',
-        measure: measure.name,
-        detail: 'Die Maßnahme trägt einen Risiko-/Störungswert, aber Evidenzstatus, Wirkungskette oder Quelle sind noch nicht belastbar dokumentiert.'
-      });
-    }
-    if (!(measure.objectiveIds || []).length) {
-      items.push({
-        key: `target-mapping:${measure.id}`,
-        type: 'target_mapping',
-        measureId: measure.id,
-        area: 'Dokumentation',
-        column: 'normal',
-        targetPhase: 'entscheidungsvorlage',
-        title: 'Ziel-Zuordnung dokumentieren',
-        measure: measure.name,
-        detail: 'Die Maßnahme ist noch keinem Aktenziel zugeordnet; dadurch bleibt der Entscheidungs- und Dokumentationsbezug unklar.'
-      });
-    }
-    if (!textPresent(measure.note)) {
-      items.push({
-        key: `measure-documentation:${measure.id}`,
-        type: 'measure_documentation',
-        measureId: measure.id,
-        area: 'Dokumentation',
-        column: 'normal',
-        targetPhase: 'konsolidierung',
-        title: 'Maßnahmendokumentation ergänzen',
-        measure: measure.name,
-        detail: 'Fachliche Maßnahmennotiz fehlt; Anlass, Quelle oder Begründung sollten dokumentiert werden.'
-      });
-    }
-  });
-  return items;
-}
-
-function sidecarClarificationItems() {
-  return (sidecar.objects || [])
-    .filter(object => object.status !== 'archived')
-    .map(object => {
-      const reasons = [];
-      if (object.openQuestions?.length) reasons.push(`${object.openQuestions.length} offene Klärfrage(n)`);
-      if (weakEvidenceStatus(object.evidenceStatus)) reasons.push(`Evidenzstatus: ${sidecarEvidenceLabel(object)}`);
-      if (object.type === 'data_quality' && object.evidenceStatus !== 'validated') reasons.push('Datenqualitätsobjekt nicht validiert');
-      if (sidecarHasOpenBridgeLogic(object)) reasons.push('wirtschaftliche Überleitungslogik offen');
-      if (String(object.reviewStatus || '').match(/not_reviewed|needs_update|open|offen/i)) reasons.push('Reviewstatus offen');
-      if (!reasons.length) return null;
-      return {
-        key: `sidecar:${object.id}`,
-        type: 'sidecar',
-        sidecarId: object.id,
-        area: 'Kontextobjekt',
-        column: 'evidence',
-        targetPhase: 'konsolidierung',
-        title: 'Evidenz-/Kontextobjekt-Klärpunkt klären',
-        measure: object.title,
-        detail: reasons.join(' · ')
-      };
-    })
-    .filter(Boolean);
-}
-
-function viabilityWorkItems() {
-  return viabilityClarificationItems(portfolioModel(), currentInputs()).map(item => ({
-    ...item,
-    area: 'Evidenz',
-    column: item.priority === 'mittel' ? 'evidence' : 'normal',
-    targetPhase: 'konsolidierung'
-  }));
+  return expertWorkItemsFor({ measures, sidecar }, currentParams(), currentPortfolio(), clarificationStatus);
 }
 
 function renderExpertWorkList() {
@@ -1048,111 +710,16 @@ function renderExpertWorkList() {
   `;
 }
 
-function impactCounts(measure) {
-  const impacts = impactAssumptionsFor(measure);
-  return {
-    total: impacts.length,
-    proven: impacts.filter(impact => impact.confidence === 'proven').length,
-    assumption: impacts.filter(impact => impact.confidence === 'assumption').length,
-    review: impacts.filter(impact => impact.confidence === 'review').length
-  };
-}
-
-function scenarioVerdictSignature() {
-  return ['basis', 'konservativ', 'wert'].map(name => decisionFor(currentPortfolio(currentScenarioParams(name))).title);
-}
-
-function clarificationKey(item) {
-  return item.key;
-}
-
-function clarificationPriorityFor(item = {}) {
-  const text = [item.area, item.title, item.detail, item.type].filter(Boolean).join(' ').toLowerCase();
-  if (/risiko|risk|q-element|q\/e|eog|rab|aktivier|cashflow|kapitalwert|irr|verzinsung|kanu/.test(text)) {
-    return { level: 1, label: 'hoch', driver: 'Rechen-/Steuerungswirkung' };
-  }
-  if (/quelle|evidenz|system|daten|mapping|sidecar|wirkannahme|doppelzähl/.test(text)) {
-    return { level: 2, label: 'mittel', driver: 'Evidenz / Datenqualität' };
-  }
-  return { level: 3, label: 'normal', driver: 'Dokumentation / Prozess' };
+function resultsByScenario() {
+  return Object.fromEntries(['basis', 'konservativ', 'wert'].map(name => [name, currentPortfolio(currentScenarioParams(name))]));
 }
 
 function clarificationItems() {
-  const impactItems = reviewRequiredImpacts(true).map(item => ({
-    key: `impact:${item.measure.id}:${item.id}`,
-    type: 'impact',
-    measureId: item.measure.id,
-    impactId: item.id,
-    area: impactAreaLabel(item.area),
-    targetPhase: 'massnahmenbewertung',
-    title: item.title,
-    measure: item.measure.name,
-    detail: item.note || item.evidence || 'Wirkannahme prüfen und Vertrauensstufe/Governance bestätigen.'
-  }));
-  const noteItems = measures
-    .filter(measure => measure.active && String(measure.note || '').trim())
-    .map(measure => ({
-      key: `note:${measure.id}`,
-      type: 'note',
-      measureId: measure.id,
-      area: 'Maßnahme',
-      targetPhase: 'konsolidierung',
-      title: 'Maßnahmennotiz klären',
-      measure: measure.name,
-      detail: measure.note
-    }));
-  const result = currentPortfolio();
-  const warningItems = result.warnings
-    .filter(warning => warning.type === 'possible_double_counting')
-    .map(warning => ({
-      key: warning.key,
-      type: warning.type,
-      measureId: warning.measureId || measures.find(measure => measure.name === warning.measure)?.id || '',
-      area: warning.area,
-      targetPhase: warning.targetPhase,
-      title: warning.title,
-      measure: warning.measure,
-      detail: warning.detail || 'mögliche Doppelzählung prüfen.'
-    }));
-  return [...impactItems, ...warningItems, ...noteItems, ...measureEvidenceItems(), ...sidecarClarificationItems(), ...viabilityWorkItems()]
-    .map(item => {
-      const priority = clarificationPriorityFor(item);
-      return {
-        ...item,
-        priority,
-        status: clarificationStatus[clarificationKey(item)]?.status || 'open'
-      };
-    })
-    .sort((a, b) => a.priority.level - b.priority.level || String(a.measure || '').localeCompare(String(b.measure || ''), 'de'));
+  return clarificationItemsFor({ measures, sidecar }, currentParams(), currentPortfolio(), clarificationStatus);
 }
 
 function maturityScore() {
-  const activeImpacts = allImpactAssumptions(true);
-  const reviewItems = reviewRequiredImpacts(true);
-  const clarifications = clarificationItems();
-  const openClarifications = clarifications.filter(item => item.status !== 'closed');
-  const basisComplete = Boolean(el.sector.value) && num('baseYear') > 0 && num('baseEog') > 0;
-  const confirmedShare = activeImpacts.length
-    ? activeImpacts.filter(item => item.confidence === 'proven' && item.governance === 'basis').length / activeImpacts.length
-    : 0;
-  const reviewPenalty = activeImpacts.length ? reviewItems.length / activeImpacts.length : 0;
-  const verdicts = scenarioVerdictSignature();
-  const verdictStable = new Set(verdicts).size <= 1;
-  const activeCount = measures.filter(measure => measure.active).length;
-  let score = 0;
-  score += basisComplete ? 20 : 0;
-  score += activeCount > 0 ? 20 : 0;
-  score += Math.round(confirmedShare * 25);
-  score += Math.max(0, 20 - Math.round(reviewPenalty * 20));
-  score += verdictStable ? 10 : 4;
-  score += openClarifications.length === 0 ? 5 : 0;
-  return {
-    score: Math.max(0, Math.min(100, score)),
-    blockers: openClarifications.length,
-    reviewCount: reviewItems.length,
-    openClarifications,
-    verdictStable
-  };
+  return maturityScoreFor({ measures, sidecar }, currentParams(), currentPortfolio(), resultsByScenario(), clarificationStatus);
 }
 
 function maturityRingHtml(score, blockers, size = 58) {
@@ -1448,27 +1015,6 @@ function isoWeek(date) {
   return Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
 }
 
-function metricsForModel(model) {
-  try {
-    const p = engineParams(model.inputs || {});
-    const result = calcPortfolio({ measures: model.measures || [] }, engineScenarioParams(p, model.scenario || 'basis'));
-    const first = result.yearly[0] || { eog: 0 };
-    const impacts = (model.measures || []).filter(measure => measure.active).flatMap(measure => impactAssumptionsFor(measure));
-    const reviewCount = impacts.filter(impact => impact.confidence === 'review' || impact.governance === 'sensitivity').length;
-    const maturity = Math.max(0, Math.min(100, 40 + (result.activeMeasures.length ? 20 : 0) + (impacts.length ? Math.round((impacts.length - reviewCount) / impacts.length * 30) : 0)));
-    return {
-      irr: result.irr,
-      npv: result.npv,
-      eog: first.regulatoryEogEffect,
-      verdict: decisionFor(result).title,
-      maturity,
-      activeMeasures: result.activeMeasures.length
-    };
-  } catch (_error) {
-    return { irr: NaN, npv: NaN, eog: NaN, verdict: '-', maturity: NaN, activeMeasures: 0 };
-  }
-}
-
 function metricSummary(metrics) {
   return `IRR ${Number.isFinite(metrics.irr) ? fmtPct(metrics.irr * 100, 1) : '-'}, Kapitalwert ${Number.isFinite(metrics.npv) ? fmtTeur(metrics.npv, 1) : '-'}, EOG-Wirkung ${Number.isFinite(metrics.eog) ? fmtTeur(metrics.eog, 1) : '-'}`;
 }
@@ -1706,9 +1252,7 @@ function setPlanningResumeField(field, value) {
 }
 
 function findClarificationItem(key) {
-  return clarificationItems().find(item => item.key === key)
-    || expertWorkItems().find(item => item.key === key)
-    || null;
+  return findClarificationItemFor(key, { measures, sidecar }, currentParams(), currentPortfolio(), clarificationStatus);
 }
 
 function renderClarificationAuditModal() {
@@ -4188,20 +3732,11 @@ function activeMeasuresForReliability(result) {
   return Array.isArray(result?.activeMeasures) ? result.activeMeasures : measures.filter(measure => measure.active);
 }
 
-function measureHasSystemReference(measure = {}) {
-  return Boolean(String(measure.sourceSystem || '').trim() && (String(measure.sourceRecordId || '').trim() || String(measure.externalId || '').trim()));
-}
-
 function measureHasRiskMapping(measure = {}) {
   if (Number(measure.riskAvoided || 0) <= 0) return true;
   const status = String(measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '').trim();
   const meaningfulStatus = status && !['missing', 'not_assessed', 'open', 'offen'].includes(status);
   return Boolean(String(measure.riskDbRef || '').trim() || meaningfulStatus || (measure.impactAssumptions || []).some(impact => impact.area === 'risk' && (impact.evidence || impact.chain || impact.riskImpact)));
-}
-
-function measureHasRiskEvidence(measure = {}) {
-  const status = measure.riskEvidenceStatus || measure.riskAvoidedEvidenceStatus || '';
-  return ['documented', 'estimated', 'benannt', 'source_available', 'validated'].includes(status) || (measure.impactAssumptions || []).some(impact => impact.area === 'risk' && (impact.evidence || impact.evidenceType !== 'open'));
 }
 
 function reliabilityActionFor(item, result) {
@@ -6269,13 +5804,6 @@ function updateSidecarObject(id, patchFields = {}, rerender = true) {
   else saveToBrowser(true);
 }
 
-function sidecarHasOpenBridgeLogic(object) {
-  if (!['effect_assumption', 'economic_bridge'].includes(object.sidecarType)) return false;
-  if (object.calculationImpact === 'none') return false;
-  const bridge = object.bridgeLogic || {};
-  return bridge.economicRelation === 'none' || ['not_applicable', 'open', 'described'].includes(bridge.quantificationStatus);
-}
-
 function sidecarHasQuantifiedBridge(object) {
   return ['working_value', 'validated'].includes(object.bridgeLogic?.quantificationStatus);
 }
@@ -6337,18 +5865,6 @@ function sidecarImpactLabel(object) {
   if (object.calculationImpact === 'scenario_only') return 'nur Szenario';
   if (object.calculationImpact === 'indirect') return 'indirekter Bezug';
   return 'keine Rechenwirkung';
-}
-
-function sidecarEvidenceLabel(object) {
-  const labels = {
-    missing: 'Evidenz fehlt',
-    stated: 'Evidenz benannt',
-    source_available: 'Quelle verfügbar',
-    validated: 'validiert',
-    conflicting: 'widersprüchlich',
-    stale: 'veraltet'
-  };
-  return labels[object.evidenceStatus] || object.evidenceStatus;
 }
 
 function renderSidecar() {
@@ -7994,3 +7510,16 @@ if (!loadEmbeddedModelState() && !loadFromBrowser()) {
 }
 applyStoryDeepLink();
 applyGlossaryDeepLink();
+
+// Characterization-test seam (see tests/characterization-akte.test.js). Exposes
+// computed values directly so KPI/Klärpunkt/Reifegrad/Segmentierung snapshots
+// stay stable across internal refactors (e.g. the Stage-1 module extraction).
+if (typeof window !== 'undefined') {
+  window.__akteDebug = {
+    currentModelData: () => currentModelData(),
+    maturityScore: () => maturityScore(),
+    clarificationItems: () => clarificationItems(),
+    currentPortfolio: () => currentPortfolio(),
+    portfolioSegmentation: () => currentPortfolio().portfolioSegmentation
+  };
+}

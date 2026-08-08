@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync('index.html', 'utf8');
 const ui = readFileSync('src/ui.js', 'utf8');
 const css = readFileSync('src/styles.css', 'utf8');
+const clarifications = readFileSync('src/clarifications.js', 'utf8');
 
 describe('workflow density and clarification UX fixes', () => {
   it('keeps sidecar summary counters actionable and uses one clear edit action', () => {
@@ -38,7 +39,7 @@ describe('workflow density and clarification UX fixes', () => {
     expect(ui).toContain('ensureClarificationProjectTask(item');
     expect(ui).toContain('projectTaskIdForClarification');
     expect(ui).toContain('function expertWorkItems()');
-    expect(ui).toContain('|| expertWorkItems().find(item => item.key === key)');
+    expect(clarifications).toContain('|| expertWorkItems(model, params, result, clarificationStatus).find(item => item.key === key)');
     expect(ui).toContain('measureEditNavigationClarificationKeys = workflowItems.map');
     expect(ui).toContain("measureEditReturnView = 'expertWork'");
     expect(ui).toContain('saveMeasureClarificationFromWorkbench');

@@ -1,0 +1,329 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Akte Charakterisierungstest (Referenzmodell, Gas) > freezes portfolio KPIs for the base scenario > invest 1`] = `5150`;
+
+exports[`Akte Charakterisierungstest (Referenzmodell, Gas) > freezes portfolio KPIs for the base scenario > irr 1`] = `-0.026672925346065284`;
+
+exports[`Akte Charakterisierungstest (Referenzmodell, Gas) > freezes portfolio KPIs for the base scenario > npv 1`] = `-1518.2156528171768`;
+
+exports[`Akte Charakterisierungstest (Referenzmodell, Gas) > freezes portfolio KPIs for the base scenario > warning-types 1`] = `
+[
+  "gas_transformation_review",
+  "gas_transformation_review",
+  "gas_transformation_review",
+  "gas_transformation_review",
+]
+`;
+
+exports[`Akte Charakterisierungstest (Referenzmodell, Gas) > freezes portfolio KPIs for the base scenario > year-1 1`] = `
+{
+  "bridge": 67.9942857142857,
+  "bridgeCumulative": 67.9942857142857,
+  "capitalReturn": 196.34589,
+  "depreciation": 198.59999999999997,
+  "ebit": 309.34017571428564,
+  "economicOpex": 0,
+  "eligibleCapital": 3872.7,
+  "eog": 439.9458899999999,
+  "firstYearOpex": 0,
+  "flexibilityAvoidedCapexEffect": 0,
+  "flexibilityDeferredCapexEffect": 0,
+  "flexibilityNetEffect": 0,
+  "flexibilityOpexEffect": 0,
+  "hgbDepreciation": 130.60571428571427,
+  "indicativeCashflow": 439.9458899999999,
+  "opex": 0,
+  "opexRisk": 45,
+  "qAndE": 0,
+  "regulatoryCapexEffect": 394.9458899999999,
+  "regulatoryEogEffect": 439.9458899999999,
+  "regulatoryPeriod": {
+    "costBaseYear": 2020,
+    "end": 2027,
+    "id": "RP4",
+    "known": true,
+    "label": "4. Regulierungsperiode",
+    "number": 4,
+    "start": 2023,
+  },
+  "reinvestAssetEffect": 0,
+  "reinvestCapitalReturn": 0,
+  "reinvestDecommission": 0,
+  "reinvestDepreciation": 0,
+  "risk": 45,
+  "year": 2027,
+}
+`;
+
+exports[`Akte Charakterisierungstest (Referenzmodell, Gas) > freezes the Klärpunktliste (clarificationItems) > clarification-items 1`] = `
+[
+  {
+    "area": "Q-Element",
+    "key": "impact:measure_6:impact_6_1",
+    "priority": "hoch",
+    "status": "open",
+    "type": "impact",
+  },
+  {
+    "area": "Risiko",
+    "key": "impact:measure_2:impact_2_1",
+    "priority": "hoch",
+    "status": "open",
+    "type": "impact",
+  },
+  {
+    "area": "Evidenz",
+    "key": "risk-evidence:measure_2",
+    "priority": "hoch",
+    "status": "open",
+    "type": "risk_evidence",
+  },
+  {
+    "area": "Maßnahme",
+    "key": "note:measure_1",
+    "priority": "hoch",
+    "status": "open",
+    "type": "note",
+  },
+  {
+    "area": "Evidenz",
+    "key": "viability:measure_1",
+    "priority": "hoch",
+    "status": "open",
+    "type": "viability",
+  },
+  {
+    "area": "Maßnahme",
+    "key": "note:measure_4",
+    "priority": "mittel",
+    "status": "open",
+    "type": "note",
+  },
+  {
+    "area": "Evidenz",
+    "key": "viability:measure_4",
+    "priority": "mittel",
+    "status": "open",
+    "type": "viability",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_7",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_1",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+  {
+    "area": "Evidenz",
+    "key": "system-reference:measure_6",
+    "priority": "mittel",
+    "status": "open",
+    "type": "system_reference",
+  },
+  {
+    "area": "Dokumentation",
+    "key": "measure-documentation:measure_6",
+    "priority": "mittel",
+    "status": "open",
+    "type": "measure_documentation",
+  },
+  {
+    "area": "Evidenz",
+    "key": "viability:measure_6",
+    "priority": "mittel",
+    "status": "open",
+    "type": "viability",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_5",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_9",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_3",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+  {
+    "area": "Evidenz",
+    "key": "system-reference:measure_2",
+    "priority": "mittel",
+    "status": "open",
+    "type": "system_reference",
+  },
+  {
+    "area": "Dokumentation",
+    "key": "target-mapping:measure_2",
+    "priority": "mittel",
+    "status": "open",
+    "type": "target_mapping",
+  },
+  {
+    "area": "Dokumentation",
+    "key": "measure-documentation:measure_2",
+    "priority": "mittel",
+    "status": "open",
+    "type": "measure_documentation",
+  },
+  {
+    "area": "Evidenz",
+    "key": "viability:measure_2",
+    "priority": "mittel",
+    "status": "open",
+    "type": "viability",
+  },
+  {
+    "area": "Evidenz",
+    "key": "system-reference:measure_5",
+    "priority": "mittel",
+    "status": "open",
+    "type": "system_reference",
+  },
+  {
+    "area": "Dokumentation",
+    "key": "target-mapping:measure_5",
+    "priority": "mittel",
+    "status": "open",
+    "type": "target_mapping",
+  },
+  {
+    "area": "Dokumentation",
+    "key": "measure-documentation:measure_5",
+    "priority": "mittel",
+    "status": "open",
+    "type": "measure_documentation",
+  },
+  {
+    "area": "Evidenz",
+    "key": "viability:measure_5",
+    "priority": "mittel",
+    "status": "open",
+    "type": "viability",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_8",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_6",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_4",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+  {
+    "area": "Evidenz",
+    "key": "system-reference:measure_3",
+    "priority": "mittel",
+    "status": "open",
+    "type": "system_reference",
+  },
+  {
+    "area": "Dokumentation",
+    "key": "measure-documentation:measure_3",
+    "priority": "mittel",
+    "status": "open",
+    "type": "measure_documentation",
+  },
+  {
+    "area": "Evidenz",
+    "key": "viability:measure_3",
+    "priority": "mittel",
+    "status": "open",
+    "type": "viability",
+  },
+  {
+    "area": "Kontextobjekt",
+    "key": "sidecar:ctx_2",
+    "priority": "mittel",
+    "status": "open",
+    "type": "sidecar",
+  },
+]
+`;
+
+exports[`Akte Charakterisierungstest (Referenzmodell, Gas) > freezes the Reifegrad-Kennzahl (maturityScore) > maturity-score 1`] = `
+{
+  "blockers": 30,
+  "openClarificationCount": 30,
+  "reviewCount": 2,
+  "score": 66,
+  "verdictStable": true,
+}
+`;
+
+exports[`Akte Charakterisierungstest (Referenzmodell, Gas) > freezes the portfolio segmentation (Budget-Tragfähigkeitsklassen) > segmentation 1`] = `
+{
+  "contextObject": {
+    "count": 0,
+    "invest": 0,
+    "npv": 0,
+    "recurringRegulatoryEog": 0,
+    "yearOneRegulatoryEog": 0,
+  },
+  "corePortfolio": {
+    "count": 1,
+    "invest": 120,
+    "npv": -48.98361371339184,
+    "recurringRegulatoryEog": 11.6277,
+    "yearOneRegulatoryEog": 11.9319,
+  },
+  "excluded": {
+    "count": 0,
+    "invest": 0,
+    "npv": 0,
+    "recurringRegulatoryEog": 0,
+    "yearOneRegulatoryEog": 0,
+  },
+  "flexibilityObject": {
+    "count": 0,
+    "invest": 0,
+    "npv": 0,
+    "recurringRegulatoryEog": 0,
+    "yearOneRegulatoryEog": 0,
+  },
+  "mappingNote": "Segmentierung basiert auf importStatus, investmentDecisionStatus, reportingStatus, effectType und orgUnit; Statusfelder haben Vorrang vor Kostenhöhe oder bloßer Aktivität.",
+  "optionSensitive": {
+    "count": 5,
+    "invest": 5030,
+    "npv": -1469.232039103785,
+    "recurringRegulatoryEog": 477.36684473684215,
+    "yearOneRegulatoryEog": 428.0139899999999,
+  },
+  "scopeCandidate": {
+    "count": 0,
+    "invest": 0,
+    "npv": 0,
+    "recurringRegulatoryEog": 0,
+    "yearOneRegulatoryEog": 0,
+  },
+}
+`;
