@@ -336,17 +336,36 @@ button {
 .akte-chart svg { display: block; height: 220px; }
 .akte-chart-zero-line { stroke: var(--akte-text-muted); stroke-width: 1; }
 .akte-chart-label { font-size: 9px; fill: var(--akte-text); dominant-baseline: middle; }
+.akte-chart-line { fill: none; stroke-width: 1.5; pointer-events: none; }
+.akte-chart-line--cashflow { stroke: var(--akte-good); }
+.akte-chart-line--bridge { stroke: var(--akte-accent); stroke-dasharray: 3 2; }
+
+.akte-chart-year-clear {
+  border: 1px solid var(--akte-border);
+  background: var(--akte-surface);
+  color: var(--akte-text-muted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.8em;
+}
+.akte-chart-year-clear:hover { background: var(--akte-accent-weak); color: var(--akte-text); }
 
 /* Wertzustand (Abschnitt 6): dieselbe Konvention wie akte-value--*, auf
    grafische Elemente übertragen. Auswahl (siehe unten) ändert nur die
    Kontur, nie die Farbe — Farbe bleibt dem Wertzustand vorbehalten. */
-.akte-chart-element rect,
+/* Unsichtbares Ziel über die volle Element-Fläche: ohne pointer-events:all
+   registriert ein Klick in die "Höhle" eines hohlen (fill:none) Werts oder
+   in eine Lücke zwischen Segment und Beschriftung überhaupt keinen Treffer —
+   das Element wäre real klickbar nur an seinem Rand. */
+.akte-chart-hit-area { fill: transparent; pointer-events: all; cursor: pointer; }
+
+.akte-chart-element rect:not(.akte-chart-hit-area),
 .akte-chart-element circle { fill: var(--akte-accent); stroke: var(--akte-accent); stroke-width: 1; cursor: pointer; }
-.akte-chart-mark--derived rect,
+.akte-chart-mark--derived rect:not(.akte-chart-hit-area),
 .akte-chart-mark--derived circle { stroke-dasharray: 1 2; }
-.akte-chart-mark--default rect,
+.akte-chart-mark--default rect:not(.akte-chart-hit-area),
 .akte-chart-mark--default circle { fill: none; stroke-dasharray: 4 3; }
-.akte-chart-mark--openByDecision rect,
+.akte-chart-mark--openByDecision rect:not(.akte-chart-hit-area),
 .akte-chart-mark--openByDecision circle { fill: none; stroke: var(--akte-text-muted); }
 .akte-chart-mark--no-evidence rect,
 .akte-chart-mark--no-evidence circle { fill: none; }

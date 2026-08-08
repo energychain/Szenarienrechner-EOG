@@ -30,7 +30,7 @@ import {
 } from './engine.js';
 import { clarificationItems } from './clarifications.js';
 import { maturityScore } from './maturity.js';
-import { linearScale, tornadoModel } from './chart-model.js';
+import { eogFlowModel, linearScale, tornadoModel } from './chart-model.js';
 import { defaultCommittee, defaultProcessState, defaultStrategy, normalizeMeasure, normalizeProcessState } from './model-normalize.js';
 import { fieldDescriptorsFor } from './field-registry.js';
 import { evidenceGaps, missingValueFields, referenceFieldsFor, suggestedEdges, valueState } from './value-state.js';
@@ -77,6 +77,11 @@ let author = 'Akte';
 // wird, gilt pro Filter, nicht global.
 let chartCollapsed = {};
 let chartAsTable = {};
+// Jahresmarkierung (Abschnitt 7.2): der einzige zusätzliche Interaktions-
+// zustand für Elemente ohne Objektbezug (Jahressäulen im Verlaufsdiagramm).
+// Bewusst nicht in model.ui2 persistiert — anders als chartCollapsed/
+// chartAsTable ist das nur eine Anzeige, kein Modellzustand.
+let chartYearMarker = null;
 
 // Rahmen/Szenario sind vier feste Pseudo-Objekte über model.inputs (siehe
 // Spezifikation 4.4) statt eigener Modellobjekte — dieselben 31 Felder aus
@@ -957,11 +962,14 @@ function renderObjectListHtml(visible) {
 // den Renderer und den ersten Diagrammtyp (Tornado auf "clarification");
 // weitere Zuordnungen kommen in V-3..V-5 hinzu (Diagrammkatalog Abschnitt 5).
 const chartTypeByFilter = {
-  clarification: 'tornado'
+  clarification: 'tornado',
+  'kpi:eogYear1': 'eogFlow',
+  'kpi:eogFollow': 'eogFlow'
 };
 
 const chartTypeLabels = {
-  tornado: 'Wirkungsrangliste'
+  tornado: 'Wirkungsrangliste',
+  eogFlow: 'Liquiditäts-/EOG-Verlauf'
 };
 
 // Baut das Diagrammmodell für den aktuellen Filter, sofern einer zugeordnet
@@ -982,8 +990,17 @@ function chartModelForCurrentFilter(visible) {
     });
     return chart;
   }
+  if (type === 'eogFlow') {
+    // Jahressäulen tragen ohnehin nie einen Objektbezug (Abschnitt 7.2) — die
+    // Regel-3-Kappung entfällt hier, es gibt nichts zu kappen.
+    return eogFlowModel(currentPortfolio(), context);
+  }
   return null;
 }
+
+// Deutsche Kurzform je Wertzustand, für <title>/Tabellenspalten aller
+// Diagrammtypen einheitlich (Abschnitt 6).
+const valueStateLabelDe = { set: 'geprüft', default: 'Vorbelegung', derived: 'abgeleitet', openByDecision: 'bewusst offen' };
 
 function chartChromeButtonsHtml(collapsed, asTable) {
   return `
@@ -997,7 +1014,7 @@ function chartChromeButtonsHtml(collapsed, asTable) {
 // Wirkungsrangliste / Tornado (Kriterium V9: <title> je Element mit Name,
 // Wert und Zustand im Klartext; Größenberechnung rein aus den Daten, kein
 // getBoundingClientRect — siehe Abschnitt 8).
-function renderTornadoSvg(chart, selectedObjectType, selectedObjectId) {
+function renderTornadoSvg(chart, { selectedType: selectedObjectType, selectedId: selectedObjectId }) {
   const width = 560;
   const height = 220;
   const labelWidth = 150;
@@ -1015,7 +1032,7 @@ function renderTornadoSvg(chart, selectedObjectType, selectedObjectId) {
     const classes = ['akte-chart-element', `akte-chart-mark--${element.valueState}`];
     if (element.hasEvidenceGap) classes.push('akte-chart-mark--no-evidence');
     if (isSelected) classes.push('selected');
-    const stateLabel = { set: 'geprüft', default: 'Vorbelegung', derived: 'abgeleitet', openByDecision: 'bewusst offen' }[element.valueState] || element.valueState;
+    const stateLabel = valueStateLabelDe[element.valueState] || element.valueState;
     const titleText = `${element.label}: Δ Kapitalwert ${fmtTeur(element.low, 1)} bis ${fmtTeur(element.high, 1)}, Zustand ${stateLabel}${element.hasEvidenceGap ? ', Evidenz fehlt' : ''}`;
     return `
       <g class="${classes.join(' ')}" tabindex="${index === 0 ? '0' : '-1'}" role="button"
@@ -1024,6 +1041,7 @@ function renderTornadoSvg(chart, selectedObjectType, selectedObjectId) {
          ${element.objectId ? `data-object-id="${esc(element.objectId)}"` : ''}
          aria-label="${esc(titleText)}">
         <title>${esc(titleText)}</title>
+        <rect class="akte-chart-hit-area" x="0" y="${y}" width="${width}" height="${rowHeight}"></rect>
         <rect x="${Math.min(lowX, highX)}" y="${y}" width="${Math.max(1, Math.abs(highX - lowX))}" height="${barHeight}"></rect>
         <text x="4" y="${y + barHeight / 2 + 4}" class="akte-chart-label">${esc(element.label)}</text>
       </g>
@@ -1038,7 +1056,6 @@ function renderTornadoSvg(chart, selectedObjectType, selectedObjectId) {
 }
 
 function renderTornadoTable(chart) {
-  const stateLabel = { set: 'geprüft', default: 'Vorbelegung', derived: 'abgeleitet', openByDecision: 'bewusst offen' };
   return `
     <table class="akte-chart-table">
       <thead><tr><th>Treiber</th><th>Δ Kapitalwert von</th><th>Δ Kapitalwert bis</th><th>Zustand</th></tr></thead>
@@ -1048,7 +1065,109 @@ function renderTornadoTable(chart) {
             <td>${esc(element.label)}</td>
             <td>${esc(fmtTeur(Math.min(element.low, element.high), 1))}</td>
             <td>${esc(fmtTeur(Math.max(element.low, element.high), 1))}</td>
-            <td>${esc(stateLabel[element.valueState] || element.valueState)}${element.hasEvidenceGap ? ' · Evidenz fehlt' : ''}</td>
+            <td>${esc(valueStateLabelDe[element.valueState] || element.valueState)}${element.hasEvidenceGap ? ' · Evidenz fehlt' : ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Liquiditäts-/EOG-Verlauf (Filter kpi:eogYear1/kpi:eogFollow): eine
+// Jahressäule je Planungsjahr, gestapelt aus AfA + Verzinsung + Q/E + Risiko
+// + Einmal-OPEX, überlagert von zwei Linien (indikativer Cashflow, kumulierte
+// Brücke). Jahressäulen haben keinen Objektbezug (Abschnitt 7.2) — ein Klick
+// setzt stattdessen die Jahresmarkierung, die die Kontextspalte liest.
+const eogFlowStackOrder = [
+  ['depreciation', 'AfA'],
+  ['capitalReturn', 'Verzinsung'],
+  ['qAndE', 'Q/E'],
+  ['risk', 'Risiko'],
+  ['firstYearOpex', 'Einmal-OPEX']
+];
+
+function renderEogFlowSvg(chart, { yearMarker }) {
+  const width = 560;
+  const height = 220;
+  const topMargin = 6;
+  const bottomMargin = 18;
+  const leftMargin = 8;
+  const rightMargin = 8;
+  const elements = chart.elements;
+  const n = Math.max(1, elements.length);
+  const colWidth = (width - leftMargin - rightMargin) / n;
+  const barWidth = Math.max(2, colWidth * 0.62);
+  const yScale = linearScale(chart.yAxis.min, chart.yAxis.max, height - bottomMargin, topMargin);
+  const zeroY = yScale(0);
+  const labelEvery = Math.max(1, Math.ceil(n / 6));
+  const columnX = index => leftMargin + colWidth * index + colWidth / 2;
+
+  const columns = elements.map((element, index) => {
+    const cx = columnX(index);
+    let positiveTotal = 0;
+    let negativeTotal = 0;
+    const segments = eogFlowStackOrder.map(([key]) => {
+      const value = element.stack[key];
+      let y0;
+      let y1;
+      if (value >= 0) {
+        y0 = yScale(positiveTotal);
+        positiveTotal += value;
+        y1 = yScale(positiveTotal);
+      } else {
+        y0 = yScale(negativeTotal);
+        negativeTotal += value;
+        y1 = yScale(negativeTotal);
+      }
+      return { y: Math.min(y0, y1), height: Math.max(0.5, Math.abs(y1 - y0)) };
+    });
+    const isMarked = yearMarker === element.year;
+    const classes = ['akte-chart-element', `akte-chart-mark--${element.valueState}`];
+    if (element.hasEvidenceGap) classes.push('akte-chart-mark--no-evidence');
+    if (isMarked) classes.push('selected');
+    const stateLabel = valueStateLabelDe[element.valueState] || element.valueState;
+    const titleText = eogFlowStackOrder
+      .map(([key, label]) => `${label} ${fmtTeur(element.stack[key], 1)}`)
+      .concat([`indikativer Cashflow ${fmtTeur(element.indicativeCashflow, 1)}`, `kumulierte Brücke ${fmtTeur(element.bridgeCumulative, 1)}`])
+      .join(', ');
+    const label = `${element.year}: ${titleText}, Zustand ${stateLabel}${element.hasEvidenceGap ? ', Evidenz fehlt' : ''}`;
+    const rects = segments.map(segment => `<rect x="${cx - barWidth / 2}" y="${segment.y}" width="${barWidth}" height="${segment.height}"></rect>`).join('');
+    const yearLabel = index % labelEvery === 0 ? `<text x="${cx}" y="${height - 4}" class="akte-chart-label" text-anchor="middle">${element.year}</text>` : '';
+    return `
+      <g class="${classes.join(' ')}" tabindex="${index === 0 ? '0' : '-1'}" role="button"
+         data-chart-element-index="${index}" data-chart-year="${element.year}" aria-label="${esc(label)}">
+        <title>${esc(label)}</title>
+        <rect class="akte-chart-hit-area" x="${cx - colWidth / 2}" y="${topMargin}" width="${colWidth}" height="${height - topMargin - bottomMargin}"></rect>
+        ${rects}
+        ${yearLabel}
+      </g>
+    `;
+  }).join('');
+
+  const linePoints = key => elements.map((element, index) => `${columnX(index)},${yScale(element[key])}`).join(' ');
+
+  return `
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="group" aria-label="${esc(chartTypeLabels[chart.type] || chart.type)}" focusable="false">
+      <line x1="${leftMargin}" y1="${zeroY}" x2="${width - rightMargin}" y2="${zeroY}" class="akte-chart-zero-line"></line>
+      ${columns}
+      <polyline points="${linePoints('indicativeCashflow')}" class="akte-chart-line akte-chart-line--cashflow"></polyline>
+      <polyline points="${linePoints('bridgeCumulative')}" class="akte-chart-line akte-chart-line--bridge"></polyline>
+    </svg>
+  `;
+}
+
+function renderEogFlowTable(chart) {
+  return `
+    <table class="akte-chart-table">
+      <thead><tr><th>Jahr</th>${eogFlowStackOrder.map(([, label]) => `<th>${esc(label)}</th>`).join('')}<th>Cashflow</th><th>Brücke kumuliert</th><th>Zustand</th></tr></thead>
+      <tbody>
+        ${chart.elements.map(element => `
+          <tr class="akte-chart-element" data-chart-year="${element.year}">
+            <td>${esc(element.year)}</td>
+            ${eogFlowStackOrder.map(([key]) => `<td>${esc(fmtTeur(element.stack[key], 1))}</td>`).join('')}
+            <td>${esc(fmtTeur(element.indicativeCashflow, 1))}</td>
+            <td>${esc(fmtTeur(element.bridgeCumulative, 1))}</td>
+            <td>${esc(valueStateLabelDe[element.valueState] || element.valueState)}${element.hasEvidenceGap ? ' · Evidenz fehlt' : ''}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -1057,7 +1176,8 @@ function renderTornadoTable(chart) {
 }
 
 const chartRenderers = {
-  tornado: { svg: renderTornadoSvg, table: renderTornadoTable }
+  tornado: { svg: renderTornadoSvg, table: renderTornadoTable },
+  eogFlow: { svg: renderEogFlowSvg, table: renderEogFlowTable }
 };
 
 function renderChartSectionHtml(visible) {
@@ -1073,7 +1193,7 @@ function renderChartSectionHtml(visible) {
     } else if (asTable) {
       body = renderer.table(chart);
     } else {
-      body = renderer.svg(chart, selectedType, selectedId);
+      body = renderer.svg(chart, { selectedType, selectedId, yearMarker: chartYearMarker });
     }
   }
   return `
@@ -1095,6 +1215,19 @@ function selectChartElement(node) {
   selectedType = objectType;
   selectedId = objectId;
   renderAll();
+}
+
+// Aktiviert ein Diagrammelement per Klick oder Enter. Jahressäulen
+// (data-chart-year) haben keinen Objektbezug — sie setzen stattdessen die
+// Jahresmarkierung (Abschnitt 7.2, einziger zusätzlicher Interaktionszustand).
+// Alle übrigen Diagrammelemente wählen wie gewohnt ihr Objekt aus.
+function activateChartElement(node) {
+  if (node.dataset.chartYear) {
+    chartYearMarker = Number(node.dataset.chartYear);
+    renderAll();
+    return;
+  }
+  selectChartElement(node);
 }
 
 // Initiale Datenerfassung: der aktuelle Filter bestimmt eindeutig, welcher
@@ -1199,8 +1332,29 @@ function renderClarificationContext(node, item) {
   `;
 }
 
+// Jahresmarkierung (Abschnitt 7.2): die Kontextspalte bezieht sich auf das
+// markierte Jahr, solange eine Markierung im Verlaufsdiagramm aktiv ist —
+// unabhängig davon, welches Objekt sonst gerade ausgewählt ist.
+function renderYearContext(node, year) {
+  const row = currentPortfolio().yearly.find(item => item.year === year);
+  if (!row) { node.innerHTML = emptyContextHtml(); return; }
+  node.innerHTML = `
+    <div class="akte-context-section">
+      <h3>Jahr ${esc(year)}</h3>
+      ${eogFlowStackOrder.map(([key, label]) => `<div class="akte-context-metric"><span>${esc(label)}</span><strong>${esc(fmtTeur(row[key] || 0, 1))}</strong></div>`).join('')}
+      <div class="akte-context-metric"><span>Indikativer Cashflow</span><strong>${esc(fmtTeur(row.indicativeCashflow || 0, 1))}</strong></div>
+      <div class="akte-context-metric"><span>Kumulierte Brücke</span><strong>${esc(fmtTeur(row.bridgeCumulative || 0, 1))}</strong></div>
+    </div>
+    <button type="button" class="akte-chart-year-clear" data-chart-year-clear>Markierung aufheben</button>
+  `;
+}
+
 function renderContextColumn(clarifications) {
   const node = document.getElementById('akteContextColumn');
+  if (chartTypeByFilter[filterKey] === 'eogFlow' && chartYearMarker !== null) {
+    renderYearContext(node, chartYearMarker);
+    return;
+  }
   const p = currentParams();
   if (selectedType === 'measure') {
     const measure = model.measures.find(item => item.id === selectedId);
@@ -1554,6 +1708,11 @@ function afterMutation() {
 }
 
 function renderAll() {
+  // Die Jahresmarkierung gilt nur innerhalb des Verlaufsdiagramms — verlässt
+  // man dessen Filter (gleich auf welchem Weg: Filterspalte, KPI-Kachel,
+  // Debug-Schnittstelle), wird sie zurückgesetzt statt unsichtbar liegen zu
+  // bleiben und bei Rückkehr überraschend wieder aufzutauchen.
+  if (chartTypeByFilter[filterKey] !== 'eogFlow') chartYearMarker = null;
   const portfolio = currentPortfolio();
   const clarifications = currentClarifications(portfolio);
   const entries = listEntries(clarifications);
@@ -1778,6 +1937,14 @@ function closeOutputWindow() {
 // ---------------------------------------------------------------------------
 
 function wireEvents() {
+  document.getElementById('akteContextColumn').addEventListener('click', event => {
+    const clearButton = event.target.closest('[data-chart-year-clear]');
+    if (clearButton) {
+      chartYearMarker = null;
+      renderAll();
+    }
+  });
+
   document.getElementById('akteKpiStrip').addEventListener('click', event => {
     const button = event.target.closest('[data-kpi]');
     if (!button) return;
@@ -1825,7 +1992,7 @@ function wireEvents() {
     }
     const chartElement = event.target.closest('.akte-chart-element');
     if (chartElement) {
-      selectChartElement(chartElement);
+      activateChartElement(chartElement);
       return;
     }
     const listItem = event.target.closest('.akte-object-list-item');
@@ -1860,7 +2027,7 @@ function wireEvents() {
       items[nextIndex].focus();
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      selectChartElement(chartElement);
+      activateChartElement(chartElement);
     } else if (event.key === 'Escape') {
       chartElement.blur();
     }
