@@ -16,6 +16,7 @@ import {
   measureDrilldownFor,
   params as engineParams,
   portfolioEffectFor,
+  scenarioParams as engineScenarioParams,
   workstandReliabilityFor,
   activationSplitHelper,
   riskHelper,
@@ -26,14 +27,15 @@ import {
   flexibilityHelper
 } from './engine.js';
 import { clarificationItems } from './clarifications.js';
-import { defaultCommittee, defaultProcessState, defaultStrategy, normalizeMeasure } from './model-normalize.js';
+import { maturityScore } from './maturity.js';
+import { defaultCommittee, defaultProcessState, defaultStrategy, normalizeMeasure, normalizeProcessState } from './model-normalize.js';
 import { fieldDescriptorsFor } from './field-registry.js';
-import { evidenceGaps, valueState } from './value-state.js';
+import { evidenceGaps, missingValueFields, referenceFieldsFor, suggestedEdges, valueState } from './value-state.js';
 import { esc, fmtPct, fmtPlain, fmtTeur } from './render-utils.js';
-import { normalizeSidecar } from './sidecar.js';
+import { normalizeSidecar, normalizeSidecarObject, normalizeSidecarSource } from './sidecar.js';
 import { demoMeasures, demoSidecar } from './demo-data.js';
 import { appendHistoryEvents, diffModelEvents, emptyHistory, eventSummary } from './history.js';
-import { inputDefaults, inputIds } from './ui-config.js';
+import { inputDefaults, inputIds, processPhases } from './ui-config.js';
 
 const storageKey = 'regulierte-sparten-szenario-rechner-akte-v1';
 const modelVersion = 8;
@@ -78,18 +80,18 @@ const inputsObjectId = 'inputs';
 
 function skeletonInputs() {
   const base = {
-    sector: 'strom',
+    sector: 'gas',
     regulationProcedure: 'standard',
     baseYear: new Date().getFullYear() + 1,
-    baseEog: 48000,
-    rab: 77000,
-    returnRate: 4.1,
-    financingRate: 4,
-    annualEnergyGwh: 465,
-    householdConsumptionKwh: 2900,
-    horizon: 8,
-    discountRate: 4,
-    kanuEndYear: 2045,
+    baseEog: 0,
+    rab: 0,
+    returnRate: 5,
+    financingRate: 5,
+    annualEnergyGwh: '',
+    householdConsumptionKwh: '',
+    horizon: 20,
+    discountRate: 5,
+    kanuEndYear: new Date().getFullYear() + 19,
     degressiveRate: 10,
     taxFactor: 0,
     portfolioAttribution: 25,
@@ -106,11 +108,33 @@ function skeletonInputs() {
   return inputs;
 }
 
-function skeletonModel() {
-  const inputs = skeletonInputs();
+function emptyProvisionalIds() {
+  return { objective: [], sidecarObject: [], sidecarSource: [] };
+}
+
+// Skelett statt Leere (Spezifikation 6.5): ein neues Modell startet mit den
+// Standard-Zielen und Rahmen-Vorbelegungen der gewählten Sparte, aber ohne
+// Maßnahmen — das eigene, noch unbeschriebene Blatt. Das unterscheidet sich
+// bewusst von den Demodaten (ein fremdes Beispiel); beide bleiben über die
+// Kopfzeile erreichbar.
+function emptySkeletonModel() {
+  return {
+    inputs: skeletonInputs(),
+    measures: [],
+    sidecar: normalizeSidecar(),
+    strategy: defaultStrategy(),
+    committee: defaultCommittee(),
+    process: defaultProcessState(),
+    clarificationStatus: {},
+    openDecisions: {},
+    provisionalIds: emptyProvisionalIds()
+  };
+}
+
+function demoModel() {
   const measures = demoMeasures.map((measure, index) => normalizeMeasure(measure, index, {}));
   return {
-    inputs,
+    inputs: skeletonInputs(),
     measures,
     sidecar: normalizeSidecar(demoSidecar),
     strategy: defaultStrategy(),
@@ -118,7 +142,7 @@ function skeletonModel() {
     process: defaultProcessState(),
     clarificationStatus: {},
     openDecisions: {},
-    ui2: { filterKey: 'all', selectedType: 'measure', selectedId: measures[0]?.id || '' }
+    provisionalIds: emptyProvisionalIds()
   };
 }
 
@@ -175,31 +199,40 @@ function currentModelData() {
     process: structuredClone(model.process),
     clarificationStatus: structuredClone(model.clarificationStatus),
     openDecisions: structuredClone(model.openDecisions),
+    provisionalIds: structuredClone(model.provisionalIds || emptyProvisionalIds()),
     ui2: { filterKey, selectedType, selectedId }
+  };
+}
+
+function modelFromStoredData(storedModel) {
+  return {
+    inputs: storedModel.inputs || skeletonInputs(),
+    measures: (storedModel.measures || []).map((measure, index) => normalizeMeasure(measure, index, {})),
+    sidecar: normalizeSidecar(storedModel.sidecar),
+    strategy: storedModel.strategy || defaultStrategy(),
+    committee: storedModel.committee || defaultCommittee(),
+    process: storedModel.process || defaultProcessState(),
+    clarificationStatus: storedModel.clarificationStatus || {},
+    openDecisions: storedModel.openDecisions || {},
+    provisionalIds: {
+      ...emptyProvisionalIds(),
+      ...(storedModel.provisionalIds || {})
+    }
   };
 }
 
 function bootstrap() {
   const stored = loadFromStorage();
   if (stored?.model) {
-    model = {
-      inputs: stored.model.inputs || skeletonInputs(),
-      measures: (stored.model.measures || []).map((measure, index) => normalizeMeasure(measure, index, {})),
-      sidecar: normalizeSidecar(stored.model.sidecar),
-      strategy: stored.model.strategy || defaultStrategy(),
-      committee: stored.model.committee || defaultCommittee(),
-      process: stored.model.process || defaultProcessState(),
-      clarificationStatus: stored.model.clarificationStatus || {},
-      openDecisions: stored.model.openDecisions || {}
-    };
+    model = modelFromStoredData(stored.model);
     history = stored.history || emptyHistory();
     filterKey = stored.model.ui2?.filterKey || 'all';
     selectedType = stored.model.ui2?.selectedType || 'measure';
     selectedId = stored.model.ui2?.selectedId || model.measures[0]?.id || '';
   } else {
-    model = skeletonModel();
-    selectedType = 'measure';
-    selectedId = model.measures[0]?.id || '';
+    model = emptySkeletonModel();
+    selectedType = 'input';
+    selectedId = 'rahmen-sparte';
   }
   previousModelForHistory = currentModelData();
 }
@@ -218,6 +251,15 @@ function currentPortfolio() {
 
 function currentClarifications(portfolio) {
   return clarificationItems({ measures: model.measures, sidecar: model.sidecar }, currentParams(), portfolio, model.clarificationStatus);
+}
+
+function resultsByScenario() {
+  const p = currentParams();
+  return Object.fromEntries(['basis', 'konservativ', 'wert'].map(name => [name, calcPortfolio({ measures: model.measures }, engineScenarioParams(p, name))]));
+}
+
+function currentMaturity(portfolio) {
+  return maturityScore({ measures: model.measures, sidecar: model.sidecar }, currentParams(), portfolio, resultsByScenario(), model.clarificationStatus);
 }
 
 function measureYear1Eog(measure, p) {
@@ -435,6 +477,7 @@ function renderFilterColumn(entries) {
       <h3>Gespeicherte Filter</h3>
       ${savedFilterDefs.map(def => filterButtonHtml(def, counts)).join('')}
     </div>
+    ${renderSuggestions()}
   `;
 }
 
@@ -481,6 +524,15 @@ function stateSuffix(state) {
 const nonEditableFieldKeys = new Set(['id']);
 const summaryOnlyFieldKeys = new Set(['impactAssumptions']);
 
+function referenceDisplayLabel(targetType, id) {
+  if (!id) return id;
+  const collection = referenceCollection(targetType);
+  const labelKey = referenceLabelKeys[targetType];
+  const match = collection.find(item => item.id === id);
+  const label = match ? (match[labelKey] || id) : id;
+  return isProvisional(targetType, id) ? `${label} (vorläufig)` : label;
+}
+
 function renderFieldValue(objectType, objectId, descriptor, object) {
   const rawValue = object[descriptor.key];
   if (summaryOnlyFieldKeys.has(descriptor.key)) {
@@ -491,8 +543,18 @@ function renderFieldValue(objectType, objectId, descriptor, object) {
   if (state.state === 'openByDecision') {
     return `<button type="button" class="akte-value akte-value--openByDecision" data-edit-key="${esc(descriptor.key)}" data-object-type="${esc(objectType)}" data-object-id="${esc(objectId)}">bewusst offen gelassen: ${esc(state.reason || 'ohne Begründung')}</button>`;
   }
-  const display = formattedValue(descriptor, rawValue);
-  return `<button type="button" class="akte-value akte-value--${esc(state.state)}" data-edit-key="${esc(descriptor.key)}" data-object-type="${esc(objectType)}" data-object-id="${esc(objectId)}">${esc(display)}</button>${stateSuffix(state)}`;
+  const referenceTarget = referenceFieldsFor(objectType)[descriptor.key];
+  let display;
+  let hasProvisional = false;
+  if (referenceTarget) {
+    const ids = referenceTarget.multi ? (Array.isArray(rawValue) ? rawValue : []) : (rawValue ? [rawValue] : []);
+    hasProvisional = ids.some(id => isProvisional(referenceTarget.targetType, id));
+    display = ids.length ? ids.map(id => referenceDisplayLabel(referenceTarget.targetType, id)).join(', ') : '–';
+  } else {
+    display = formattedValue(descriptor, rawValue);
+  }
+  const provisionalCls = hasProvisional ? ' akte-value--provisional' : '';
+  return `<button type="button" class="akte-value akte-value--${esc(state.state)}${provisionalCls}" data-edit-key="${esc(descriptor.key)}" data-object-type="${esc(objectType)}" data-object-id="${esc(objectId)}">${esc(display)}</button>${stateSuffix(state)}`;
 }
 
 function renderSentenceForGroup(objectType, objectId, group, object) {
@@ -572,10 +634,14 @@ function renderMeasureDetail(measure, clarifications, p) {
   `;
 }
 
+function provisionalBadgeHtml(objectType, objectId) {
+  return isProvisional(objectType, objectId) ? '<span class="akte-provisional-badge">vorläufig</span>' : '';
+}
+
 function renderFlatDetail(objectType, objectId, group, object, title, subtitle) {
   const sentence = renderSentenceForGroup(objectType, objectId, group, object);
   return `
-    <h2 class="akte-object-title">${esc(title)}</h2>
+    <h2 class="akte-object-title">${esc(title)}${provisionalBadgeHtml(objectType, objectId)}</h2>
     <p class="akte-object-subtitle">${esc(subtitle)}</p>
     <div class="akte-sentence-block akte-sentence-block--flat">
       <div class="akte-sentence-body">${sentence}</div>
@@ -640,7 +706,7 @@ function renderObjectListHtml(visible) {
     <div class="akte-object-list" role="list" aria-label="Objekte im aktuellen Filter">
       ${visible.map(entry => `
         <button type="button" class="akte-object-list-item ${entry.objectType === selectedType && entry.id === selectedId ? 'active' : ''}" data-object-type="${esc(entry.objectType)}" data-object-id="${esc(entry.id)}">
-          <span class="akte-object-list-title">${esc(entry.title)}</span>
+          <span class="akte-object-list-title">${esc(entry.title)}${provisionalBadgeHtml(entry.objectType, entry.id)}</span>
           <span class="akte-object-list-meta">
             <span class="akte-object-list-type">${esc(objectTypeLabels[entry.objectType] || entry.objectType)}</span>
             ${entry.gapCount ? `<span class="akte-object-list-gap">${entry.gapCount}</span>` : ''}
@@ -654,11 +720,11 @@ function renderObjectListHtml(visible) {
 function renderObjectSurface(visible, clarifications) {
   const node = document.getElementById('akteObjectSurface');
   if (!visible.length) {
-    node.innerHTML = '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
+    node.innerHTML = renderPhaseWarningHtml() + '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
     return;
   }
   const p = currentParams();
-  node.innerHTML = renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
+  node.innerHTML = renderPhaseWarningHtml() + renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
 }
 
 // ---------------------------------------------------------------------------
@@ -766,6 +832,56 @@ function closePopover() {
   activePopoverTarget = null;
 }
 
+const referenceLabelKeys = { objective: 'label', sidecarObject: 'title', sidecarSource: 'title' };
+
+function referenceCollection(targetType) {
+  if (targetType === 'objective') {
+    model.strategy.objectives = model.strategy.objectives || [];
+    return model.strategy.objectives;
+  }
+  if (targetType === 'sidecarObject') {
+    model.sidecar.objects = model.sidecar.objects || [];
+    return model.sidecar.objects;
+  }
+  if (targetType === 'sidecarSource') {
+    model.sidecar.sources = model.sidecar.sources || [];
+    return model.sidecar.sources;
+  }
+  return model.measures;
+}
+
+// Stellvertreterobjekt nach Wiki-Muster (Spezifikation 6.2, Lückenart 3):
+// referenziert der Nutzer einen Namen, für den weder eine ID noch ein
+// bestehendes Label passt, entsteht sofort ein neues Objekt mit Status
+// "vorläufig" (model.provisionalIds) statt eines toten Verweises.
+function resolveOrCreateReference(targetType, text) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return '';
+  const collection = referenceCollection(targetType);
+  const labelKey = referenceLabelKeys[targetType];
+  const existing = collection.find(item => item.id === trimmed || String(item[labelKey] || '').toLowerCase() === trimmed.toLowerCase());
+  if (existing) return existing.id;
+  const newId = `${targetType}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  let created;
+  if (targetType === 'objective') created = { id: newId, label: trimmed, note: '' };
+  else if (targetType === 'sidecarObject') created = normalizeSidecarObject({ id: newId, title: trimmed });
+  else if (targetType === 'sidecarSource') created = normalizeSidecarSource({ id: newId, title: trimmed });
+  else return trimmed;
+  collection.push(created);
+  model.provisionalIds[targetType] = model.provisionalIds[targetType] || [];
+  model.provisionalIds[targetType].push(newId);
+  return newId;
+}
+
+function isProvisional(objectType, id) {
+  return Boolean(model.provisionalIds?.[objectType]?.includes(id));
+}
+
+function clearProvisional(objectType, id) {
+  if (!model.provisionalIds?.[objectType]) return;
+  model.provisionalIds[objectType] = model.provisionalIds[objectType].filter(item => item !== id);
+}
+
 function helperNoteFor(descriptor, object) {
   const fn = descriptor.helper ? helperFunctions[descriptor.helper] : null;
   if (!fn) return '';
@@ -821,12 +937,14 @@ function openPopover(button) {
   const currentValue = object[key];
   const stateObjectId = objectIdForState(objectType, objectId);
   const state = valueState(objectType, key, currentValue, { object, objectId: stateObjectId, history, openDecisions: model.openDecisions });
+  const referenceTarget = referenceFieldsFor(objectType)[key];
 
   popover.innerHTML = `
     <div class="akte-popover-title">${esc(descriptor.label)}</div>
     <div class="akte-popover-state">Zustand: ${esc(state.state)}${descriptor.default !== undefined ? ` · Vorbelegung: ${esc(formattedValue(descriptor, descriptor.default))}` : ''}</div>
     <label for="akteFieldInput">${esc(descriptor.label)}${descriptor.unit ? ` (${esc(descriptor.unit)})` : ''}</label>
     ${inputControlFor(descriptor, currentValue)}
+    ${referenceTarget ? `<div class="akte-popover-helper">Verweist auf ${esc(objectTypeLabels[referenceTarget.targetType])}. Ein noch unbekannter Name legt sofort ein vorläufiges ${esc(objectTypeLabels[referenceTarget.targetType])}-Objekt an.</div>` : ''}
     ${descriptor.evidenceKey ? `<label for="akteEvidenceInput">Quelle / Evidenz (${esc(descriptor.evidenceKey)})</label><input id="akteEvidenceInput" type="text" value="${esc(object[descriptor.evidenceKey] ?? '')}">` : ''}
     ${helperNoteFor(descriptor, object)}
     <button type="button" class="akte-open-decision-toggle" id="akteOpenDecisionToggle">bewusst offen lassen …</button>
@@ -848,13 +966,20 @@ function openPopover(button) {
 
   document.getElementById('aktePopoverCancel').addEventListener('click', closePopover);
   document.getElementById('aktePopoverSave').addEventListener('click', () => {
-    const nextValue = parseControlValue(descriptor, currentValue);
+    let nextValue = parseControlValue(descriptor, currentValue);
+    const referenceTarget = referenceFieldsFor(objectType)[key];
+    if (referenceTarget) {
+      nextValue = referenceTarget.multi
+        ? (Array.isArray(nextValue) ? nextValue : []).map(text => resolveOrCreateReference(referenceTarget.targetType, text))
+        : resolveOrCreateReference(referenceTarget.targetType, nextValue);
+    }
     object[key] = nextValue;
     if (descriptor.evidenceKey) {
       const evidenceInput = document.getElementById('akteEvidenceInput');
       if (evidenceInput) object[descriptor.evidenceKey] = evidenceInput.value;
     }
     if (model.openDecisions?.[stateObjectId]) delete model.openDecisions[stateObjectId][key];
+    clearProvisional(objectType, stateObjectId);
     afterMutation();
     closePopover();
   });
@@ -888,6 +1013,81 @@ function positionPopover(popover, anchor) {
 }
 
 // ---------------------------------------------------------------------------
+// Phasenübergang (Abschnitt 6.6, Kriterium 10)
+//
+// Entscheidung des Auftraggebers (Spezifikation 11.3): der Übergang nach
+// entscheidungsvorlage warnt bei offenen Lücken, blockiert aber nicht — die
+// alte Oberfläche kennt ebenfalls keine Sperre (setProcessPhase in ui.js
+// wechselt ungeprüft).
+// ---------------------------------------------------------------------------
+
+function allMissingValueFields() {
+  const entries = [];
+  const collect = (objectType, objectId, object) => {
+    missingValueFields(objectType, object, { objectId, history, openDecisions: model.openDecisions })
+      .forEach(entry => entries.push({ objectType, objectId, key: entry.key }));
+  };
+  model.measures.forEach(measure => collect('measure', measure.id, measure));
+  collect('input', inputsObjectId, model.inputs);
+  (model.strategy.objectives || []).forEach(objective => collect('objective', objective.id, objective));
+  (model.sidecar.objects || []).forEach(object => collect('sidecarObject', object.id, object));
+  (model.sidecar.sources || []).forEach(source => collect('sidecarSource', source.id, source));
+  return entries;
+}
+
+function renderPhaseSelect() {
+  const select = document.getElementById('aktePhaseSelect');
+  select.innerHTML = processPhases.map(([id, label]) => `<option value="${esc(id)}" ${model.process.phase === id ? 'selected' : ''}>${esc(label)}</option>`).join('');
+}
+
+function setPhase(nextPhase) {
+  if (!processPhases.some(([id]) => id === nextPhase) || model.process.phase === nextPhase) return;
+  model.process = normalizeProcessState({ ...model.process, phase: nextPhase });
+  afterMutation();
+  if (nextPhase === 'entscheidungsvorlage') {
+    const gapCount = allMissingValueFields().length;
+    if (gapCount > 0) {
+      showToast(`Entscheidungsvorlage: ${gapCount} Lücke(n) sind weder gesetzt noch bewusst offen gelassen.`);
+    }
+  }
+}
+
+function renderPhaseWarningHtml() {
+  if (model.process.phase !== 'entscheidungsvorlage') return '';
+  const gapCount = allMissingValueFields().length;
+  if (!gapCount) return '';
+  return `
+    <div class="akte-phase-warning">
+      <strong>Entscheidungsvorlage bei offenen Lücken</strong>
+      ${esc(gapCount)} Feld(er) im Arbeitsstand sind weder gesetzt noch bewusst offen gelassen (Abschnitt 6.6). Der Übergang bleibt möglich; vor der Sitzung sollten diese Felder durchgegangen werden.
+    </div>
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// Kantenvorschläge (Abschnitt 6.2 Lückenart 4)
+// ---------------------------------------------------------------------------
+
+const suggestionFilterFor = {
+  'measure-objective': 'without-objective'
+};
+
+function renderSuggestions() {
+  const edges = suggestedEdges(model);
+  if (!edges.length) return '';
+  return `
+    <div class="akte-filter-group">
+      <h3>Vorschläge</h3>
+      ${edges.map(edge => `
+        <button type="button" class="akte-suggestion-item" data-suggestion-filter="${esc(suggestionFilterFor[edge.type] || 'all')}">
+          ${esc(edge.label)}
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ---------------------------------------------------------------------------
 // Zustand ändern -> neu rendern
 // ---------------------------------------------------------------------------
 
@@ -907,6 +1107,7 @@ function renderAll() {
     selectedId = visible[0].id;
   }
   document.getElementById('akteSectorLabel').textContent = model.inputs.sector === 'gas' ? 'Gas' : 'Strom';
+  renderPhaseSelect();
   renderKpiStrip(portfolio, clarifications);
   renderFilterColumn(entries);
   renderObjectSurface(visible, clarifications);
@@ -936,6 +1137,12 @@ function wireEvents() {
   });
 
   document.getElementById('akteFilterColumn').addEventListener('click', event => {
+    const suggestionButton = event.target.closest('[data-suggestion-filter]');
+    if (suggestionButton) {
+      filterKey = suggestionButton.dataset.suggestionFilter;
+      renderAll();
+      return;
+    }
     const button = event.target.closest('[data-filter]');
     if (!button) return;
     filterKey = button.dataset.filter;
@@ -982,6 +1189,22 @@ function wireEvents() {
 
   document.getElementById('akteSaveButton').addEventListener('click', () => saveToStorage(false));
 
+  document.getElementById('aktePhaseSelect').addEventListener('change', event => setPhase(event.target.value));
+
+  document.getElementById('akteLoadDemoButton').addEventListener('click', () => {
+    if (!window.confirm('Demodaten laden? Der aktuelle Arbeitsstand in dieser Oberfläche wird ersetzt. Vorher exportieren, wenn er erhalten bleiben soll.')) return;
+    model = demoModel();
+    history = emptyHistory();
+    selectedType = 'measure';
+    selectedId = model.measures[0]?.id || '';
+    filterKey = 'all';
+    searchText = '';
+    previousModelForHistory = currentModelData();
+    previousKpis = null;
+    afterMutation();
+    showToast('Demodaten geladen.');
+  });
+
   document.getElementById('akteExportButton').addEventListener('click', () => {
     const state = {
       app: 'regulierte-sparten-szenario-rechner',
@@ -1013,16 +1236,7 @@ function wireEvents() {
       try {
         const state = JSON.parse(String(reader.result));
         const incomingModel = state.model || state;
-        model = {
-          inputs: incomingModel.inputs || skeletonInputs(),
-          measures: (incomingModel.measures || []).map((measure, index) => normalizeMeasure(measure, index, {})),
-          sidecar: normalizeSidecar(incomingModel.sidecar),
-          strategy: incomingModel.strategy || defaultStrategy(),
-          committee: incomingModel.committee || defaultCommittee(),
-          process: incomingModel.process || defaultProcessState(),
-          clarificationStatus: incomingModel.clarificationStatus || {},
-          openDecisions: incomingModel.openDecisions || {}
-        };
+        model = modelFromStoredData(incomingModel);
         history = state.history && Array.isArray(state.history.events) ? state.history : emptyHistory();
         selectedType = incomingModel.ui2?.selectedType || 'measure';
         selectedId = incomingModel.ui2?.selectedId || model.measures[0]?.id || '';
@@ -1067,6 +1281,13 @@ if (typeof window !== 'undefined') {
     getFilterKey: () => filterKey,
     setSelectedId: id => { selectedId = id; renderAll(); },
     setSelectedObject: (type, id) => { selectedType = type; selectedId = id; renderAll(); },
-    setFilterKey: key => { filterKey = key; renderAll(); }
+    setFilterKey: key => { filterKey = key; renderAll(); },
+    // Kriterium 3 (Parität beider Oberflächen): dieselben Rechenkern-/
+    // Modul-Aufrufe wie window.__akteDebug in ui.js, siehe tests/akte-parity.test.js.
+    currentPortfolio: () => currentPortfolio(),
+    clarificationItems: () => currentClarifications(currentPortfolio()),
+    maturityScore: () => currentMaturity(currentPortfolio()),
+    portfolioSegmentation: () => currentPortfolio().portfolioSegmentation,
+    measureDrilldownFor: measureId => measureDrilldownFor(model.measures.find(measure => measure.id === measureId), currentParams())
   };
 }

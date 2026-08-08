@@ -15,11 +15,14 @@
   <div class="akte-header-identity">
     <span id="akteSectorLabel" class="akte-sector-pill">Gas</span>
     <span id="akteModelName" class="akte-model-name">Digitale Akte</span>
+    <label class="akte-phase-label" for="aktePhaseSelect">Phase</label>
+    <select id="aktePhaseSelect" aria-label="Prozessphase"></select>
   </div>
   <div class="akte-header-search">
     <input id="akteSearch" type="search" placeholder="Suchen (Strg+K)" aria-label="Objekte durchsuchen">
   </div>
   <div class="akte-header-actions">
+    <button type="button" id="akteLoadDemoButton">Demodaten laden</button>
     <button type="button" id="akteImportButton">Modell laden</button>
     <input id="akteImportFile" type="file" accept="application/json" hidden>
     <button type="button" id="akteSaveButton">Speichern</button>

@@ -7520,6 +7520,9 @@ if (typeof window !== 'undefined') {
     maturityScore: () => maturityScore(),
     clarificationItems: () => clarificationItems(),
     currentPortfolio: () => currentPortfolio(),
-    portfolioSegmentation: () => currentPortfolio().portfolioSegmentation
+    portfolioSegmentation: () => currentPortfolio().portfolioSegmentation,
+    // Kriterium 3 (Parität der Rechenpfade zwischen den Oberflächen),
+    // siehe tests/akte-parity.test.js.
+    measureDrilldownFor: measureId => measureDrilldownFor(measures.find(measure => measure.id === measureId), currentParams())
   };
 }

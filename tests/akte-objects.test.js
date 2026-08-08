@@ -19,10 +19,15 @@ function click(node) {
 beforeEach(async () => {
   document.documentElement.innerHTML = html.replace(/^[\s\S]*<html[^>]*>/i, '').replace(/<\/html>\s*$/i, '');
   localStorage.clear();
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
   vi.resetModules();
   const mainModulePath = '../src/main-akte.js';
   await import(mainModulePath);
   debug = /** @type {any} */ (window).__akte2Debug;
+  // A brand-new session boots with the skeleton (Stufe 6, Abschnitt 6.5), not
+  // the demo example — this file exercises measure/sidecar object behaviour,
+  // so it loads the demo content explicitly, like a real user would.
+  click(document.getElementById('akteLoadDemoButton'));
 });
 
 const objectTypeFilters = [

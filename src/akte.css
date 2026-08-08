@@ -88,6 +88,57 @@ button {
 }
 .akte-header-actions button:hover { background: var(--akte-accent-weak); }
 
+.akte-phase-label { font-size: 0.78em; color: var(--akte-text-muted); font-weight: 400; margin-left: 6px; }
+#aktePhaseSelect {
+  border: 1px solid var(--akte-border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  background: var(--akte-bg);
+  font-size: 0.85em;
+}
+
+/* Vorschläge (Kantenvorschläge, Abschnitt 6.2 Lückenart 4) --------------- */
+
+.akte-suggestion-item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: var(--akte-accent-weak);
+  color: var(--akte-text);
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 0.88em;
+}
+.akte-suggestion-item:hover { background: #d6e2fb; }
+
+/* Phasenübergang-Warnung (Kriterium 10) ---------------------------------- */
+
+.akte-phase-warning {
+  background: #fef3c7;
+  border: 1px solid var(--akte-warn);
+  color: #7c4a03;
+  border-radius: var(--akte-radius);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.akte-phase-warning strong { display: block; margin-bottom: 4px; }
+
+/* Stellvertreterobjekte (Abschnitt 6.2 Lückenart 3) ----------------------- */
+
+.akte-value--provisional { border-bottom: 2px dotted var(--akte-bad); }
+.akte-object-list-item .akte-provisional-badge,
+.akte-provisional-badge {
+  background: var(--akte-bad);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.7em;
+  font-weight: 700;
+  padding: 1px 7px;
+  margin-left: 6px;
+}
+
 /* KPI strip ----------------------------------------------------------- */
 
 .akte-kpi-strip {

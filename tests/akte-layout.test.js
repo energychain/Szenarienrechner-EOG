@@ -25,12 +25,18 @@ function click(node) {
 beforeEach(async () => {
   document.documentElement.innerHTML = html.replace(/^[\s\S]*<html[^>]*>/i, '').replace(/<\/html>\s*$/i, '');
   localStorage.clear();
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
   // main-akte.js boots at module top-level; force a fresh evaluation per
   // test so it re-runs against this test's freshly reset DOM.
   vi.resetModules();
   const mainModulePath = '../src/main-akte.js';
   await import(mainModulePath);
   debug = /** @type {any} */ (window).__akte2Debug;
+  // A brand-new session boots with the skeleton (Stufe 6, Abschnitt 6.5),
+  // not the demo example — these Stufe-4/5 tests exercise measure/sidecar
+  // behaviour, so they load the demo content explicitly, like a real user
+  // exploring the app would.
+  click(document.getElementById('akteLoadDemoButton'));
 });
 
 function fieldInput() {
