@@ -286,6 +286,19 @@ button {
 .akte-rechenpfad { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--akte-border); color: var(--akte-text-muted); }
 .akte-rechenpfad strong { color: var(--akte-text); }
 
+/* Neuanlage (initiale Datenerfassung) ------------------------------------ */
+
+.akte-add-bar { margin-bottom: 12px; }
+.akte-add-button {
+  border: 1px dashed var(--akte-accent);
+  background: var(--akte-accent-weak);
+  color: var(--akte-accent);
+  border-radius: var(--akte-radius);
+  padding: 8px 14px;
+  font-weight: 600;
+}
+.akte-add-button:hover { background: var(--akte-accent); color: #fff; }
+
 /* Objektliste (Kriterium 6: alle Objekttypen in derselben Liste) --------- */
 
 .akte-object-list {

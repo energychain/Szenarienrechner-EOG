@@ -116,7 +116,7 @@ function skeletonInputs() {
 }
 
 function emptyProvisionalIds() {
-  return { objective: [], sidecarObject: [], sidecarSource: [] };
+  return { measure: [], objective: [], sidecarObject: [], sidecarSource: [] };
 }
 
 // Skelett statt Leere (Spezifikation 6.5): ein neues Modell startet mit den
@@ -864,14 +864,25 @@ function renderObjectListHtml(visible) {
   `;
 }
 
+// Initiale Datenerfassung: der aktuelle Filter bestimmt eindeutig, welcher
+// Objekttyp entstehen würde (Kriterium 6: ein Filter zeigt genau einen
+// Objekttyp) — der Button erscheint daher nur bei einem der vier
+// anlegbaren Objekttyp-Filter, nicht bei "Alles" oder gespeicherten Filtern.
+function addObjectBarHtml() {
+  const def = creatableObjectTypes[filterKey];
+  if (!def) return '';
+  return `<div class="akte-add-bar"><button type="button" class="akte-add-button" data-add-object-type="${esc(filterKey)}">+ ${esc(def.label)} anlegen</button></div>`;
+}
+
 function renderObjectSurface(visible, clarifications) {
   const node = document.getElementById('akteObjectSurface');
+  const addBar = addObjectBarHtml();
   if (!visible.length) {
-    node.innerHTML = renderPhaseWarningHtml() + '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
+    node.innerHTML = renderPhaseWarningHtml() + addBar + '<div class="akte-empty-state">Keine Objekte in diesem Filter.</div>';
     return;
   }
   const p = currentParams();
-  node.innerHTML = renderPhaseWarningHtml() + renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
+  node.innerHTML = renderPhaseWarningHtml() + addBar + renderObjectListHtml(visible) + renderObjectDetailHtml(selectedType, selectedId, clarifications, p);
 }
 
 // ---------------------------------------------------------------------------
@@ -979,7 +990,7 @@ function closePopover() {
   activePopoverTarget = null;
 }
 
-const referenceLabelKeys = { objective: 'label', sidecarObject: 'title', sidecarSource: 'title' };
+const referenceLabelKeys = { measure: 'name', objective: 'label', sidecarObject: 'title', sidecarSource: 'title' };
 
 function referenceCollection(targetType) {
   if (targetType === 'objective') {
@@ -997,6 +1008,19 @@ function referenceCollection(targetType) {
   return model.measures;
 }
 
+function newObjectId(targetType) {
+  return `${targetType}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function createBareObject(targetType, title) {
+  const id = newObjectId(targetType);
+  if (targetType === 'measure') return normalizeMeasure({ id, name: title, sector: model.inputs.sector }, model.measures.length, {});
+  if (targetType === 'objective') return { id, label: title, note: '' };
+  if (targetType === 'sidecarObject') return normalizeSidecarObject({ id, title });
+  if (targetType === 'sidecarSource') return normalizeSidecarSource({ id, title });
+  return null;
+}
+
 // Stellvertreterobjekt nach Wiki-Muster (Spezifikation 6.2, Lückenart 3):
 // referenziert der Nutzer einen Namen, für den weder eine ID noch ein
 // bestehendes Label passt, entsteht sofort ein neues Objekt mit Status
@@ -1008,16 +1032,37 @@ function resolveOrCreateReference(targetType, text) {
   const labelKey = referenceLabelKeys[targetType];
   const existing = collection.find(item => item.id === trimmed || String(item[labelKey] || '').toLowerCase() === trimmed.toLowerCase());
   if (existing) return existing.id;
-  const newId = `${targetType}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-  let created;
-  if (targetType === 'objective') created = { id: newId, label: trimmed, note: '' };
-  else if (targetType === 'sidecarObject') created = normalizeSidecarObject({ id: newId, title: trimmed });
-  else if (targetType === 'sidecarSource') created = normalizeSidecarSource({ id: newId, title: trimmed });
-  else return trimmed;
+  const created = createBareObject(targetType, trimmed);
+  if (!created) return trimmed;
   collection.push(created);
   model.provisionalIds[targetType] = model.provisionalIds[targetType] || [];
-  model.provisionalIds[targetType].push(newId);
-  return newId;
+  model.provisionalIds[targetType].push(created.id);
+  return created.id;
+}
+
+// Direkte Neuanlage (initiale Datenerfassung): der "+ Neu"-Button in der
+// Objektliste legt ein Objekt mit demselben Grundgerüst wie das
+// Stellvertreterobjekt-Muster an, aber bewusst gewählt statt aus einer
+// unaufgelösten Referenz entstanden — deshalb ohne provisorischen Status.
+const creatableObjectTypes = {
+  measure: { label: 'Maßnahme', defaultTitle: 'Neue Maßnahme' },
+  objective: { label: 'Ziel', defaultTitle: 'Neues Ziel' },
+  sidecarObject: { label: 'Kontextobjekt', defaultTitle: 'Neues Kontextobjekt' },
+  sidecarSource: { label: 'Quelle', defaultTitle: 'Neue Quelle' }
+};
+
+function addNewObject(objectType) {
+  const def = creatableObjectTypes[objectType];
+  if (!def) return;
+  const created = createBareObject(objectType, def.defaultTitle);
+  if (!created) return;
+  referenceCollection(objectType).push(created);
+  selectedType = objectType;
+  selectedId = created.id;
+  filterKey = objectType;
+  searchText = '';
+  afterMutation();
+  showToast(`${def.label} angelegt.`);
 }
 
 function isProvisional(objectType, id) {
@@ -1248,11 +1293,17 @@ function renderAll() {
   const portfolio = currentPortfolio();
   const clarifications = currentClarifications(portfolio);
   const entries = listEntries(clarifications);
-  let visible = filteredEntries(entries);
-  if (!visible.length) visible = entries;
-  if (visible.length && !visible.some(entry => entry.objectType === selectedType && entry.id === selectedId)) {
-    selectedType = visible[0].objectType;
-    selectedId = visible[0].id;
+  const visible = filteredEntries(entries);
+  // Wenn der aktuelle Filter (noch) nichts zeigt, bleibt die Auswahl trotzdem
+  // gültig — sie fällt auf irgendein vorhandenes Objekt zurück, damit sie
+  // nicht auf eine gelöschte ID zeigt. Angezeigt wird dabei aber weiterhin
+  // die tatsächlich gefilterte (ggf. leere) Liste, nicht heimlich alle
+  // Objekte — sonst verdeckt ein "+ Neu"-Button unbemerkt ein fremdes Objekt
+  // (siehe initiale Datenerfassung: leerer Maßnahmen-Filter).
+  const selectionPool = visible.length ? visible : entries;
+  if (selectionPool.length && !selectionPool.some(entry => entry.objectType === selectedType && entry.id === selectedId)) {
+    selectedType = selectionPool[0].objectType;
+    selectedId = selectionPool[0].id;
   }
   document.getElementById('akteSectorLabel').textContent = model.inputs.sector === 'gas' ? 'Gas' : 'Strom';
   renderPhaseSelect();
@@ -1486,6 +1537,11 @@ function wireEvents() {
   });
 
   document.getElementById('akteObjectSurface').addEventListener('click', event => {
+    const addButton = event.target.closest('[data-add-object-type]');
+    if (addButton) {
+      addNewObject(addButton.dataset.addObjectType);
+      return;
+    }
     const listItem = event.target.closest('.akte-object-list-item');
     if (listItem) {
       selectedType = listItem.dataset.objectType;
