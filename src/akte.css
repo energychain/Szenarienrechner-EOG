@@ -442,6 +442,14 @@ button {
 .akte-context-section { margin-bottom: 18px; }
 .akte-context-section h3 { font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--akte-text-muted); margin: 0 0 8px; }
 .akte-context-metric { display: flex; justify-content: space-between; padding: 3px 0; }
+
+/* Mikro-Verlauf (Abschnitt 4.1) — reine Form, keine Achsen/Legende/Farbcodes
+   nach Wertzustand wie bei den Objektflächen-Diagrammen. */
+.akte-micro-chart { display: block; max-width: 280px; max-height: 90px; margin-bottom: 6px; }
+.akte-micro-chart-area { fill: var(--akte-accent-weak); stroke: none; }
+.akte-micro-chart-line { fill: none; stroke-width: 1.25; }
+.akte-micro-chart-line--eog { stroke: var(--akte-accent); }
+.akte-micro-chart-line--cashflow { stroke: var(--akte-good); stroke-dasharray: 2 2; }
 .akte-open-point { display: block; padding: 6px 0; border-bottom: 1px solid var(--akte-border); font-size: 0.92em; }
 .akte-open-point:last-child { border-bottom: none; }
 .akte-history-event { font-size: 0.85em; color: var(--akte-text-muted); padding: 3px 0; }

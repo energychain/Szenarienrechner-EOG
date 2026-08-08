@@ -5,7 +5,7 @@
 // valueState/label) — keine SVG-Strings, keine Farben, keine Pixelmaße
 // jenseits der Zielgröße. Rendering (SVG-Markup) lebt ausschließlich in der
 // UI-Schicht (main-akte.js), nicht hier.
-import { riskExpectedValue, impactAssumptionsFor, portfolioWaterfallFor, portfolioSensitivityTornadoFor } from './engine.js';
+import { riskExpectedValue, impactAssumptionsFor, portfolioWaterfallFor, portfolioSensitivityTornadoFor, calcMeasure, portfolioEffectFor } from './engine.js';
 import { viabilityOverviewFor, VIABILITY_CATEGORIES } from './viability-classification.js';
 import { valueState, evidenceGapFor } from './value-state.js';
 
@@ -398,4 +398,25 @@ export function viabilitySegmentsModel(model, inputs, context = {}) {
     collapsedValue: 0,
     emptyReason: elements.length ? null : 'Noch keine Maßnahme einer Tragfähigkeitskategorie zugeordnet.'
   };
+}
+
+// ---------------------------------------------------------------------------
+// 7. Mikro-Verlauf (Kontextspalte, Abschnitt 4.1) — AfA, Verzinsung,
+// regulatorische EOG-Wirkung und indikativer Cashflow einer einzelnen
+// Maßnahme über ihren Horizont. Bewusst ohne valueState/objectId: die
+// Mikrografik hat laut Spezifikation "keine Interaktion, kein Klickziel" und
+// keine eigene Beschriftung — nur eine Form, kein Objektbezug wie bei den
+// übrigen Diagrammen.
+// ---------------------------------------------------------------------------
+
+export function measureMicroFlowModel(measure, p) {
+  const result = calcMeasure(measure, p, portfolioEffectFor(measure, p));
+  const rows = (result.rows || []).map(row => ({
+    year: row.year,
+    depreciation: row.depreciation || 0,
+    capitalReturn: row.capitalReturn || 0,
+    regulatoryEogEffect: row.regulatoryEogEffect || 0,
+    indicativeCashflow: row.indicativeCashflow || 0
+  }));
+  return { type: 'measureMicroFlow', rows };
 }

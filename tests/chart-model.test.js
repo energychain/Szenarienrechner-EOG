@@ -14,6 +14,7 @@ import {
   contributionBarsModel,
   eogFlowModel,
   linearScale,
+  measureMicroFlowModel,
   niceTicks,
   outlierAwareScale,
   riskMatrixModel,
@@ -226,5 +227,34 @@ describe('chart-model: Segmentbalken (Filter "rahmen")', () => {
     const model = viabilitySegmentsModel({ ...referenceModel, measures: [] }, referenceModel.inputs, context);
     expect(model.elements).toEqual([]);
     expect(model.emptyReason).toBeTruthy();
+  });
+});
+
+describe('chart-model: Mikro-Verlauf (Kontextspalte, Abschnitt 4.1)', () => {
+  it('produces one row per horizon year for a single measure, with the same fields the object-surface Verlauf chart uses', () => {
+    const measure = referenceModel.measures[0];
+    const model = measureMicroFlowModel(measure, p);
+    expect(model.type).toBe('measureMicroFlow');
+    expect(model.rows.length).toBe(p.horizon);
+    model.rows.forEach(row => {
+      expect(Number.isFinite(row.year)).toBe(true);
+      expect(Number.isFinite(row.depreciation)).toBe(true);
+      expect(Number.isFinite(row.capitalReturn)).toBe(true);
+      expect(Number.isFinite(row.regulatoryEogEffect)).toBe(true);
+      expect(Number.isFinite(row.indicativeCashflow)).toBe(true);
+    });
+  });
+
+  it('carries no objectId/valueState — Abschnitt 4.1: "keine Interaktion, kein Klickziel"', () => {
+    const measure = referenceModel.measures[0];
+    const model = measureMicroFlowModel(measure, p);
+    model.rows.forEach(row => {
+      expect(row.objectId).toBeUndefined();
+      expect(row.valueState).toBeUndefined();
+    });
+  });
+
+  it('never throws for a bare measure with only an id set (Kriterium 8: keine Eingabe blockiert die Rechnung)', () => {
+    expect(() => measureMicroFlowModel({ id: 'bare' }, p)).not.toThrow();
   });
 });

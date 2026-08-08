@@ -30,7 +30,7 @@ import {
 } from './engine.js';
 import { clarificationItems } from './clarifications.js';
 import { maturityScore } from './maturity.js';
-import { contributionBarsModel, eogFlowModel, linearScale, riskMatrixModel, tornadoModel, viabilitySegmentsModel, waterfallModel } from './chart-model.js';
+import { contributionBarsModel, eogFlowModel, linearScale, measureMicroFlowModel, riskMatrixModel, tornadoModel, viabilitySegmentsModel, waterfallModel } from './chart-model.js';
 import { defaultCommittee, defaultProcessState, defaultStrategy, normalizeMeasure, normalizeProcessState } from './model-normalize.js';
 import { fieldDescriptorsFor } from './field-registry.js';
 import { evidenceGaps, missingValueFields, referenceFieldsFor, suggestedEdges, valueState } from './value-state.js';
@@ -1591,14 +1591,47 @@ function emptyContextHtml() {
   return '<div class="akte-empty-state">Kein Objekt ausgewählt.</div>';
 }
 
+// Mikro-Verlauf (Abschnitt 4.1): 280×90 px, keine Achsenbeschriftung, keine
+// Legende, keine Interaktion, kein Klickziel — reine Form, kein Diagramm im
+// Sinn von Abschnitt 3 (deshalb aria-hidden statt eigener Beschreibung; die
+// zugrunde liegenden Werte stehen bereits als Zahl in den Metriken
+// darunter/im Satz, Kriterium V10). Entfällt ersatzlos für alle anderen
+// Objekttypen als "measure".
+function renderMeasureMicroFlowSvg(microFlow) {
+  const rows = microFlow.rows;
+  if (!rows.length) return '';
+  const width = 280;
+  const height = 90;
+  const padding = 2;
+  const stackTotals = rows.map(row => row.depreciation + row.capitalReturn);
+  const lineValues = [...rows.map(row => row.regulatoryEogEffect), ...rows.map(row => row.indicativeCashflow)];
+  const yMax = Math.max(0, ...stackTotals, ...lineValues);
+  const yMin = Math.min(0, ...stackTotals, ...lineValues);
+  const xScale = linearScale(0, Math.max(1, rows.length - 1), padding, width - padding);
+  const yScale = linearScale(yMin, yMax || 1, height - padding, padding);
+  const zeroY = yScale(0);
+  const topPoints = rows.map((row, index) => `${xScale(index)},${yScale(row.depreciation + row.capitalReturn)}`);
+  const areaPath = `M${xScale(0)},${zeroY} L${topPoints.join(' L')} L${xScale(rows.length - 1)},${zeroY} Z`;
+  const linePoints = key => rows.map((row, index) => `${xScale(index)},${yScale(row[key])}`).join(' ');
+  return `
+    <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" class="akte-micro-chart" aria-hidden="true" focusable="false">
+      <path d="${areaPath}" class="akte-micro-chart-area"></path>
+      <polyline points="${linePoints('regulatoryEogEffect')}" class="akte-micro-chart-line akte-micro-chart-line--eog"></polyline>
+      <polyline points="${linePoints('indicativeCashflow')}" class="akte-micro-chart-line akte-micro-chart-line--cashflow"></polyline>
+    </svg>
+  `;
+}
+
 function renderMeasureContext(node, measure, clarifications, p) {
   const drilldown = measureDrilldownFor(measure, p);
+  const microFlow = measureMicroFlowModel(measure, p);
   const related = clarifications.filter(item => item.measureId === measure.id);
   const evidence = evidenceGaps('measure', measure);
   const events = historyEventsFor('measure', measure.id).slice(-6).reverse();
   node.innerHTML = `
     <div class="akte-context-section">
       <h3>Wirkung dieses Objekts</h3>
+      ${renderMeasureMicroFlowSvg(microFlow)}
       <div class="akte-context-metric"><span>EOG Jahr 1</span><strong>${esc(fmtTeur(drilldown.rows?.[0]?.regulatoryEogEffect || 0, 1))}</strong></div>
       <div class="akte-context-metric"><span>${esc(drilldown.returnMetricLabel || 'IRR')}</span><strong>${Number.isFinite(drilldown.returnMetricValue) ? esc(fmtPct(drilldown.returnMetricValue * 100, 1)) : '–'}</strong></div>
       <div class="akte-context-metric"><span>Kapitalwert</span><strong>${esc(fmtTeur(drilldown.npvTeur || 0, 1))}</strong></div>
