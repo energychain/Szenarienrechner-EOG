@@ -736,6 +736,14 @@ const measureGroupOrder = ['identitaet', 'investitionAktivierung', 'wirkung', 'l
 function formattedValue(descriptor, value) {
   if (descriptor.type === 'bool') return value ? 'ja' : 'nein';
   if (Array.isArray(value)) return value.length ? value.join(', ') : '–';
+  // Select-Werte bleiben im Modell englische/camelCase Enum-Konstanten
+  // (z. B. "costPathReview") — angezeigt wird die deutsche Beschriftung aus
+  // dem Felddeskriptor, nicht der Rohwert. Vor der generischen Leerwert-
+  // Prüfung, da manche Optionslisten der leeren Zeichenkette selbst eine
+  // Beschriftung geben (z. B. "automatisch ableiten").
+  if (descriptor.type === 'select' && descriptor.optionLabels && Object.hasOwn(descriptor.optionLabels, value ?? '')) {
+    return descriptor.optionLabels[value ?? ''];
+  }
   if (value === '' || value === null || value === undefined) return '(nicht gesetzt)';
   if (descriptor.type === 'teur') return fmtPlain(Number(value) || 0, 1);
   if (descriptor.type === 'percent' || descriptor.type === 'number' || descriptor.type === 'year') return fmtPlain(Number(value) || 0, 0);
@@ -1913,7 +1921,10 @@ function inputControlFor(descriptor, value) {
   }
   if (descriptor.type === 'select') {
     const options = descriptor.options || [];
-    return `<select id="${id}">${options.map(option => `<option value="${esc(option)}" ${String(value) === String(option) ? 'selected' : ''}>${esc(option || '(leer)')}</option>`).join('')}</select>`;
+    return `<select id="${id}">${options.map(option => {
+      const optionLabel = descriptor.optionLabels?.[option] || option || '(leer)';
+      return `<option value="${esc(option)}" ${String(value) === String(option) ? 'selected' : ''}>${esc(optionLabel)}</option>`;
+    }).join('')}</select>`;
   }
   if (descriptor.type === 'number' || descriptor.type === 'percent' || descriptor.type === 'teur' || descriptor.type === 'year') {
     return `<input id="${id}" type="number" step="any" value="${esc(value ?? '')}">`;
