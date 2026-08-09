@@ -301,6 +301,12 @@ button {
 
 /* Neuanlage (initiale Datenerfassung) ------------------------------------ */
 
+.akte-wirkannahme-block { margin-left: 18px; background: var(--akte-bg); }
+.akte-wirkannahme-block > summary { justify-content: space-between; }
+.akte-wirkannahme-actions { display: flex; align-items: center; gap: 8px; }
+.akte-delete-button--small { padding: 3px 8px; font-size: 0.78em; }
+.akte-add-impact-button { margin: 0 0 12px 18px; }
+
 .akte-add-bar { margin-bottom: 12px; }
 .akte-add-button {
   border: 1px dashed var(--akte-accent);

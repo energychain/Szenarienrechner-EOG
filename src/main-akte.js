@@ -523,8 +523,18 @@ const objectTypeLabels = {
   objective: 'Ziel',
   sidecarObject: 'Kontextobjekt',
   sidecarSource: 'Quelle',
-  clarification: 'Klärpunkt'
+  clarification: 'Klärpunkt',
+  impactAssumption: 'Wirkannahme'
 };
+
+// Wirkannahmen sind in measure.impactAssumptions[] verschachtelt und daher
+// nur innerhalb einer Maßnahme eindeutig — die Objekt-ID für das Popover-
+// System (data-object-id) ist deshalb "measureId:impactId", genau das
+// Subjekt-Format, das history.js (diffImpactEvents) und value-state.js
+// (historyIndicatesChange) bereits für Wirkannahme-Felder verwenden.
+function impactAssumptionCompoundId(measureId, impactId) {
+  return `${measureId}:${impactId}`;
+}
 
 function resolveObject(objectType, id) {
   if (objectType === 'measure') return model.measures.find(item => item.id === id) || null;
@@ -532,6 +542,11 @@ function resolveObject(objectType, id) {
   if (objectType === 'objective') return (model.strategy.objectives || []).find(item => item.id === id) || null;
   if (objectType === 'sidecarObject') return (model.sidecar.objects || []).find(item => item.id === id) || null;
   if (objectType === 'sidecarSource') return (model.sidecar.sources || []).find(item => item.id === id) || null;
+  if (objectType === 'impactAssumption') {
+    const [measureId, impactId] = String(id).split(':');
+    const measure = model.measures.find(item => item.id === measureId);
+    return measure ? (measure.impactAssumptions || []).find(item => item.id === impactId) || null : null;
+  }
   return null;
 }
 
@@ -544,6 +559,10 @@ function historySubjectFor(objectType, stateObjectId) {
   if (objectType === 'input') return { scope: 'inputs' };
   if (objectType === 'objective') return { scope: 'strategy' };
   if (objectType === 'sidecarObject' || objectType === 'sidecarSource') return { scope: 'sidecar', sidecarId: stateObjectId };
+  if (objectType === 'impactAssumption') {
+    const [measureId, impactId] = String(stateObjectId).split(':');
+    return { measureId, impactId };
+  }
   return null;
 }
 
@@ -854,6 +873,42 @@ function renderRechenpfad(measure, p) {
   }
 }
 
+// Wirkannahmen haben volle Felddeskriptoren (field-registry.js), aber keine
+// eigene Objektfläche — sie werden direkt unter der "Wirkung"-Gruppe der
+// Maßnahme als eigene aufklappbare Blöcke angezeigt. Jedes Feld bleibt über
+// denselben data-edit-key/data-object-type/data-object-id-Mechanismus wie
+// überall sonst bearbeitbar (openPopover ist bereits generisch über
+// objectType); nur Anlegen/Löschen brauchen eigene Funktionen, weil die
+// Sammlung measure.impactAssumptions[] verschachtelt ist, nicht flach wie
+// bei den vier Objekttypen aus creatableObjectTypes.
+function impactAssumptionOpenCount(measure, impact, clarifications) {
+  return clarifications.filter(item => item.status !== 'closed' && item.measureId === measure.id && item.impactId === impact.id).length;
+}
+
+function renderImpactAssumptionBlocks(measure, clarifications) {
+  return (measure.impactAssumptions || []).map(impact => {
+    const compoundId = impactAssumptionCompoundId(measure.id, impact.id);
+    const sentence = renderSentenceForGroup('impactAssumption', compoundId, 'wirkannahme', impact);
+    const openCount = impactAssumptionOpenCount(measure, impact, clarifications);
+    return `
+      <details class="akte-sentence-block akte-wirkannahme-block" ${openCount ? 'open' : ''} data-group="wirkannahme">
+        <summary>
+          <span>${esc(impact.title || 'Wirkannahme ohne Titel')}</span>
+          <span class="akte-wirkannahme-actions">
+            ${openCount ? `<span class="badge">${openCount} offen</span>` : ''}
+            <button type="button" class="akte-delete-button akte-delete-button--small" data-delete-impact-assumption="${esc(compoundId)}">Löschen</button>
+          </span>
+        </summary>
+        <div class="akte-sentence-body">${sentence}</div>
+      </details>
+    `;
+  }).join('');
+}
+
+function addImpactAssumptionButtonHtml(measure) {
+  return `<button type="button" class="akte-add-button akte-add-impact-button" data-add-impact-assumption="${esc(measure.id)}">+ Wirkannahme anlegen</button>`;
+}
+
 function renderMeasureDetail(measure, clarifications, p) {
   const blocksHtml = measureGroupOrder
     .filter(group => fieldDescriptorsFor('measure').some(d => d.group === group && (!d.appliesWhen || d.appliesWhen(measure))))
@@ -863,7 +918,8 @@ function renderMeasureDetail(measure, clarifications, p) {
       const openCount = measureGroupOpenPointCount(group, measure, clarifications);
       const hasNonDefault = groupHasGapOrNonDefault('measure', measure.id, group, measure);
       const shouldOpen = isCore || openCount > 0 || hasNonDefault;
-      return blockHtml(group, measureGroupTitles[group] || group, openCount, shouldOpen, sentence);
+      const block = blockHtml(group, measureGroupTitles[group] || group, openCount, shouldOpen, sentence);
+      return group === 'wirkung' ? block + renderImpactAssumptionBlocks(measure, clarifications) + addImpactAssumptionButtonHtml(measure) : block;
     }).join('');
   const titleHtml = esc(measure.name || 'Maßnahme ohne Namen') + provisionalBadgeHtml('measure', measure.id);
   return `
@@ -1893,6 +1949,31 @@ function deleteObject(objectType, objectId) {
   showToast(`${def.label} gelöscht.`);
 }
 
+// Wirkannahmen sind kein eigenständiger Objekttyp in creatableObjectTypes
+// (sie leben nur innerhalb einer Maßnahme) — Anlegen/Löschen arbeitet daher
+// direkt auf measure.impactAssumptions[] statt über referenceCollection().
+function addImpactAssumption(measureId) {
+  const measure = model.measures.find(item => item.id === measureId);
+  if (!measure) return;
+  measure.impactAssumptions = measure.impactAssumptions || [];
+  measure.impactAssumptions.push({ id: newObjectId('impact'), title: 'Neue Wirkannahme' });
+  afterMutation();
+  showToast('Wirkannahme angelegt.');
+}
+
+function deleteImpactAssumption(compoundId) {
+  const [measureId, impactId] = String(compoundId).split(':');
+  const measure = model.measures.find(item => item.id === measureId);
+  const list = measure?.impactAssumptions || [];
+  const impact = list.find(item => item.id === impactId);
+  if (!impact) return;
+  if (!window.confirm(`Wirkannahme "${impact.title || impact.id}" wirklich löschen?`)) return;
+  list.splice(list.indexOf(impact), 1);
+  if (model.openDecisions) delete model.openDecisions[compoundId];
+  afterMutation();
+  showToast('Wirkannahme gelöscht.');
+}
+
 function isProvisional(objectType, id) {
   return Boolean(model.provisionalIds?.[objectType]?.includes(id));
 }
@@ -2424,6 +2505,17 @@ function wireEvents() {
     const deleteButton = event.target.closest('[data-delete-object-type]');
     if (deleteButton) {
       deleteObject(deleteButton.dataset.deleteObjectType, deleteButton.dataset.deleteObjectId);
+      return;
+    }
+    const addImpactButton = event.target.closest('[data-add-impact-assumption]');
+    if (addImpactButton) {
+      addImpactAssumption(addImpactButton.dataset.addImpactAssumption);
+      return;
+    }
+    const deleteImpactButton = event.target.closest('[data-delete-impact-assumption]');
+    if (deleteImpactButton) {
+      event.preventDefault(); // sitzt in <summary>, sonst klappt der Block beim Löschen zusätzlich auf/zu
+      deleteImpactAssumption(deleteImpactButton.dataset.deleteImpactAssumption);
       return;
     }
     const chartCollapseToggle = event.target.closest('[data-chart-toggle-collapse]');
